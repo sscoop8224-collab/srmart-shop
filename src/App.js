@@ -50,6 +50,13 @@ function App() {
   const [cart, setCart] = useState([]);
   const [user, setUser] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [messages, setMessages] = useState({
+    welcome: '환영해요! SR Mart 가족이 되셨어요! 🎉',
+    logout: '로그아웃 됐어요. 이용해주셔서 감사합니다! 😊',
+    login: '님, 환영해요! 즐거운 쇼핑 되세요 😊',
+    banner: 'SR Mart에 오신 것을 환영해요!',
+    bannerSub: '신선하고 다양한 상품을 만나보세요',
+  });
   const [filterLarge, setFilterLarge] = useState('전체');
   const [filterMedium, setFilterMedium] = useState('전체');
   const [filterSmall, setFilterSmall] = useState('전체');
@@ -59,10 +66,13 @@ function App() {
     setPage('home');
   };
 
-  const handleLogout = () => {
-    setUser(null);
-    setCart([]);
-    setPage('login');
+const handleLogout = () => {
+    if (window.confirm('정말 로그아웃 하시겠어요?')) {
+      setUser(null);
+      setCart([]);
+      setPage('login');
+      alert(messages.logout);
+    }
   };
 
   const addToCart = (product) => {
@@ -168,8 +178,8 @@ function App() {
       {page === 'home' && (
         <main style={{ padding: '32px', maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ background: 'linear-gradient(135deg, #2e7d32, #4caf50)', borderRadius: '16px', padding: '40px 48px', marginBottom: '32px', color: 'white' }}>
-            <h2 style={{ margin: '0 0 8px', fontSize: '28px' }}>🛒 SR Mart에 오신 것을 환영해요!</h2>
-            <p style={{ margin: 0, opacity: 0.9, fontSize: '16px' }}>신선하고 다양한 상품을 만나보세요</p>
+            <h2 style={{ margin: '0 0 8px', fontSize: '28px' }}>🛒 {messages.banner}</h2>
+<p style={{ margin: 0, opacity: 0.9, fontSize: '16px' }}>{messages.bannerSub}</p>
           </div>
 
           <div style={{ marginBottom: '24px' }}>

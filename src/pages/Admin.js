@@ -48,7 +48,7 @@ function ImageUploadMulti({ images, onImagesChange }) {
   );
 }
 
-function Admin({ products, setProducts, categories, setCategories }) {
+function Admin({ products, setProducts, categories, setCategories, messages, setMessages }) {
   const [tab, setTab] = useState('products');
   const [form, setForm] = useState({
     name: '',
@@ -60,6 +60,7 @@ function Admin({ products, setProducts, categories, setCategories }) {
     images: [],
   });
   const [editId, setEditId] = useState(null);
+  const [msgForm, setMsgForm] = useState({ ...messages });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -129,6 +130,11 @@ function Admin({ products, setProducts, categories, setCategories }) {
     }
   };
 
+  const handleMsgSave = () => {
+    setMessages(msgForm);
+    alert('문구가 저장됐어요! 😊');
+  };
+
   const selectedLarge = categories.find((c) => c.name === form.large);
   const selectedMedium = selectedLarge && selectedLarge.children.find((m) => m.name === form.medium);
 
@@ -137,47 +143,39 @@ function Admin({ products, setProducts, categories, setCategories }) {
       <h2 style={{ marginBottom: '24px', color: '#1b5e20' }}>⚙️ 관리자 페이지</h2>
 
       {/* 탭 */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-        {[{ key: 'products', label: '📦 상품 관리' }, { key: 'categories', label: '📂 카테고리 관리' }].map((t) => (
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
+        {[
+          { key: 'products', label: '📦 상품 관리' },
+          { key: 'categories', label: '📂 카테고리 관리' },
+          { key: 'messages', label: '✏️ 문구 관리' },
+        ].map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)} style={{ padding: '10px 24px', background: tab === t.key ? '#2e7d32' : '#f1f8e9', color: tab === t.key ? 'white' : '#2e7d32', border: '1px solid #c8e6c9', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' }}>
             {t.label}
           </button>
         ))}
       </div>
 
+      {/* 상품 관리 탭 */}
       {tab === 'products' && (
         <div>
-          {/* 등록/수정 폼 */}
           <div style={{ background: '#f1f8e9', padding: '24px', borderRadius: '12px', marginBottom: '32px', border: '1px solid #c8e6c9' }}>
             <h3 style={{ marginBottom: '16px', color: '#2e7d32' }}>
               {editId !== null ? '✏️ 상품 수정' : '➕ 상품 등록'}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-
-              {/* 이미지 5개 */}
               <ImageUploadMulti
                 images={form.images}
                 onImagesChange={(updater) => setForm((prev) => ({ ...prev, images: typeof updater === 'function' ? updater(prev.images) : updater }))}
               />
-
-              {/* 상품명 */}
               <input name="name" value={form.name} onChange={handleChange} placeholder="상품명" style={{ padding: '12px', borderRadius: '8px', border: '1px solid #c8e6c9', fontSize: '14px' }} />
-
-              {/* 가격 */}
               <input name="price" value={form.price} onChange={handleChange} placeholder="가격 (숫자만)" type="number" style={{ padding: '12px', borderRadius: '8px', border: '1px solid #c8e6c9', fontSize: '14px' }} />
-
-              {/* 바코드 */}
               <input name="barcode" value={form.barcode} onChange={handleChange} placeholder="바코드 번호 (선택)" style={{ padding: '12px', borderRadius: '8px', border: '1px solid #c8e6c9', fontSize: '14px' }} />
-
-              {/* 대분류 */}
               <select name="large" value={form.large} onChange={handleChange} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #c8e6c9', fontSize: '14px' }}>
                 <option value="">대분류 선택</option>
                 {categories.map((c) => (
                   <option key={c.name} value={c.name}>{c.name}</option>
                 ))}
               </select>
-
-              {/* 중분류 */}
               {selectedLarge && selectedLarge.children.length > 0 && (
                 <select name="medium" value={form.medium} onChange={handleChange} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #c8e6c9', fontSize: '14px' }}>
                   <option value="">중분류 선택</option>
@@ -186,8 +184,6 @@ function Admin({ products, setProducts, categories, setCategories }) {
                   ))}
                 </select>
               )}
-
-              {/* 소분류 */}
               {selectedMedium && selectedMedium.children.length > 0 && (
                 <select name="small" value={form.small} onChange={handleChange} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #c8e6c9', fontSize: '14px' }}>
                   <option value="">소분류 선택</option>
@@ -196,7 +192,6 @@ function Admin({ products, setProducts, categories, setCategories }) {
                   ))}
                 </select>
               )}
-
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button onClick={handleSubmit} style={{ flex: 1, padding: '12px', background: '#2e7d32', color: 'white', border: 'none', borderRadius: '8px', fontSize: '15px', cursor: 'pointer', fontWeight: 'bold' }}>
                   {editId !== null ? '✏️ 수정 완료' : '➕ 상품 등록'}
@@ -210,7 +205,6 @@ function Admin({ products, setProducts, categories, setCategories }) {
             </div>
           </div>
 
-          {/* 상품 목록 */}
           <h3 style={{ marginBottom: '16px', color: '#1b5e20' }}>등록된 상품 목록 ({products.length}개)</h3>
           <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -256,8 +250,42 @@ function Admin({ products, setProducts, categories, setCategories }) {
         </div>
       )}
 
+      {/* 카테고리 관리 탭 */}
       {tab === 'categories' && (
         <CategoryManager categories={categories} setCategories={setCategories} />
+      )}
+
+      {/* 문구 관리 탭 */}
+      {tab === 'messages' && (
+        <div style={{ background: '#f1f8e9', padding: '24px', borderRadius: '12px', border: '1px solid #c8e6c9' }}>
+          <h3 style={{ marginBottom: '20px', color: '#2e7d32' }}>✏️ 문구 관리</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+            {[
+              { key: 'banner', label: '🏠 메인 배너 제목', placeholder: 'SR Mart에 오신 것을 환영해요!' },
+              { key: 'bannerSub', label: '🏠 메인 배너 부제목', placeholder: '신선하고 다양한 상품을 만나보세요' },
+              { key: 'login', label: '🔑 로그인 환영 메시지', placeholder: '님, 환영해요! 즐거운 쇼핑 되세요 😊' },
+              { key: 'welcome', label: '🎉 회원가입 환영 메시지', placeholder: '환영해요! SR Mart 가족이 되셨어요! 🎉' },
+              { key: 'logout', label: '👋 로그아웃 메시지', placeholder: '로그아웃 됐어요. 이용해주셔서 감사합니다! 😊' },
+            ].map((item) => (
+              <div key={item.key}>
+                <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#2e7d32', display: 'block', marginBottom: '6px' }}>
+                  {item.label}
+                </label>
+                <input
+                  value={msgForm[item.key]}
+                  onChange={(e) => setMsgForm({ ...msgForm, [item.key]: e.target.value })}
+                  placeholder={item.placeholder}
+                  style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #c8e6c9', fontSize: '14px', boxSizing: 'border-box' }}
+                />
+              </div>
+            ))}
+
+            <button onClick={handleMsgSave} style={{ padding: '14px', background: '#2e7d32', color: 'white', border: 'none', borderRadius: '8px', fontSize: '15px', cursor: 'pointer', fontWeight: 'bold', marginTop: '8px' }}>
+              💾 문구 저장
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

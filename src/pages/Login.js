@@ -1,7 +1,9 @@
 import { useState, useRef } from 'react';
+import FindAccount from './FindAccount';
 
 function Login({ onLogin }) {
   const [isSignup, setIsSignup] = useState(false);
+  const [isFindAccount, setIsFindAccount] = useState(false);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -24,7 +26,7 @@ function Login({ onLogin }) {
       (u) => u.email === form.email && u.password === form.password
     );
     if (user) {
-      alert('환영해요, ' + user.name + '님! 😊');
+      alert(user.name + '님, 환영해요! 즐거운 쇼핑 되세요 😊');
       onLogin(user);
     } else {
       alert('이메일 또는 비밀번호가 틀렸어요!');
@@ -62,6 +64,15 @@ function Login({ onLogin }) {
       else handleLogin();
     }
   };
+
+  if (isFindAccount) {
+    return (
+      <FindAccount
+        users={users}
+        onBack={() => setIsFindAccount(false)}
+      />
+    );
+  }
 
   return (
     <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -110,15 +121,22 @@ function Login({ onLogin }) {
           </button>
         </div>
 
-        <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#666' }}>
-          {isSignup ? '이미 계정이 있으신가요?' : '아직 계정이 없으신가요?'}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
           <span
             onClick={() => { setIsSignup(!isSignup); setForm({ name: '', email: '', password: '' }); }}
-            style={{ color: '#2e7d32', cursor: 'pointer', marginLeft: '8px', fontWeight: 'bold' }}
+            style={{ color: '#2e7d32', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}
           >
             {isSignup ? '로그인' : '회원가입'}
           </span>
-        </p>
+          {!isSignup && (
+            <span
+              onClick={() => setIsFindAccount(true)}
+              style={{ color: '#666', cursor: 'pointer', fontSize: '14px' }}
+            >
+              아이디/비밀번호 찾기
+            </span>
+          )}
+        </div>
 
         {!isSignup && (
           <div style={{ marginTop: '20px', background: '#e8f5e9', padding: '12px', borderRadius: '8px', fontSize: '13px', color: '#555' }}>
