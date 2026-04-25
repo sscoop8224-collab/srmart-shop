@@ -328,7 +328,7 @@ const [selectedProduct, setSelectedProduct] = useState(null);
           <AdminOrders orders={orders} goBack={goBack} />
         )}
         {page === 'admin' && (
-          <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} messages={messages} setMessages={setMessages} goBack={goBack} />
+          <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} messages={messages} setMessages={() => {}} goBack={goBack} />
         )}
       </div>
 
