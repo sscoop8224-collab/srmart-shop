@@ -60,7 +60,7 @@ function App() {
   const [users, setUsers] = useState([
     { name: '관리자', email: 'admin@srmart.com', password: '1234', grade: '관리자' },
   ]);
-  const [messages, setMessages] = useState({
+  const [messages] = useState({
     welcome: '환영해요! SR Mart 가족이 되셨어요! 🎉',
     logout: '로그아웃 되었어요. 이용해주셔서 감사합니다! 😊',
     login: '님, 환영해요! 즐거운 쇼핑 되세요 😊',
