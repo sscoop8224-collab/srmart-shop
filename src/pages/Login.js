@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import FindAccount from './FindAccount';
 
 function Login({ onLogin }) {
@@ -9,6 +9,41 @@ function Login({ onLogin }) {
     email: '',
     password: '',
   });
+  const [autoLogin, setAutoLogin] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('srmart_auto_login');
+    if (saved) {
+      const { email, password } = JSON.parse(saved);
+      const user = users.find((u) => u.email === email && u.password === password);
+      if (user) {
+        onLogin(user);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('srmart_auto_login');
+    if (saved) {
+      const { email, password } = JSON.parse(saved);
+      const user = users.find((u) => u.email === email && u.password === password);
+      if (user) {
+        onLogin(user);
+      }
+    }
+  }, []);
+  
+
+  useEffect(() => {
+    const saved = localStorage.getItem('srmart_auto_login');
+    if (saved) {
+      const { email, password } = JSON.parse(saved);
+      const user = users.find((u) => u.email === email && u.password === password);
+      if (user) {
+        onLogin(user);
+      }
+    }
+  }, []);
   const [users, setUsers] = useState([
     { name: '관리자', email: 'admin@srmart.com', password: '1234' }
   ]);
@@ -26,6 +61,11 @@ function Login({ onLogin }) {
       (u) => u.email === form.email && u.password === form.password
     );
     if (user) {
+      if (autoLogin) {
+        localStorage.setItem('srmart_auto_login', JSON.stringify({ email: form.email, password: form.password }));
+      } else {
+        localStorage.removeItem('srmart_auto_login');
+      }
       alert(user.name + '님, 환영해요! 즐거운 쇼핑 되세요 😊');
       onLogin(user);
     } else {
@@ -113,6 +153,18 @@ function Login({ onLogin }) {
             type="password"
             style={{ padding: '12px', borderRadius: '8px', border: '1px solid #c8e6c9', fontSize: '14px' }}
           />
+          {!isSignup && (
+  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+    <input
+      type="checkbox"
+      id="autoLogin"
+      checked={autoLogin}
+      onChange={(e) => setAutoLogin(e.target.checked)}
+      style={{ width: '16px', height: '16px', accentColor: '#00c471', cursor: 'pointer' }}
+    />
+    <label htmlFor="autoLogin" style={{ fontSize: '13px', color: '#868e96', cursor: 'pointer', fontWeight: '500' }}>자동 로그인</label>
+  </div>
+)}
           <button
             onClick={isSignup ? handleSignup : handleLogin}
             style={{ padding: '12px', background: '#2e7d32', color: 'white', border: 'none', borderRadius: '8px', fontSize: '15px', cursor: 'pointer', marginTop: '8px', fontWeight: 'bold' }}

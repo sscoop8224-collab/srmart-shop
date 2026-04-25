@@ -15,12 +15,12 @@ function Cart({ cart, setCart, onPayment, onHome }) {
 
   if (cart.length === 0) {
     return (
-      <main style={{ padding: '32px', maxWidth: '800px', margin: '0 auto' }}>
-        <h2 style={{ marginBottom: '24px', color: '#1b5e20' }}>🛒 장바구니</h2>
-        <div style={{ textAlign: 'center', padding: '80px', color: '#888', background: 'white', borderRadius: '16px', border: '1px solid #e0e0e0' }}>
-          <p style={{ fontSize: '56px', margin: '0 0 16px' }}>🛒</p>
-          <p style={{ fontSize: '16px', margin: '0 0 24px' }}>장바구니가 비어있어요!</p>
-          <button onClick={onHome} style={{ padding: '12px 28px', background: '#2e7d32', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '15px', fontWeight: 'bold' }}>
+      <main style={{ padding: '20px' }}>
+        <h2 style={{ marginBottom: '20px', fontSize: '18px', fontWeight: '800', color: '#212529' }}>🛒 장바구니</h2>
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#adb5bd' }}>
+          <p style={{ fontSize: '52px', margin: '0 0 16px' }}>🛒</p>
+          <p style={{ fontSize: '15px', margin: '0 0 24px', fontWeight: '500' }}>장바구니가 비어있어요!</p>
+          <button onClick={onHome} style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '15px', fontWeight: '700' }}>
             쇼핑 계속하기
           </button>
         </div>
@@ -29,50 +29,48 @@ function Cart({ cart, setCart, onPayment, onHome }) {
   }
 
   return (
-    <main style={{ padding: '32px', maxWidth: '800px', margin: '0 auto' }}>
-      <h2 style={{ marginBottom: '24px', color: '#1b5e20' }}>🛒 장바구니</h2>
-      <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', overflow: 'hidden', marginBottom: '16px' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ background: '#2e7d32', color: 'white' }}>
-              <th style={{ padding: '14px 16px', textAlign: 'left' }}>이미지</th>
-              <th style={{ padding: '14px 16px', textAlign: 'left' }}>상품명</th>
-              <th style={{ padding: '14px 16px', textAlign: 'center' }}>수량</th>
-              <th style={{ padding: '14px 16px', textAlign: 'right' }}>금액</th>
-              <th style={{ padding: '14px 16px', textAlign: 'center' }}>삭제</th>
-            </tr>
-          </thead>
-          <tbody>
-            {cart.map((item) => (
-              <tr key={item.id} style={{ borderBottom: '1px solid #e0e0e0' }}>
-                <td style={{ padding: '14px 16px' }}>
-                  {item.image ? (
-                    <img src={item.image} alt={item.name} style={{ width: '52px', height: '52px', objectFit: 'contain', background: '#f5f5f5', borderRadius: '8px' }} />
-                  ) : (
-                    <div style={{ width: '52px', height: '52px', background: '#f1f8e9', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🛍️</div>
-                  )}
-                </td>
-                <td style={{ padding: '14px 16px', fontWeight: '500' }}>{item.name}</td>
-                <td style={{ padding: '14px 16px', textAlign: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                    <button onClick={() => updateQuantity(item.id, -1)} style={{ width: '30px', height: '30px', background: '#f1f8e9', border: '1px solid #c8e6c9', borderRadius: '6px', cursor: 'pointer', fontSize: '16px', color: '#2e7d32', fontWeight: 'bold' }}>-</button>
-                    <span style={{ minWidth: '28px', textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.id, 1)} style={{ width: '30px', height: '30px', background: '#f1f8e9', border: '1px solid #c8e6c9', borderRadius: '6px', cursor: 'pointer', fontSize: '16px', color: '#2e7d32', fontWeight: 'bold' }}>+</button>
-                  </div>
-                </td>
-                <td style={{ padding: '14px 16px', textAlign: 'right', color: '#2e7d32', fontWeight: 'bold', fontSize: '16px' }}>₩{(item.price * item.quantity).toLocaleString()}</td>
-                <td style={{ padding: '14px 16px', textAlign: 'center' }}>
-                  <button onClick={() => removeFromCart(item.id)} style={{ background: '#e53935', color: 'white', border: 'none', borderRadius: '6px', padding: '7px 14px', cursor: 'pointer', fontSize: '13px' }}>삭제</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <main style={{ padding: '16px' }}>
+      <h2 style={{ marginBottom: '16px', fontSize: '18px', fontWeight: '800', color: '#212529' }}>🛒 장바구니</h2>
+
+      {/* 상품 목록 카드형 */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+        {cart.map((item) => (
+          <div key={item.id} style={{ background: 'white', borderRadius: '14px', border: '1px solid #e9ecef', padding: '14px', display: 'flex', gap: '12px', alignItems: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+
+            {/* 이미지 */}
+            {item.image ? (
+              <img src={item.image} alt={item.name} style={{ width: '64px', height: '64px', objectFit: 'contain', background: '#f8f9fa', borderRadius: '10px', flexShrink: 0 }} />
+            ) : (
+              <div style={{ width: '64px', height: '64px', background: '#f8f9fa', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', flexShrink: 0 }}>🛍️</div>
+            )}
+
+            {/* 상품 정보 */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontWeight: '700', fontSize: '14px', color: '#212529', margin: '0 0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</p>
+              <p style={{ fontWeight: '800', fontSize: '15px', color: '#00c471', margin: '0 0 10px' }}>₩{(item.price * item.quantity).toLocaleString()}</p>
+
+              {/* 수량 조절 + 삭제 */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8f9fa', borderRadius: '8px', padding: '4px 8px' }}>
+                  <button onClick={() => updateQuantity(item.id, -1)} style={{ width: '28px', height: '28px', background: 'white', border: '1px solid #dee2e6', borderRadius: '6px', cursor: 'pointer', fontSize: '16px', color: '#495057', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>-</button>
+                  <span style={{ minWidth: '24px', textAlign: 'center', fontWeight: '700', fontSize: '14px' }}>{item.quantity}</span>
+                  <button onClick={() => updateQuantity(item.id, 1)} style={{ width: '28px', height: '28px', background: 'white', border: '1px solid #dee2e6', borderRadius: '6px', cursor: 'pointer', fontSize: '16px', color: '#495057', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                </div>
+                <button onClick={() => removeFromCart(item.id)} style={{ background: '#fff0f1', color: '#ff4757', border: '1px solid #ffd0d4', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>삭제</button>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
-      <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '20px 24px', textAlign: 'right' }}>
-        <p style={{ fontSize: '22px', fontWeight: 'bold', margin: '0 0 16px', color: '#1b5e20' }}>총 합계: ₩{totalPrice.toLocaleString()}</p>
-        <button onClick={onPayment} style={{ padding: '14px 36px', background: '#FFCD00', color: '#1a1a1a', border: 'none', borderRadius: '10px', fontSize: '16px', cursor: 'pointer', fontWeight: 'bold' }}>
-          카카오페이로 결제하기
+
+      {/* 결제 영역 */}
+      <div style={{ background: 'white', borderRadius: '14px', border: '1px solid #e9ecef', padding: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <span style={{ fontSize: '15px', color: '#868e96', fontWeight: '500' }}>총 결제금액</span>
+          <span style={{ fontSize: '20px', fontWeight: '800', color: '#212529' }}>₩{totalPrice.toLocaleString()}</span>
+        </div>
+        <button onClick={onPayment} style={{ width: '100%', padding: '15px', background: '#FFCD00', color: '#1a1a1a', border: 'none', borderRadius: '12px', fontSize: '16px', cursor: 'pointer', fontWeight: '800', letterSpacing: '-0.3px' }}>
+          카카오페이로 결제하기 💳
         </button>
       </div>
     </main>

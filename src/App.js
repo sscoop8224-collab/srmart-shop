@@ -1,10 +1,16 @@
 import { useState } from 'react';
 import './App.css';
+import srmLogo from './srm_logo.png';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
 import Orders from './pages/Orders';
 import Cart from './pages/Cart';
 import { kakaoPayReady } from './pages/KakaoPay';
+import AdminHome from './pages/AdminHome';
+import Members from './pages/Members';
+import AdminOrders from './pages/AdminOrders';
+import Search from './pages/Search';
+import ProductDetail from './pages/ProductDetail';
 
 const initialProducts = [
   { id: 1, name: '신선 사과', price: 5000, large: '식품', medium: '신선식품', small: '과일', image: null },
@@ -45,14 +51,18 @@ const initialCategories = [
 
 function App() {
   const [page, setPage] = useState('login');
+  const [pageHistory, setPageHistory] = useState([]);
   const [products, setProducts] = useState(initialProducts);
   const [categories, setCategories] = useState(initialCategories);
   const [cart, setCart] = useState([]);
   const [user, setUser] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [users, setUsers] = useState([
+    { name: '관리자', email: 'admin@srmart.com', password: '1234', grade: '관리자' },
+  ]);
   const [messages, setMessages] = useState({
     welcome: '환영해요! SR Mart 가족이 되셨어요! 🎉',
-    logout: '로그아웃 됐어요. 이용해주셔서 감사합니다! 😊',
+    logout: '로그아웃 되었어요. 이용해주셔서 감사합니다! 😊',
     login: '님, 환영해요! 즐거운 쇼핑 되세요 😊',
     banner: 'SR Mart에 오신 것을 환영해요!',
     bannerSub: '신선하고 다양한 상품을 만나보세요',
@@ -60,16 +70,37 @@ function App() {
   const [filterLarge, setFilterLarge] = useState('전체');
   const [filterMedium, setFilterMedium] = useState('전체');
   const [filterSmall, setFilterSmall] = useState('전체');
+const [selectedProduct, setSelectedProduct] = useState(null);
+
+  const isAdmin = user && user.email === 'admin@srmart.com';
+
+  const goToPage = (newPage) => {
+    setPageHistory((prev) => [...prev, page]);
+    setPage(newPage);
+  };
+
+  const goBack = () => {
+    if (pageHistory.length === 0) return;
+    const prevPage = pageHistory[pageHistory.length - 1];
+    setPageHistory((prev) => prev.slice(0, -1));
+    setPage(prevPage);
+  };
 
   const handleLogin = (loggedInUser) => {
     setUser(loggedInUser);
-    setPage('home');
+    if (loggedInUser.email === 'admin@srmart.com') {
+      goToPage('adminHome');
+    } else {
+      goToPage('home');
+    }
   };
 
-const handleLogout = () => {
+  const handleLogout = () => {
     if (window.confirm('정말 로그아웃 하시겠어요?')) {
+      localStorage.removeItem('srmart_auto_login');
       setUser(null);
       setCart([]);
+      setPageHistory([]);
       setPage('login');
       alert(messages.logout);
     }
@@ -84,7 +115,7 @@ const handleLogout = () => {
     } else {
       setCart([...cart, { ...product, quantity: 1 }]);
     }
-    alert(product.name + '이(가) 장바구니에 담겼어요!');
+    alert(product.name + '이(가) 장바구니에 담겼어요! 🛒');
   };
 
   const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -131,75 +162,78 @@ const handleLogout = () => {
 
   if (page === 'login') {
     return (
-      <div style={{ minHeight: '100vh', background: '#f9fbe7' }}>
-        <header style={{ background: '#2e7d32', padding: '16px 32px' }}>
-          <h1 style={{ color: 'white', margin: 0, fontSize: '26px' }}>🛒 SR Mart</h1>
-        </header>
+      <div className="App">
         <Login onLogin={handleLogin} />
-        <footer style={{ background: '#1b5e20', color: 'white', padding: '24px', textAlign: 'center', marginTop: '40px' }}>
-          <p style={{ margin: 0, fontSize: '14px' }}>© 2026 SR Mart. All rights reserved.</p>
-        </footer>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f9fbe7' }}>
-      <header style={{ background: '#2e7d32', padding: '0 32px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '64px' }}>
-        <h1 style={{ color: 'white', margin: 0, fontSize: '24px', cursor: 'pointer' }} onClick={() => setPage('home')}>🛒 SR Mart</h1>
-        <nav style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {[{ label: '홈', key: 'home' }, { label: '주문내역', key: 'orders' }].map((item) => (
-            <button key={item.key} onClick={() => setPage(item.key)} style={{ background: page === item.key ? 'rgba(255,255,255,0.25)' : 'transparent', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', fontSize: '14px', fontWeight: page === item.key ? 'bold' : 'normal' }}>
-              {item.label}
-            </button>
-          ))}
-          <button onClick={() => setPage('cart')} style={{ background: page === 'cart' ? 'rgba(255,255,255,0.25)' : 'transparent', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', fontSize: '14px', position: 'relative' }}>
-            🛒 장바구니
-            {cart.length > 0 && (
-              <span style={{ position: 'absolute', top: '2px', right: '2px', background: '#ff6f00', borderRadius: '50%', width: '18px', height: '18px', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-                {cart.length}
-              </span>
-            )}
-          </button>
-          {user && user.email === 'admin@srmart.com' && (
-            <button onClick={() => setPage('admin')} style={{ background: page === 'admin' ? 'rgba(255,255,255,0.25)' : 'transparent', color: '#ffd54f', border: '1px solid #ffd54f', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}>
-              ⚙️ 관리자
-            </button>
+    <div className="App">
+      {/* 헤더 */}
+      <header className="header">
+        <div className="header-logo" onClick={() => goToPage(isAdmin ? 'adminHome' : 'home')}>
+          <img src={srmLogo} alt="SR Mart" style={{ height: '24px', objectFit: 'contain' }} />
+          <span style={{ fontFamily: "'Nanum Pen Script', cursive", fontSize: '22px', color: '#1b5e20', fontWeight: '700', lineHeight: '1', marginTop: '4px' }}>에스알마트</span>
+        </div>
+        <div className="header-actions">
+          {user && (
+            <span style={{ fontSize: '12px', color: 'var(--gray-600)', maxWidth: '60px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              👤 {user.name}
+            </span>
           )}
-          <div style={{ borderLeft: '1px solid rgba(255,255,255,0.3)', paddingLeft: '12px', marginLeft: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ color: 'white', fontSize: '13px' }}>👤 {user && user.name}님</span>
-            <button onClick={handleLogout} style={{ background: 'transparent', color: '#ffcdd2', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', fontSize: '13px' }}>
-              로그아웃
-            </button>
-          </div>
-        </nav>
+          <button className="header-icon-btn" onClick={() => goToPage('search')}>
+            🔍
+          </button>
+          <button className="header-icon-btn" onClick={() => goToPage('cart')}>
+            🛒
+            {cart.length > 0 && <span className="badge">{cart.length}</span>}
+          </button>
+          <button onClick={handleLogout} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e53935" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+              <line x1="12" y1="2" x2="12" y2="12"/>
+            </svg>
+            <span style={{ fontSize: '10px', fontWeight: '700', color: '#868e96' }}>로그아웃</span>
+          </button>
+        </div>
       </header>
 
-      {page === 'home' && (
-        <main style={{ padding: '32px', maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ background: 'linear-gradient(135deg, #2e7d32, #4caf50)', borderRadius: '16px', padding: '40px 48px', marginBottom: '32px', color: 'white' }}>
-            <h2 style={{ margin: '0 0 8px', fontSize: '28px' }}>🛒 {messages.banner}</h2>
-<p style={{ margin: 0, opacity: 0.9, fontSize: '16px' }}>{messages.bannerSub}</p>
-          </div>
+      {/* 페이지 콘텐츠 */}
+      <div className="main-content">
+        {page === 'home' && (
+          <>
+            <div className="banner">
+              <h2>🛒 {messages.banner}</h2>
+              <p>{messages.bannerSub}</p>
+            </div>
 
-          <div style={{ marginBottom: '24px' }}>
-            {/* 대분류 */}
-            <div style={{ overflowX: 'auto', paddingBottom: '8px', marginBottom: '8px' }}>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'nowrap', minWidth: 'max-content' }}>
+            <div className="divider" />
+
+            <div className="category-scroll">
+              <div className="category-list">
                 {['전체', ...categories.map((c) => c.name)].map((name) => (
-                  <button key={name} onClick={() => { setFilterLarge(name); setFilterMedium('전체'); setFilterSmall('전체'); }} style={{ padding: '8px 18px', background: filterLarge === name ? '#2e7d32' : 'white', color: filterLarge === name ? 'white' : '#2e7d32', border: '1px solid #c8e6c9', borderRadius: '20px', cursor: 'pointer', fontWeight: filterLarge === name ? 'bold' : 'normal', fontSize: '14px', whiteSpace: 'nowrap' }}>
+                  <button
+                    key={name}
+                    className={'category-btn' + (filterLarge === name ? ' active' : '')}
+                    onClick={() => { setFilterLarge(name); setFilterMedium('전체'); setFilterSmall('전체'); }}
+                  >
                     {name}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* 중분류 */}
             {selectedLargeObj && selectedLargeObj.children.length > 0 && (
-              <div style={{ overflowX: 'auto', paddingBottom: '8px', marginBottom: '8px', paddingLeft: '16px' }}>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'nowrap', minWidth: 'max-content' }}>
+              <div className="category-scroll">
+                <div className="category-list">
                   {['전체', ...selectedLargeObj.children.map((m) => m.name)].map((name) => (
-                    <button key={name} onClick={() => { setFilterMedium(name); setFilterSmall('전체'); }} style={{ padding: '6px 14px', background: filterMedium === name ? '#388e3c' : '#f1f8e9', color: filterMedium === name ? 'white' : '#388e3c', border: '1px solid #c8e6c9', borderRadius: '20px', cursor: 'pointer', fontWeight: filterMedium === name ? 'bold' : 'normal', fontSize: '13px', whiteSpace: 'nowrap' }}>
+                    <button
+                      key={name}
+                      className={'category-btn' + (filterMedium === name ? ' active' : '')}
+                      onClick={() => { setFilterMedium(name); setFilterSmall('전체'); }}
+                      style={{ fontSize: '12px', padding: '5px 12px' }}
+                    >
                       {name}
                     </button>
                   ))}
@@ -207,70 +241,143 @@ const handleLogout = () => {
               </div>
             )}
 
-            {/* 소분류 */}
             {selectedMediumObj && selectedMediumObj.children.length > 0 && (
-              <div style={{ overflowX: 'auto', paddingBottom: '8px', paddingLeft: '32px' }}>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'nowrap', minWidth: 'max-content' }}>
+              <div className="category-scroll">
+                <div className="category-list">
                   {['전체', ...selectedMediumObj.children].map((name) => (
-                    <button key={name} onClick={() => setFilterSmall(name)} style={{ padding: '5px 12px', background: filterSmall === name ? '#4caf50' : '#f9fbe7', color: filterSmall === name ? 'white' : '#4caf50', border: '1px solid #c8e6c9', borderRadius: '20px', cursor: 'pointer', fontWeight: filterSmall === name ? 'bold' : 'normal', fontSize: '12px', whiteSpace: 'nowrap' }}>
+                    <button
+                      key={name}
+                      className={'category-btn' + (filterSmall === name ? ' active' : '')}
+                      onClick={() => setFilterSmall(name)}
+                      style={{ fontSize: '11px', padding: '4px 10px' }}
+                    >
                       {name}
                     </button>
                   ))}
                 </div>
               </div>
             )}
-          </div>
 
-          <h2 style={{ marginBottom: '20px', color: '#1b5e20', fontSize: '20px' }}>
-            {filterLarge === '전체' ? '전체 상품' : filterLarge} ({filteredProducts.length}개)
-          </h2>
+            <p className="section-title">
+              {filterLarge === '전체' ? '전체 상품' : filterLarge} ({filteredProducts.length}개)
+            </p>
 
-          {filteredProducts.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px', color: '#888', background: 'white', borderRadius: '16px', border: '1px solid #e0e0e0' }}>
-              <p style={{ fontSize: '48px', margin: '0 0 12px' }}>🛍️</p>
-              <p>해당 카테고리에 상품이 없어요!</p>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-              {filteredProducts.map((product) => (
-                <div key={product.id} style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-                  {product.image ? (
-                    <img src={product.image} alt={product.name} style={{ width: '100%', height: '180px', objectFit: 'contain', background: '#f5f5f5' }} />
-                  ) : (
-                    <div style={{ background: '#f1f8e9', height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '48px' }}>🛍️</div>
-                  )}
-                  <div style={{ padding: '16px' }}>
-                    <div style={{ display: 'flex', gap: '4px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                      {product.large && <span style={{ fontSize: '11px', background: '#e8f5e9', color: '#2e7d32', padding: '3px 8px', borderRadius: '20px', fontWeight: 'bold' }}>{product.large}</span>}
-                      {product.medium && <span style={{ fontSize: '11px', background: '#f1f8e9', color: '#388e3c', padding: '3px 8px', borderRadius: '20px' }}>{product.medium}</span>}
-                      {product.small && <span style={{ fontSize: '11px', background: '#f9fbe7', color: '#4caf50', padding: '3px 8px', borderRadius: '20px' }}>{product.small}</span>}
+            {filteredProducts.length === 0 ? (
+              <div className="empty-state">
+                <span className="empty-state-icon">🛍️</span>
+                <span className="empty-state-text">해당 카테고리에 상품이 없어요!</span>
+              </div>
+            ) : (
+              <div className="product-grid">
+                {filteredProducts.map((product) => (
+                  <div key={product.id} className="product-card" onClick={() => { setSelectedProduct(product); goToPage('productDetail'); }}>
+                    {product.image ? (
+                      <img src={product.image} alt={product.name} className="product-card-image" />
+                    ) : (
+                      <div className="product-card-image-placeholder">🛍️</div>
+                    )}
+                    <div className="product-card-body">
+                      <p className="product-card-category">
+                        {[product.large, product.medium, product.small].filter(Boolean).join(' > ')}
+                      </p>
+                      <p className="product-card-name">{product.name}</p>
+                      <p className="product-card-price">₩{product.price.toLocaleString()}</p>
+                      <button className="btn-cart" onClick={() => addToCart(product)}>
+                        🛒 담기
+                      </button>
                     </div>
-                    <h3 style={{ margin: '0 0 6px', fontSize: '16px', color: '#1a1a1a' }}>{product.name}</h3>
-                    <p style={{ color: '#2e7d32', fontWeight: 'bold', margin: '0 0 14px', fontSize: '18px' }}>₩{product.price.toLocaleString()}</p>
-                    <button onClick={() => addToCart(product)} style={{ background: '#2e7d32', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 16px', cursor: 'pointer', width: '100%', fontSize: '14px', fontWeight: 'bold' }}>
-                      🛒 장바구니 담기
-                    </button>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </main>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {page === 'search' && (
+          <Search
+            products={products}
+            categories={categories}
+            goBack={goBack}
+            onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }}
+            onAddToCart={addToCart}
+          />
+        )}
+        {page === 'productDetail' && (
+          <ProductDetail
+            product={selectedProduct}
+            onBack={goBack}
+            onAddToCart={addToCart}
+          />
+        )}
+
+        {page === 'cart' && (
+          <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} />
+        )}
+
+        {page === 'orders' && <Orders orders={orders} goBack={goBack} />}
+
+        {page === 'adminHome' && (
+          <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} />
+        )}
+
+        {page === 'members' && (
+          <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} />
+        )}
+
+        {page === 'adminOrders' && (
+          <AdminOrders orders={orders} goBack={goBack} />
+        )}
+        {page === 'admin' && (
+          <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} messages={messages} setMessages={setMessages} goBack={goBack} />
+        )}
+      </div>
+
+      {/* 하단 탭 네비게이션 */}
+      {!isAdmin && (
+        <nav className="bottom-nav">
+          <button className={'bottom-nav-item' + (page === 'home' ? ' active' : '')} onClick={() => goToPage('home')}>
+            <span>🏠</span>
+            <span>홈</span>
+          </button>
+          <button className={'bottom-nav-item' + (page === 'cart' ? ' active' : '')} onClick={() => goToPage('cart')}>
+            <span>🛒</span>
+            <span>장바구니</span>
+            {cart.length > 0 && <span className="badge">{cart.length}</span>}
+          </button>
+          <button className={'bottom-nav-item' + (page === 'orders' ? ' active' : '')} onClick={() => goToPage('orders')}>
+            <span>📋</span>
+            <span>주문내역</span>
+          </button>
+          <button className={'bottom-nav-item'} onClick={handleLogout}>
+            <span>👤</span>
+            <span>마이</span>
+          </button>
+        </nav>
       )}
 
-      {page === 'cart' && (
-        <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => setPage('home')} />
+      {isAdmin && (
+        <nav className="bottom-nav">
+          <button className={'bottom-nav-item' + (page === 'adminHome' ? ' active' : '')} onClick={() => goToPage('adminHome')}>
+            <span>🏠</span>
+            <span>대시보드</span>
+          </button>
+          <button className={'bottom-nav-item' + (page === 'admin' ? ' active' : '')} onClick={() => goToPage('admin')}>
+            <span>📦</span>
+            <span>상품관리</span>
+          </button>
+          <button className={'bottom-nav-item' + (page === 'members' ? ' active' : '')} onClick={() => goToPage('members')}>
+            <span>👥</span>
+            <span>회원관리</span>
+          </button>
+          <button className={'bottom-nav-item'} onClick={handleLogout}>
+            <span>🚪</span>
+            <span>로그아웃</span>
+          </button>
+        </nav>
       )}
 
-      {page === 'orders' && <Orders orders={orders} />}
-
-      {page === 'admin' && (
-        <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} />
-      )}
-
-      <footer style={{ background: '#1b5e20', color: 'white', padding: '32px', textAlign: 'center', marginTop: '60px' }}>
-        <p style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 'bold' }}>🛒 SR Mart</p>
-        <p style={{ margin: 0, fontSize: '13px', opacity: 0.7 }}>© 2026 SR Mart. All rights reserved.</p>
+      <footer style={{ textAlign: 'center', padding: '16px', fontSize: '12px', color: 'var(--gray-400)', borderTop: '1px solid var(--gray-200)' }}>
+        © 2026 Dongsin Market. All rights reserved.
       </footer>
     </div>
   );
