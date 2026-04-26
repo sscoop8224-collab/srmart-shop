@@ -11,6 +11,7 @@ import Members from './pages/Members';
 import AdminOrders from './pages/AdminOrders';
 import Search from './pages/Search';
 import ProductDetail from './pages/ProductDetail';
+import Wishlist from './pages/Wishlist';
 
 const initialProducts = [
   { id: 1, name: '신선 사과', price: 5000, large: '식품', medium: '신선식품', small: '과일', image: null },
@@ -56,6 +57,16 @@ function App() {
   const [categories, setCategories] = useState(initialCategories);
   const [cart, setCart] = useState([]);
   const [user, setUser] = useState(null);
+  const [wishlist, setWishlist] = useState([]);
+
+  const toggleWishlist = (product) => {
+    const exists = wishlist.find((item) => item.id === product.id);
+    if (exists) {
+      setWishlist(wishlist.filter((item) => item.id !== product.id));
+    } else {
+      setWishlist([...wishlist, product]);
+    }
+  };
   const [orders, setOrders] = useState([]);
   const [users, setUsers] = useState([
     { name: '관리자', email: 'admin@srmart.com', password: '1234', grade: '관리자' },
@@ -299,15 +310,36 @@ const filteredProducts = products.filter((p) => {
                       </p>
                       <p className="product-card-name">{product.name}</p>
                       <p className="product-card-price">₩{product.price.toLocaleString()}</p>
-                      <button className="btn-cart" onClick={() => addToCart(product)}>
-                        🛒 담기
-                      </button>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button
+                          className="btn-cart"
+                          style={{ flex: 1 }}
+                          onClick={(e) => { e.stopPropagation(); addToCart(product); }}
+                        >
+                          🛒 담기
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleWishlist(product); }}
+                          style={{ width: '36px', height: '36px', background: wishlist.find((item) => item.id === product.id) ? '#ff4757' : '#f1f3f5', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                        >
+                          {wishlist.find((item) => item.id === product.id) ? '❤️' : '🤍'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
           </>
+        )}
+
+        {page === 'wishlist' && (
+          <Wishlist
+            wishlist={wishlist}
+            onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }}
+            onAddToCart={addToCart}
+            onToggleWishlist={toggleWishlist}
+          />
         )}
 
         {page === 'search' && (
@@ -319,6 +351,7 @@ const filteredProducts = products.filter((p) => {
             onAddToCart={addToCart}
           />
         )}
+
         {page === 'productDetail' && (
           <ProductDetail
             product={selectedProduct}
@@ -364,6 +397,11 @@ const filteredProducts = products.filter((p) => {
           <button className={'bottom-nav-item' + (page === 'orders' ? ' active' : '')} onClick={() => goToPage('orders')}>
             <span>📋</span>
             <span>주문내역</span>
+          </button>
+          <button className={'bottom-nav-item' + (page === 'wishlist' ? ' active' : '')} onClick={() => goToPage('wishlist')}>
+            <span>❤️</span>
+            <span>찜</span>
+            {wishlist.length > 0 && <span className="badge">{wishlist.length}</span>}
           </button>
           <button className={'bottom-nav-item'} onClick={handleLogout}>
             <span>👤</span>
