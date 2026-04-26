@@ -70,7 +70,7 @@ function App() {
   const [filterLarge, setFilterLarge] = useState('전체');
   const [filterMedium, setFilterMedium] = useState('전체');
   const [filterSmall, setFilterSmall] = useState('전체');
-const [selectedProduct, setSelectedProduct] = useState(null);
+const [sortOrder, setSortOrder] = useState('default');
 
   const isAdmin = user && user.email === 'admin@srmart.com';
 
@@ -120,11 +120,16 @@ const [selectedProduct, setSelectedProduct] = useState(null);
 
   const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  const filteredProducts = products.filter((p) => {
+const filteredProducts = products.filter((p) => {
     if (filterLarge !== '전체' && p.large !== filterLarge) return false;
     if (filterMedium !== '전체' && p.medium !== filterMedium) return false;
     if (filterSmall !== '전체' && p.small !== filterSmall) return false;
     return true;
+  }).sort((a, b) => {
+    if (sortOrder === 'price_asc') return a.price - b.price;
+    if (sortOrder === 'price_desc') return b.price - a.price;
+    if (sortOrder === 'name') return a.name.localeCompare(b.name);
+    return 0;
   });
 
   const selectedLargeObj = categories.find((c) => c.name === filterLarge);
@@ -258,9 +263,21 @@ const [selectedProduct, setSelectedProduct] = useState(null);
               </div>
             )}
 
-            <p className="section-title">
-              {filterLarge === '전체' ? '전체 상품' : filterLarge} ({filteredProducts.length}개)
-            </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px 8px' }}>
+  <p style={{ fontSize: '16px', fontWeight: '700', color: '#212529', margin: 0 }}>
+    {filterLarge === '전체' ? '전체 상품' : filterLarge} ({filteredProducts.length}개)
+  </p>
+  <select
+    value={sortOrder}
+    onChange={(e) => setSortOrder(e.target.value)}
+    style={{ padding: '6px 12px', borderRadius: '8px', border: '1.5px solid #dee2e6', fontSize: '13px', outline: 'none', background: 'white', cursor: 'pointer' }}
+  >
+    <option value="default">기본순</option>
+    <option value="price_asc">낮은 가격순</option>
+    <option value="price_desc">높은 가격순</option>
+    <option value="name">이름순</option>
+  </select>
+</div>
 
             {filteredProducts.length === 0 ? (
               <div className="empty-state">
