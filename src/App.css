@@ -81,6 +81,15 @@ body {
 
 .App.admin-mode {
   max-width: 1200px;
+  background: white !important;
+  color: #212529 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .App.admin-mode {
+    background: white !important;
+    color: #212529 !important;
+  }
 }
 
 /* 헤더 */
