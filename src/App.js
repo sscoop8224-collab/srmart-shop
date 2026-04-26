@@ -12,6 +12,7 @@ import AdminOrders from './pages/AdminOrders';
 import Search from './pages/Search';
 import ProductDetail from './pages/ProductDetail';
 import Wishlist from './pages/Wishlist';
+import Notice from './pages/Notice';
 
 const initialProducts = [
   { id: 1, name: '신선 사과', price: 5000, large: '식품', medium: '신선식품', small: '과일', image: null },
@@ -58,6 +59,7 @@ function App() {
   const [cart, setCart] = useState([]);
   const [user, setUser] = useState(null);
   const [wishlist, setWishlist] = useState([]);
+  const [notices, setNotices] = useState([]);
 
   const toggleWishlist = (product) => {
     const exists = wishlist.find((item) => item.id === product.id);
@@ -333,6 +335,15 @@ const filteredProducts = products.filter((p) => {
           </>
         )}
 
+        {page === 'notice' && (
+          <Notice
+            notices={notices}
+            setNotices={setNotices}
+            isAdmin={isAdmin}
+            goBack={goBack}
+          />
+        )}
+
         {page === 'wishlist' && (
           <Wishlist
             wishlist={wishlist}
@@ -341,7 +352,6 @@ const filteredProducts = products.filter((p) => {
             onToggleWishlist={toggleWishlist}
           />
         )}
-
         {page === 'search' && (
           <Search
             products={products}
@@ -385,9 +395,13 @@ const filteredProducts = products.filter((p) => {
       {/* 하단 탭 네비게이션 */}
       {!isAdmin && (
         <nav className="bottom-nav">
-          <button className={'bottom-nav-item' + (page === 'home' ? ' active' : '')} onClick={() => goToPage('home')}>
+         <button className={'bottom-nav-item' + (page === 'home' ? ' active' : '')} onClick={() => goToPage('home')}>
             <span>🏠</span>
             <span>홈</span>
+          </button>
+          <button className={'bottom-nav-item' + (page === 'notice' ? ' active' : '')} onClick={() => goToPage('notice')}>
+            <span>📢</span>
+            <span>공지</span>
           </button>
           <button className={'bottom-nav-item' + (page === 'cart' ? ' active' : '')} onClick={() => goToPage('cart')}>
             <span>🛒</span>
@@ -415,6 +429,10 @@ const filteredProducts = products.filter((p) => {
           <button className={'bottom-nav-item' + (page === 'adminHome' ? ' active' : '')} onClick={() => goToPage('adminHome')}>
             <span>🏠</span>
             <span>대시보드</span>
+          </button>
+          <button className={'bottom-nav-item' + (page === 'notice' ? ' active' : '')} onClick={() => goToPage('notice')}>
+            <span>📢</span>
+            <span>공지</span>
           </button>
           <button className={'bottom-nav-item' + (page === 'admin' ? ' active' : '')} onClick={() => goToPage('admin')}>
             <span>📦</span>
