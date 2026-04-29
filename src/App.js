@@ -396,7 +396,31 @@ const filteredProducts = products.filter((p) => {
       {/* 하단 탭 네비게이션 */}
       {!isAdmin && (
         <nav className="bottom-nav">
-         <button className={'bottom-nav-item' + (page === 'home' ? ' active' : '')} onClick={() => goToPage('home')}>
+          <button className={'bottom-nav-item' + (page === 'home' ? ' active' : '')} onClick={() => goToPage('home')}>
+            <span>🏠</span>
+            <span>홈</span>
+          </button>
+          <button className={'bottom-nav-item' + (page === 'notice' ? ' active' : '')} onClick={() => goToPage('notice')}>
+            <span>📢</span>
+            <span>공지</span>
+          </button>
+          <button className={'bottom-nav-item' + (page === 'cart' ? ' active' : '')} onClick={() => goToPage('cart')}>
+            <span>🛒</span>
+            <span>장바구니</span>
+            {cart.length > 0 && <span className="badge">{cart.length}</span>}
+          </button>
+          <button className={'bottom-nav-item' + (page === 'wishlist' ? ' active' : '')} onClick={() => goToPage('wishlist')}>
+            <span>❤️</span>
+            <span>찜</span>
+            {wishlist.length > 0 && <span className="badge">{wishlist.length}</span>}
+          </button>
+          <button className={'bottom-nav-item'} onClick={handleLogout}>
+            <span>👤</span>
+            <span>마이</span>
+          </button>
+        </nav>
+      )}
+          <button className={'bottom-nav-item' + (page === 'home' ? ' active' : '')} onClick={() => goToPage('home')}>
             <span>🏠</span>
             <span>홈</span>
           </button>
