@@ -61,15 +61,6 @@ function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [wishlist, setWishlist] = useState([]);
   const [notices, setNotices] = useState([]);
-
-  const toggleWishlist = (product) => {
-    const exists = wishlist.find((item) => item.id === product.id);
-    if (exists) {
-      setWishlist(wishlist.filter((item) => item.id !== product.id));
-    } else {
-      setWishlist([...wishlist, product]);
-    }
-  };
   const [orders, setOrders] = useState([]);
   const [users, setUsers] = useState([
     { name: '관리자', email: 'admin@srmart.com', password: '1234', grade: '관리자' },
@@ -84,9 +75,18 @@ function App() {
   const [filterLarge, setFilterLarge] = useState('전체');
   const [filterMedium, setFilterMedium] = useState('전체');
   const [filterSmall, setFilterSmall] = useState('전체');
-const [sortOrder, setSortOrder] = useState('default');
+  const [sortOrder, setSortOrder] = useState('default');
 
   const isAdmin = user && user.email === 'admin@srmart.com';
+
+  const toggleWishlist = (product) => {
+    const exists = wishlist.find((item) => item.id === product.id);
+    if (exists) {
+      setWishlist(wishlist.filter((item) => item.id !== product.id));
+    } else {
+      setWishlist([...wishlist, product]);
+    }
+  };
 
   const goToPage = (newPage) => {
     setPageHistory((prev) => [...prev, page]);
@@ -134,7 +134,7 @@ const [sortOrder, setSortOrder] = useState('default');
 
   const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-const filteredProducts = products.filter((p) => {
+  const filteredProducts = products.filter((p) => {
     if (filterLarge !== '전체' && p.large !== filterLarge) return false;
     if (filterMedium !== '전체' && p.medium !== filterMedium) return false;
     if (filterSmall !== '전체' && p.small !== filterSmall) return false;
@@ -201,9 +201,7 @@ const filteredProducts = products.filter((p) => {
               👤 {user.name}
             </span>
           )}
-          <button className="header-icon-btn" onClick={() => goToPage('search')}>
-            🔍
-          </button>
+          <button className="header-icon-btn" onClick={() => goToPage('search')}>🔍</button>
           <button className="header-icon-btn" onClick={() => goToPage('cart')}>
             🛒
             {cart.length > 0 && <span className="badge">{cart.length}</span>}
@@ -226,73 +224,49 @@ const filteredProducts = products.filter((p) => {
               <h2>🛒 {messages.banner}</h2>
               <p>{messages.bannerSub}</p>
             </div>
-
             <div className="divider" />
-
             <div className="category-scroll">
               <div className="category-list">
                 {['전체', ...categories.map((c) => c.name)].map((name) => (
-                  <button
-                    key={name}
-                    className={'category-btn' + (filterLarge === name ? ' active' : '')}
-                    onClick={() => { setFilterLarge(name); setFilterMedium('전체'); setFilterSmall('전체'); }}
-                  >
+                  <button key={name} className={'category-btn' + (filterLarge === name ? ' active' : '')} onClick={() => { setFilterLarge(name); setFilterMedium('전체'); setFilterSmall('전체'); }}>
                     {name}
                   </button>
                 ))}
               </div>
             </div>
-
             {selectedLargeObj && selectedLargeObj.children.length > 0 && (
               <div className="category-scroll">
                 <div className="category-list">
                   {['전체', ...selectedLargeObj.children.map((m) => m.name)].map((name) => (
-                    <button
-                      key={name}
-                      className={'category-btn' + (filterMedium === name ? ' active' : '')}
-                      onClick={() => { setFilterMedium(name); setFilterSmall('전체'); }}
-                      style={{ fontSize: '12px', padding: '5px 12px' }}
-                    >
+                    <button key={name} className={'category-btn' + (filterMedium === name ? ' active' : '')} onClick={() => { setFilterMedium(name); setFilterSmall('전체'); }} style={{ fontSize: '12px', padding: '5px 12px' }}>
                       {name}
                     </button>
                   ))}
                 </div>
               </div>
             )}
-
             {selectedMediumObj && selectedMediumObj.children.length > 0 && (
               <div className="category-scroll">
                 <div className="category-list">
                   {['전체', ...selectedMediumObj.children].map((name) => (
-                    <button
-                      key={name}
-                      className={'category-btn' + (filterSmall === name ? ' active' : '')}
-                      onClick={() => setFilterSmall(name)}
-                      style={{ fontSize: '11px', padding: '4px 10px' }}
-                    >
+                    <button key={name} className={'category-btn' + (filterSmall === name ? ' active' : '')} onClick={() => setFilterSmall(name)} style={{ fontSize: '11px', padding: '4px 10px' }}>
                       {name}
                     </button>
                   ))}
                 </div>
               </div>
             )}
-
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px 8px' }}>
-  <p style={{ fontSize: '16px', fontWeight: '700', color: '#212529', margin: 0 }}>
-    {filterLarge === '전체' ? '전체 상품' : filterLarge} ({filteredProducts.length}개)
-  </p>
-  <select
-    value={sortOrder}
-    onChange={(e) => setSortOrder(e.target.value)}
-    style={{ padding: '6px 12px', borderRadius: '8px', border: '1.5px solid #dee2e6', fontSize: '13px', outline: 'none', background: 'white', cursor: 'pointer' }}
-  >
-    <option value="default">기본순</option>
-    <option value="price_asc">낮은 가격순</option>
-    <option value="price_desc">높은 가격순</option>
-    <option value="name">이름순</option>
-  </select>
-</div>
-
+              <p style={{ fontSize: '16px', fontWeight: '700', color: '#212529', margin: 0 }}>
+                {filterLarge === '전체' ? '전체 상품' : filterLarge} ({filteredProducts.length}개)
+              </p>
+              <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} style={{ padding: '6px 12px', borderRadius: '8px', border: '1.5px solid #dee2e6', fontSize: '13px', outline: 'none', background: 'white', cursor: 'pointer' }}>
+                <option value="default">기본순</option>
+                <option value="price_asc">낮은 가격순</option>
+                <option value="price_desc">높은 가격순</option>
+                <option value="name">이름순</option>
+              </select>
+            </div>
             {filteredProducts.length === 0 ? (
               <div className="empty-state">
                 <span className="empty-state-icon">🛍️</span>
@@ -308,23 +282,12 @@ const filteredProducts = products.filter((p) => {
                       <div className="product-card-image-placeholder">🛍️</div>
                     )}
                     <div className="product-card-body">
-                      <p className="product-card-category">
-                        {[product.large, product.medium, product.small].filter(Boolean).join(' > ')}
-                      </p>
+                      <p className="product-card-category">{[product.large, product.medium, product.small].filter(Boolean).join(' > ')}</p>
                       <p className="product-card-name">{product.name}</p>
                       <p className="product-card-price">₩{product.price.toLocaleString()}</p>
                       <div style={{ display: 'flex', gap: '6px' }}>
-                        <button
-                          className="btn-cart"
-                          style={{ flex: 1 }}
-                          onClick={(e) => { e.stopPropagation(); addToCart(product); }}
-                        >
-                          🛒 담기
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); toggleWishlist(product); }}
-                          style={{ width: '36px', height: '36px', background: wishlist.find((item) => item.id === product.id) ? '#ff4757' : '#f1f3f5', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-                        >
+                        <button className="btn-cart" style={{ flex: 1 }} onClick={(e) => { e.stopPropagation(); addToCart(product); }}>🛒 담기</button>
+                        <button onClick={(e) => { e.stopPropagation(); toggleWishlist(product); }} style={{ width: '36px', height: '36px', background: wishlist.find((item) => item.id === product.id) ? '#ff4757' : '#f1f3f5', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           {wishlist.find((item) => item.id === product.id) ? '❤️' : '🤍'}
                         </button>
                       </div>
@@ -336,64 +299,19 @@ const filteredProducts = products.filter((p) => {
           </>
         )}
 
-        {page === 'notice' && (
-          <Notice
-            notices={notices}
-            setNotices={setNotices}
-            isAdmin={isAdmin}
-            goBack={goBack}
-          />
-        )}
-
-        {page === 'wishlist' && (
-          <Wishlist
-            wishlist={wishlist}
-            onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }}
-            onAddToCart={addToCart}
-            onToggleWishlist={toggleWishlist}
-          />
-        )}
-        {page === 'search' && (
-          <Search
-            products={products}
-            categories={categories}
-            goBack={goBack}
-            onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }}
-            onAddToCart={addToCart}
-          />
-        )}
-
-        {page === 'productDetail' && (
-          <ProductDetail
-            product={selectedProduct}
-            onBack={goBack}
-            onAddToCart={addToCart}
-          />
-        )}
-
-        {page === 'cart' && (
-          <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} />
-        )}
-
+        {page === 'notice' && <Notice notices={notices} setNotices={setNotices} isAdmin={isAdmin} goBack={goBack} />}
+        {page === 'wishlist' && <Wishlist wishlist={wishlist} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWishlist={toggleWishlist} />}
+        {page === 'search' && <Search products={products} categories={categories} goBack={goBack} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} />}
+        {page === 'productDetail' && <ProductDetail product={selectedProduct} onBack={goBack} onAddToCart={addToCart} />}
+        {page === 'cart' && <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} />}
         {page === 'orders' && <Orders orders={orders} goBack={goBack} />}
-
-        {page === 'adminHome' && (
-          <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} />
-        )}
-
-        {page === 'members' && (
-          <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} />
-        )}
-
-        {page === 'adminOrders' && (
-          <AdminOrders orders={orders} goBack={goBack} />
-        )}
-        {page === 'admin' && (
-          <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} messages={messages} setMessages={() => {}} goBack={goBack} />
-        )}
+        {page === 'adminHome' && <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} />}
+        {page === 'members' && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} />}
+        {page === 'adminOrders' && <AdminOrders orders={orders} goBack={goBack} />}
+        {page === 'admin' && <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} messages={messages} setMessages={() => {}} goBack={goBack} />}
       </div>
 
-      {/* 하단 탭 네비게이션 */}
+      {/* 고객 하단 탭 */}
       {!isAdmin && (
         <nav className="bottom-nav">
           <button className={'bottom-nav-item' + (page === 'home' ? ' active' : '')} onClick={() => goToPage('home')}>
@@ -420,35 +338,8 @@ const filteredProducts = products.filter((p) => {
           </button>
         </nav>
       )}
-          <button className={'bottom-nav-item' + (page === 'home' ? ' active' : '')} onClick={() => goToPage('home')}>
-            <span>🏠</span>
-            <span>홈</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'notice' ? ' active' : '')} onClick={() => goToPage('notice')}>
-            <span>📢</span>
-            <span>공지</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'cart' ? ' active' : '')} onClick={() => goToPage('cart')}>
-            <span>🛒</span>
-            <span>장바구니</span>
-            {cart.length > 0 && <span className="badge">{cart.length}</span>}
-          </button>
-          <button className={'bottom-nav-item' + (page === 'orders' ? ' active' : '')} onClick={() => goToPage('orders')}>
-            <span>📋</span>
-            <span>주문내역</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'wishlist' ? ' active' : '')} onClick={() => goToPage('wishlist')}>
-            <span>❤️</span>
-            <span>찜</span>
-            {wishlist.length > 0 && <span className="badge">{wishlist.length}</span>}
-          </button>
-          <button className={'bottom-nav-item'} onClick={handleLogout}>
-            <span>👤</span>
-            <span>마이</span>
-          </button>
-        </nav>
-      )}
 
+      {/* 관리자 하단 탭 */}
       {isAdmin && (
         <nav className="bottom-nav">
           <button className={'bottom-nav-item' + (page === 'adminHome' ? ' active' : '')} onClick={() => goToPage('adminHome')}>
