@@ -189,7 +189,6 @@ function App() {
 
   return (
     <div className="App">
-      {/* 헤더 */}
       <header className="header">
         <div className="header-logo" onClick={() => goToPage(isAdmin ? 'adminHome' : 'home')}>
           <img src={srmLogo} alt="SR Mart" style={{ height: '24px', objectFit: 'contain' }} />
@@ -216,7 +215,6 @@ function App() {
         </div>
       </header>
 
-      {/* 페이지 콘텐츠 */}
       <div className="main-content">
         {page === 'home' && (
           <>
