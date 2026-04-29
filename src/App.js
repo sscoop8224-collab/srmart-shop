@@ -192,7 +192,7 @@ const filteredProducts = products.filter((p) => {
       <header className="header">
         <div className="header-logo" onClick={() => goToPage(isAdmin ? 'adminHome' : 'home')}>
           <img src={srmLogo} alt="SR Mart" style={{ height: '24px', objectFit: 'contain' }} />
-          <span style={{ fontFamily: "'Nanum Pen Script', cursive", fontSize: '22px', color: '#1b5e20', fontWeight: '700', lineHeight: '1', marginTop: '4px' }}>에스알마트</span>
+          <span style={{ fontFamily: "'Nanum Pen Script', cursive", fontSize: 'clamp(14px, 4vw, 22px)', color: '#1b5e20', fontWeight: '700', lineHeight: '1', marginTop: '2px', whiteSpace: 'nowrap' }}>에스알마트</span>
         </div>
         <div className="header-actions">
           {user && (
