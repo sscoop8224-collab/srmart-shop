@@ -58,6 +58,7 @@ function App() {
   const [categories, setCategories] = useState(initialCategories);
   const [cart, setCart] = useState([]);
   const [user, setUser] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [wishlist, setWishlist] = useState([]);
   const [notices, setNotices] = useState([]);
 
