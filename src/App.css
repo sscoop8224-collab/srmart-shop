@@ -85,6 +85,32 @@ body {
   color: #212529 !important;
 }
 
+.App.admin-mode header,
+.App.admin-mode main,
+.App.admin-mode div,
+.App.admin-mode p,
+.App.admin-mode h2,
+.App.admin-mode h3,
+.App.admin-mode span,
+.App.admin-mode td,
+.App.admin-mode th,
+.App.admin-mode label,
+.App.admin-mode button {
+  color: inherit !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .App.admin-mode {
+    background: white !important;
+    color: #212529 !important;
+  }
+
+  .App.admin-mode * {
+    background-color: inherit;
+    color: inherit !important;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   .App.admin-mode {
     background: white !important;
