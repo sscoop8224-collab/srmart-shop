@@ -130,6 +130,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
+  padding-top: env(safe-area-inset-top);
   backdrop-filter: blur(10px);
 }
 
@@ -851,4 +852,8 @@ body {
   .divider {
     background: #242424;
   }
+}
+/* Safe Area 대응 */
+.App {
+  padding-top: env(safe-area-inset-top);
 }
