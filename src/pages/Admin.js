@@ -58,6 +58,8 @@ function Admin({ products, setProducts, categories, setCategories, messages, set
     medium: '',
     small: '',
     images: [],
+    description: '',
+    nutritionImage: null,
   });
   const [editId, setEditId] = useState(null);
   const [msgForm, setMsgForm] = useState({ ...messages });
@@ -101,7 +103,7 @@ function Admin({ products, setProducts, categories, setCategories, messages, set
     if (editId !== null) {
       setProducts(products.map((p) =>
         p.id === editId
-          ? { ...p, name: form.name, price: Number(form.price), barcode: form.barcode, large: form.large, medium: form.medium, small: form.small, images: form.images, image: form.images[0] || null }
+          ? { ...p, name: form.name, price: Number(form.price), barcode: form.barcode, large: form.large, medium: form.medium, small: form.small, images: form.images, image: form.images[0] || null, description: form.description, nutritionImage: form.nutritionImage }
           : p
       ));
       alert('상품이 수정됐어요! 😊');
@@ -117,11 +119,13 @@ function Admin({ products, setProducts, categories, setCategories, messages, set
         small: form.small,
         images: form.images,
         image: form.images[0] || null,
+        description: form.description,
+        nutritionImage: form.nutritionImage,
       };
       setProducts([...products, newProduct]);
       alert('상품이 등록됐어요! 😊');
     }
-    setForm({ name: '', price: '', barcode: '', large: '', medium: '', small: '', images: [] });
+    setForm({ name: '', price: '', barcode: '', large: '', medium: '', small: '', images: [], description: '', nutritionImage: null });
   };
 
   const handleDelete = (id) => {
@@ -190,6 +194,36 @@ function Admin({ products, setProducts, categories, setCategories, messages, set
               <input name="name" value={form.name} onChange={handleChange} placeholder="상품명" style={{ padding: '12px', borderRadius: '10px', border: '1.5px solid #dee2e6', fontSize: '14px', outline: 'none' }} />
               <input name="price" value={form.price} onChange={handleChange} placeholder="가격 (숫자만)" type="number" style={{ padding: '12px', borderRadius: '10px', border: '1.5px solid #dee2e6', fontSize: '14px', outline: 'none' }} />
               <input name="barcode" value={form.barcode} onChange={handleChange} placeholder="바코드 번호 (선택)" style={{ padding: '12px', borderRadius: '10px', border: '1.5px solid #dee2e6', fontSize: '14px', outline: 'none' }} />
+              <textarea
+  name="description"
+  value={form.description || ''}
+  onChange={handleChange}
+  placeholder="상품 상세 설명 (선택)"
+  rows={3}
+  style={{ padding: '12px', borderRadius: '10px', border: '1.5px solid #dee2e6', fontSize: '14px', outline: 'none', resize: 'none', fontFamily: 'inherit' }}
+/><div>
+  <label style={{ fontSize: '13px', fontWeight: '700', color: '#495057', display: 'block', marginBottom: '8px' }}>
+    영양정보 이미지 (선택)
+  </label>
+  {form.nutritionImage && (
+    <div style={{ position: 'relative', marginBottom: '8px' }}>
+      <img src={form.nutritionImage} alt="영양정보" style={{ width: '100%', borderRadius: '10px', border: '1px solid #dee2e6' }} />
+      <button onClick={() => setForm({ ...form, nutritionImage: null })} style={{ position: 'absolute', top: '8px', right: '8px', background: '#ff4757', color: 'white', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+    </div>
+  )}
+  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', background: '#f8f9fa', borderRadius: '10px', border: '1.5px dashed #dee2e6', cursor: 'pointer' }}>
+    <span style={{ fontSize: '20px' }}>📷</span>
+    <span style={{ fontSize: '13px', color: '#868e96' }}>영양정보 이미지 추가</span>
+    <input type="file" accept="image/*" onChange={(e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onloadend = () => setForm({ ...form, nutritionImage: reader.result });
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    }} style={{ display: 'none' }} />
+  </label>
+</div>
               <select name="large" value={form.large} onChange={handleChange} style={{ padding: '12px', borderRadius: '10px', border: '1.5px solid #dee2e6', fontSize: '14px', outline: 'none', background: 'white' }}>
                 <option value="">대분류 선택</option>
                 {categories.map((c) => (

@@ -87,6 +87,23 @@ function ProductDetail({ product, onBack, onAddToCart }) {
         </div>
       </div>
 
+      {/* 상세 설명 */}
+      {product.description && (
+        <div style={{ padding: '0 20px 20px' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#212529', margin: '0 0 12px' }}>📝 상품 설명</h3>
+          <div style={{ background: '#f8f9fa', borderRadius: '14px', padding: '16px' }}>
+            <p style={{ fontSize: '14px', color: '#495057', margin: 0, lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>{product.description}</p>
+          </div>
+        </div>
+      )}
+
+      {/* 영양정보 이미지 */}
+      {product.nutritionImage && (
+        <div style={{ padding: '0 20px 20px' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#212529', margin: '0 0 12px' }}>🥗 영양정보</h3>
+          <img src={product.nutritionImage} alt="영양정보" style={{ width: '100%', borderRadius: '14px', border: '1px solid #e9ecef' }} />
+        </div>
+      )}
       {/* 하단 버튼 */}
       <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', padding: '16px 20px 32px', background: 'white', borderTop: '1px solid #f1f3f5', boxShadow: '0 -4px 20px rgba(0,0,0,0.06)' }}>
         <button onClick={handleAddToCart} style={{ width: '100%', padding: '16px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '14px', fontSize: '16px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>

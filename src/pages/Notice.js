@@ -74,4 +74,9 @@ function Notice({ notices, setNotices, isAdmin, goBack }) {
 
       {/* 공지사항 목록 */}
       {notices.length === 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', color: '#adb5bd' }}>
+          <span style={{ fontSize: '64px', marginBottom: '16px', opacity: '0.6' }}>📢</span>
+          <p style={{ fontSize: '16px', fontWeight: '600', color: '#495057', margin: '0 0 6px' }}>등록된 공지사항이 없어요!</p>
+          <p style={{ fontSize: '13px', color: '#adb5bd', margin: 0 }}>새로운 소식을 기다려주세요</p>
+        </div>
+      ) : (
