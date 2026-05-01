@@ -82,12 +82,19 @@ function App() {
   const [filterSmall, setFilterSmall] = useState('전체');
   const [sortOrder, setSortOrder] = useState('default');
   const [toast, setToast] = useState('');
+  const [bannerIndex, setBannerIndex] = useState(0);
 
   const isAdmin = user && user.email === 'admin@srmart.com';
 
   useEffect(() => {
     localStorage.setItem('srmart_users', JSON.stringify(users));
   }, [users]);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setBannerIndex((prev) => (prev + 1) % 4);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -252,23 +259,45 @@ function App() {
       <div className="main-content">
         {page === 'home' && (
           <>
-            {/* 배너 */}
+            {/* 배너 슬라이드 */}
             <div style={{ padding: '16px' }}>
-              <div style={{ background: 'linear-gradient(135deg, #00c471, #00a85e)', borderRadius: '18px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', overflow: 'hidden', position: 'relative' }}>
-                <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%' }} />
-                <div style={{ position: 'relative', zIndex: 1 }}>
-                  <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.85)', margin: '0 0 4px', fontWeight: '600' }}>특별 할인</p>
-                  <h2 style={{ fontSize: '18px', fontWeight: '800', color: 'white', margin: '0 0 6px', letterSpacing: '-0.5px' }}>{messages.banner}</h2>
-                  <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.85)', margin: '0 0 12px' }}>{messages.bannerSub}</p>
-                  <button style={{ background: 'white', color: '#00c471', border: 'none', borderRadius: '20px', padding: '7px 16px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>쇼핑하기 →</button>
+              <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '18px' }}>
+                {[
+                  { bg: 'linear-gradient(135deg, #00c471, #00a85e)', label: '특별 할인', title: messages.banner, sub: messages.bannerSub, emoji: '🛒', filter: null },
+                  { bg: 'linear-gradient(135deg, #ff6b6b, #ee5a24)', label: '신선식품', title: '신선한 채소와 과일!', sub: '오늘의 특가 상품을 확인해보세요', emoji: '🥦', filter: '식품' },
+                  { bg: 'linear-gradient(135deg, #a29bfe, #6c5ce7)', label: '음료 코너', title: '시원한 음료 모음!', sub: '다양한 음료를 만나보세요', emoji: '🧃', filter: '음료' },
+                  { bg: 'linear-gradient(135deg, #fdcb6e, #e17055)', label: '간식/과자', title: '맛있는 간식 특가!', sub: '달콤한 간식을 지금 담아보세요', emoji: '🍿', filter: '간식/과자' },
+                ].map((slide, index) => (
+                  <div
+                    key={index}
+                    onClick={() => { if (slide.filter) { setFilterLarge(slide.filter); setFilterMedium('전체'); setFilterSmall('전체'); } }}
+                    style={{ display: bannerIndex === index ? 'flex' : 'none', background: slide.bg, borderRadius: '18px', padding: '20px 24px', justifyContent: 'space-between', alignItems: 'center', overflow: 'hidden', position: 'relative', cursor: slide.filter ? 'pointer' : 'default' }}
+                  >
+                    <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%' }} />
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                      <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.85)', margin: '0 0 4px', fontWeight: '600' }}>{slide.label}</p>
+                      <h2 style={{ fontSize: '18px', fontWeight: '800', color: 'white', margin: '0 0 6px', letterSpacing: '-0.5px' }}>{slide.title}</h2>
+                      <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.85)', margin: '0 0 12px' }}>{slide.sub}</p>
+                      <button onClick={(e) => { e.stopPropagation(); if (slide.filter) { setFilterLarge(slide.filter); setFilterMedium('전체'); setFilterSmall('전체'); } }} style={{ background: 'white', color: '#333', border: 'none', borderRadius: '20px', padding: '7px 16px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>
+                        {slide.filter ? slide.filter + ' 보러가기 →' : '쇼핑하기 →'}
+                      </button>
+                    </div>
+                    <span style={{ fontSize: '64px', position: 'relative', zIndex: 1 }}>{slide.emoji}</span>
+                  </div>
+                ))}
+
+                {/* 슬라이드 인디케이터 */}
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
+                  {[0, 1, 2, 3].map((i) => (
+                    <button key={i} onClick={() => setBannerIndex(i)} style={{ width: bannerIndex === i ? '20px' : '8px', height: '8px', background: bannerIndex === i ? '#00c471' : '#dee2e6', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: 0, transition: 'all 0.3s' }} />
+                  ))}
                 </div>
-                <span style={{ fontSize: '64px', position: 'relative', zIndex: 1 }}>🛒</span>
               </div>
             </div>
 
             {/* 카테고리 필터 */}
             <div style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto' }}>
-              <span style={{ fontSize: '16px', flexShrink: 0 }}>🔍</span>
+              
               {['전체', ...categories.map((c) => c.name)].map((name) => (
                 <button
                   key={name}
