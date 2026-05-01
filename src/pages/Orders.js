@@ -1,67 +1,60 @@
 function Orders({ orders, goBack }) {
-  if (orders.length === 0) {
-    return (
-      <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-          <button onClick={goBack} style={{ padding: '8px 16px', background: '#f1f8e9', color: '#2e7d32', border: '1px solid #c8e6c9', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}>
-            ← 뒤로
-          </button>
-          <h2 style={{ margin: 0 }}>📋 주문 내역</h2>
-        </div>
-        <div style={{ textAlign: 'center', padding: '60px', color: '#888' }}>
-          <p style={{ fontSize: '48px' }}>📋</p>
-          <p>주문 내역이 없어요!</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <button onClick={goBack} style={{ padding: '8px 16px', background: '#f1f8e9', color: '#2e7d32', border: '1px solid #c8e6c9', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}>
-          ← 뒤로
-        </button>
-        <h2 style={{ margin: 0 }}>📋 주문 내역</h2>
+    <div style={{ background: '#f8f9fa', minHeight: '100vh', paddingBottom: '80px' }}>
+
+      {/* 헤더 */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', background: 'white', borderBottom: '1px solid #f1f3f5', position: 'sticky', top: 0, zIndex: 10 }}>
+        <button onClick={goBack} style={{ width: '36px', height: '36px', background: '#f1f3f5', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
+        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#212529' }}>주문내역</h2>
       </div>
-      {orders.map((order) => (
-        <div key={order.id} style={{ border: '1px solid #ddd', borderRadius: '8px', marginBottom: '16px', overflow: 'hidden' }}>
-          <div style={{ background: '#2e7d32', color: 'white', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontWeight: 'bold' }}>주문번호: {order.id}</span>
-            <span style={{ fontSize: '14px' }}>{order.date}</span>
-          </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#f5f5f5' }}>
-                <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '14px' }}>이미지</th>
-                <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '14px' }}>상품명</th>
-                <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: '14px' }}>수량</th>
-                <th style={{ padding: '10px 16px', textAlign: 'right', fontSize: '14px' }}>금액</th>
-              </tr>
-            </thead>
-            <tbody>
-              {order.items.map((item, index) => (
-                <tr key={index} style={{ borderTop: '1px solid #eee' }}>
-                  <td style={{ padding: '10px 16px' }}>
-                    {item.image ? (
-                      <img src={item.image} alt={item.name} style={{ width: '40px', height: '40px', objectFit: 'contain', background: '#f5f5f5', borderRadius: '4px' }} />
-                    ) : (
-                      <div style={{ width: '40px', height: '40px', background: '#f5f5f5', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>🛍️</div>
-                    )}
-                  </td>
-                  <td style={{ padding: '10px 16px', fontSize: '14px' }}>{item.name}</td>
-                  <td style={{ padding: '10px 16px', textAlign: 'center', fontSize: '14px' }}>{item.quantity}개</td>
-                  <td style={{ padding: '10px 16px', textAlign: 'right', fontSize: '14px', color: '#2e7d32', fontWeight: 'bold' }}>₩{(item.price * item.quantity).toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div style={{ padding: '12px 16px', textAlign: 'right', borderTop: '1px solid #ddd', background: '#fafafa' }}>
-            <span style={{ fontSize: '16px', fontWeight: 'bold' }}>총 합계: ₩{order.totalPrice.toLocaleString()}</span>
-            <span style={{ marginLeft: '16px', padding: '4px 12px', background: '#e8f5e9', color: '#2e7d32', borderRadius: '4px', fontSize: '13px' }}>결제완료</span>
-          </div>
+
+      {orders.length === 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', color: '#adb5bd' }}>
+          <span style={{ fontSize: '64px', marginBottom: '16px', opacity: '0.6' }}>📋</span>
+          <p style={{ fontSize: '16px', fontWeight: '600', color: '#495057', margin: '0 0 6px' }}>주문내역이 없어요!</p>
+          <p style={{ fontSize: '13px', color: '#adb5bd', margin: 0 }}>첫 주문을 해보세요</p>
         </div>
-      ))}
+      ) : (
+        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {orders.map((order) => (
+            <div key={order.id} style={{ background: 'white', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+
+              {/* 주문 헤더 */}
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #f8f9fa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <p style={{ fontSize: '11px', color: '#adb5bd', margin: '0 0 4px', fontFamily: 'monospace' }}>{order.id}</p>
+                  <p style={{ fontSize: '13px', color: '#868e96', margin: 0 }}>{order.date}</p>
+                </div>
+                <span style={{ background: '#e8faf3', color: '#00a85e', padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>결제완료</span>
+              </div>
+
+              {/* 상품 목록 */}
+              <div style={{ padding: '12px 20px' }}>
+                {order.items.map((item, index) => (
+                  <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 0', borderBottom: index < order.items.length - 1 ? '1px solid #f8f9fa' : 'none' }}>
+                    {item.image ? (
+                      <img src={item.image} alt={item.name} style={{ width: '48px', height: '48px', objectFit: 'contain', background: '#f8f9fa', borderRadius: '10px', flexShrink: 0 }} />
+                    ) : (
+                      <div style={{ width: '48px', height: '48px', background: '#f8f9fa', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>🛍️</div>
+                    )}
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: '13px', fontWeight: '600', color: '#212529', margin: '0 0 3px' }}>{item.name}</p>
+                      <p style={{ fontSize: '12px', color: '#adb5bd', margin: 0 }}>{item.quantity}개</p>
+                    </div>
+                    <p style={{ fontSize: '14px', fontWeight: '800', color: '#212529', margin: 0 }}>₩{(item.price * item.quantity).toLocaleString()}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* 합계 */}
+              <div style={{ padding: '14px 20px', background: '#f8f9fa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '14px', color: '#868e96', fontWeight: '600' }}>총 결제금액</span>
+                <span style={{ fontSize: '18px', fontWeight: '900', color: '#00c471' }}>₩{order.totalPrice.toLocaleString()}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
