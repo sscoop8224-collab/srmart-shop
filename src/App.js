@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 import srmLogo from './srm_logo.png';
 import Admin from './pages/Admin';
@@ -63,9 +63,12 @@ function App() {
   const [wishlist, setWishlist] = useState([]);
   const [notices, setNotices] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [users, setUsers] = useState([
-    { name: '관리자', email: 'admin@srmart.com', password: '1234', grade: '관리자' },
-  ]);
+  const [users, setUsers] = useState(() => {
+    const saved = localStorage.getItem('srmart_users');
+    return saved ? JSON.parse(saved) : [
+      { name: '관리자', email: 'admin@srmart.com', password: '1234', grade: '관리자' },
+    ];
+  });
   const [messages] = useState({
     welcome: '환영해요! SR Mart 가족이 되셨어요! 🎉',
     logout: '로그아웃 되었어요. 이용해주셔서 감사합니다! 😊',
@@ -78,6 +81,9 @@ function App() {
   const [filterSmall, setFilterSmall] = useState('전체');
   const [sortOrder, setSortOrder] = useState('default');
 
+  useEffect(() => {
+    localStorage.setItem('srmart_users', JSON.stringify(users));
+  }, [users]);
   const isAdmin = user && user.email === 'admin@srmart.com';
 
   const toggleWishlist = (product) => {
