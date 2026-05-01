@@ -80,17 +80,18 @@ function App() {
   const [filterMedium, setFilterMedium] = useState('전체');
   const [filterSmall, setFilterSmall] = useState('전체');
   const [sortOrder, setSortOrder] = useState('default');
+  const [toast, setToast] = useState('');
+
+  const isAdmin = user && user.email === 'admin@srmart.com';
 
   useEffect(() => {
     localStorage.setItem('srmart_users', JSON.stringify(users));
   }, [users]);
-  const [toast, setToast] = useState('');
 
   const showToast = useCallback((msg) => {
     setToast(msg);
-    setTimeout(() => setToast(''), 1000);
+    setTimeout(() => setToast(''), 1500);
   }, []);
-  const isAdmin = user && user.email === 'admin@srmart.com';
 
   const toggleWishlist = (product) => {
     const exists = wishlist.find((item) => item.id === product.id);
@@ -201,13 +202,14 @@ function App() {
   if (page === 'login') {
     return (
       <div className="App">
-        <Login onLogin={handleLogin} onGuest={() => { setPage('home'); }} />
+        <Login onLogin={handleLogin} onGuest={() => setPage('home')} />
       </div>
     );
   }
 
   return (
     <div className="App">
+      {/* 헤더 */}
       <header className="header">
         <div className="header-logo" onClick={() => goToPage(isAdmin ? 'adminHome' : 'home')}>
           <img src={srmLogo} alt="SR Mart" style={{ height: '24px', objectFit: 'contain' }} />
@@ -224,16 +226,28 @@ function App() {
             🛒
             {cart.length > 0 && <span className="badge">{cart.length}</span>}
           </button>
-          <button onClick={handleLogout} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e53935" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
-              <line x1="12" y1="2" x2="12" y2="12"/>
-            </svg>
-            <span style={{ fontSize: '10px', fontWeight: '700', color: '#868e96' }}>로그아웃</span>
-          </button>
+          {user ? (
+            <button onClick={handleLogout} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e53935" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+                <line x1="12" y1="2" x2="12" y2="12"/>
+              </svg>
+              <span style={{ fontSize: '10px', fontWeight: '700', color: '#868e96' }}>로그아웃</span>
+            </button>
+          ) : (
+            <button onClick={() => setPage('login')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                <polyline points="10 17 15 12 10 7"/>
+                <line x1="15" y1="12" x2="3" y2="12"/>
+              </svg>
+              <span style={{ fontSize: '10px', fontWeight: '700', color: '#00c471' }}>로그인</span>
+            </button>
+          )}
         </div>
       </header>
 
+      {/* 페이지 콘텐츠 */}
       <div className="main-content">
         {page === 'home' && (
           <>
@@ -324,6 +338,7 @@ function App() {
         {page === 'orders' && <Orders orders={orders} goBack={goBack} />}
         {page === 'adminHome' && <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} />}
         {page === 'members' && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} />}
+        {page === 'adminOrders' && <AdminOrders orders={orders} goBack={goBack} />}
         {page === 'mypage' && <MyPage user={user} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} />}
         {page === 'admin' && <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} messages={messages} setMessages={() => {}} goBack={goBack} />}
       </div>
@@ -335,22 +350,23 @@ function App() {
             <span>🏠</span>
             <span>홈</span>
           </button>
-          <button className={'bottom-nav-item' + (page === 'notice' ? ' active' : '')} onClick={() => goToPage('notice')}>
-            <span>📢</span>
+          <button className={'bottom-nav-item' + (page === 'notice' ? ' active' : '')} onClick={() => user ? goToPage('notice') : requireLogin()}>
+            <span>📢{!user && <span style={{ fontSize: '8px' }}>🔒</span>}</span>
             <span>공지</span>
           </button>
-          <button className={'bottom-nav-item' + (page === 'cart' ? ' active' : '')} onClick={() => goToPage('cart')}>
-            <span>🛒</span>
+          <button className={'bottom-nav-item' + (page === 'cart' ? ' active' : '')} onClick={() => user ? goToPage('cart') : requireLogin()}>
+            <span style={{ position: 'relative' }}>
+              🛒{!user && <span style={{ fontSize: '8px' }}>🔒</span>}
+              {cart.length > 0 && <span className="badge">{cart.length}</span>}
+            </span>
             <span>장바구니</span>
-            {cart.length > 0 && <span className="badge">{cart.length}</span>}
           </button>
-          <button className={'bottom-nav-item' + (page === 'wishlist' ? ' active' : '')} onClick={() => goToPage('wishlist')}>
-            <span>❤️</span>
+          <button className={'bottom-nav-item' + (page === 'wishlist' ? ' active' : '')} onClick={() => user ? goToPage('wishlist') : requireLogin()}>
+            <span>❤️{!user && <span style={{ fontSize: '8px' }}>🔒</span>}</span>
             <span>찜</span>
-            {wishlist.length > 0 && <span className="badge">{wishlist.length}</span>}
           </button>
-          <button className={'bottom-nav-item' + (page === 'mypage' ? ' active' : '')} onClick={() => goToPage('mypage')}>
-            <span>👤</span>
+          <button className={'bottom-nav-item' + (page === 'mypage' ? ' active' : '')} onClick={() => user ? goToPage('mypage') : requireLogin()}>
+            <span>👤{!user && <span style={{ fontSize: '8px' }}>🔒</span>}</span>
             <span>마이</span>
           </button>
         </nav>
@@ -387,6 +403,7 @@ function App() {
           {toast}
         </div>
       )}
+
       <footer style={{ textAlign: 'center', padding: '16px', fontSize: '12px', color: 'var(--gray-400)', borderTop: '1px solid var(--gray-200)' }}>
         © 2026 Dongsin Market. All rights reserved.
       </footer>
