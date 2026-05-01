@@ -88,7 +88,7 @@ function App() {
 
   const showToast = useCallback((msg) => {
     setToast(msg);
-    setTimeout(() => setToast(''), 2000);
+    setTimeout(() => setToast(''), 1000);
   }, []);
   const isAdmin = user && user.email === 'admin@srmart.com';
 
