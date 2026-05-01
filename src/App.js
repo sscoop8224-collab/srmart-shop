@@ -251,9 +251,18 @@ function App() {
       <div className="main-content">
         {page === 'home' && (
           <>
-            <div className="banner">
-              <h2>🛒 {messages.banner}</h2>
-              <p>{messages.bannerSub}</p>
+            <div style={{ padding: '16px', background: 'white' }}>
+              {/* 배너 */}
+              <div style={{ background: 'linear-gradient(135deg, #00c471, #00a85e)', borderRadius: '18px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', overflow: 'hidden', position: 'relative', marginBottom: '20px' }}>
+                <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%' }} />
+                <div style={{ position: 'relative', zIndex: 1 }}>
+                  <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.85)', margin: '0 0 4px', fontWeight: '600' }}>특별 할인</p>
+                  <h2 style={{ fontSize: '18px', fontWeight: '800', color: 'white', margin: '0 0 6px', letterSpacing: '-0.5px' }}>{messages.banner}</h2>
+                  <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.85)', margin: '0 0 12px' }}>{messages.bannerSub}</p>
+                  <button style={{ background: 'white', color: '#00c471', border: 'none', borderRadius: '20px', padding: '7px 16px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>쇼핑하기 →</button>
+                </div>
+                <span style={{ fontSize: '64px', position: 'relative', zIndex: 1 }}>🛒</span>
+              </div>
             </div>
             <div className="divider" />
             <div className="category-scroll">
@@ -312,15 +321,17 @@ function App() {
                     ) : (
                       <div className="product-card-image-placeholder">🛍️</div>
                     )}
-                    <div className="product-card-body">
-                      <p className="product-card-category">{[product.large, product.medium, product.small].filter(Boolean).join(' > ')}</p>
-                      <p className="product-card-name">{product.name}</p>
-                      <p className="product-card-price">₩{product.price.toLocaleString()}</p>
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        <button className="btn-cart" style={{ flex: 1 }} onClick={(e) => { e.stopPropagation(); addToCart(product); }}>🛒 담기</button>
-                        <button onClick={(e) => { e.stopPropagation(); toggleWishlist(product); }} style={{ width: '36px', height: '36px', background: wishlist.find((item) => item.id === product.id) ? '#ff4757' : '#f1f3f5', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          {wishlist.find((item) => item.id === product.id) ? '❤️' : '🤍'}
-                        </button>
+                    <div style={{ padding: '10px 12px 12px' }}>
+                      <p style={{ fontSize: '11px', color: '#adb5bd', margin: '0 0 3px' }}>{product.large}</p>
+                      <p style={{ fontSize: '13px', fontWeight: '700', color: '#212529', margin: '0 0 6px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.name}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <p style={{ fontSize: '15px', fontWeight: '800', color: '#212529', margin: 0 }}>₩{product.price.toLocaleString()}</p>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <button onClick={(e) => { e.stopPropagation(); toggleWishlist(product); }} style={{ width: '28px', height: '28px', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+                            {wishlist.find((item) => item.id === product.id) ? '❤️' : '🤍'}
+                          </button>
+                          <button onClick={(e) => { e.stopPropagation(); addToCart(product); }} style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,196,113,0.3)', flexShrink: 0 }}>+</button>
+                        </div>
                       </div>
                     </div>
                   </div>

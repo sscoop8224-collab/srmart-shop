@@ -73,60 +73,76 @@ function Login({ onLogin, onGuest }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(160deg, #e8faf3 0%, #ffffff 60%)', padding: '24px' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'white' }}>
 
-      {/* 로고 */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
-        <img src={srmLogo} alt="SR Mart" style={{ height: '80px', objectFit: 'contain', marginBottom: '8px' }} />
-        <span style={{ fontFamily: "'Nanum Pen Script', cursive", fontSize: '28px', color: '#1b5e20', fontWeight: '700' }}>에스알마트</span>
-        <span style={{ fontSize: '13px', color: '#868e96', marginTop: '4px' }}>신선하고 다양한 상품을 만나보세요</span>
+      {/* 상단 그린 영역 */}
+      <div style={{ background: 'linear-gradient(160deg, #00c471 0%, #00a85e 100%)', padding: '60px 32px 80px', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '180px', height: '180px', background: 'rgba(255,255,255,0.08)', borderRadius: '50%' }} />
+        <div style={{ position: 'absolute', bottom: '-60px', left: '-30px', width: '200px', height: '200px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%' }} />
+        <img src={srmLogo} alt="SR Mart" style={{ height: '90px', objectFit: 'contain', marginBottom: '12px', position: 'relative', zIndex: 1 }} />
+        <span style={{ fontFamily: "'Nanum Pen Script', cursive", fontSize: '32px', color: 'white', fontWeight: '700', position: 'relative', zIndex: 1 }}>에스알마트</span>
+        <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.85)', marginTop: '6px', position: 'relative', zIndex: 1 }}>신선하고 다양한 상품을 만나보세요</span>
       </div>
 
-      {/* 폼 */}
-      <div style={{ background: 'white', borderRadius: '20px', padding: '28px 24px', width: '100%', maxWidth: '400px', boxShadow: '0 8px 32px rgba(0,196,113,0.1)', border: '1px solid #e8faf3' }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '24px', color: '#212529', fontSize: '18px', fontWeight: '800' }}>
+      {/* 하단 폼 영역 */}
+      <div style={{ flex: 1, background: 'white', borderRadius: '28px 28px 0 0', marginTop: '-24px', padding: '32px 24px', position: 'relative', zIndex: 2 }}>
+        <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#212529', margin: '0 0 6px' }}>
           {isSignup ? '회원가입' : '로그인'}
         </h2>
+        <p style={{ fontSize: '13px', color: '#868e96', margin: '0 0 28px' }}>
+          {isSignup ? '계정을 만들어 쇼핑을 시작하세요' : '이메일과 비밀번호를 입력해주세요'}
+        </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {isSignup && (
-            <input ref={nameRef} name="name" value={form.name} onChange={handleChange} onKeyDown={handleKeyDownName} placeholder="이름" style={{ padding: '13px 16px', borderRadius: '10px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', fontFamily: 'inherit' }} onFocus={(e) => e.target.style.borderColor = '#00c471'} onBlur={(e) => e.target.style.borderColor = '#e9ecef'} />
+            <div>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#495057', display: 'block', marginBottom: '6px' }}>이름</label>
+              <input ref={nameRef} name="name" value={form.name} onChange={handleChange} onKeyDown={handleKeyDownName} placeholder="이름을 입력해주세요" style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#f8f9fa' }} onFocus={(e) => { e.target.style.borderColor = '#00c471'; e.target.style.background = 'white'; }} onBlur={(e) => { e.target.style.borderColor = '#e9ecef'; e.target.style.background = '#f8f9fa'; }} />
+            </div>
           )}
-          <input ref={emailRef} name="email" value={form.email} onChange={handleChange} onKeyDown={handleKeyDownEmail} placeholder="이메일" type="email" style={{ padding: '13px 16px', borderRadius: '10px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', fontFamily: 'inherit' }} onFocus={(e) => e.target.style.borderColor = '#00c471'} onBlur={(e) => e.target.style.borderColor = '#e9ecef'} />
-          <input ref={passwordRef} name="password" value={form.password} onChange={handleChange} onKeyDown={handleKeyDownPassword} placeholder="비밀번호" type="password" style={{ padding: '13px 16px', borderRadius: '10px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', fontFamily: 'inherit' }} onFocus={(e) => e.target.style.borderColor = '#00c471'} onBlur={(e) => e.target.style.borderColor = '#e9ecef'} />
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: '700', color: '#495057', display: 'block', marginBottom: '6px' }}>이메일</label>
+            <input ref={emailRef} name="email" value={form.email} onChange={handleChange} onKeyDown={handleKeyDownEmail} placeholder="이메일을 입력해주세요" type="email" style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#f8f9fa' }} onFocus={(e) => { e.target.style.borderColor = '#00c471'; e.target.style.background = 'white'; }} onBlur={(e) => { e.target.style.borderColor = '#e9ecef'; e.target.style.background = '#f8f9fa'; }} />
+          </div>
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: '700', color: '#495057', display: 'block', marginBottom: '6px' }}>비밀번호</label>
+            <input ref={passwordRef} name="password" value={form.password} onChange={handleChange} onKeyDown={handleKeyDownPassword} placeholder="비밀번호를 입력해주세요" type="password" style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#f8f9fa' }} onFocus={(e) => { e.target.style.borderColor = '#00c471'; e.target.style.background = 'white'; }} onBlur={(e) => { e.target.style.borderColor = '#e9ecef'; e.target.style.background = '#f8f9fa'; }} />
+          </div>
 
           {!isSignup && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <input type="checkbox" id="autoLogin" checked={autoLogin} onChange={(e) => setAutoLogin(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#00c471', cursor: 'pointer' }} />
-              <label htmlFor="autoLogin" style={{ fontSize: '13px', color: '#868e96', cursor: 'pointer', fontWeight: '500' }}>자동 로그인</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input type="checkbox" id="autoLogin" checked={autoLogin} onChange={(e) => setAutoLogin(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#00c471', cursor: 'pointer' }} />
+                <label htmlFor="autoLogin" style={{ fontSize: '13px', color: '#868e96', cursor: 'pointer' }}>자동 로그인</label>
+              </div>
+              <span onClick={() => setIsFindAccount(true)} style={{ fontSize: '13px', color: '#00c471', cursor: 'pointer', fontWeight: '600' }}>비밀번호 찾기</span>
             </div>
           )}
 
-          <button onClick={isSignup ? handleSignup : handleLogin} style={{ padding: '14px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '12px', fontSize: '16px', cursor: 'pointer', fontWeight: '800', marginTop: '4px', letterSpacing: '-0.3px' }}>
+          <button onClick={isSignup ? handleSignup : handleLogin} style={{ padding: '16px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '14px', fontSize: '16px', cursor: 'pointer', fontWeight: '800', marginTop: '8px', boxShadow: '0 4px 16px rgba(0,196,113,0.3)', letterSpacing: '-0.3px' }}>
             {isSignup ? '회원가입' : '로그인'}
           </button>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
-          <span onClick={() => { setIsSignup(!isSignup); setForm({ name: '', email: '', password: '' }); }} style={{ color: '#00c471', cursor: 'pointer', fontSize: '14px', fontWeight: '700' }}>
+        <div style={{ textAlign: 'center', marginTop: '24px' }}>
+          <span style={{ fontSize: '14px', color: '#868e96' }}>
+            {isSignup ? '이미 계정이 있으신가요? ' : '계정이 없으신가요? '}
+          </span>
+          <span onClick={() => { setIsSignup(!isSignup); setForm({ name: '', email: '', password: '' }); }} style={{ fontSize: '14px', color: '#00c471', cursor: 'pointer', fontWeight: '700' }}>
             {isSignup ? '로그인' : '회원가입'}
           </span>
-          {!isSignup && (
-            <span onClick={() => setIsFindAccount(true)} style={{ color: '#868e96', cursor: 'pointer', fontSize: '14px' }}>
-              아이디/비밀번호 찾기
-            </span>
-          )}
         </div>
+
+        {onGuest && (
+          <div style={{ textAlign: 'center', marginTop: '16px' }}>
+            <span onClick={onGuest} style={{ fontSize: '13px', color: '#adb5bd', cursor: 'pointer', textDecoration: 'underline' }}>
+              로그인 없이 둘러보기
+            </span>
+          </div>
+        )}
+
+        <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '11px', color: '#dee2e6' }}>© 2026 Dongsin Market. All rights reserved.</p>
       </div>
-
-      {/* 로그인 없이 둘러보기 */}
-      {onGuest && (
-        <button onClick={onGuest} style={{ marginTop: '16px', background: 'transparent', border: 'none', color: '#868e96', fontSize: '14px', cursor: 'pointer', textDecoration: 'underline' }}>
-          로그인 없이 둘러보기
-        </button>
-      )}
-
-      <p style={{ marginTop: '16px', fontSize: '12px', color: '#adb5bd' }}>© 2026 Dongsin Market. All rights reserved.</p>
     </div>
   );
 }
