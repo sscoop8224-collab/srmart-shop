@@ -91,7 +91,7 @@ function App() {
 
   const showToast = useCallback((msg) => {
     setToast(msg);
-    setTimeout(() => setToast(''), 1000);
+    setTimeout(() => setToast(''), 1500);
   }, []);
 
   const toggleWishlist = (product) => {
@@ -252,9 +252,9 @@ function App() {
       <div className="main-content">
         {page === 'home' && (
           <>
-            <div style={{ padding: '16px', background: 'white' }}>
-              {/* 배너 */}
-              <div style={{ background: 'linear-gradient(135deg, #00c471, #00a85e)', borderRadius: '18px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', overflow: 'hidden', position: 'relative', marginBottom: '20px' }}>
+            {/* 배너 */}
+            <div style={{ padding: '16px' }}>
+              <div style={{ background: 'linear-gradient(135deg, #00c471, #00a85e)', borderRadius: '18px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', overflow: 'hidden', position: 'relative' }}>
                 <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%' }} />
                 <div style={{ position: 'relative', zIndex: 1 }}>
                   <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.85)', margin: '0 0 4px', fontWeight: '600' }}>특별 할인</p>
@@ -265,38 +265,44 @@ function App() {
                 <span style={{ fontSize: '64px', position: 'relative', zIndex: 1 }}>🛒</span>
               </div>
             </div>
-            <div className="divider" />
-            <div className="category-scroll">
-              <div className="category-list">
-                {['전체', ...categories.map((c) => c.name)].map((name) => (
-                  <button key={name} className={'category-btn' + (filterLarge === name ? ' active' : '')} onClick={() => { setFilterLarge(name); setFilterMedium('전체'); setFilterSmall('전체'); }}>
+
+            {/* 카테고리 필터 */}
+            <div style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto' }}>
+              <span style={{ fontSize: '16px', flexShrink: 0 }}>🔍</span>
+              {['전체', ...categories.map((c) => c.name)].map((name) => (
+                <button
+                  key={name}
+                  onClick={() => { setFilterLarge(name); setFilterMedium('전체'); setFilterSmall('전체'); }}
+                  style={{ padding: '8px 18px', background: filterLarge === name ? '#00c471' : 'white', color: filterLarge === name ? 'white' : '#495057', border: filterLarge === name ? 'none' : '1.5px solid #e9ecef', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0, boxShadow: filterLarge === name ? '0 2px 8px rgba(0,196,113,0.3)' : 'none' }}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+
+            {/* 중분류 */}
+            {selectedLargeObj && selectedLargeObj.children.length > 0 && (
+              <div style={{ padding: '4px 16px', display: 'flex', gap: '8px', overflowX: 'auto' }}>
+                {['전체', ...selectedLargeObj.children.map((m) => m.name)].map((name) => (
+                  <button key={name} onClick={() => { setFilterMedium(name); setFilterSmall('전체'); }} style={{ padding: '6px 14px', background: filterMedium === name ? '#212529' : 'white', color: filterMedium === name ? 'white' : '#868e96', border: filterMedium === name ? 'none' : '1.5px solid #e9ecef', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0 }}>
                     {name}
                   </button>
                 ))}
               </div>
-            </div>
-            {selectedLargeObj && selectedLargeObj.children.length > 0 && (
-              <div className="category-scroll">
-                <div className="category-list">
-                  {['전체', ...selectedLargeObj.children.map((m) => m.name)].map((name) => (
-                    <button key={name} className={'category-btn' + (filterMedium === name ? ' active' : '')} onClick={() => { setFilterMedium(name); setFilterSmall('전체'); }} style={{ fontSize: '12px', padding: '5px 12px' }}>
-                      {name}
-                    </button>
-                  ))}
-                </div>
-              </div>
             )}
+
+            {/* 소분류 */}
             {selectedMediumObj && selectedMediumObj.children.length > 0 && (
-              <div className="category-scroll">
-                <div className="category-list">
-                  {['전체', ...selectedMediumObj.children].map((name) => (
-                    <button key={name} className={'category-btn' + (filterSmall === name ? ' active' : '')} onClick={() => setFilterSmall(name)} style={{ fontSize: '11px', padding: '4px 10px' }}>
-                      {name}
-                    </button>
-                  ))}
-                </div>
+              <div style={{ padding: '4px 16px', display: 'flex', gap: '8px', overflowX: 'auto' }}>
+                {['전체', ...selectedMediumObj.children].map((name) => (
+                  <button key={name} onClick={() => setFilterSmall(name)} style={{ padding: '5px 12px', background: filterSmall === name ? '#868e96' : 'white', color: filterSmall === name ? 'white' : '#adb5bd', border: filterSmall === name ? 'none' : '1.5px solid #e9ecef', borderRadius: '20px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0 }}>
+                    {name}
+                  </button>
+                ))}
               </div>
             )}
+
+            {/* 상품 목록 헤더 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px 8px' }}>
               <p style={{ fontSize: '16px', fontWeight: '700', color: '#212529', margin: 0 }}>
                 {filterLarge === '전체' ? '전체 상품' : filterLarge} ({filteredProducts.length}개)
@@ -308,6 +314,8 @@ function App() {
                 <option value="name">이름순</option>
               </select>
             </div>
+
+            {/* 상품 그리드 */}
             {filteredProducts.length === 0 ? (
               <div className="empty-state">
                 <span className="empty-state-icon">🛍️</span>
