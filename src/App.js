@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import srmLogo from './srm_logo.png';
 import Admin from './pages/Admin';
@@ -84,6 +84,12 @@ function App() {
   useEffect(() => {
     localStorage.setItem('srmart_users', JSON.stringify(users));
   }, [users]);
+  const [toast, setToast] = useState('');
+
+  const showToast = useCallback((msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 2000);
+  }, []);
   const isAdmin = user && user.email === 'admin@srmart.com';
 
   const toggleWishlist = (product) => {
@@ -136,7 +142,7 @@ function App() {
     } else {
       setCart([...cart, { ...product, quantity: 1 }]);
     }
-    alert(product.name + '이(가) 장바구니에 담겼어요! 🛒');
+    showToast(product.name + '이(가) 장바구니에 담겼어요! 🛒');
   };
 
   const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -370,6 +376,11 @@ function App() {
         </nav>
       )}
 
+      {toast && (
+        <div style={{ position: 'fixed', bottom: '90px', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.75)', color: 'white', padding: '12px 24px', borderRadius: '24px', fontSize: '14px', fontWeight: '600', zIndex: 9999, whiteSpace: 'nowrap', boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}>
+          {toast}
+        </div>
+      )}
       <footer style={{ textAlign: 'center', padding: '16px', fontSize: '12px', color: 'var(--gray-400)', borderTop: '1px solid var(--gray-200)' }}>
         © 2026 Dongsin Market. All rights reserved.
       </footer>
