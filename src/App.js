@@ -13,6 +13,7 @@ import Search from './pages/Search';
 import ProductDetail from './pages/ProductDetail';
 import Wishlist from './pages/Wishlist';
 import Notice from './pages/Notice';
+import MyPage from './pages/MyPage';
 
 const initialProducts = [
   { id: 1, name: '신선 사과', price: 5000, large: '식품', medium: '신선식품', small: '과일', image: null },
@@ -305,7 +306,7 @@ function App() {
         {page === 'orders' && <Orders orders={orders} goBack={goBack} />}
         {page === 'adminHome' && <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} />}
         {page === 'members' && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} />}
-        {page === 'adminOrders' && <AdminOrders orders={orders} goBack={goBack} />}
+        {page === 'mypage' && <MyPage user={user} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} />}
         {page === 'admin' && <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} messages={messages} setMessages={() => {}} goBack={goBack} />}
       </div>
 
@@ -330,7 +331,7 @@ function App() {
             <span>찜</span>
             {wishlist.length > 0 && <span className="badge">{wishlist.length}</span>}
           </button>
-          <button className={'bottom-nav-item'} onClick={handleLogout}>
+          <button className={'bottom-nav-item' + (page === 'mypage' ? ' active' : '')} onClick={() => goToPage('mypage')}>
             <span>👤</span>
             <span>마이</span>
           </button>
