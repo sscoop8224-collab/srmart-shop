@@ -30,7 +30,10 @@ function Cart({ cart, setCart, onPayment, onHome }) {
 
   return (
     <main style={{ padding: '16px' }}>
-      <h2 style={{ marginBottom: '16px', fontSize: '18px', fontWeight: '800', color: '#212529' }}>🛒 장바구니</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+        <button onClick={goBack} style={{ width: '36px', height: '36px', background: '#f1f3f5', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
+        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#212529' }}>🛒 장바구니</h2>
+      </div>
 
       {/* 상품 목록 카드형 */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>

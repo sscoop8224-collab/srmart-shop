@@ -133,7 +133,13 @@ function App() {
     }
   };
 
+  const requireLogin = () => {
+    alert('로그인이 필요해요! 😊');
+    setPage('login');
+  };
+
   const addToCart = (product) => {
+    if (!user) { requireLogin(); return; }
     const existing = cart.find((item) => item.id === product.id);
     if (existing) {
       setCart(cart.map((item) =>
@@ -195,7 +201,7 @@ function App() {
   if (page === 'login') {
     return (
       <div className="App">
-        <Login onLogin={handleLogin} />
+        <Login onLogin={handleLogin} onGuest={() => { setPage('home'); }} />
       </div>
     );
   }
@@ -214,7 +220,7 @@ function App() {
             </span>
           )}
           <button className="header-icon-btn" onClick={() => goToPage('search')}>🔍</button>
-          <button className="header-icon-btn" onClick={() => goToPage('cart')}>
+          <button className="header-icon-btn" onClick={() => user ? goToPage('cart') : requireLogin()}>
             🛒
             {cart.length > 0 && <span className="badge">{cart.length}</span>}
           </button>
