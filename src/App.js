@@ -67,6 +67,7 @@ function App() {
     const saved = localStorage.getItem('srmart_users');
     return saved ? JSON.parse(saved) : [
       { name: '관리자', email: 'admin@srmart.com', password: '1234', grade: '관리자' },
+      { name: '이민우', email: 'sscoop@naver.com', password: '1234', grade: '일반' },
     ];
   });
   const [messages] = useState({
@@ -90,7 +91,7 @@ function App() {
 
   const showToast = useCallback((msg) => {
     setToast(msg);
-    setTimeout(() => setToast(''), 1500);
+    setTimeout(() => setToast(''), 1000);
   }, []);
 
   const toggleWishlist = (product) => {
