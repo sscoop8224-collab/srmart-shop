@@ -163,8 +163,13 @@ function App() {
 
   const addToCart = (product) => {
     if (!user) { requireLogin(); return; }
+    if (product.isSoldOut) { showToast('품절된 상품이에요! 😢'); return; }
+    if (product.stock !== '' && Number(product.stock) <= 0) { showToast('재고가 없어요! 😢'); return; }
     const existing = cart.find((item) => item.id === product.id);
     if (existing) {
+      if (product.stock !== '' && existing.quantity >= Number(product.stock)) {
+        showToast('재고 수량을 초과했어요! 😢'); return;
+      }
       setCart(cart.map((item) =>
         item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
       ));
