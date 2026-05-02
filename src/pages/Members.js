@@ -6,7 +6,7 @@ function Members({ users, setUsers, goBack }) {
   const [editGrade, setEditGrade] = useState('');
   const [editMemo, setEditMemo] = useState('');
 
-  const grades = ['일반', 'VIP', '블랙리스트', '관리자'];
+  const grades = ['일반', 'VIP', '장기미고객', '관리자'];
 
   const filteredUsers = users.filter((u) =>
     u.name.includes(search) || u.email.includes(search)
@@ -37,7 +37,7 @@ function Members({ users, setUsers, goBack }) {
 
   const gradeColor = (grade) => {
     if (grade === 'VIP') return { bg: '#fff3e0', color: '#e65100', icon: '⭐' };
-    if (grade === '블랙리스트') return { bg: '#ffebee', color: '#c62828', icon: '🚫' };
+    if (grade === '장기미고객') return { bg: '#ffebee', color: '#c62828', icon: '🚫' };
     if (grade === '관리자') return { bg: '#e8faf3', color: '#00a85e', icon: '👑' };
     return { bg: '#f1f3f5', color: '#868e96', icon: '👤' };
   };
@@ -56,7 +56,7 @@ function Members({ users, setUsers, goBack }) {
         {[
           { label: '전체', value: users.length, bg: '#e8faf3', color: '#00a85e' },
           { label: 'VIP', value: users.filter((u) => u.grade === 'VIP').length, bg: '#fff3e0', color: '#e65100' },
-          { label: '블랙', value: users.filter((u) => u.grade === '블랙리스트').length, bg: '#ffebee', color: '#c62828' },
+          { label: '장기미고객', value: users.filter((u) => u.grade === '장기미고객').length, bg: '#ffebee', color: '#c62828' },
           { label: '일반', value: users.filter((u) => !u.grade || u.grade === '일반').length, bg: '#f1f3f5', color: '#868e96' },
         ].map((stat) => (
           <div key={stat.label} style={{ background: stat.bg, borderRadius: '12px', padding: '12px 8px', textAlign: 'center' }}>
@@ -85,7 +85,7 @@ function Members({ users, setUsers, goBack }) {
           {filteredUsers.map((user, index) => {
             const gc = gradeColor(user.grade || '일반');
             return (
-              <div key={user.email} style={{ background: user.grade === '블랙리스트' ? '#fff5f5' : 'white', borderRadius: '16px', border: user.grade === '블랙리스트' ? '1px solid #ffd0d4' : '1px solid #e9ecef', padding: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+              <div key={user.email} style={{ background: user.grade === '장기미고객' ? '#fff5f5' : 'white', borderRadius: '16px', border: user.grade === '장기미고객' ? '1px solid #ffd0d4' : '1px solid #e9ecef', padding: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
 
                 {/* 회원 정보 */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
