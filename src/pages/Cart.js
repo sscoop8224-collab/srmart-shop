@@ -21,7 +21,12 @@ function Cart({ cart, setCart, onPayment, onHome, goBack }) {
           <button onClick={goBack} style={{ width: '36px', height: '36px', background: '#f1f3f5', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
           <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#212529' }}>장바구니</h2>
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <span style={{ fontSize: '13px', color: '#868e96' }}>{cart.length}개 상품</span>
+        {cart.length > 0 && (
+          <button onClick={() => { if (window.confirm('장바구니를 비울까요?')) setCart([]); }} style={{ fontSize: '12px', color: '#ff4757', background: '#fff0f1', border: 'none', borderRadius: '20px', padding: '5px 12px', cursor: 'pointer', fontWeight: '700' }}>전체 삭제</button>
+        )}
+      </div>
       </div>
 
       {cart.length === 0 ? (
