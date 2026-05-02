@@ -15,7 +15,7 @@ import Wishlist from './pages/Wishlist';
 import Notice from './pages/Notice';
 import Receipt from './pages/Receipt';
 import CouponManager from './pages/CouponManager';
-import SalesStats from './pages/SalesStats';
+import PrintReceipt from './pages/PrintReceipt';
 import BannerManager from './pages/BannerManager';
 
 const initialProducts = [
@@ -86,6 +86,7 @@ function App() {
   const [sortOrder, setSortOrder] = useState('default');
   const [toast, setToast] = useState('');
   const [lastOrder, setLastOrder] = useState(null);
+  const [printOrder, setPrintOrder] = useState(null);
   const [coupons, setCoupons] = useState([
     { code: 'WELCOME10', discount: 10, type: 'percent', description: '신규 회원 10% 할인', isActive: true },
     { code: 'SAVE5000', discount: 5000, type: 'fixed', description: '5,000원 할인 쿠폰', isActive: true },
@@ -407,7 +408,7 @@ function App() {
         {page === 'salesStats' && <SalesStats orders={orders} products={products} goBack={goBack} />} 
         {page === 'adminHome' && <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} />}
         {page === 'members' && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} />}
-        {page === 'adminOrders' && <AdminOrders orders={orders} setOrders={setOrders} goBack={goBack} />}
+        {page === 'adminOrders' && <AdminOrders orders={orders} setOrders={setOrders} goBack={goBack} onPrint={(order) => setPrintOrder(order)} />}
         {page === 'mypage' && <MyPage user={user} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} />}
         {page === 'bannerManager' && <BannerManager banners={banners} setBanners={setBanners} categories={categories} goBack={goBack} />}
         {page === 'admin' && <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} messages={messages} setMessages={() => {}} goBack={goBack} />}

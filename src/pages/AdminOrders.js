@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-function AdminOrders({ orders, setOrders, goBack }) {
+function AdminOrders({ orders, setOrders, goBack, onPrint }) {
   const [filterStatus, setFilterStatus] = useState('전체');
 
   const statusList = ['전체', '결제완료', '배송중', '배송완료', '취소'];
@@ -89,6 +89,9 @@ function AdminOrders({ orders, setOrders, goBack }) {
                       {s}
                     </button>
                   ))}
+                  <button onClick={() => onPrint(order)} style={{ padding: '7px 14px', background: '#212529', color: 'white', border: 'none', borderRadius: '20px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>
+                    🖨️ 영수증 출력
+                  </button>
                 </div>
               </div>
             );
