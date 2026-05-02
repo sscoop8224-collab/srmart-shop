@@ -15,6 +15,7 @@ import Wishlist from './pages/Wishlist';
 import Notice from './pages/Notice';
 import Receipt from './pages/Receipt';
 import CouponManager from './pages/CouponManager';
+import SalesStats from './pages/SalesStats';
 import BannerManager from './pages/BannerManager';
 
 const initialProducts = [
@@ -402,7 +403,8 @@ function App() {
         {page === 'cart' && <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} coupons={coupons} appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon} />}
         {page === 'orders' && <Orders orders={orders} goBack={goBack} />}
         {page === 'receipt' && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
-        {page === 'couponManager' && <CouponManager coupons={coupons} setCoupons={setCoupons} goBack={goBack} />} 
+        {page === 'couponManager' && <CouponManager coupons={coupons} setCoupons={setCoupons} goBack={goBack} />}
+        {page === 'salesStats' && <SalesStats orders={orders} products={products} goBack={goBack} />} 
         {page === 'adminHome' && <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} />}
         {page === 'members' && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} />}
         {page === 'adminOrders' && <AdminOrders orders={orders} setOrders={setOrders} goBack={goBack} />}
@@ -458,6 +460,10 @@ function App() {
           <button className={'bottom-nav-item' + (page === 'couponManager' ? ' active' : '')} onClick={() => goToPage('couponManager')}>
             <span>🎟️</span>
             <span>쿠폰관리</span>
+          </button>
+          <button className={'bottom-nav-item' + (page === 'salesStats' ? ' active' : '')} onClick={() => goToPage('salesStats')}>
+            <span>📊</span>
+            <span>매출통계</span>
           </button>
           <button className={'bottom-nav-item' + (page === 'admin' ? ' active' : '')} onClick={() => goToPage('admin')}>
             <span>📦</span>
