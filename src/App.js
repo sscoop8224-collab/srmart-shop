@@ -14,6 +14,7 @@ import ProductDetail from './pages/ProductDetail';
 import Wishlist from './pages/Wishlist';
 import Notice from './pages/Notice';
 import MyPage from './pages/MyPage';
+import BannerManager from './pages/BannerManager';
 
 const initialProducts = [
   { id: 1, name: '신선 사과', price: 5000, large: '식품', medium: '신선식품', small: '과일', image: null },
@@ -83,6 +84,12 @@ function App() {
   const [sortOrder, setSortOrder] = useState('default');
   const [toast, setToast] = useState('');
   const [bannerIndex, setBannerIndex] = useState(0);
+  const [banners, setBanners] = useState([
+    { id: 1, label: '특별 할인', title: 'SR Mart에 오신 것을 환영해요!', sub: '신선하고 다양한 상품을 만나보세요', emoji: '🛒', bg: 'linear-gradient(135deg, #00c471, #00a85e)', filter: null },
+    { id: 2, label: '신선식품', title: '신선한 채소와 과일!', sub: '오늘의 특가 상품을 확인해보세요', emoji: '🥦', bg: 'linear-gradient(135deg, #ff6b6b, #ee5a24)', filter: '식품' },
+    { id: 3, label: '음료 코너', title: '시원한 음료 모음!', sub: '다양한 음료를 만나보세요', emoji: '🧃', bg: 'linear-gradient(135deg, #a29bfe, #6c5ce7)', filter: '음료' },
+    { id: 4, label: '간식/과자', title: '맛있는 간식 특가!', sub: '달콤한 간식을 지금 담아보세요', emoji: '🍿', bg: 'linear-gradient(135deg, #fdcb6e, #e17055)', filter: '간식/과자' },
+  ]);
 
   const isAdmin = user && user.email === 'admin@srmart.com';
 
@@ -91,7 +98,7 @@ function App() {
   }, [users]);
   useEffect(() => {
     const timer = setInterval(() => {
-      setBannerIndex((prev) => (prev + 1) % 4);
+      setBannerIndex((prev) => (prev + 1) % banners.length);
     }, 3000);
     return () => clearInterval(timer);
   }, []);
@@ -262,12 +269,7 @@ function App() {
             {/* 배너 슬라이드 */}
             <div style={{ padding: '16px' }}>
               <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '18px' }}>
-                {[
-                  { bg: 'linear-gradient(135deg, #00c471, #00a85e)', label: '특별 할인', title: messages.banner, sub: messages.bannerSub, emoji: '🛒', filter: null },
-                  { bg: 'linear-gradient(135deg, #ff6b6b, #ee5a24)', label: '신선식품', title: '신선한 채소와 과일!', sub: '오늘의 특가 상품을 확인해보세요', emoji: '🥦', filter: '식품' },
-                  { bg: 'linear-gradient(135deg, #a29bfe, #6c5ce7)', label: '음료 코너', title: '시원한 음료 모음!', sub: '다양한 음료를 만나보세요', emoji: '🧃', filter: '음료' },
-                  { bg: 'linear-gradient(135deg, #fdcb6e, #e17055)', label: '간식/과자', title: '맛있는 간식 특가!', sub: '달콤한 간식을 지금 담아보세요', emoji: '🍿', filter: '간식/과자' },
-                ].map((slide, index) => (
+                {banners.map((slide, index) => (
                   <div
                     key={index}
                     onClick={() => { if (slide.filter) { setFilterLarge(slide.filter); setFilterMedium('전체'); setFilterSmall('전체'); } }}
@@ -288,7 +290,7 @@ function App() {
 
                 {/* 슬라이드 인디케이터 */}
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
-                  {[0, 1, 2, 3].map((i) => (
+                  {banners.map((_, i) => (
                     <button key={i} onClick={() => setBannerIndex(i)} style={{ width: bannerIndex === i ? '20px' : '8px', height: '8px', background: bannerIndex === i ? '#00c471' : '#dee2e6', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: 0, transition: 'all 0.3s' }} />
                   ))}
                 </div>
@@ -389,6 +391,7 @@ function App() {
         {page === 'members' && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} />}
         {page === 'adminOrders' && <AdminOrders orders={orders} goBack={goBack} />}
         {page === 'mypage' && <MyPage user={user} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} />}
+        {page === 'bannerManager' && <BannerManager banners={banners} setBanners={setBanners} categories={categories} goBack={goBack} />}
         {page === 'admin' && <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} messages={messages} setMessages={() => {}} goBack={goBack} />}
       </div>
 
@@ -432,6 +435,10 @@ function App() {
             <span>📢</span>
             <span>공지</span>
           </button>
+          <button className={'bottom-nav-item' + (page === 'bannerManager' ? ' active' : '')} onClick={() => goToPage('bannerManager')}>
+            <span>🖼️</span>
+            <span>배너관리</span>
+          </button>
           <button className={'bottom-nav-item' + (page === 'admin' ? ' active' : '')} onClick={() => goToPage('admin')}>
             <span>📦</span>
             <span>상품관리</span>
@@ -440,10 +447,7 @@ function App() {
             <span>👥</span>
             <span>회원관리</span>
           </button>
-          <button className={'bottom-nav-item'} onClick={handleLogout}>
-            <span>🚪</span>
-            <span>로그아웃</span>
-          </button>
+          
         </nav>
       )}
 
