@@ -14,6 +14,7 @@ import ProductDetail from './pages/ProductDetail';
 import Wishlist from './pages/Wishlist';
 import Notice from './pages/Notice';
 import Receipt from './pages/Receipt';
+import CouponManager from './pages/CouponManager';
 import BannerManager from './pages/BannerManager';
 
 const initialProducts = [
@@ -84,6 +85,12 @@ function App() {
   const [sortOrder, setSortOrder] = useState('default');
   const [toast, setToast] = useState('');
   const [lastOrder, setLastOrder] = useState(null);
+  const [coupons, setCoupons] = useState([
+    { code: 'WELCOME10', discount: 10, type: 'percent', description: '신규 회원 10% 할인', isActive: true },
+    { code: 'SAVE5000', discount: 5000, type: 'fixed', description: '5,000원 할인 쿠폰', isActive: true },
+    { code: 'FRESH20', discount: 20, type: 'percent', description: '신선식품 20% 할인', isActive: true },
+  ]);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [banners, setBanners] = useState([
     { id: 1, label: '특별 할인', title: 'SR Mart에 오신 것을 환영해요!', sub: '신선하고 다양한 상품을 만나보세요', emoji: '🛒', bg: 'linear-gradient(135deg, #00c471, #00a85e)', filter: null },
     { id: 2, label: '신선식품', title: '신선한 채소와 과일!', sub: '오늘의 특가 상품을 확인해보세요', emoji: '🥦', bg: 'linear-gradient(135deg, #ff6b6b, #ee5a24)', filter: '식품' },
@@ -387,9 +394,10 @@ function App() {
         {page === 'wishlist' && <Wishlist wishlist={wishlist} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWishlist={toggleWishlist} />}
         {page === 'search' && <Search products={products} categories={categories} goBack={goBack} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} />}
         {page === 'productDetail' && <ProductDetail product={selectedProduct} onBack={goBack} onAddToCart={addToCart} />}
-        {page === 'cart' && <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} />}
+        {page === 'cart' && <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} coupons={coupons} appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon} />}
         {page === 'orders' && <Orders orders={orders} goBack={goBack} />}
         {page === 'receipt' && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
+        {page === 'couponManager' && <CouponManager coupons={coupons} setCoupons={setCoupons} goBack={goBack} />} 
         {page === 'adminHome' && <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} />}
         {page === 'members' && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} />}
         {page === 'adminOrders' && <AdminOrders orders={orders} setOrders={setOrders} goBack={goBack} />}
@@ -441,6 +449,10 @@ function App() {
           <button className={'bottom-nav-item' + (page === 'bannerManager' ? ' active' : '')} onClick={() => goToPage('bannerManager')}>
             <span>🖼️</span>
             <span>배너관리</span>
+          </button>
+          <button className={'bottom-nav-item' + (page === 'couponManager' ? ' active' : '')} onClick={() => goToPage('couponManager')}>
+            <span>🎟️</span>
+            <span>쿠폰관리</span>
           </button>
           <button className={'bottom-nav-item' + (page === 'admin' ? ' active' : '')} onClick={() => goToPage('admin')}>
             <span>📦</span>
