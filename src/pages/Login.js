@@ -38,6 +38,10 @@ function Login({ onLogin, onGuest }) {
   const handleLogin = () => {
     const user = users.find((u) => u.email === form.email && u.password === form.password);
     if (user) {
+      if (user.grade === '장기미고객') {
+        alert('이용이 제한된 계정이에요. 관리자에게 문의해주세요!');
+        return;
+      }
       if (autoLogin) {
         localStorage.setItem('srmart_auto_login', JSON.stringify({ email: form.email, password: form.password }));
       } else {
