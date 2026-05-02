@@ -2,6 +2,8 @@ import { useState } from 'react';
 
 function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon, setAppliedCoupon }) {
   const [couponInput, setCouponInput] = useState('');
+  const [address, setAddress] = useState({ name: '', phone: '', address: '', detail: '' });
+  const [showAddress, setShowAddress] = useState(false);
 
   const updateQuantity = (id, delta) => {
     setCart(cart.map((item) =>
@@ -114,6 +116,30 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
             )}
           </div>
 
+          {/* 배송지 입력 */}
+          <div style={{ margin: '0 16px 12px', background: 'white', borderRadius: '16px', padding: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showAddress ? '12px' : 0 }}>
+              <p style={{ fontSize: '14px', fontWeight: '700', color: '#212529', margin: 0 }}>🚚 배송지 입력</p>
+              <button onClick={() => setShowAddress(!showAddress)} style={{ padding: '6px 12px', background: '#f1f3f5', border: 'none', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', color: '#495057' }}>
+                {showAddress ? '접기' : '입력하기'}
+              </button>
+            </div>
+            {showAddress && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <input value={address.name} onChange={(e) => setAddress({ ...address, name: e.target.value })} placeholder="받는 분 이름" style={{ padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', fontFamily: 'inherit' }} />
+                <input value={address.phone} onChange={(e) => setAddress({ ...address, phone: e.target.value })} placeholder="연락처 (010-0000-0000)" type="tel" style={{ padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', fontFamily: 'inherit' }} />
+                <input value={address.address} onChange={(e) => setAddress({ ...address, address: e.target.value })} placeholder="주소" style={{ padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', fontFamily: 'inherit' }} />
+                <input value={address.detail} onChange={(e) => setAddress({ ...address, detail: e.target.value })} placeholder="상세 주소 (동/호수 등)" style={{ padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', fontFamily: 'inherit' }} />
+                {address.name && address.phone && address.address && (
+                  <div style={{ background: '#e8faf3', borderRadius: '10px', padding: '10px 14px' }}>
+                    <p style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', margin: '0 0 4px' }}>✅ 배송지 입력 완료</p>
+                    <p style={{ fontSize: '12px', color: '#495057', margin: 0 }}>{address.name} · {address.phone}</p>
+                    <p style={{ fontSize: '12px', color: '#495057', margin: 0 }}>{address.address} {address.detail}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           {/* 결제 영역 */}
           <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: 'white', padding: '16px 20px 32px', borderTop: '1px solid #f1f3f5', boxShadow: '0 -4px 20px rgba(0,0,0,0.06)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
