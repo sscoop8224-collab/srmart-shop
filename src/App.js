@@ -16,6 +16,8 @@ import Notice from './pages/Notice';
 import Receipt from './pages/Receipt';
 import CouponManager from './pages/CouponManager';
 import PrintReceipt from './pages/PrintReceipt';
+import SalesStats from './pages/SalesStats';
+import MyPage from './pages/MyPage';
 import BannerManager from './pages/BannerManager';
 
 const initialProducts = [
@@ -85,6 +87,7 @@ function App() {
   const [filterSmall, setFilterSmall] = useState('전체');
   const [sortOrder, setSortOrder] = useState('default');
   const [toast, setToast] = useState('');
+  const [bannerIndex, setBannerIndex] = useState(0);
   const [lastOrder, setLastOrder] = useState(null);
   const [printOrder, setPrintOrder] = useState(null);
   const [coupons, setCoupons] = useState([
@@ -105,12 +108,13 @@ function App() {
   useEffect(() => {
     localStorage.setItem('srmart_users', JSON.stringify(users));
   }, [users]);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setBannerIndex((prev) => (prev + 1) % banners.length);
     }, 3000);
     return () => clearInterval(timer);
-  }, []);
+  }, [banners.length]);
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -198,7 +202,7 @@ function App() {
   const selectedLargeObj = categories.find((c) => c.name === filterLarge);
   const selectedMediumObj = selectedLargeObj && selectedLargeObj.children.find((m) => m.name === filterMedium);
 
-  const handlePayment = async () => {
+  const handlePayment = async (finalPrice) => {
     if (cart.length === 0) {
       alert('장바구니가 비어있어요!');
       return;
@@ -209,7 +213,7 @@ function App() {
         userId: user.email,
         itemName: cart.length === 1 ? cart[0].name : cart[0].name + ' 외 ' + (cart.length - 1) + '건',
         quantity: cart.reduce((sum, item) => sum + item.quantity, 0),
-        totalAmount: totalPrice,
+        totalAmount: finalPrice || totalPrice,
       };
       const result = await kakaoPayReady(orderInfo);
       if (result.next_redirect_pc_url) {
@@ -217,7 +221,9 @@ function App() {
           id: orderInfo.orderId,
           date: new Date().toLocaleString('ko-KR'),
           items: [...cart],
-          totalPrice,
+          totalPrice: finalPrice || totalPrice,
+          userId: user.email,
+          status: '결제완료',
         };
         setOrders([newOrder, ...orders]);
         setLastOrder(newOrder);
@@ -289,7 +295,7 @@ function App() {
                   <div
                     key={index}
                     onClick={() => { if (slide.filter) { setFilterLarge(slide.filter); setFilterMedium('전체'); setFilterSmall('전체'); } }}
-                    style={{ display: bannerIndex === index ? 'flex' : 'none', background: slide.bg, borderRadius: '18px', padding: '20px 24px', justifyContent: 'space-between', alignItems: 'center', overflow: 'hidden', position: 'relative', cursor: slide.filter ? 'pointer' : 'default' }}
+                    style={{ display: bannerIndex === index ? 'flex' : 'none', background: slide.bg, borderRadius: '18px', padding: '20px 24px', justifyContent: 'space-between', alignItems: 'center', overflow: 'hidden', position: 'relative', cursor: slide.filter ? 'pointer' : 'default', animation: bannerIndex === index ? 'slideIn 0.4s ease forwards' : 'none' }}
                   >
                     <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%' }} />
                     <div style={{ position: 'relative', zIndex: 1 }}>
@@ -303,7 +309,6 @@ function App() {
                     <span style={{ fontSize: '64px', position: 'relative', zIndex: 1 }}>{slide.emoji}</span>
                   </div>
                 ))}
-
                 {/* 슬라이드 인디케이터 */}
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
                   {banners.map((_, i) => (
@@ -315,13 +320,8 @@ function App() {
 
             {/* 카테고리 필터 */}
             <div style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto' }}>
-              
               {['전체', ...categories.map((c) => c.name)].map((name) => (
-                <button
-                  key={name}
-                  onClick={() => { setFilterLarge(name); setFilterMedium('전체'); setFilterSmall('전체'); }}
-                  style={{ padding: '8px 18px', background: filterLarge === name ? '#00c471' : 'white', color: filterLarge === name ? 'white' : '#495057', border: filterLarge === name ? 'none' : '1.5px solid #e9ecef', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0, boxShadow: filterLarge === name ? '0 2px 8px rgba(0,196,113,0.3)' : 'none' }}
-                >
+                <button key={name} onClick={() => { setFilterLarge(name); setFilterMedium('전체'); setFilterSmall('전체'); }} style={{ padding: '8px 18px', background: filterLarge === name ? '#00c471' : 'white', color: filterLarge === name ? 'white' : '#495057', border: filterLarge === name ? 'none' : '1.5px solid #e9ecef', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0, boxShadow: filterLarge === name ? '0 2px 8px rgba(0,196,113,0.3)' : 'none' }}>
                   {name}
                 </button>
               ))}
@@ -371,11 +371,14 @@ function App() {
             ) : (
               <div className="product-grid">
                 {filteredProducts.map((product) => (
-                  <div key={product.id} className="product-card" onClick={() => { setSelectedProduct(product); goToPage('productDetail'); }}>
+                  <div key={product.id} className="product-card" style={{ position: 'relative', opacity: product.isSoldOut ? 0.7 : 1 }} onClick={() => { if (!product.isSoldOut) { setSelectedProduct(product); goToPage('productDetail'); } }}>
                     {product.image ? (
                       <img src={product.image} alt={product.name} className="product-card-image" />
                     ) : (
                       <div className="product-card-image-placeholder">🛍️</div>
+                    )}
+                    {product.isSoldOut && (
+                      <div style={{ position: 'absolute', top: '8px', left: '8px', background: '#ff4757', color: 'white', fontSize: '11px', fontWeight: '700', padding: '3px 8px', borderRadius: '10px' }}>품절</div>
                     )}
                     <div style={{ padding: '10px 12px 12px' }}>
                       <p style={{ fontSize: '11px', color: '#adb5bd', margin: '0 0 3px' }}>{product.large}</p>
@@ -386,7 +389,7 @@ function App() {
                           <button onClick={(e) => { e.stopPropagation(); toggleWishlist(product); }} style={{ width: '28px', height: '28px', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
                             {wishlist.find((item) => item.id === product.id) ? '❤️' : '🤍'}
                           </button>
-                          <button onClick={(e) => { e.stopPropagation(); addToCart(product); }} style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,196,113,0.3)', flexShrink: 0 }}>+</button>
+                          <button onClick={(e) => { e.stopPropagation(); addToCart(product); }} style={{ width: '32px', height: '32px', background: product.isSoldOut ? '#dee2e6' : 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: '50%', cursor: product.isSoldOut ? 'not-allowed' : 'pointer', fontSize: '18px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: product.isSoldOut ? 'none' : '0 2px 8px rgba(0,196,113,0.3)', flexShrink: 0 }}>+</button>
                         </div>
                       </div>
                     </div>
@@ -405,7 +408,7 @@ function App() {
         {page === 'orders' && <Orders orders={orders} goBack={goBack} />}
         {page === 'receipt' && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
         {page === 'couponManager' && <CouponManager coupons={coupons} setCoupons={setCoupons} goBack={goBack} />}
-        {page === 'salesStats' && <SalesStats orders={orders} products={products} goBack={goBack} />} 
+        {page === 'salesStats' && <SalesStats orders={orders} products={products} goBack={goBack} />}
         {page === 'adminHome' && <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} />}
         {page === 'members' && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} />}
         {page === 'adminOrders' && <AdminOrders orders={orders} setOrders={setOrders} goBack={goBack} onPrint={(order) => setPrintOrder(order)} />}
@@ -474,7 +477,6 @@ function App() {
             <span>👥</span>
             <span>회원관리</span>
           </button>
-          
         </nav>
       )}
 
@@ -485,6 +487,7 @@ function App() {
       )}
 
       {printOrder && <PrintReceipt order={printOrder} onClose={() => setPrintOrder(null)} />}
+
       <footer style={{ textAlign: 'center', padding: '16px', fontSize: '12px', color: 'var(--gray-400)', borderTop: '1px solid var(--gray-200)' }}>
         © 2026 Dongsin Market. All rights reserved.
       </footer>
