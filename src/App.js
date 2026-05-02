@@ -13,7 +13,7 @@ import Search from './pages/Search';
 import ProductDetail from './pages/ProductDetail';
 import Wishlist from './pages/Wishlist';
 import Notice from './pages/Notice';
-import MyPage from './pages/MyPage';
+import Receipt from './pages/Receipt';
 import BannerManager from './pages/BannerManager';
 
 const initialProducts = [
@@ -83,7 +83,7 @@ function App() {
   const [filterSmall, setFilterSmall] = useState('전체');
   const [sortOrder, setSortOrder] = useState('default');
   const [toast, setToast] = useState('');
-  const [bannerIndex, setBannerIndex] = useState(0);
+  const [lastOrder, setLastOrder] = useState(null);
   const [banners, setBanners] = useState([
     { id: 1, label: '특별 할인', title: 'SR Mart에 오신 것을 환영해요!', sub: '신선하고 다양한 상품을 만나보세요', emoji: '🛒', bg: 'linear-gradient(135deg, #00c471, #00a85e)', filter: null },
     { id: 2, label: '신선식품', title: '신선한 채소와 과일!', sub: '오늘의 특가 상품을 확인해보세요', emoji: '🥦', bg: 'linear-gradient(135deg, #ff6b6b, #ee5a24)', filter: '식품' },
@@ -206,8 +206,10 @@ function App() {
           totalPrice,
         };
         setOrders([newOrder, ...orders]);
+        setLastOrder(newOrder);
         setCart([]);
         window.open(result.next_redirect_pc_url, '_blank');
+        goToPage('receipt');
       }
     } catch (error) {
       alert('결제 준비 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.');
@@ -387,6 +389,7 @@ function App() {
         {page === 'productDetail' && <ProductDetail product={selectedProduct} onBack={goBack} onAddToCart={addToCart} />}
         {page === 'cart' && <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} />}
         {page === 'orders' && <Orders orders={orders} goBack={goBack} />}
+        {page === 'receipt' && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
         {page === 'adminHome' && <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} />}
         {page === 'members' && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} />}
         {page === 'adminOrders' && <AdminOrders orders={orders} setOrders={setOrders} goBack={goBack} />}
