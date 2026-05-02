@@ -25,7 +25,7 @@ function Orders({ orders, goBack }) {
                   <p style={{ fontSize: '11px', color: '#adb5bd', margin: '0 0 4px', fontFamily: 'monospace' }}>{order.id}</p>
                   <p style={{ fontSize: '13px', color: '#868e96', margin: 0 }}>{order.date}</p>
                 </div>
-                <span style={{ background: '#e8faf3', color: '#00a85e', padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>결제완료</span>
+                <span style={{ background: order.status === '배송중' ? '#fff3cd' : order.status === '배송완료' ? '#e8f0fe' : order.status === '취소' ? '#fff0f1' : '#e8faf3', color: order.status === '배송중' ? '#f0a500' : order.status === '배송완료' ? '#1a73e8' : order.status === '취소' ? '#ff4757' : '#00a85e', padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>{order.status || '결제완료'}</span>
               </div>
 
               {/* 상품 목록 */}

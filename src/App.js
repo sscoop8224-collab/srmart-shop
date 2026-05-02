@@ -389,7 +389,7 @@ function App() {
         {page === 'orders' && <Orders orders={orders} goBack={goBack} />}
         {page === 'adminHome' && <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} />}
         {page === 'members' && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} />}
-        {page === 'adminOrders' && <AdminOrders orders={orders} goBack={goBack} />}
+        {page === 'adminOrders' && <AdminOrders orders={orders} setOrders={setOrders} goBack={goBack} />}
         {page === 'mypage' && <MyPage user={user} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} />}
         {page === 'bannerManager' && <BannerManager banners={banners} setBanners={setBanners} categories={categories} goBack={goBack} />}
         {page === 'admin' && <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} messages={messages} setMessages={() => {}} goBack={goBack} />}
