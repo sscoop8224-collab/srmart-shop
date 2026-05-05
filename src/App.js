@@ -295,7 +295,7 @@ function App() {
                   <div
                     key={index}
                     onClick={() => { if (slide.filter) { setFilterLarge(slide.filter); setFilterMedium('전체'); setFilterSmall('전체'); } }}
-                    style={{ display: bannerIndex === index ? 'flex' : 'none', background: slide.bg, borderRadius: '18px', padding: '20px 24px', justifyContent: 'space-between', alignItems: 'center', overflow: 'hidden', position: 'relative', cursor: slide.filter ? 'pointer' : 'default', animation: bannerIndex === index ? 'slideIn 0.4s ease forwards' : 'none' }}
+                    style={{ background: slide.bg, borderRadius: '18px', padding: '20px 24px', justifyContent: 'space-between', alignItems: 'center', overflow: 'hidden', position: 'relative', cursor: slide.filter ? 'pointer' : 'default', animation: bannerIndex === index ? 'slideIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards' : 'none', display: bannerIndex === index ? 'flex' : 'none' }}
                   >
                     <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%' }} />
                     <div style={{ position: 'relative', zIndex: 1 }}>
