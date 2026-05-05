@@ -302,7 +302,7 @@ function App() {
             {/* 배너 슬라이드 */}
             <div style={{ padding: '16px' }}>
               <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden' }}>
-                <div style={{ display: 'flex', transition: bannerTransition ? 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none', transform: `translateX(-${bannerIndex * 100}%)`, willChange: 'transform' }}>
+                <div style={{ display: 'flex', transition: bannerTransition ? '-webkit-transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none', WebkitTransform: `translateX(-${bannerIndex * 100}%)`, transform: `translateX(-${bannerIndex * 100}%)`, willChange: 'transform' }}>
                   {[...banners, banners[0]].map((slide, index) => (
                     <div
                       key={index}
