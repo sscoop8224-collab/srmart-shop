@@ -88,6 +88,7 @@ function App() {
   const [sortOrder, setSortOrder] = useState('default');
   const [toast, setToast] = useState('');
   const [bannerIndex, setBannerIndex] = useState(0);
+  const [bannerTransition, setBannerTransition] = useState(true);
   const [lastOrder, setLastOrder] = useState(null);
   const [printOrder, setPrintOrder] = useState(null);
   const [coupons, setCoupons] = useState([
@@ -111,10 +112,20 @@ function App() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setBannerIndex((prev) => (prev + 1) % banners.length);
+      setBannerTransition(true);
+      setBannerIndex((prev) => prev + 1);
     }, 3000);
     return () => clearInterval(timer);
   }, [banners.length]);
+
+  useEffect(() => {
+    if (bannerIndex === banners.length) {
+      setTimeout(() => {
+        setBannerTransition(false);
+        setBannerIndex(0);
+      }, 600);
+    }
+  }, [bannerIndex, banners.length]);
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -291,8 +302,8 @@ function App() {
             {/* 배너 슬라이드 */}
             <div style={{ padding: '16px' }}>
               <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden' }}>
-                <div style={{ display: 'flex', transition: 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)', transform: `translateX(-${bannerIndex * 100}%)` }}>
-                  {banners.map((slide, index) => (
+                <div style={{ display: 'flex', transition: bannerTransition ? 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none', transform: `translateX(-${bannerIndex * 100}%)`, willChange: 'transform' }}>
+                  {[...banners, banners[0]].map((slide, index) => (
                     <div
                       key={index}
                       onClick={() => { if (slide.filter) { setFilterLarge(slide.filter); setFilterMedium('전체'); setFilterSmall('전체'); } }}
@@ -314,7 +325,7 @@ function App() {
                 {/* 슬라이드 인디케이터 */}
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
                   {banners.map((_, i) => (
-                    <button key={i} onClick={() => setBannerIndex(i)} style={{ width: bannerIndex === i ? '20px' : '8px', height: '8px', background: bannerIndex === i ? '#00c471' : '#dee2e6', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: 0, transition: 'all 0.3s' }} />
+                    <button key={i} onClick={() => { setBannerTransition(true); setBannerIndex(i); }} style={{ width: (bannerIndex % banners.length) === i ? '20px' : '8px', height: '8px', background: bannerIndex === i ? '#00c471' : '#dee2e6', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: 0, transition: 'all 0.3s' }} />
                   ))}
                 </div>
               </div>
