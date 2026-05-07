@@ -49,23 +49,23 @@ function Login({ onLogin, onGuest }) {
       }
       onLogin(user);
     } else {
-      alert('이메일 또는 비밀번호가 틀렸어요!');
+      alert('아이디 또는 비밀번호가 틀렸어요!');
     }
   };
 
   const handleSignup = () => {
-    if (!form.name || !form.email || !form.password) {
-      alert('모든 항목을 입력해주세요!');
+    if (!form.name || !form.email || !form.password || !form.phone) {
+      alert('이름, 아이디, 비밀번호, 휴대폰 번호는 필수예요!');
       return;
     }
     if (users.find((u) => u.email === form.email)) {
-      alert('이미 가입된 이메일이에요!');
+      alert('이미 가입된 아이디예요!');
       return;
     }
     setUsers([...users, { name: form.name, email: form.email, password: form.password, phone: form.phone, address: form.address }]);
     alert(form.name + '님 가입을 축하해요! 🎉');
     setIsSignup(false);
-    setForm({ name: '', email: '', password: '' });
+    setForm({ name: '', email: '', password: '', phone: '', address: '' });
   };
 
   const handleKeyDownName = (e) => { if (e.key === 'Enter') emailRef.current?.focus(); };
@@ -83,7 +83,7 @@ function Login({ onLogin, onGuest }) {
       <div style={{ background: 'linear-gradient(160deg, #00c471 0%, #00a85e 100%)', padding: '60px 32px 80px', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '180px', height: '180px', background: 'rgba(255,255,255,0.08)', borderRadius: '50%' }} />
         <div style={{ position: 'absolute', bottom: '-60px', left: '-30px', width: '200px', height: '200px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%' }} />
-        <img src={srmLogo} alt="SR Mart" style={{ height: '200px', objectFit: 'contain', marginBottom: '12px', position: 'relative', zIndex: 1 }} />
+        <img src={srmLogo} alt="SR Mart" style={{ height: '180px', objectFit: 'contain', marginBottom: '12px', position: 'relative', zIndex: 1 }} />
         <span style={{ fontFamily: "'Nanum Pen Script', cursive", fontSize: '32px', color: 'white', fontWeight: '700', position: 'relative', zIndex: 1 }}>에스알마트</span>
         <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.85)', marginTop: '6px', position: 'relative', zIndex: 1 }}>신선하고 다양한 상품을 만나보세요</span>
       </div>
@@ -94,7 +94,7 @@ function Login({ onLogin, onGuest }) {
           {isSignup ? '회원가입' : '로그인'}
         </h2>
         <p style={{ fontSize: '13px', color: '#868e96', margin: '0 0 28px' }}>
-          {isSignup ? '계정을 만들어 쇼핑을 시작하세요' : '이메일과 비밀번호를 입력해주세요'}
+          {isSignup ? '계정을 만들어 쇼핑을 시작하세요' : '아이디와 비밀번호를 입력해주세요'}
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -114,15 +114,18 @@ function Login({ onLogin, onGuest }) {
           </div>
 
           {isSignup && (
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#495057', display: 'block', marginBottom: '6px' }}>휴대폰 번호</label>
+            <>
               <div>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#495057', display: 'block', marginBottom: '6px' }}>주소</label>
-              <input name="address" value={form.address || ''} onChange={handleChange} placeholder="주소를 입력해주세요" style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#f8f9fa' }} onFocus={(e) => { e.target.style.borderColor = '#00c471'; e.target.style.background = 'white'; }} onBlur={(e) => { e.target.style.borderColor = '#e9ecef'; e.target.style.background = '#f8f9fa'; }} />
-            </div>
-              <input name="phone" value={form.phone} onChange={handleChange} placeholder="010-0000-0000" type="tel" style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#f8f9fa' }} onFocus={(e) => { e.target.style.borderColor = '#00c471'; e.target.style.background = 'white'; }} onBlur={(e) => { e.target.style.borderColor = '#e9ecef'; e.target.style.background = '#f8f9fa'; }} />
-            </div>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#495057', display: 'block', marginBottom: '6px' }}>휴대폰 번호</label>
+                <input name="phone" value={form.phone} onChange={handleChange} placeholder="010-0000-0000" type="tel" style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#f8f9fa' }} onFocus={(e) => { e.target.style.borderColor = '#00c471'; e.target.style.background = 'white'; }} onBlur={(e) => { e.target.style.borderColor = '#e9ecef'; e.target.style.background = '#f8f9fa'; }} />
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#495057', display: 'block', marginBottom: '6px' }}>주소 (선택)</label>
+                <input name="address" value={form.address} onChange={handleChange} placeholder="주소를 입력해주세요" style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#f8f9fa' }} onFocus={(e) => { e.target.style.borderColor = '#00c471'; e.target.style.background = 'white'; }} onBlur={(e) => { e.target.style.borderColor = '#e9ecef'; e.target.style.background = '#f8f9fa'; }} />
+              </div>
+            </>
           )}
+
           {!isSignup && (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -142,7 +145,7 @@ function Login({ onLogin, onGuest }) {
           <span style={{ fontSize: '14px', color: '#868e96' }}>
             {isSignup ? '이미 계정이 있으신가요? ' : '계정이 없으신가요? '}
           </span>
-          <span onClick={() => { setIsSignup(!isSignup); setForm({ name: '', email: '', password: '' }); }} style={{ fontSize: '14px', color: '#00c471', cursor: 'pointer', fontWeight: '700' }}>
+          <span onClick={() => { setIsSignup(!isSignup); setForm({ name: '', email: '', password: '', phone: '', address: '' }); }} style={{ fontSize: '14px', color: '#00c471', cursor: 'pointer', fontWeight: '700' }}>
             {isSignup ? '로그인' : '회원가입'}
           </span>
         </div>
