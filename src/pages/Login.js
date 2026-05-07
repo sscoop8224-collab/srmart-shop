@@ -5,7 +5,7 @@ import srmLogo from '../srm_logo.png';
 function Login({ onLogin, onGuest }) {
   const [isSignup, setIsSignup] = useState(false);
   const [isFindAccount, setIsFindAccount] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', address: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', address: '', addressDetail: '' });
   const [autoLogin, setAutoLogin] = useState(false);
   const [users, setUsers] = useState(() => {
     const saved = localStorage.getItem('srmart_users');
@@ -62,10 +62,10 @@ function Login({ onLogin, onGuest }) {
       alert('이미 가입된 아이디예요!');
       return;
     }
-    setUsers([...users, { name: form.name, email: form.email, password: form.password, phone: form.phone, address: form.address }]);
+    setUsers([...users, { name: form.name, email: form.email, password: form.password, phone: form.phone, address: form.address, addressDetail: form.addressDetail }]);
     alert(form.name + '님 가입을 축하해요! 🎉');
     setIsSignup(false);
-    setForm({ name: '', email: '', password: '', phone: '', address: '' });
+    setForm({ name: '', email: '', password: '', phone: '', address: '', addressDetail: '' });
   };
 
   const handleKeyDownName = (e) => { if (e.key === 'Enter') emailRef.current?.focus(); };
@@ -116,12 +116,20 @@ function Login({ onLogin, onGuest }) {
           {isSignup && (
             <>
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '700', color: '#495057', display: 'block', marginBottom: '6px' }}>휴대폰 번호</label>
-                <input name="phone" value={form.phone} onChange={handleChange} placeholder="010-0000-0000" type="tel" style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#f8f9fa' }} onFocus={(e) => { e.target.style.borderColor = '#00c471'; e.target.style.background = 'white'; }} onBlur={(e) => { e.target.style.borderColor = '#e9ecef'; e.target.style.background = '#f8f9fa'; }} />
-              </div>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: '700', color: '#495057', display: 'block', marginBottom: '6px' }}>주소 (선택)</label>
-                <input name="address" value={form.address} onChange={handleChange} placeholder="주소를 입력해주세요" style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#f8f9fa' }} onFocus={(e) => { e.target.style.borderColor = '#00c471'; e.target.style.background = 'white'; }} onBlur={(e) => { e.target.style.borderColor = '#e9ecef'; e.target.style.background = '#f8f9fa'; }} />
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#495057', display: 'block', marginBottom: '6px' }}>주소</label>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                  <input name="address" value={form.address} readOnly placeholder="주소 검색 버튼을 눌러주세요" style={{ flex: 1, padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#f8f9fa' }} />
+                  <button type="button" onClick={() => {
+                    new window.daum.Postcode({
+                      oncomplete: (data) => {
+                        setForm({ ...form, address: data.roadAddress || data.jibunAddress, addressDetail: '' });
+                      }
+                    }).open();
+                  }} style={{ padding: '14px 16px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '12px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                    주소 찾기
+                  </button>
+                </div>
+                <input name="addressDetail" value={form.addressDetail || ''} onChange={handleChange} placeholder="상세 주소를 입력해주세요 (동/호수 등)" style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#f8f9fa' }} onFocus={(e) => { e.target.style.borderColor = '#00c471'; e.target.style.background = 'white'; }} onBlur={(e) => { e.target.style.borderColor = '#e9ecef'; e.target.style.background = '#f8f9fa'; }} />
               </div>
             </>
           )}
