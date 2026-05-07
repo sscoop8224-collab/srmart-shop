@@ -33,6 +33,8 @@ function Login({ onLogin, onGuest }) {
     localStorage.setItem('srmart_users', JSON.stringify(users));
   }, [users]);
 
+  const emptyForm = { name: '', email: '', password: '', phone: '', address: '', addressDetail: '' };
+
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleLogin = () => {
@@ -65,12 +67,22 @@ function Login({ onLogin, onGuest }) {
     setUsers([...users, { name: form.name, email: form.email, password: form.password, phone: form.phone, address: form.address, addressDetail: form.addressDetail }]);
     alert(form.name + '님 가입을 축하해요! 🎉');
     setIsSignup(false);
-    setForm({ name: '', email: '', password: '', phone: '', address: '', addressDetail: '' });
+    setForm({ ...emptyForm });
+  };
+
+  const handleCancel = () => {
+    setIsSignup(false);
+    setForm({ ...emptyForm });
   };
 
   const handleKeyDownName = (e) => { if (e.key === 'Enter') emailRef.current?.focus(); };
   const handleKeyDownEmail = (e) => { if (e.key === 'Enter') passwordRef.current?.focus(); };
   const handleKeyDownPassword = (e) => { if (e.key === 'Enter') { if (isSignup) handleSignup(); else handleLogin(); } };
+
+  const inputStyle = { width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#f8f9fa' };
+  const inputFocus = (e) => { e.target.style.borderColor = '#00c471'; e.target.style.background = 'white'; };
+  const inputBlur = (e) => { e.target.style.borderColor = '#e9ecef'; e.target.style.background = '#f8f9fa'; };
+  const labelStyle = { fontSize: '12px', fontWeight: '700', color: '#495057', display: 'block', marginBottom: '6px' };
 
   if (isFindAccount) {
     return <FindAccount users={users} onBack={() => setIsFindAccount(false)} />;
@@ -98,42 +110,52 @@ function Login({ onLogin, onGuest }) {
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+          {/* 회원가입 전용 필드 */}
           {isSignup && (
             <div>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#495057', display: 'block', marginBottom: '6px' }}>이름</label>
-              <input ref={nameRef} name="name" value={form.name} onChange={handleChange} onKeyDown={handleKeyDownName} placeholder="이름을 입력해주세요" style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#f8f9fa' }} onFocus={(e) => { e.target.style.borderColor = '#00c471'; e.target.style.background = 'white'; }} onBlur={(e) => { e.target.style.borderColor = '#e9ecef'; e.target.style.background = '#f8f9fa'; }} />
+              <label style={labelStyle}>이름</label>
+              <input ref={nameRef} name="name" value={form.name} onChange={handleChange} onKeyDown={handleKeyDownName} placeholder="이름을 입력해주세요" style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
             </div>
           )}
+
+          {/* 공통 필드 */}
           <div>
-            <label style={{ fontSize: '12px', fontWeight: '700', color: '#495057', display: 'block', marginBottom: '6px' }}>아이디</label>
-            <input ref={emailRef} name="email" value={form.email} onChange={handleChange} onKeyDown={handleKeyDownEmail} placeholder="아이디를 입력해주세요" type="text" style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#f8f9fa' }} onFocus={(e) => { e.target.style.borderColor = '#00c471'; e.target.style.background = 'white'; }} onBlur={(e) => { e.target.style.borderColor = '#e9ecef'; e.target.style.background = '#f8f9fa'; }} />
+            <label style={labelStyle}>아이디</label>
+            <input ref={emailRef} name="email" value={form.email} onChange={handleChange} onKeyDown={handleKeyDownEmail} placeholder="아이디를 입력해주세요" type="text" style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
           </div>
           <div>
-            <label style={{ fontSize: '12px', fontWeight: '700', color: '#495057', display: 'block', marginBottom: '6px' }}>비밀번호</label>
-            <input ref={passwordRef} name="password" value={form.password} onChange={handleChange} onKeyDown={handleKeyDownPassword} placeholder="비밀번호를 입력해주세요" type="password" style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#f8f9fa' }} onFocus={(e) => { e.target.style.borderColor = '#00c471'; e.target.style.background = 'white'; }} onBlur={(e) => { e.target.style.borderColor = '#e9ecef'; e.target.style.background = '#f8f9fa'; }} />
+            <label style={labelStyle}>비밀번호</label>
+            <input ref={passwordRef} name="password" value={form.password} onChange={handleChange} onKeyDown={handleKeyDownPassword} placeholder="비밀번호를 입력해주세요" type="password" style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
           </div>
 
+          {/* 회원가입 추가 필드 */}
           {isSignup && (
             <>
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '700', color: '#495057', display: 'block', marginBottom: '6px' }}>주소</label>
+                <label style={labelStyle}>휴대폰 번호</label>
+                <input name="phone" value={form.phone} onChange={handleChange} placeholder="010-0000-0000" type="tel" style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
+              </div>
+              <div>
+                <label style={labelStyle}>주소 (선택)</label>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                  <input name="address" value={form.address} readOnly placeholder="주소 검색 버튼을 눌러주세요" style={{ flex: 1, padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#f8f9fa' }} />
+                  <input name="address" value={form.address} readOnly placeholder="주소 검색 버튼을 눌러주세요" style={{ ...inputStyle, flex: 1 }} />
                   <button type="button" onClick={() => {
                     new window.daum.Postcode({
                       oncomplete: (data) => {
-                        setForm({ ...form, address: data.roadAddress || data.jibunAddress, addressDetail: '' });
+                        setForm((prev) => ({ ...prev, address: data.roadAddress || data.jibunAddress, addressDetail: '' }));
                       }
                     }).open();
                   }} style={{ padding: '14px 16px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '12px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                     주소 찾기
                   </button>
                 </div>
-                <input name="addressDetail" value={form.addressDetail || ''} onChange={handleChange} placeholder="상세 주소를 입력해주세요 (동/호수 등)" style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#f8f9fa' }} onFocus={(e) => { e.target.style.borderColor = '#00c471'; e.target.style.background = 'white'; }} onBlur={(e) => { e.target.style.borderColor = '#e9ecef'; e.target.style.background = '#f8f9fa'; }} />
+                <input name="addressDetail" value={form.addressDetail} onChange={handleChange} placeholder="상세 주소 (동/호수 등)" style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
               </div>
             </>
           )}
 
+          {/* 로그인 전용 */}
           {!isSignup && (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -144,17 +166,26 @@ function Login({ onLogin, onGuest }) {
             </div>
           )}
 
+          {/* 메인 버튼 */}
           <button onClick={isSignup ? handleSignup : handleLogin} style={{ padding: '16px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '14px', fontSize: '16px', cursor: 'pointer', fontWeight: '800', marginTop: '8px', boxShadow: '0 4px 16px rgba(0,196,113,0.3)', letterSpacing: '-0.3px' }}>
             {isSignup ? '회원가입' : '로그인'}
           </button>
+
+          {/* 취소 버튼 (회원가입 시만) */}
+          {isSignup && (
+            <button onClick={handleCancel} style={{ padding: '14px', background: '#f1f3f5', color: '#495057', border: 'none', borderRadius: '14px', fontSize: '15px', cursor: 'pointer', fontWeight: '700' }}>
+              취소
+            </button>
+          )}
         </div>
 
+        {/* 하단 링크 */}
         <div style={{ textAlign: 'center', marginTop: '24px' }}>
           <span style={{ fontSize: '14px', color: '#868e96' }}>
             {isSignup ? '이미 계정이 있으신가요? ' : '계정이 없으신가요? '}
           </span>
-          <span onClick={() => { setIsSignup(!isSignup); setForm({ name: '', email: '', password: '', phone: '', address: '' }); }} style={{ fontSize: '14px', color: '#00c471', cursor: 'pointer', fontWeight: '700' }}>
-            {isSignup ? '로그인' : '회원가입'}
+          <span onClick={() => { setIsSignup(!isSignup); setForm({ ...emptyForm }); }} style={{ fontSize: '14px', color: '#00c471', cursor: 'pointer', fontWeight: '700' }}>
+            {isSignup ? '로그인으로 돌아가기' : '회원가입'}
           </span>
         </div>
 
