@@ -2,149 +2,103 @@ import { useState } from 'react';
 
 function FindAccount({ users, onBack }) {
   const [tab, setTab] = useState('id');
-  const [form, setForm] = useState({ name: '', email: '', newPassword: '' });
+  const [form, setForm] = useState({ name: '', phone: '' });
   const [result, setResult] = useState(null);
-  const [step, setStep] = useState(1);
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setResult(null);
-  };
+  const [tempPassword, setTempPassword] = useState(null);
 
   const handleFindId = () => {
-    if (!form.name.trim()) { alert('이름을 입력해주세요!'); return; }
-    const user = users.find((u) => u.name === form.name.trim());
+    if (!form.name || !form.phone) {
+      alert('이름과 휴대폰 번호를 입력해주세요!');
+      return;
+    }
+    const user = users.find((u) => u.name === form.name && u.phone === form.phone);
     if (user) {
-      const email = user.email;
-      const masked = email.substring(0, 3) + '****' + email.substring(email.indexOf('@'));
-      setResult({ type: 'success', message: '찾은 이메일: ' + masked });
+      setResult({ type: 'id', value: user.email });
     } else {
-      setResult({ type: 'error', message: '해당 이름으로 가입된 계정이 없어요!' });
+      alert('일치하는 회원 정보가 없어요!');
     }
   };
 
   const handleFindPassword = () => {
-    if (step === 1) {
-      if (!form.email.trim()) { alert('이메일을 입력해주세요!'); return; }
-      const user = users.find((u) => u.email === form.email.trim());
-      if (user) {
-        setStep(2);
-        setResult({ type: 'success', message: '이메일이 확인됐어요! 새 비밀번호를 입력해주세요.' });
-      } else {
-        setResult({ type: 'error', message: '해당 이메일로 가입된 계정이 없어요!' });
-      }
+    if (!form.name || !form.phone) {
+      alert('이름과 휴대폰 번호를 입력해주세요!');
+      return;
+    }
+    const user = users.find((u) => u.name === form.name && u.phone === form.phone);
+    if (user) {
+      const temp = 'temp' + Math.random().toString(36).slice(2, 8).toUpperCase();
+      setTempPassword(temp);
+      setResult({ type: 'password', value: temp, userId: user.email });
+      alert('임시 비밀번호가 발급됐어요!\n실제 서비스에서는 문자로 발송됩니다 😊');
     } else {
-      if (!form.newPassword.trim()) { alert('새 비밀번호를 입력해주세요!'); return; }
-      if (form.newPassword.length < 4) { alert('비밀번호는 4자 이상이어야 해요!'); return; }
-      const user = users.find((u) => u.email === form.email.trim());
-      if (user) {
-        user.password = form.newPassword;
-        setResult({ type: 'success', message: '비밀번호가 변경됐어요! 새 비밀번호로 로그인해주세요.' });
-        setStep(3);
-      }
+      alert('일치하는 회원 정보가 없어요!');
     }
   };
 
-  const resetForm = () => {
-    setForm({ name: '', email: '', newPassword: '' });
-    setResult(null);
-    setStep(1);
-  };
-
   return (
-    <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ background: '#f1f8e9', padding: '40px', borderRadius: '12px', width: '100%', maxWidth: '400px', border: '1px solid #c8e6c9' }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '24px', color: '#2e7d32' }}>🔍 계정 찾기</h2>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'white' }}>
+
+      {/* 상단 그린 영역 */}
+      <div style={{ background: 'linear-gradient(160deg, #00c471 0%, #00a85e 100%)', padding: '40px 32px 60px', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '180px', height: '180px', background: 'rgba(255,255,255,0.08)', borderRadius: '50%' }} />
+        <span style={{ fontSize: '48px', marginBottom: '8px', position: 'relative', zIndex: 1 }}>🔍</span>
+        <span style={{ fontFamily: "'Nanum Pen Script', cursive", fontSize: '28px', color: 'white', fontWeight: '700', position: 'relative', zIndex: 1 }}>아이디/비밀번호 찾기</span>
+      </div>
+
+      {/* 폼 영역 */}
+      <div style={{ flex: 1, background: 'white', borderRadius: '28px 28px 0 0', marginTop: '-24px', padding: '32px 24px', position: 'relative', zIndex: 2 }}>
 
         {/* 탭 */}
-        <div style={{ display: 'flex', marginBottom: '24px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #c8e6c9' }}>
-          {[{ key: 'id', label: '아이디 찾기' }, { key: 'password', label: '비밀번호 찾기' }].map((t) => (
-            <button
-              key={t.key}
-              onClick={() => { setTab(t.key); resetForm(); }}
-              style={{ flex: 1, padding: '10px', background: tab === t.key ? '#2e7d32' : 'white', color: tab === t.key ? 'white' : '#2e7d32', border: 'none', cursor: 'pointer', fontWeight: tab === t.key ? 'bold' : 'normal', fontSize: '14px' }}
-            >
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid #e9ecef', paddingBottom: '0' }}>
+          {[
+            { key: 'id', label: '아이디 찾기' },
+            { key: 'password', label: '비밀번호 찾기' },
+          ].map((t) => (
+            <button key={t.key} onClick={() => { setTab(t.key); setResult(null); setForm({ name: '', phone: '' }); }} style={{ padding: '10px 20px', background: 'transparent', color: tab === t.key ? '#00c471' : '#868e96', border: 'none', borderBottom: tab === t.key ? '2px solid #00c471' : '2px solid transparent', cursor: 'pointer', fontWeight: tab === t.key ? '700' : '500', fontSize: '15px', fontFamily: 'inherit' }}>
               {t.label}
             </button>
           ))}
         </div>
 
-        {/* 아이디 찾기 */}
-        {tab === 'id' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>가입 시 입력한 이름으로 아이디를 찾을 수 있어요.</p>
-            <input
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              onKeyDown={(e) => e.key === 'Enter' && handleFindId()}
-              placeholder="이름 입력"
-              style={{ padding: '12px', borderRadius: '8px', border: '1px solid #c8e6c9', fontSize: '14px' }}
-            />
-            <button onClick={handleFindId} style={{ padding: '12px', background: '#2e7d32', color: 'white', border: 'none', borderRadius: '8px', fontSize: '15px', cursor: 'pointer', fontWeight: 'bold' }}>
-              아이디 찾기
+        {/* 결과 화면 */}
+        {result ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ background: '#e8faf3', borderRadius: '14px', padding: '24px', textAlign: 'center' }}>
+              {result.type === 'id' ? (
+                <>
+                  <p style={{ fontSize: '14px', color: '#495057', margin: '0 0 8px' }}>회원님의 아이디는</p>
+                  <p style={{ fontSize: '20px', fontWeight: '900', color: '#00c471', margin: '0 0 8px' }}>{result.value}</p>
+                  <p style={{ fontSize: '13px', color: '#868e96', margin: 0 }}>입니다 😊</p>
+                </>
+              ) : (
+                <>
+                  <p style={{ fontSize: '14px', color: '#495057', margin: '0 0 8px' }}>임시 비밀번호가 발급됐어요!</p>
+                  <p style={{ fontSize: '24px', fontWeight: '900', color: '#00c471', margin: '0 0 8px', letterSpacing: '2px' }}>{result.value}</p>
+                  <p style={{ fontSize: '13px', color: '#868e96', margin: 0 }}>로그인 후 비밀번호를 변경해주세요!</p>
+                </>
+              )}
+            </div>
+            <button onClick={onBack} style={{ padding: '16px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '14px', fontSize: '16px', cursor: 'pointer', fontWeight: '800', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
+              로그인하러 가기
             </button>
           </div>
-        )}
-
-        {/* 비밀번호 찾기 */}
-        {tab === 'password' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {step === 1 && (
-              <>
-                <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>가입한 이메일로 비밀번호를 재설정할 수 있어요.</p>
-                <input
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  onKeyDown={(e) => e.key === 'Enter' && handleFindPassword()}
-                  placeholder="이메일 입력"
-                  type="email"
-                  style={{ padding: '12px', borderRadius: '8px', border: '1px solid #c8e6c9', fontSize: '14px' }}
-                />
-                <button onClick={handleFindPassword} style={{ padding: '12px', background: '#2e7d32', color: 'white', border: 'none', borderRadius: '8px', fontSize: '15px', cursor: 'pointer', fontWeight: 'bold' }}>
-                  이메일 확인
-                </button>
-              </>
-            )}
-            {step === 2 && (
-              <>
-                <input
-                  name="newPassword"
-                  value={form.newPassword}
-                  onChange={handleChange}
-                  onKeyDown={(e) => e.key === 'Enter' && handleFindPassword()}
-                  placeholder="새 비밀번호 입력"
-                  type="password"
-                  style={{ padding: '12px', borderRadius: '8px', border: '1px solid #c8e6c9', fontSize: '14px' }}
-                />
-                <button onClick={handleFindPassword} style={{ padding: '12px', background: '#2e7d32', color: 'white', border: 'none', borderRadius: '8px', fontSize: '15px', cursor: 'pointer', fontWeight: 'bold' }}>
-                  비밀번호 변경
-                </button>
-              </>
-            )}
-            {step === 3 && (
-              <button onClick={() => { resetForm(); onBack(); }} style={{ padding: '12px', background: '#2e7d32', color: 'white', border: 'none', borderRadius: '8px', fontSize: '15px', cursor: 'pointer', fontWeight: 'bold' }}>
-                로그인 하러 가기
-              </button>
-            )}
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#495057', display: 'block', marginBottom: '6px' }}>이름</label>
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="이름을 입력해주세요" style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#f8f9fa' }} onFocus={(e) => { e.target.style.borderColor = '#00c471'; e.target.style.background = 'white'; }} onBlur={(e) => { e.target.style.borderColor = '#e9ecef'; e.target.style.background = '#f8f9fa'; }} />
+            </div>
+            <div>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: '#495057', display: 'block', marginBottom: '6px' }}>휴대폰 번호</label>
+              <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="010-0000-0000" type="tel" style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid #e9ecef', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#f8f9fa' }} onFocus={(e) => { e.target.style.borderColor = '#00c471'; e.target.style.background = 'white'; }} onBlur={(e) => { e.target.style.borderColor = '#e9ecef'; e.target.style.background = '#f8f9fa'; }} />
+            </div>
+            <button onClick={tab === 'id' ? handleFindId : handleFindPassword} style={{ padding: '16px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '14px', fontSize: '16px', cursor: 'pointer', fontWeight: '800', marginTop: '8px', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
+              {tab === 'id' ? '아이디 찾기' : '임시 비밀번호 발급'}
+            </button>
+            <button onClick={onBack} style={{ padding: '14px', background: '#f1f3f5', color: '#495057', border: 'none', borderRadius: '14px', fontSize: '15px', cursor: 'pointer', fontWeight: '700' }}>
+              로그인으로 돌아가기
+            </button>
           </div>
-        )}
-
-        {/* 결과 메시지 */}
-        {result && (
-          <div style={{ marginTop: '16px', padding: '12px', background: result.type === 'success' ? '#e8f5e9' : '#ffebee', borderRadius: '8px', border: '1px solid ' + (result.type === 'success' ? '#c8e6c9' : '#ffcdd2') }}>
-            <p style={{ margin: 0, fontSize: '14px', color: result.type === 'success' ? '#2e7d32' : '#e53935' }}>{result.message}</p>
-          </div>
-        )}
-
-        {/* 뒤로가기 */}
-        {step !== 3 && (
-          <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px' }}>
-            <span onClick={onBack} style={{ color: '#2e7d32', cursor: 'pointer', fontWeight: 'bold' }}>
-              ← 로그인으로 돌아가기
-            </span>
-          </p>
         )}
       </div>
     </div>
