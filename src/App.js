@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import srmLogo from './srm_logo.png';
+
+// 기존 페이지들
 import Admin from './pages/Admin';
 import Login from './pages/Login';
 import Orders from './pages/Orders';
@@ -19,6 +21,18 @@ import PrintReceipt from './pages/PrintReceipt';
 import SalesStats from './pages/SalesStats';
 import MyPage from './pages/MyPage';
 import BannerManager from './pages/BannerManager';
+
+// PC 관리자 페이지들
+import Dashboard from './components/admin/Dashboard';
+import OrderManagement from './components/admin/OrderManagement';
+import { ProductManagement, InventoryManagement } from './components/admin/ProductAndInventory';
+import {
+  MemberManagement as AdminMembers,
+  ReviewManagement as AdminReviews,
+  SalesStats as AdminSalesStats,
+  KakaoPaySettlement,
+  Settings as AdminSettings,
+} from './components/admin/OtherPages';
 
 const initialProducts = [
   { id: 1, name: '신선 사과', price: 5000, large: '식품', medium: '신선식품', small: '과일', image: null },
@@ -68,6 +82,15 @@ function App() {
   const [wishlist, setWishlist] = useState([]);
   const [notices, setNotices] = useState([]);
   const [orders, setOrders] = useState([]);
+
+  // ✅ 다크모드 상태 — App.js에서 한 곳에서만 관리
+  const [adminDark, setAdminDark] = useState(() => localStorage.getItem('srmart_admin_dark') === 'true');
+
+  // 다크모드 바뀔 때마다 브라우저에 저장
+  useEffect(() => {
+    localStorage.setItem('srmart_admin_dark', adminDark);
+  }, [adminDark]);
+
   const [users, setUsers] = useState(() => {
     const saved = localStorage.getItem('srmart_users');
     return saved ? JSON.parse(saved) : [
@@ -255,6 +278,24 @@ function App() {
     );
   }
 
+  // ✅ PC 관리자 페이지 — dark, setDark를 모든 페이지에 props로 전달
+  const adminPCPages = ['adminPC','adminPC_orders','adminPC_products','adminPC_inventory','adminPC_members','adminPC_reviews','adminPC_stats','adminPC_settlement','adminPC_settings'];
+  if (adminPCPages.includes(page)) {
+    return (
+      <>
+        {page === 'adminPC'            && <Dashboard        setPage={goToPage} dark={adminDark} setDark={setAdminDark} />}
+        {page === 'adminPC_orders'     && <OrderManagement  setPage={goToPage} dark={adminDark} setDark={setAdminDark} />}
+        {page === 'adminPC_products'   && <ProductManagement setPage={goToPage} dark={adminDark} setDark={setAdminDark} />}
+        {page === 'adminPC_inventory'  && <InventoryManagement setPage={goToPage} dark={adminDark} setDark={setAdminDark} />}
+        {page === 'adminPC_members'    && <AdminMembers     setPage={goToPage} dark={adminDark} setDark={setAdminDark} />}
+        {page === 'adminPC_reviews'    && <AdminReviews     setPage={goToPage} dark={adminDark} setDark={setAdminDark} />}
+        {page === 'adminPC_stats'      && <AdminSalesStats  setPage={goToPage} dark={adminDark} setDark={setAdminDark} />}
+        {page === 'adminPC_settlement' && <KakaoPaySettlement setPage={goToPage} dark={adminDark} setDark={setAdminDark} />}
+        {page === 'adminPC_settings'   && <AdminSettings    setPage={goToPage} dark={adminDark} setDark={setAdminDark} />}
+      </>
+    );
+  }
+
   return (
     <div className="App">
       {/* 헤더 */}
@@ -299,7 +340,6 @@ function App() {
       <div className="main-content">
         {page === 'home' && (
           <>
-            {/* 배너 슬라이드 */}
             <div style={{ padding: '16px' }}>
               <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', transition: bannerTransition ? '-webkit-transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none', WebkitTransform: `translateX(-${bannerIndex * 100}%)`, transform: `translateX(-${bannerIndex * 100}%)`, willChange: 'transform' }}>
@@ -322,7 +362,6 @@ function App() {
                     </div>
                   ))}
                 </div>
-                {/* 슬라이드 인디케이터 */}
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
                   {banners.map((_, i) => (
                     <button key={i} onClick={() => { setBannerTransition(true); setBannerIndex(i); }} style={{ width: (bannerIndex % banners.length) === i ? '20px' : '8px', height: '8px', background: bannerIndex === i ? '#00c471' : '#dee2e6', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: 0, transition: 'all 0.3s' }} />
@@ -331,7 +370,6 @@ function App() {
               </div>
             </div>
 
-            {/* 카테고리 필터 */}
             <div style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto' }}>
               {['전체', ...categories.map((c) => c.name)].map((name) => (
                 <button key={name} onClick={() => { setFilterLarge(name); setFilterMedium('전체'); setFilterSmall('전체'); }} style={{ padding: '8px 18px', background: filterLarge === name ? '#00c471' : 'white', color: filterLarge === name ? 'white' : '#495057', border: filterLarge === name ? 'none' : '1.5px solid #e9ecef', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0, boxShadow: filterLarge === name ? '0 2px 8px rgba(0,196,113,0.3)' : 'none' }}>
@@ -340,7 +378,6 @@ function App() {
               ))}
             </div>
 
-            {/* 중분류 */}
             {selectedLargeObj && selectedLargeObj.children.length > 0 && (
               <div style={{ padding: '4px 16px', display: 'flex', gap: '8px', overflowX: 'auto' }}>
                 {['전체', ...selectedLargeObj.children.map((m) => m.name)].map((name) => (
@@ -351,7 +388,6 @@ function App() {
               </div>
             )}
 
-            {/* 소분류 */}
             {selectedMediumObj && selectedMediumObj.children.length > 0 && (
               <div style={{ padding: '4px 16px', display: 'flex', gap: '8px', overflowX: 'auto' }}>
                 {['전체', ...selectedMediumObj.children].map((name) => (
@@ -362,7 +398,6 @@ function App() {
               </div>
             )}
 
-            {/* 상품 목록 헤더 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px 8px' }}>
               <p style={{ fontSize: '16px', fontWeight: '700', color: '#212529', margin: 0 }}>
                 {filterLarge === '전체' ? '전체 상품' : filterLarge} ({filteredProducts.length}개)
@@ -375,7 +410,6 @@ function App() {
               </select>
             </div>
 
-            {/* 상품 그리드 */}
             {filteredProducts.length === 0 ? (
               <div className="empty-state">
                 <span className="empty-state-icon">🛍️</span>
@@ -413,83 +447,48 @@ function App() {
           </>
         )}
 
-        {page === 'notice' && <Notice notices={notices} setNotices={setNotices} isAdmin={isAdmin} goBack={goBack} />}
-        {page === 'wishlist' && <Wishlist wishlist={wishlist} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWishlist={toggleWishlist} />}
-        {page === 'search' && <Search products={products} categories={categories} goBack={goBack} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} />}
+        {page === 'notice'        && <Notice notices={notices} setNotices={setNotices} isAdmin={isAdmin} goBack={goBack} />}
+        {page === 'wishlist'      && <Wishlist wishlist={wishlist} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWishlist={toggleWishlist} />}
+        {page === 'search'        && <Search products={products} categories={categories} goBack={goBack} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} />}
         {page === 'productDetail' && <ProductDetail product={selectedProduct} onBack={goBack} onAddToCart={addToCart} />}
-        {page === 'cart' && <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} coupons={coupons} appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon} />}
-        {page === 'orders' && <Orders orders={orders} goBack={goBack} />}
-        {page === 'receipt' && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
+        {page === 'cart'          && <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} coupons={coupons} appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon} />}
+        {page === 'orders'        && <Orders orders={orders} goBack={goBack} />}
+        {page === 'receipt'       && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
         {page === 'couponManager' && <CouponManager coupons={coupons} setCoupons={setCoupons} goBack={goBack} />}
-        {page === 'salesStats' && <SalesStats orders={orders} products={products} goBack={goBack} />}
-        {page === 'adminHome' && <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} />}
-        {page === 'members' && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} />}
-        {page === 'adminOrders' && <AdminOrders orders={orders} setOrders={setOrders} goBack={goBack} onPrint={(order) => setPrintOrder(order)} />}
-        {page === 'mypage' && <MyPage user={user} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} />}
+        {page === 'salesStats'    && <SalesStats orders={orders} products={products} goBack={goBack} />}
+        {page === 'adminHome'     && <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} />}
+        {page === 'members'       && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} />}
+        {page === 'adminOrders'   && <AdminOrders orders={orders} setOrders={setOrders} goBack={goBack} onPrint={(order) => setPrintOrder(order)} />}
+        {page === 'mypage'        && <MyPage user={user} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} />}
         {page === 'bannerManager' && <BannerManager banners={banners} setBanners={setBanners} categories={categories} goBack={goBack} />}
-        {page === 'admin' && <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} messages={messages} setMessages={() => {}} goBack={goBack} />}
+        {page === 'admin'         && <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} messages={messages} setMessages={() => {}} goBack={goBack} />}
       </div>
 
       {/* 고객 하단 탭 */}
       {!isAdmin && (
         <nav className="bottom-nav">
-          <button className={'bottom-nav-item' + (page === 'home' ? ' active' : '')} onClick={() => goToPage('home')}>
-            <span>🏠</span>
-            <span>홈</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'notice' ? ' active' : '')} onClick={() => user ? goToPage('notice') : requireLogin()}>
-            <span>📢{!user && <span style={{ fontSize: '8px' }}>🔒</span>}</span>
-            <span>공지</span>
-          </button>
+          <button className={'bottom-nav-item' + (page === 'home' ? ' active' : '')} onClick={() => goToPage('home')}><span>🏠</span><span>홈</span></button>
+          <button className={'bottom-nav-item' + (page === 'notice' ? ' active' : '')} onClick={() => user ? goToPage('notice') : requireLogin()}><span>📢{!user && <span style={{ fontSize: '8px' }}>🔒</span>}</span><span>공지</span></button>
           <button className={'bottom-nav-item' + (page === 'cart' ? ' active' : '')} onClick={() => user ? goToPage('cart') : requireLogin()}>
-            <span style={{ position: 'relative' }}>
-              🛒{!user && <span style={{ fontSize: '8px' }}>🔒</span>}
-              {cart.length > 0 && <span className="badge">{cart.length}</span>}
-            </span>
+            <span style={{ position: 'relative' }}>🛒{!user && <span style={{ fontSize: '8px' }}>🔒</span>}{cart.length > 0 && <span className="badge">{cart.length}</span>}</span>
             <span>장바구니</span>
           </button>
-          <button className={'bottom-nav-item' + (page === 'wishlist' ? ' active' : '')} onClick={() => user ? goToPage('wishlist') : requireLogin()}>
-            <span>❤️{!user && <span style={{ fontSize: '8px' }}>🔒</span>}</span>
-            <span>찜</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'mypage' ? ' active' : '')} onClick={() => user ? goToPage('mypage') : requireLogin()}>
-            <span>👤{!user && <span style={{ fontSize: '8px' }}>🔒</span>}</span>
-            <span>마이</span>
-          </button>
+          <button className={'bottom-nav-item' + (page === 'wishlist' ? ' active' : '')} onClick={() => user ? goToPage('wishlist') : requireLogin()}><span>❤️{!user && <span style={{ fontSize: '8px' }}>🔒</span>}</span><span>찜</span></button>
+          <button className={'bottom-nav-item' + (page === 'mypage' ? ' active' : '')} onClick={() => user ? goToPage('mypage') : requireLogin()}><span>👤{!user && <span style={{ fontSize: '8px' }}>🔒</span>}</span><span>마이</span></button>
         </nav>
       )}
 
       {/* 관리자 하단 탭 */}
       {isAdmin && (
         <nav className="bottom-nav">
-          <button className={'bottom-nav-item' + (page === 'adminHome' ? ' active' : '')} onClick={() => goToPage('adminHome')}>
-            <span>🏠</span>
-            <span>대시보드</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'notice' ? ' active' : '')} onClick={() => goToPage('notice')}>
-            <span>📢</span>
-            <span>공지</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'bannerManager' ? ' active' : '')} onClick={() => goToPage('bannerManager')}>
-            <span>🖼️</span>
-            <span>배너관리</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'couponManager' ? ' active' : '')} onClick={() => goToPage('couponManager')}>
-            <span>🎟️</span>
-            <span>쿠폰관리</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'salesStats' ? ' active' : '')} onClick={() => goToPage('salesStats')}>
-            <span>📊</span>
-            <span>매출통계</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'admin' ? ' active' : '')} onClick={() => goToPage('admin')}>
-            <span>📦</span>
-            <span>상품관리</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'members' ? ' active' : '')} onClick={() => goToPage('members')}>
-            <span>👥</span>
-            <span>회원관리</span>
-          </button>
+          <button className={'bottom-nav-item' + (page === 'adminHome' ? ' active' : '')} onClick={() => goToPage('adminHome')}><span>🏠</span><span>대시보드</span></button>
+          <button className={'bottom-nav-item' + (page === 'notice' ? ' active' : '')} onClick={() => goToPage('notice')}><span>📢</span><span>공지</span></button>
+          <button className={'bottom-nav-item' + (page === 'bannerManager' ? ' active' : '')} onClick={() => goToPage('bannerManager')}><span>🖼️</span><span>배너관리</span></button>
+          <button className={'bottom-nav-item' + (page === 'couponManager' ? ' active' : '')} onClick={() => goToPage('couponManager')}><span>🎟️</span><span>쿠폰관리</span></button>
+          <button className={'bottom-nav-item' + (page === 'salesStats' ? ' active' : '')} onClick={() => goToPage('salesStats')}><span>📊</span><span>매출통계</span></button>
+          <button className={'bottom-nav-item' + (page === 'admin' ? ' active' : '')} onClick={() => goToPage('admin')}><span>📦</span><span>상품관리</span></button>
+          <button className={'bottom-nav-item' + (page === 'members' ? ' active' : '')} onClick={() => goToPage('members')}><span>👥</span><span>회원관리</span></button>
+          <button className="bottom-nav-item" onClick={() => goToPage('adminPC')}><span>🖥️</span><span>PC관리</span></button>
         </nav>
       )}
 
