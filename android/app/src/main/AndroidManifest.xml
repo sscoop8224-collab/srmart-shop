@@ -30,6 +30,19 @@
     </application>
 
     <!-- Permissions -->
-
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- ✅ 카메라 권한 -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.front" android:required="false" />
+
+    <!-- ✅ 저장소 권한 (이미지 업로드용) -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+
+    <!-- ✅ 진동 권한 (바코드 스캔 피드백용) -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
 </manifest>

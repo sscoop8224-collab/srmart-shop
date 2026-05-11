@@ -137,7 +137,7 @@ function Login({ onLogin, onGuest }) {
                 <input name="phone" value={form.phone} onChange={handleChange} placeholder="010-0000-0000" type="tel" style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
               </div>
               <div>
-                <label style={labelStyle}>주소 (선택)</label>
+                <label style={labelStyle}>주소</label>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
                   <input name="address" value={form.address} readOnly placeholder="주소 검색 버튼을 눌러주세요" style={{ ...inputStyle, flex: 1 }} />
                   <button type="button" onClick={() => {

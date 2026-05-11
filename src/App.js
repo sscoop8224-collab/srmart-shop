@@ -35,12 +35,12 @@ import {
 } from './components/admin/OtherPages';
 
 const initialProducts = [
-  { id: 1, name: '신선 사과', price: 5000, large: '식품', medium: '신선식품', small: '과일', image: null },
-  { id: 2, name: '제주 감귤', price: 8000, large: '식품', medium: '신선식품', small: '과일', image: null },
-  { id: 3, name: '세탁 세제', price: 12000, large: '생활용품', medium: '세탁/청소', small: '세제', image: null },
-  { id: 4, name: '콜라 1.5L', price: 3000, large: '음료', medium: '탄산음료', small: '', image: null },
-  { id: 5, name: '냉동 만두', price: 7000, large: '식품', medium: '가공식품', small: '냉동식품', image: null },
-  { id: 6, name: '포카칩', price: 2500, large: '간식/과자', medium: '과자/스낵', small: '', image: null },
+  { id: 1, name: '신선 사과', price: 5000, large: '식품', medium: '신선식품', small: '과일', image: null, stock: 50, barcode: '', images: [], status: '판매중' },
+  { id: 2, name: '제주 감귤', price: 8000, large: '식품', medium: '신선식품', small: '과일', image: null, stock: 30, barcode: '', images: [], status: '판매중' },
+  { id: 3, name: '세탁 세제', price: 12000, large: '생활용품', medium: '세탁/청소', small: '세제', image: null, stock: 20, barcode: '', images: [], status: '판매중' },
+  { id: 4, name: '콜라 1.5L', price: 3000, large: '음료', medium: '탄산음료', small: '', image: null, stock: 100, barcode: '', images: [], status: '판매중' },
+  { id: 5, name: '냉동 만두', price: 7000, large: '식품', medium: '가공식품', small: '냉동식품', image: null, stock: 15, barcode: '', images: [], status: '판매중' },
+  { id: 6, name: '포카칩', price: 2500, large: '간식/과자', medium: '과자/스낵', small: '', image: null, stock: 0, barcode: '', images: [], status: '판매중지' },
 ];
 
 const initialCategories = [
@@ -83,10 +83,8 @@ function App() {
   const [notices, setNotices] = useState([]);
   const [orders, setOrders] = useState([]);
 
-  // ✅ 다크모드 상태 — App.js에서 한 곳에서만 관리
+  // 다크모드 상태 — App.js 한 곳에서만 관리
   const [adminDark, setAdminDark] = useState(() => localStorage.getItem('srmart_admin_dark') === 'true');
-
-  // 다크모드 바뀔 때마다 브라우저에 저장
   useEffect(() => {
     localStorage.setItem('srmart_admin_dark', adminDark);
   }, [adminDark]);
@@ -278,20 +276,77 @@ function App() {
     );
   }
 
-  // ✅ PC 관리자 페이지 — dark, setDark를 모든 페이지에 props로 전달
+  // ✅ PC 관리자 페이지 — 실제 데이터 props로 전달
   const adminPCPages = ['adminPC','adminPC_orders','adminPC_products','adminPC_inventory','adminPC_members','adminPC_reviews','adminPC_stats','adminPC_settlement','adminPC_settings'];
   if (adminPCPages.includes(page)) {
     return (
       <>
-        {page === 'adminPC'            && <Dashboard        setPage={goToPage} dark={adminDark} setDark={setAdminDark} />}
-        {page === 'adminPC_orders'     && <OrderManagement  setPage={goToPage} dark={adminDark} setDark={setAdminDark} />}
-        {page === 'adminPC_products'   && <ProductManagement setPage={goToPage} dark={adminDark} setDark={setAdminDark} />}
-        {page === 'adminPC_inventory'  && <InventoryManagement setPage={goToPage} dark={adminDark} setDark={setAdminDark} />}
-        {page === 'adminPC_members'    && <AdminMembers     setPage={goToPage} dark={adminDark} setDark={setAdminDark} />}
-        {page === 'adminPC_reviews'    && <AdminReviews     setPage={goToPage} dark={adminDark} setDark={setAdminDark} />}
-        {page === 'adminPC_stats'      && <AdminSalesStats  setPage={goToPage} dark={adminDark} setDark={setAdminDark} />}
-        {page === 'adminPC_settlement' && <KakaoPaySettlement setPage={goToPage} dark={adminDark} setDark={setAdminDark} />}
-        {page === 'adminPC_settings'   && <AdminSettings    setPage={goToPage} dark={adminDark} setDark={setAdminDark} />}
+        {page === 'adminPC' && (
+          <Dashboard
+            setPage={goToPage}
+            dark={adminDark} setDark={setAdminDark}
+            products={products}
+            orders={orders}
+            users={users}
+          />
+        )}
+        {page === 'adminPC_orders' && (
+          <OrderManagement
+            setPage={goToPage}
+            dark={adminDark} setDark={setAdminDark}
+            orders={orders} setOrders={setOrders}
+          />
+        )}
+        {page === 'adminPC_products' && (
+          <ProductManagement
+            setPage={goToPage}
+            dark={adminDark} setDark={setAdminDark}
+            products={products} setProducts={setProducts}
+            categories={categories}
+          />
+        )}
+        {page === 'adminPC_inventory' && (
+          <InventoryManagement
+            setPage={goToPage}
+            dark={adminDark} setDark={setAdminDark}
+            products={products} setProducts={setProducts}
+          />
+        )}
+        {page === 'adminPC_members' && (
+          <AdminMembers
+            setPage={goToPage}
+            dark={adminDark} setDark={setAdminDark}
+            users={users} setUsers={setUsers}
+          />
+        )}
+        {page === 'adminPC_reviews' && (
+          <AdminReviews
+            setPage={goToPage}
+            dark={adminDark} setDark={setAdminDark}
+          />
+        )}
+        {page === 'adminPC_stats' && (
+          <AdminSalesStats
+            setPage={goToPage}
+            dark={adminDark} setDark={setAdminDark}
+            orders={orders}
+            products={products}
+          />
+        )}
+        {page === 'adminPC_settlement' && (
+          <KakaoPaySettlement
+            setPage={goToPage}
+            dark={adminDark} setDark={setAdminDark}
+            orders={orders}
+          />
+        )}
+        {page === 'adminPC_settings' && (
+          <AdminSettings
+            setPage={goToPage}
+            dark={adminDark} setDark={setAdminDark}
+            users={users} setUsers={setUsers}
+          />
+        )}
       </>
     );
   }
