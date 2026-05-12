@@ -560,7 +560,6 @@ function App() {
 
       <footer style={{ textAlign: 'center', padding: '16px', fontSize: '12px', color: 'var(--gray-400)', borderTop: '1px solid var(--gray-200)' }}>
         © 2026 Dongsin Market. All rights reserved.
-      <Chatbot />
       </footer>
     </div>
   );
