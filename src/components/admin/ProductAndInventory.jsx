@@ -80,22 +80,110 @@ function normalizeProduct(p) {
 }
 
 // =============================================
+// 카메라 스캔 컴포넌트 — html5-qrcode 사용
+// =============================================
+function CameraScanner({ onDetected, onError, c, s }) {
+  const [active, setActive] = useState(false);
+  const [error, setError] = useState('');
+  const scannerRef = useRef(null);
+  const SCANNER_ID = 'srmart-barcode-scanner';
+
+  const startScanner = async () => {
+    setError('');
+    try {
+      const { Html5Qrcode } = await import('html5-qrcode');
+      const scanner = new Html5Qrcode(SCANNER_ID);
+      scannerRef.current = scanner;
+
+      await scanner.start(
+        { facingMode: 'environment' },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 120 },
+          aspectRatio: 1.5,
+        },
+        (decodedText) => {
+          // 스캔 성공
+          if (navigator.vibrate) navigator.vibrate(100);
+          onDetected(decodedText);
+        },
+        () => {
+          // 스캔 중 오류 무시 (매 프레임마다 발생)
+        }
+      );
+      setActive(true);
+    } catch (err) {
+      const msg = err.message || String(err);
+      if (msg.includes('permission') || msg.includes('Permission')) {
+        setError('카메라 권한이 없어요. 브라우저 설정에서 카메라를 허용해주세요.');
+      } else {
+        setError('카메라를 시작할 수 없어요: ' + msg);
+      }
+      onError && onError(msg);
+    }
+  };
+
+  const stopScanner = async () => {
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+        scannerRef.current.clear();
+      } catch {}
+      scannerRef.current = null;
+    }
+    setActive(false);
+  };
+
+  useEffect(() => {
+    return () => { stopScanner(); };
+  }, []);
+
+  return (
+    <div>
+      {!active ? (
+        <div>
+          <div style={{ background: '#e6f1fb', border: '1px solid #85b7eb', borderRadius: 10, padding: 14, marginBottom: 16, fontSize: 12, color: '#185fa5', lineHeight: 1.7 }}>
+            <div style={{ fontWeight: 600, marginBottom: 6 }}>📷 카메라 바코드 스캔</div>
+            <div>카메라로 상품 바코드를 비추면 자동으로 인식해요</div>
+            <div>EAN-13, EAN-8, Code-128, UPC 등 지원</div>
+            <div style={{ marginTop: 6, fontSize: 11, color: '#444' }}>※ 카메라 권한 허용이 필요해요</div>
+          </div>
+          {error && (
+            <div style={{ background: '#fcebeb', border: '1px solid #f09595', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: '#a32d2d', marginBottom: 12 }}>
+              ⚠️ {error}
+            </div>
+          )}
+          <button style={{ ...s.btnPrimary, width: '100%', justifyContent: 'center', padding: '12px' }} onClick={startScanner}>
+            📷 카메라 시작
+          </button>
+        </div>
+      ) : (
+        <div>
+          {/* html5-qrcode가 여기에 카메라를 렌더링해요 */}
+          <div
+            id={SCANNER_ID}
+            style={{ width: '100%', borderRadius: 12, overflow: 'hidden', marginBottom: 12 }}
+          />
+          <button style={{ ...s.btn, width: '100%', justifyContent: 'center' }} onClick={stopScanner}>
+            ⏹ 카메라 종료
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =============================================
 // 재고 실사 모드 컴포넌트
 // =============================================
 function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose }) {
-  const [scanMode, setScanMode] = useState('barcode'); // 'barcode' | 'camera' | 'manual'
+  const [scanMode, setScanMode] = useState('barcode');
   const [barcodeInput, setBarcodeInput] = useState('');
   const [manualSearch, setManualSearch] = useState('');
-  const [scanList, setScanList] = useState([]); // 실사 목록 [{id, name, barcode, prevStock, newStock}]
+  const [scanList, setScanList] = useState([]);
   const [scanMsg, setScanMsg] = useState('');
-  const [cameraActive, setCameraActive] = useState(false);
-  const [cameraError, setCameraError] = useState('');
-  const videoRef = useRef(null);
-  const streamRef = useRef(null);
-  const scannerRef = useRef(null);
   const barcodeInputRef = useRef(null);
 
-  // 바코드로 상품 찾기
   const findByBarcode = useCallback((code) => {
     if (!code.trim()) return null;
     return rawProducts.find(p =>
@@ -105,7 +193,6 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
     );
   }, [rawProducts]);
 
-  // 상품명으로 찾기
   const findByName = (keyword) => {
     if (!keyword.trim()) return [];
     return rawProducts.filter(p =>
@@ -113,16 +200,14 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
     );
   };
 
-  // 실사 목록에 상품 추가/수량 증가
   const addToScanList = useCallback((product) => {
     setScanList(prev => {
       const exists = prev.find(i => i.id === product.id);
       if (exists) {
-        // 이미 있으면 수량 +1
-        setScanMsg(`✅ ${product.name} — 스캔 누적 ${exists.newStock + 1}개`);
+        setScanMsg(`✅ ${product.name} — 누적 ${exists.newStock + 1}개`);
         return prev.map(i => i.id === product.id ? { ...i, newStock: i.newStock + 1 } : i);
       } else {
-        setScanMsg(`✅ ${product.name} — 실사 목록에 추가됨`);
+        setScanMsg(`✅ ${product.name} — 추가됨`);
         return [...prev, {
           id: product.id,
           name: product.name,
@@ -136,7 +221,17 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
     setTimeout(() => setScanMsg(''), 2000);
   }, []);
 
-  // 바코드 스캐너/PDA 입력 처리 (엔터키)
+  // 카메라 스캔 성공 콜백
+  const handleCameraDetected = useCallback((code) => {
+    const found = findByBarcode(code);
+    if (found) {
+      addToScanList(found);
+    } else {
+      setScanMsg(`❌ '${code}' — 등록되지 않은 바코드예요`);
+      setTimeout(() => setScanMsg(''), 2500);
+    }
+  }, [findByBarcode, addToScanList]);
+
   const handleBarcodeEnter = (e) => {
     if (e.key === 'Enter') {
       const code = barcodeInput.trim();
@@ -152,95 +247,21 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
     }
   };
 
-  // 카메라 시작
-  const startCamera = async () => {
-    setCameraError('');
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
-      setCameraActive(true);
-
-      // Quagga2로 바코드 인식
-      const Quagga = (await import('@ericblade/quagga2')).default;
-      scannerRef.current = Quagga;
-
-      Quagga.init({
-        inputStream: {
-          type: 'LiveStream',
-          target: videoRef.current,
-          constraints: { facingMode: 'environment' },
-        },
-        decoder: {
-          readers: ['ean_reader', 'ean_8_reader', 'code_128_reader', 'code_39_reader', 'upc_reader', 'upc_e_reader'],
-        },
-        locate: true,
-      }, (err) => {
-        if (err) {
-          setCameraError('카메라 초기화 실패: ' + err.message);
-          return;
-        }
-        Quagga.start();
-      });
-
-      Quagga.onDetected((result) => {
-        const code = result.codeResult.code;
-        if (!code) return;
-        const found = findByBarcode(code);
-        if (found) {
-          addToScanList(found);
-          // 진동 피드백 (모바일)
-          if (navigator.vibrate) navigator.vibrate(100);
-        } else {
-          setScanMsg(`❌ '${code}' — 등록되지 않은 바코드예요`);
-          setTimeout(() => setScanMsg(''), 2000);
-        }
-      });
-
-    } catch (err) {
-      setCameraError('카메라 접근 권한이 없어요. 브라우저 설정에서 카메라를 허용해주세요.');
-    }
-  };
-
-  // 카메라 종료
-  const stopCamera = () => {
-    if (scannerRef.current) {
-      try { scannerRef.current.stop(); } catch {}
-      scannerRef.current = null;
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
-    }
-    setCameraActive(false);
-  };
-
-  // 모드 전환 시 카메라 종료
   useEffect(() => {
-    if (scanMode !== 'camera') stopCamera();
     if (scanMode === 'barcode') setTimeout(() => barcodeInputRef.current?.focus(), 100);
-    return () => stopCamera();
   }, [scanMode]);
 
-  // 실사 수량 직접 수정
   const updateQty = (id, val) => {
     const n = parseInt(val);
     if (isNaN(n) || n < 0) return;
     setScanList(prev => prev.map(i => i.id === id ? { ...i, newStock: n } : i));
   };
 
-  // 실사 목록에서 제거
   const removeFromList = (id) => setScanList(prev => prev.filter(i => i.id !== id));
 
-  // 실사 결과 일괄 저장
   const saveAll = () => {
     if (scanList.length === 0) return alert('실사된 상품이 없어요');
-    if (!window.confirm(`총 ${scanList.length}개 상품의 재고를 실사 결과로 업데이트하시겠어요?`)) return;
+    if (!window.confirm(`총 ${scanList.length}개 상품의 재고를 업데이트하시겠어요?`)) return;
     if (setRawProducts) {
       setRawProducts(prev => prev.map(p => {
         const scanned = scanList.find(i => i.id === p.id);
@@ -264,8 +285,7 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: c.bg, zIndex: 200, display: 'flex', flexDirection: 'column', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-
-      {/* 실사 모드 헤더 */}
+      {/* 헤더 */}
       <div style={{ background: c.topbarBg, borderBottom: `1px solid ${c.topbarBorder}`, paddingLeft: 24, paddingRight: 24, paddingTop: 'max(12px, env(safe-area-inset-top))', paddingBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: c.textPrimary }}>📋 재고 실사 모드</div>
@@ -273,21 +293,19 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {scanList.length > 0 && <button style={s.btnPrimary} onClick={saveAll}>💾 저장 ({scanList.length})</button>}
-          <button style={s.btn} onClick={() => { stopCamera(); onClose(); }}>✕ 닫기</button>
+          <button style={s.btn} onClick={onClose}>✕ 닫기</button>
         </div>
       </div>
 
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-
-        {/* 왼쪽 — 스캔 입력 영역 */}
+        {/* 왼쪽 — 스캔 영역 */}
         <div style={{ width: 360, borderRight: `1px solid ${c.cardBorder}`, display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-
-          {/* 스캔 방법 탭 */}
+          {/* 탭 */}
           <div style={{ display: 'flex', borderBottom: `1px solid ${c.cardBorder}`, background: c.cardBg }}>
             {[
               { key: 'barcode', label: '📡 스캐너/PDA', desc: '방법 1·3' },
-              { key: 'camera', label: '📷 카메라', desc: '방법 2' },
-              { key: 'manual', label: '🔍 수동검색', desc: '직접입력' },
+              { key: 'camera',  label: '📷 카메라',     desc: '방법 2' },
+              { key: 'manual',  label: '🔍 수동검색',   desc: '직접입력' },
             ].map(tab => (
               <div key={tab.key} onClick={() => setScanMode(tab.key)} style={{ flex: 1, padding: '10px 8px', textAlign: 'center', cursor: 'pointer', borderBottom: scanMode === tab.key ? `2px solid ${sg}` : '2px solid transparent', background: scanMode === tab.key ? sgl : 'transparent', marginBottom: -1 }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: scanMode === tab.key ? sgd : c.textSecondary }}>{tab.label}</div>
@@ -296,10 +314,9 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
             ))}
           </div>
 
-          {/* 스캔 입력 영역 */}
           <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
 
-            {/* 방법 1·3: 바코드 스캐너/PDA 입력 */}
+            {/* 스캐너/PDA */}
             {scanMode === 'barcode' && (
               <div>
                 <div style={{ background: dark ? '#1a3a2a' : sgl, border: `1px solid ${sg}`, borderRadius: 10, padding: 14, marginBottom: 16, fontSize: 12, color: sgd, lineHeight: 1.7 }}>
@@ -309,74 +326,41 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
                   <div>③ 상품 바코드를 스캔하면 자동 입력돼요</div>
                   <div style={{ marginTop: 6, color: c.textSecondary, fontSize: 11 }}>※ PDA는 크롬 브라우저에서 이 페이지를 열면 동일하게 작동해요</div>
                 </div>
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 12, color: c.textSecondary, marginBottom: 6 }}>바코드 입력 (스캔 또는 직접 입력 후 Enter)</div>
-                  <input
-                    ref={barcodeInputRef}
-                    style={{ ...s.formInput, fontSize: 16, padding: '12px 14px', border: `2px solid ${sg}` }}
-                    placeholder="바코드를 스캔하세요..."
-                    value={barcodeInput}
-                    onChange={e => setBarcodeInput(e.target.value)}
-                    onKeyDown={handleBarcodeEnter}
-                    autoFocus
-                  />
-                </div>
+                <div style={{ fontSize: 12, color: c.textSecondary, marginBottom: 6 }}>바코드 입력 (스캔 또는 직접 입력 후 Enter)</div>
+                <input
+                  ref={barcodeInputRef}
+                  style={{ ...s.formInput, fontSize: 16, padding: '12px 14px', border: `2px solid ${sg}` }}
+                  placeholder="바코드를 스캔하세요..."
+                  value={barcodeInput}
+                  onChange={e => setBarcodeInput(e.target.value)}
+                  onKeyDown={handleBarcodeEnter}
+                  autoFocus
+                />
                 {scanMsg && (
-                  <div style={{ padding: '8px 12px', borderRadius: 8, background: scanMsg.startsWith('✅') ? sgl : '#fcebeb', color: scanMsg.startsWith('✅') ? sgd : '#a32d2d', fontSize: 12, fontWeight: 500, marginBottom: 10 }}>
+                  <div style={{ padding: '8px 12px', borderRadius: 8, background: scanMsg.startsWith('✅') ? sgl : '#fcebeb', color: scanMsg.startsWith('✅') ? sgd : '#a32d2d', fontSize: 12, fontWeight: 500, marginTop: 10 }}>
                     {scanMsg}
                   </div>
                 )}
-                <div style={{ fontSize: 11, color: c.textTertiary }}>스캔할 때마다 아래 실사 목록에 자동으로 추가돼요</div>
+                <div style={{ fontSize: 11, color: c.textTertiary, marginTop: 8 }}>스캔할 때마다 실사 목록에 자동으로 추가돼요</div>
               </div>
             )}
 
-            {/* 방법 2: 카메라 스캔 */}
+            {/* ✅ 카메라 — html5-qrcode */}
             {scanMode === 'camera' && (
               <div>
-                {!cameraActive ? (
-                  <div>
-                    <div style={{ background: dark ? '#1a2a3a' : '#e6f1fb', border: '1px solid #85b7eb', borderRadius: 10, padding: 14, marginBottom: 16, fontSize: 12, color: '#185fa5', lineHeight: 1.7 }}>
-                      <div style={{ fontWeight: 600, marginBottom: 6 }}>📷 카메라 바코드 스캔</div>
-                      <div>카메라로 상품 바코드를 비추면 자동으로 인식해요</div>
-                      <div>EAN-13, EAN-8, Code-128, UPC 등 지원</div>
-                      <div style={{ marginTop: 6, fontSize: 11, color: c.textSecondary }}>※ 카메라 권한 허용이 필요해요</div>
-                    </div>
-                    {cameraError && (
-                      <div style={{ background: '#fcebeb', border: '1px solid #f09595', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: '#a32d2d', marginBottom: 12 }}>
-                        ⚠️ {cameraError}
-                      </div>
-                    )}
-                    <button style={{ ...s.btnPrimary, width: '100%', justifyContent: 'center', padding: '12px' }} onClick={startCamera}>
-                      📷 카메라 시작
-                    </button>
-                  </div>
-                ) : (
-                  <div>
-                    {/* 카메라 뷰파인더 */}
-                    <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', marginBottom: 12, background: '#000' }}>
-                      <video ref={videoRef} style={{ width: '100%', display: 'block', borderRadius: 12 }} muted playsInline autoPlay />
-                      {/* 스캔 가이드 라인 */}
-                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                        <div style={{ width: '70%', height: 2, background: 'rgba(0,196,113,0.8)', boxShadow: '0 0 8px rgba(0,196,113,0.8)' }} />
-                      </div>
-                      <div style={{ position: 'absolute', top: 8, left: 0, right: 0, textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>
-                        바코드를 녹색 선에 맞춰주세요
-                      </div>
-                    </div>
-                    {scanMsg && (
-                      <div style={{ padding: '8px 12px', borderRadius: 8, background: scanMsg.startsWith('✅') ? sgl : '#fcebeb', color: scanMsg.startsWith('✅') ? sgd : '#a32d2d', fontSize: 12, fontWeight: 500, marginBottom: 10 }}>
-                        {scanMsg}
-                      </div>
-                    )}
-                    <button style={{ ...s.btn, width: '100%', justifyContent: 'center' }} onClick={stopCamera}>
-                      ⏹ 카메라 종료
-                    </button>
+                <CameraScanner
+                  onDetected={handleCameraDetected}
+                  c={c} s={s}
+                />
+                {scanMsg && (
+                  <div style={{ padding: '8px 12px', borderRadius: 8, background: scanMsg.startsWith('✅') ? sgl : '#fcebeb', color: scanMsg.startsWith('✅') ? sgd : '#a32d2d', fontSize: 12, fontWeight: 500, marginTop: 10 }}>
+                    {scanMsg}
                   </div>
                 )}
               </div>
             )}
 
-            {/* 방법 3: 수동 검색 */}
+            {/* 수동검색 */}
             {scanMode === 'manual' && (
               <div>
                 <div style={{ background: dark ? '#252525' : '#f5f5f3', border: `1px solid ${c.cardBorder}`, borderRadius: 10, padding: 14, marginBottom: 16, fontSize: 12, color: c.textSecondary, lineHeight: 1.7 }}>
@@ -396,7 +380,7 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
                       <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: c.metricBg, borderRadius: 8, border: `1px solid ${c.cardBorder}` }}>
                         <div>
                           <div style={{ fontSize: 12, fontWeight: 600, color: c.textPrimary }}>{p.name}</div>
-                          <div style={{ fontSize: 10, color: c.textTertiary }}>재고 {p.stock ?? 0}개 · {p.barcode || 'バーコード없음'}</div>
+                          <div style={{ fontSize: 10, color: c.textTertiary }}>재고 {p.stock ?? 0}개 · {p.barcode || '바코드없음'}</div>
                         </div>
                         <button style={{ ...s.actionBtn, borderColor: sg, color: sgd, fontSize: 11 }} onClick={() => { addToScanList(normalizeProduct(p)); setManualSearch(''); }}>
                           + 추가
@@ -442,34 +426,20 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
                   const diff = item.newStock - item.prevStock;
                   return (
                     <div key={item.id} style={{ background: c.cardBg, border: `1px solid ${c.cardBorder}`, borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                      {/* 순번 */}
                       <div style={{ width: 24, height: 24, borderRadius: '50%', background: c.metricBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: c.textTertiary, fontWeight: 600, flexShrink: 0 }}>{idx + 1}</div>
-
-                      {/* 상품 정보 */}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 600, color: c.textPrimary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
                         <div style={{ fontSize: 10, color: c.textTertiary, marginTop: 2 }}>기존 재고: {item.prevStock}개</div>
                       </div>
-
-                      {/* 실사 수량 입력 */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                         <button onClick={() => updateQty(item.id, item.newStock - 1)} style={{ width: 26, height: 26, borderRadius: 6, border: `1px solid ${c.cardBorder}`, background: c.metricBg, color: c.textPrimary, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                        <input
-                          type="number"
-                          value={item.newStock}
-                          onChange={e => updateQty(item.id, e.target.value)}
-                          style={{ width: 52, textAlign: 'center', padding: '4px 6px', border: `1px solid ${c.inputBorder}`, borderRadius: 6, fontSize: 13, fontWeight: 600, background: c.inputBg, color: c.textPrimary, outline: 'none' }}
-                        />
+                        <input type="number" value={item.newStock} onChange={e => updateQty(item.id, e.target.value)} style={{ width: 52, textAlign: 'center', padding: '4px 6px', border: `1px solid ${c.inputBorder}`, borderRadius: 6, fontSize: 13, fontWeight: 600, background: c.inputBg, color: c.textPrimary, outline: 'none' }} />
                         <button onClick={() => updateQty(item.id, item.newStock + 1)} style={{ width: 26, height: 26, borderRadius: 6, border: `1px solid ${c.cardBorder}`, background: c.metricBg, color: c.textPrimary, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                         <span style={{ fontSize: 11, color: c.textTertiary, width: 20 }}>개</span>
                       </div>
-
-                      {/* 변화량 */}
                       <div style={{ width: 50, textAlign: 'center', fontSize: 11, fontWeight: 600, color: diff > 0 ? sgd : diff < 0 ? '#a32d2d' : c.textTertiary, flexShrink: 0 }}>
                         {diff > 0 ? `+${diff}` : diff < 0 ? `${diff}` : '±0'}
                       </div>
-
-                      {/* 삭제 */}
                       <button onClick={() => removeFromList(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: c.textTertiary, padding: 4, flexShrink: 0 }}>✕</button>
                     </div>
                   );
@@ -478,12 +448,9 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
             )}
           </div>
 
-          {/* 하단 저장 버튼 */}
           {scanList.length > 0 && (
             <div style={{ padding: '12px 16px', borderTop: `1px solid ${c.cardBorder}`, background: c.cardBg, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <div style={{ flex: 1, fontSize: 12, color: c.textSecondary, display: 'flex', alignItems: 'center' }}>
-                총 {scanList.length}개 상품 · 재고 변경 예정
-              </div>
+              <div style={{ flex: 1, fontSize: 12, color: c.textSecondary, display: 'flex', alignItems: 'center' }}>총 {scanList.length}개 상품 · 재고 변경 예정</div>
               <button style={s.btn} onClick={() => { if (window.confirm('실사 목록을 초기화하시겠어요?')) setScanList([]); }}>초기화</button>
               <button style={s.btnPrimary} onClick={saveAll}>💾 실사 결과 저장</button>
             </div>
@@ -698,7 +665,7 @@ export function InventoryManagement({ setPage, dark, setDark, products: rawProdu
   const [modalTab, setModalTab] = useState('receive');
   const [qty, setQty] = useState('');
   const [soldoutReason, setSoldoutReason] = useState('');
-  const [showStockTaking, setShowStockTaking] = useState(false); // ✅ 실사 모드
+  const [showStockTaking, setShowStockTaking] = useState(false);
 
   const filtered = inv.filter(p => {
     if (stockFilter && getStockStatus(p) !== stockFilter) return false;
@@ -742,30 +709,20 @@ export function InventoryManagement({ setPage, dark, setDark, products: rawProdu
 
   return (
     <>
-      {/* ✅ 재고 실사 모드 */}
       {showStockTaking && (
         <StockTakingMode
           c={c} s={s} dark={dark}
-          inv={inv}
-          rawProducts={rawProducts}
-          setRawProducts={setRawProducts}
+          inv={inv} rawProducts={rawProducts} setRawProducts={setRawProducts}
           onClose={() => setShowStockTaking(false)}
         />
       )}
-
       <div style={{ display: 'flex', height: '100vh', background: c.bg, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
         <Sidebar currentPage="adminPC_inventory" setPage={setPage} dark={dark} />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={s.topbar}>
             <div style={s.topbarTitle}>재고 관리</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              {/* ✅ 재고 실사 버튼 */}
-              <button
-                style={{ ...s.btnPrimary, background: '#534ab7' }}
-                onClick={() => setShowStockTaking(true)}
-              >
-                📋 재고 실사
-              </button>
+              <button style={{ ...s.btnPrimary, background: '#534ab7' }} onClick={() => setShowStockTaking(true)}>📋 재고 실사</button>
               <DarkToggle dark={dark} setDark={setDark} />
             </div>
           </div>
@@ -828,7 +785,6 @@ export function InventoryManagement({ setPage, dark, setDark, products: rawProdu
           </div>
         </div>
 
-        {/* 재고 관리 모달 */}
         {selected && (
           <div style={s.modalBg} onClick={() => setSelected(null)}>
             <div style={{ ...s.modal, width: 460 }} onClick={e => e.stopPropagation()}>
