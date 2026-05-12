@@ -80,30 +80,58 @@ function normalizeProduct(p) {
 }
 
 // =============================================
-// 카메라 스캔 컴포넌트 — html5-qrcode 사용
-// ✅ setActive(true) 먼저 → div 렌더링 후 → 스캐너 시작
+// 카메라 스캔 컴포넌트 — html5-qrcode
+// ✅ 인식률 향상 + 가로/세로 모드 자동 대응
 // =============================================
 function CameraScanner({ onDetected, c, s }) {
   const [active, setActive] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
   const scannerRef = useRef(null);
   const SCANNER_ID = 'srmart-barcode-scanner';
+
+  // 화면 방향 변경 감지
+  useEffect(() => {
+    const handleResize = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight);
+    };
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
+  }, []);
 
   const startScanner = async () => {
     setError('');
     setLoading(true);
-    // ✅ 1단계: 먼저 div를 화면에 렌더링
+    // 1단계: div 먼저 렌더링
     setActive(true);
-    // ✅ 2단계: div가 DOM에 마운트될 때까지 대기
+    // 2단계: DOM 마운트 대기
     await new Promise(resolve => setTimeout(resolve, 200));
     try {
       const { Html5Qrcode } = await import('html5-qrcode');
       const scanner = new Html5Qrcode(SCANNER_ID);
       scannerRef.current = scanner;
+
+      // ✅ 화면 방향에 따라 인식 박스 동적 조정
+      const landscape = window.innerWidth > window.innerHeight;
+      const boxWidth = landscape
+        ? Math.min(Math.round(window.innerWidth * 0.35), 400)
+        : Math.min(Math.round(window.innerWidth * 0.65), 300);
+      const boxHeight = Math.round(boxWidth * 0.45);
+
       await scanner.start(
         { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 120 }, aspectRatio: 1.5 },
+        {
+          fps: 30,
+          qrbox: { width: boxWidth, height: boxHeight },
+          aspectRatio: landscape ? window.innerWidth / window.innerHeight : 1.7,
+          disableFlip: false,
+          experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+        },
         (decodedText) => {
           if (navigator.vibrate) navigator.vibrate(100);
           onDetected(decodedText);
@@ -159,10 +187,17 @@ function CameraScanner({ onDetected, c, s }) {
         </div>
       ) : (
         <div>
-          {/* ✅ html5-qrcode가 이 div 안에 카메라를 렌더링해요 */}
+          {/* html5-qrcode가 이 div 안에 카메라를 렌더링해요 */}
           <div
             id={SCANNER_ID}
-            style={{ width: '100%', borderRadius: 12, overflow: 'hidden', marginBottom: 12, minHeight: 200, background: '#000' }}
+            style={{
+              width: '100%',
+              borderRadius: 12,
+              overflow: 'hidden',
+              marginBottom: 12,
+              minHeight: isLandscape ? 140 : 200,
+              background: '#000',
+            }}
           />
           {loading && (
             <div style={{ textAlign: 'center', fontSize: 12, color: '#666', marginBottom: 8 }}>
