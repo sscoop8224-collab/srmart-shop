@@ -81,45 +81,45 @@ function normalizeProduct(p) {
 
 // =============================================
 // 카메라 스캔 컴포넌트 — html5-qrcode 사용
+// ✅ setActive(true) 먼저 → div 렌더링 후 → 스캐너 시작
 // =============================================
-function CameraScanner({ onDetected, onError, c, s }) {
+function CameraScanner({ onDetected, c, s }) {
   const [active, setActive] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const scannerRef = useRef(null);
   const SCANNER_ID = 'srmart-barcode-scanner';
 
   const startScanner = async () => {
     setError('');
+    setLoading(true);
+    // ✅ 1단계: 먼저 div를 화면에 렌더링
+    setActive(true);
+    // ✅ 2단계: div가 DOM에 마운트될 때까지 대기
+    await new Promise(resolve => setTimeout(resolve, 200));
     try {
       const { Html5Qrcode } = await import('html5-qrcode');
       const scanner = new Html5Qrcode(SCANNER_ID);
       scannerRef.current = scanner;
-
       await scanner.start(
         { facingMode: 'environment' },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 120 },
-          aspectRatio: 1.5,
-        },
+        { fps: 10, qrbox: { width: 250, height: 120 }, aspectRatio: 1.5 },
         (decodedText) => {
-          // 스캔 성공
           if (navigator.vibrate) navigator.vibrate(100);
           onDetected(decodedText);
         },
-        () => {
-          // 스캔 중 오류 무시 (매 프레임마다 발생)
-        }
+        () => {}
       );
-      setActive(true);
     } catch (err) {
       const msg = err.message || String(err);
-      if (msg.includes('permission') || msg.includes('Permission')) {
+      if (msg.includes('permission') || msg.includes('Permission') || msg.includes('NotAllowed')) {
         setError('카메라 권한이 없어요. 브라우저 설정에서 카메라를 허용해주세요.');
       } else {
         setError('카메라를 시작할 수 없어요: ' + msg);
       }
-      onError && onError(msg);
+      setActive(false);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -159,11 +159,16 @@ function CameraScanner({ onDetected, onError, c, s }) {
         </div>
       ) : (
         <div>
-          {/* html5-qrcode가 여기에 카메라를 렌더링해요 */}
+          {/* ✅ html5-qrcode가 이 div 안에 카메라를 렌더링해요 */}
           <div
             id={SCANNER_ID}
-            style={{ width: '100%', borderRadius: 12, overflow: 'hidden', marginBottom: 12 }}
+            style={{ width: '100%', borderRadius: 12, overflow: 'hidden', marginBottom: 12, minHeight: 200, background: '#000' }}
           />
+          {loading && (
+            <div style={{ textAlign: 'center', fontSize: 12, color: '#666', marginBottom: 8 }}>
+              카메라 초기화 중...
+            </div>
+          )}
           <button style={{ ...s.btn, width: '100%', justifyContent: 'center' }} onClick={stopScanner}>
             ⏹ 카메라 종료
           </button>
@@ -221,7 +226,6 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
     setTimeout(() => setScanMsg(''), 2000);
   }, []);
 
-  // 카메라 스캔 성공 콜백
   const handleCameraDetected = useCallback((code) => {
     const found = findByBarcode(code);
     if (found) {
@@ -285,7 +289,6 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: c.bg, zIndex: 200, display: 'flex', flexDirection: 'column', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-      {/* 헤더 */}
       <div style={{ background: c.topbarBg, borderBottom: `1px solid ${c.topbarBorder}`, paddingLeft: 24, paddingRight: 24, paddingTop: 'max(12px, env(safe-area-inset-top))', paddingBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: c.textPrimary }}>📋 재고 실사 모드</div>
@@ -298,9 +301,7 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
       </div>
 
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* 왼쪽 — 스캔 영역 */}
         <div style={{ width: 360, borderRight: `1px solid ${c.cardBorder}`, display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-          {/* 탭 */}
           <div style={{ display: 'flex', borderBottom: `1px solid ${c.cardBorder}`, background: c.cardBg }}>
             {[
               { key: 'barcode', label: '📡 스캐너/PDA', desc: '방법 1·3' },
@@ -315,8 +316,6 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
-
-            {/* 스캐너/PDA */}
             {scanMode === 'barcode' && (
               <div>
                 <div style={{ background: dark ? '#1a3a2a' : sgl, border: `1px solid ${sg}`, borderRadius: 10, padding: 14, marginBottom: 16, fontSize: 12, color: sgd, lineHeight: 1.7 }}>
@@ -345,13 +344,9 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
               </div>
             )}
 
-            {/* ✅ 카메라 — html5-qrcode */}
             {scanMode === 'camera' && (
               <div>
-                <CameraScanner
-                  onDetected={handleCameraDetected}
-                  c={c} s={s}
-                />
+                <CameraScanner onDetected={handleCameraDetected} c={c} s={s} />
                 {scanMsg && (
                   <div style={{ padding: '8px 12px', borderRadius: 8, background: scanMsg.startsWith('✅') ? sgl : '#fcebeb', color: scanMsg.startsWith('✅') ? sgd : '#a32d2d', fontSize: 12, fontWeight: 500, marginTop: 10 }}>
                     {scanMsg}
@@ -360,7 +355,6 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
               </div>
             )}
 
-            {/* 수동검색 */}
             {scanMode === 'manual' && (
               <div>
                 <div style={{ background: dark ? '#252525' : '#f5f5f3', border: `1px solid ${c.cardBorder}`, borderRadius: 10, padding: 14, marginBottom: 16, fontSize: 12, color: c.textSecondary, lineHeight: 1.7 }}>
@@ -402,7 +396,6 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
           </div>
         </div>
 
-        {/* 오른쪽 — 실사 목록 */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ padding: '12px 20px', borderBottom: `1px solid ${c.cardBorder}`, background: c.cardBg, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: c.textPrimary }}>실사 목록 <span style={{ color: c.textTertiary, fontWeight: 400, fontSize: 12 }}>({scanList.length}개)</span></div>
