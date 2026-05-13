@@ -45,12 +45,13 @@ function makeStyles(c) {
   };
 }
 
-// 탭 목록
+// ✅ 탭 목록 — 반품 추가
 const TABS = [
-  { key: 'inspect', label: '🔍 검수 입고', desc: '납품 바코드 스캔' },
-  { key: 'suppliers', label: '🏢 거래처 관리', desc: '거래처 목록' },
-  { key: 'history', label: '📋 매입 내역', desc: '날짜별 기록' },
-  { key: 'settlement', label: '💰 정산 관리', desc: '미수금/외상' },
+  { key: 'inspect',    label: '🔍 검수 입고',  desc: '납품 바코드 스캔' },
+  { key: 'suppliers',  label: '🏢 거래처 관리', desc: '거래처 목록' },
+  { key: 'history',    label: '📋 매입 내역',   desc: '날짜별 기록' },
+  { key: 'returns',    label: '↩ 반품 관리',    desc: '반품 처리' },
+  { key: 'settlement', label: '💰 정산 관리',   desc: '미수금/외상' },
 ];
 
 // =============================================
@@ -85,14 +86,7 @@ function InspectTab({ c, s, products, setProducts, suppliers, setPurchaseHistory
         return prev.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i);
       } else {
         setScanMsg(`✅ ${product.name} — 추가됨`);
-        return [...prev, {
-          id: product.id,
-          name: product.name,
-          barcode: product.barcode || '-',
-          price: product.price,
-          costPrice: 0, // 매입단가
-          qty: 1,
-        }];
+        return [...prev, { id: product.id, name: product.name, barcode: product.barcode || '-', price: product.price, costPrice: 0, qty: 1 }];
       }
     });
     setTimeout(() => setScanMsg(''), 2000);
@@ -116,47 +110,33 @@ function InspectTab({ c, s, products, setProducts, suppliers, setPurchaseHistory
   const updateQty = (id, val) => { const n = parseInt(val); if (isNaN(n) || n < 0) return; setScanList(prev => prev.map(i => i.id === id ? { ...i, qty: n } : i)); };
   const updateCostPrice = (id, val) => { const n = parseInt(val); if (isNaN(n) || n < 0) return; setScanList(prev => prev.map(i => i.id === id ? { ...i, costPrice: n } : i)); };
   const removeFromList = (id) => setScanList(prev => prev.filter(i => i.id !== id));
-
   const totalAmount = scanList.reduce((sum, i) => sum + i.costPrice * i.qty, 0);
 
   const saveInspect = () => {
     if (scanList.length === 0) return alert('검수 상품이 없어요');
     if (!selectedSupplier) return alert('거래처를 선택해주세요');
     if (!window.confirm(`총 ${scanList.length}개 품목을 입고 처리하시겠어요?`)) return;
-
-    // 재고 업데이트
     setProducts(prev => prev.map(p => {
       const item = scanList.find(i => i.id === p.id);
       if (item) return { ...p, stock: (p.stock ?? 0) + item.qty, lastIn: new Date().toLocaleDateString('ko-KR'), status: '판매중', isSoldOut: false };
       return p;
     }));
-
-    // 매입 내역 저장
     const record = {
-      id: Date.now(),
-      date: new Date().toLocaleString('ko-KR'),
-      supplier: selectedSupplier,
-      items: [...scanList],
-      totalAmount,
-      payType,
-      memo,
+      id: Date.now(), date: new Date().toLocaleString('ko-KR'),
+      supplier: selectedSupplier, items: [...scanList],
+      totalAmount, payType, memo,
       status: payType === '외상' ? '미수금' : '완료',
     };
     setPurchaseHistory(prev => [record, ...prev]);
-
     alert(`✅ 입고 완료! ${scanList.length}개 품목, 총 ${totalAmount.toLocaleString()}원`);
-    setScanList([]);
-    setMemo('');
-    setBarcodeInput('');
+    setScanList([]); setMemo(''); setBarcodeInput('');
   };
 
   const manualResults = manualSearch.length >= 1 ? findByName(manualSearch) : [];
 
   return (
     <div style={{ display: 'flex', gap: 16, height: '100%' }}>
-      {/* 왼쪽 — 스캔 */}
       <div style={{ width: 360, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {/* 거래처 선택 */}
         <div style={{ background: c.cardBg, border: `1px solid ${c.cardBorder}`, borderRadius: 12, padding: 16 }}>
           <div style={{ fontSize: 12, color: c.textSecondary, marginBottom: 8 }}>거래처 선택 *</div>
           <select style={{ ...s.formInput }} value={selectedSupplier} onChange={e => setSelectedSupplier(e.target.value)}>
@@ -167,10 +147,7 @@ function InspectTab({ c, s, products, setProducts, suppliers, setPurchaseHistory
             <div>
               <div style={{ fontSize: 11, color: c.textSecondary, marginBottom: 4 }}>결제 방식</div>
               <select style={{ ...s.formInput, fontSize: 12 }} value={payType} onChange={e => setPayType(e.target.value)}>
-                <option>현금</option>
-                <option>계좌이체</option>
-                <option>외상</option>
-                <option>카드</option>
+                <option>현금</option><option>계좌이체</option><option>외상</option><option>카드</option>
               </select>
             </div>
             <div>
@@ -179,8 +156,6 @@ function InspectTab({ c, s, products, setProducts, suppliers, setPurchaseHistory
             </div>
           </div>
         </div>
-
-        {/* 스캔 탭 */}
         <div style={{ background: c.cardBg, border: `1px solid ${c.cardBorder}`, borderRadius: 12, overflow: 'hidden', flex: 1 }}>
           <div style={{ display: 'flex', borderBottom: `1px solid ${c.cardBorder}` }}>
             {[{ key: 'barcode', label: '📡 스캐너' }, { key: 'manual', label: '🔍 수동검색' }].map(tab => (
@@ -221,13 +196,11 @@ function InspectTab({ c, s, products, setProducts, suppliers, setPurchaseHistory
         </div>
       </div>
 
-      {/* 오른쪽 — 검수 목록 */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: c.cardBg, border: `1px solid ${c.cardBorder}`, borderRadius: 12, overflow: 'hidden' }}>
         <div style={{ padding: '12px 16px', borderBottom: `1px solid ${c.cardBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: c.textPrimary }}>검수 목록 <span style={{ fontSize: 12, color: c.textTertiary, fontWeight: 400 }}>({scanList.length}개 품목)</span></div>
           {scanList.length > 0 && <button style={{ ...s.actionBtn, color: '#a32d2d', borderColor: '#f09595', fontSize: 11 }} onClick={() => { if (window.confirm('목록을 초기화할까요?')) setScanList([]); }}>초기화</button>}
         </div>
-
         <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
           {scanList.length === 0 ? (
             <div style={{ textAlign: 'center', paddingTop: 60, color: c.textTertiary }}>
@@ -237,7 +210,6 @@ function InspectTab({ c, s, products, setProducts, suppliers, setPurchaseHistory
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {/* 헤더 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 90px 60px 30px', gap: 8, padding: '4px 8px', fontSize: 10, color: c.textTertiary, fontWeight: 600 }}>
                 <div>상품명</div><div>매입단가(원)</div><div>수량</div><div>소계</div><div></div>
               </div>
@@ -253,17 +225,13 @@ function InspectTab({ c, s, products, setProducts, suppliers, setPurchaseHistory
                     <input type="number" value={item.qty} onChange={e => updateQty(item.id, e.target.value)} style={{ width: 36, textAlign: 'center', padding: '3px 4px', border: `1px solid ${c.inputBorder}`, borderRadius: 4, fontSize: 12, background: c.inputBg, color: c.textPrimary, outline: 'none' }} />
                     <button onClick={() => updateQty(item.id, item.qty + 1)} style={{ width: 22, height: 22, borderRadius: 4, border: `1px solid ${c.cardBorder}`, background: c.cardBg, cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.textPrimary }}>+</button>
                   </div>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: c.textPrimary }}>
-                    {(item.costPrice * item.qty).toLocaleString()}
-                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: c.textPrimary }}>{(item.costPrice * item.qty).toLocaleString()}</div>
                   <button onClick={() => removeFromList(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: c.textTertiary }}>✕</button>
                 </div>
               ))}
             </div>
           )}
         </div>
-
-        {/* 하단 합계 + 저장 */}
         {scanList.length > 0 && (
           <div style={{ padding: '12px 16px', borderTop: `1px solid ${c.cardBorder}`, display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ flex: 1 }}>
@@ -307,7 +275,6 @@ function SuppliersTab({ c, s, suppliers, setSuppliers }) {
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
         <button style={s.btnPrimary} onClick={openAdd}>+ 거래처 등록</button>
       </div>
-
       {suppliers.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 60, color: c.textTertiary }}>
           <div style={{ fontSize: 36, marginBottom: 10 }}>🏢</div>
@@ -337,7 +304,6 @@ function SuppliersTab({ c, s, suppliers, setSuppliers }) {
           </table>
         </div>
       )}
-
       {showModal && (
         <div style={s.modalBg} onClick={() => setShowModal(false)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
@@ -397,7 +363,6 @@ function HistoryTab({ c, s, purchaseHistory, suppliers }) {
           </div>
         ))}
       </div>
-
       <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
         <input style={{ ...s.input, flex: 1 }} placeholder="거래처, 메모 검색..." value={search} onChange={e => setSearch(e.target.value)} />
         <select style={s.select} value={supplierFilter} onChange={e => setSupplierFilter(e.target.value)}>
@@ -410,7 +375,6 @@ function HistoryTab({ c, s, purchaseHistory, suppliers }) {
           <option value="미수금">미수금</option>
         </select>
       </div>
-
       {filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 60, color: c.textTertiary }}>
           <div style={{ fontSize: 36, marginBottom: 10 }}>📋</div>
@@ -431,9 +395,7 @@ function HistoryTab({ c, s, purchaseHistory, suppliers }) {
                   <td style={{ ...s.td, fontWeight: 600, color: c.textPrimary }}>₩{r.totalAmount.toLocaleString()}</td>
                   <td style={{ ...s.td, color: c.textSecondary }}>{r.payType}</td>
                   <td style={s.td}>
-                    <span style={{ ...s.pill, background: r.status === '완료' ? sgl : '#fcebeb', color: r.status === '완료' ? sgd : '#a32d2d' }}>
-                      {r.status}
-                    </span>
+                    <span style={{ ...s.pill, background: r.status === '완료' ? sgl : '#fcebeb', color: r.status === '완료' ? sgd : '#a32d2d' }}>{r.status}</span>
                   </td>
                   <td style={s.td}>
                     <button style={s.actionBtn} onClick={() => setSelectedRecord(r)}>상세</button>
@@ -444,8 +406,6 @@ function HistoryTab({ c, s, purchaseHistory, suppliers }) {
           </table>
         </div>
       )}
-
-      {/* 상세 모달 */}
       {selectedRecord && (
         <div style={s.modalBg} onClick={() => setSelectedRecord(null)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
@@ -489,6 +449,234 @@ function HistoryTab({ c, s, purchaseHistory, suppliers }) {
 }
 
 // =============================================
+// ✅ 반품 관리 탭 — 신규
+// =============================================
+function ReturnsTab({ c, s, products, setProducts, purchaseHistory, suppliers, setReturnHistory, returnHistory }) {
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [returnItems, setReturnItems] = useState([]);
+  const [returnReason, setReturnReason] = useState('불량품');
+  const [returnMemo, setReturnMemo] = useState('');
+  const [supplierFilter, setSupplierFilter] = useState('');
+  const [showModal, setShowModal] = useState(false);
+
+  // 매입 내역에서 반품 가능한 것만 (완료 또는 미수금)
+  const availableRecords = purchaseHistory.filter(r =>
+    !supplierFilter || r.supplier === supplierFilter
+  );
+
+  const openReturn = (record) => {
+    setSelectedRecord(record);
+    setReturnItems(record.items.map(i => ({ ...i, returnQty: 0 })));
+    setReturnReason('불량품');
+    setReturnMemo('');
+    setShowModal(true);
+  };
+
+  const updateReturnQty = (id, val) => {
+    const n = parseInt(val);
+    if (isNaN(n) || n < 0) return;
+    setReturnItems(prev => prev.map(i => {
+      if (i.id === id) {
+        const max = i.qty;
+        return { ...i, returnQty: Math.min(n, max) };
+      }
+      return i;
+    }));
+  };
+
+  const totalReturnAmount = returnItems.reduce((sum, i) => sum + i.costPrice * i.returnQty, 0);
+
+  const saveReturn = () => {
+    const hasReturn = returnItems.some(i => i.returnQty > 0);
+    if (!hasReturn) return alert('반품 수량을 입력해주세요');
+    if (!window.confirm(`반품 처리하시겠어요? 총 ₩${totalReturnAmount.toLocaleString()} 반품됩니다.`)) return;
+
+    // 재고 차감
+    setProducts(prev => prev.map(p => {
+      const item = returnItems.find(i => i.id === p.id && i.returnQty > 0);
+      if (item) return { ...p, stock: Math.max(0, (p.stock ?? 0) - item.returnQty) };
+      return p;
+    }));
+
+    // 반품 내역 저장
+    const record = {
+      id: Date.now(),
+      date: new Date().toLocaleString('ko-KR'),
+      supplier: selectedRecord.supplier,
+      originalId: selectedRecord.id,
+      items: returnItems.filter(i => i.returnQty > 0).map(i => ({ ...i, qty: i.returnQty })),
+      totalAmount: totalReturnAmount,
+      reason: returnReason,
+      memo: returnMemo,
+      status: '반품완료',
+    };
+    setReturnHistory(prev => [record, ...prev]);
+
+    alert(`✅ 반품 완료! ₩${totalReturnAmount.toLocaleString()} 반품 처리됐어요.`);
+    setShowModal(false);
+  };
+
+  return (
+    <div>
+      {/* 반품 내역 요약 */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 16 }}>
+        {[
+          { label: '총 반품 건수', val: `${returnHistory.length}건`, color: c.textPrimary },
+          { label: '총 반품 금액', val: `₩${returnHistory.reduce((s, r) => s + r.totalAmount, 0).toLocaleString()}`, color: '#e24b4a' },
+          { label: '이번 달 반품', val: `${returnHistory.filter(r => r.date.includes(new Date().toLocaleDateString('ko-KR').slice(0, 7))).length}건`, color: c.textSecondary },
+        ].map(card => (
+          <div key={card.label} style={s.sumCard}>
+            <div style={s.sumLabel}>{card.label}</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: card.color }}>{card.val}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: 12 }}>
+        {/* 왼쪽 — 매입 내역에서 반품 선택 */}
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 12, alignItems: 'center' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: c.textPrimary }}>매입 내역에서 반품 선택</div>
+            <select style={{ ...s.select, marginLeft: 'auto' }} value={supplierFilter} onChange={e => setSupplierFilter(e.target.value)}>
+              <option value="">전체 거래처</option>
+              {suppliers.map(s2 => <option key={s2.id} value={s2.name}>{s2.name}</option>)}
+            </select>
+          </div>
+          {availableRecords.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 40, color: c.textTertiary }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
+              <div style={{ fontSize: 13, color: c.textSecondary }}>매입 내역이 없어요</div>
+            </div>
+          ) : (
+            <div style={s.tableCard}>
+              <table style={s.table}>
+                <thead style={{ background: c.theadBg }}>
+                  <tr>{['날짜', '거래처', '품목수', '매입금액', '반품'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr>
+                </thead>
+                <tbody>
+                  {availableRecords.map(r => (
+                    <tr key={r.id}>
+                      <td style={{ ...s.td, fontSize: 11, color: c.textTertiary }}>{r.date}</td>
+                      <td style={{ ...s.td, fontWeight: 600 }}>{r.supplier}</td>
+                      <td style={{ ...s.td, color: c.textSecondary }}>{r.items.length}개</td>
+                      <td style={{ ...s.td, fontWeight: 600 }}>₩{r.totalAmount.toLocaleString()}</td>
+                      <td style={s.td}>
+                        <button style={{ ...s.btnDanger, padding: '4px 10px', fontSize: 11 }} onClick={() => openReturn(r)}>
+                          반품 처리
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* 오른쪽 — 반품 완료 내역 */}
+        <div style={{ width: 340, flexShrink: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: c.textPrimary, marginBottom: 12 }}>반품 완료 내역</div>
+          {returnHistory.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 40, color: c.textTertiary, background: c.cardBg, border: `1px solid ${c.cardBorder}`, borderRadius: 12 }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>↩</div>
+              <div style={{ fontSize: 12, color: c.textSecondary }}>반품 내역이 없어요</div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {returnHistory.map(r => (
+                <div key={r.id} style={{ background: c.cardBg, border: `1px solid ${c.cardBorder}`, borderRadius: 10, padding: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: c.textPrimary }}>{r.supplier}</span>
+                    <span style={{ ...s.pill, background: '#fff3f3', color: '#a32d2d' }}>반품완료</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: c.textTertiary, marginBottom: 4 }}>{r.date}</div>
+                  <div style={{ fontSize: 11, color: c.textSecondary, marginBottom: 4 }}>사유: {r.reason}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#e24b4a' }}>-₩{r.totalAmount.toLocaleString()}</div>
+                  <div style={{ fontSize: 10, color: c.textTertiary, marginTop: 4 }}>
+                    {r.items.map(i => `${i.name} ${i.qty}개`).join(', ')}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 반품 처리 모달 */}
+      {showModal && selectedRecord && (
+        <div style={s.modalBg} onClick={() => setShowModal(false)}>
+          <div style={{ ...s.modal, width: 620 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+              <span style={{ fontSize: 15, fontWeight: 600, color: c.textPrimary }}>↩ 반품 처리</span>
+              <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: c.textSecondary }} onClick={() => setShowModal(false)}>✕</button>
+            </div>
+
+            {/* 원본 매입 정보 */}
+            <div style={{ background: c.metricBg, borderRadius: 10, padding: 12, marginBottom: 16, fontSize: 12, lineHeight: 1.8 }}>
+              <div><span style={{ color: c.textSecondary }}>거래처:</span> <strong style={{ color: c.textPrimary }}>{selectedRecord.supplier}</strong></div>
+              <div><span style={{ color: c.textSecondary }}>매입일:</span> <span style={{ color: c.textPrimary }}>{selectedRecord.date}</span></div>
+            </div>
+
+            {/* 반품 사유 */}
+            <div style={s.row2}>
+              <div>
+                <div style={s.formLabel}>반품 사유 *</div>
+                <select style={s.formInput} value={returnReason} onChange={e => setReturnReason(e.target.value)}>
+                  <option>불량품</option>
+                  <option>오배송</option>
+                  <option>유통기한 초과</option>
+                  <option>파손</option>
+                  <option>주문 취소</option>
+                  <option>기타</option>
+                </select>
+              </div>
+              <div>
+                <div style={s.formLabel}>메모</div>
+                <input style={s.formInput} placeholder="추가 메모..." value={returnMemo} onChange={e => setReturnMemo(e.target.value)} />
+              </div>
+            </div>
+
+            {/* 반품 수량 입력 */}
+            <div style={{ fontSize: 12, color: c.textSecondary, marginBottom: 8 }}>반품할 수량 입력 (최대: 매입 수량)</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16, maxHeight: 260, overflowY: 'auto' }}>
+              {returnItems.map(item => (
+                <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px 80px', gap: 8, alignItems: 'center', padding: '8px 10px', background: c.metricBg, borderRadius: 8 }}>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: c.textPrimary }}>{item.name}</div>
+                    <div style={{ fontSize: 10, color: c.textTertiary }}>매입 {item.qty}개 · ₩{item.costPrice.toLocaleString()}/개</div>
+                  </div>
+                  <div style={{ fontSize: 11, color: c.textSecondary, textAlign: 'center' }}>최대 {item.qty}개</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <button onClick={() => updateReturnQty(item.id, item.returnQty - 1)} style={{ width: 20, height: 20, borderRadius: 4, border: `1px solid ${c.cardBorder}`, background: c.cardBg, cursor: 'pointer', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.textPrimary }}>−</button>
+                    <input type="number" value={item.returnQty} onChange={e => updateReturnQty(item.id, e.target.value)} style={{ width: 32, textAlign: 'center', padding: '2px', border: `1px solid ${c.inputBorder}`, borderRadius: 4, fontSize: 12, background: item.returnQty > 0 ? '#fff3f3' : c.inputBg, color: item.returnQty > 0 ? '#a32d2d' : c.textPrimary, outline: 'none' }} />
+                    <button onClick={() => updateReturnQty(item.id, item.returnQty + 1)} style={{ width: 20, height: 20, borderRadius: 4, border: `1px solid ${c.cardBorder}`, background: c.cardBg, cursor: 'pointer', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.textPrimary }}>+</button>
+                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: item.returnQty > 0 ? '#e24b4a' : c.textTertiary, textAlign: 'right' }}>
+                    {item.returnQty > 0 ? `-₩${(item.costPrice * item.returnQty).toLocaleString()}` : '-'}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* 합계 + 처리 버튼 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 12, borderTop: `1px solid ${c.cardBorder}` }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, color: c.textSecondary }}>총 반품 금액</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: totalReturnAmount > 0 ? '#e24b4a' : c.textTertiary }}>
+                  {totalReturnAmount > 0 ? `-₩${totalReturnAmount.toLocaleString()}` : '₩0'}
+                </div>
+              </div>
+              <button style={s.btn} onClick={() => setShowModal(false)}>취소</button>
+              <button style={s.btnDanger} onClick={saveReturn}>↩ 반품 처리</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =============================================
 // 정산 관리 탭
 // =============================================
 function SettlementTab({ c, s, purchaseHistory, setPurchaseHistory, suppliers }) {
@@ -505,7 +693,6 @@ function SettlementTab({ c, s, purchaseHistory, setPurchaseHistory, suppliers })
 
   const totalUnpaid = filtered.reduce((sum, r) => sum + r.totalAmount, 0);
 
-  // 거래처별 미수금 합계
   const bySupplier = {};
   unpaid.forEach(r => {
     if (!bySupplier[r.supplier]) bySupplier[r.supplier] = 0;
@@ -514,7 +701,6 @@ function SettlementTab({ c, s, purchaseHistory, setPurchaseHistory, suppliers })
 
   return (
     <div>
-      {/* 거래처별 미수금 요약 */}
       {Object.keys(bySupplier).length > 0 && (
         <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
           {Object.entries(bySupplier).map(([name, amount]) => (
@@ -525,7 +711,6 @@ function SettlementTab({ c, s, purchaseHistory, setPurchaseHistory, suppliers })
           ))}
         </div>
       )}
-
       <div style={{ display: 'flex', gap: 10, marginBottom: 14, alignItems: 'center' }}>
         <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: c.textPrimary }}>
           미수금 <span style={{ color: '#a32d2d' }}>₩{totalUnpaid.toLocaleString()}</span>
@@ -535,7 +720,6 @@ function SettlementTab({ c, s, purchaseHistory, setPurchaseHistory, suppliers })
           {suppliers.map(s2 => <option key={s2.id} value={s2.name}>{s2.name}</option>)}
         </select>
       </div>
-
       {filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 60, color: c.textTertiary }}>
           <div style={{ fontSize: 36, marginBottom: 10 }}>✅</div>
@@ -582,16 +766,16 @@ export default function PurchaseManagement({ setPage, dark, setDark, products, s
     { id: 2, name: '동신식품', contact: '이식품', phone: '010-9876-5432', email: 'ds@food.com', address: '인천시 계양구', memo: '주 2회 납품', createdAt: '2026-01-15' },
   ]);
   const [purchaseHistory, setPurchaseHistory] = useState([]);
+  const [returnHistory, setReturnHistory] = useState([]); // ✅ 반품 내역
 
-  // 요약 통계
   const totalPurchase = purchaseHistory.reduce((sum, r) => sum + r.totalAmount, 0);
   const unpaidCount = purchaseHistory.filter(r => r.status === '미수금').length;
+  const totalReturn = returnHistory.reduce((sum, r) => sum + r.totalAmount, 0); // ✅ 총 반품액
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: c.bg, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
       <Sidebar currentPage="adminPC_purchase" setPage={setPage} dark={dark} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {/* 탑바 */}
         <div style={s.topbar}>
           <div style={s.topbarTitle}>🚚 검수 매입 관리</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -604,22 +788,22 @@ export default function PurchaseManagement({ setPage, dark, setDark, products, s
           </div>
         </div>
 
-        {/* 요약 카드 */}
-        <div style={{ padding: '12px 24px 0', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
+        {/* ✅ 요약 카드 — 반품액 추가 */}
+        <div style={{ padding: '12px 24px 0', display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 10 }}>
           {[
             { label: '거래처 수', val: `${suppliers.length}개`, color: c.textPrimary },
             { label: '총 매입 건수', val: `${purchaseHistory.length}건`, color: c.textPrimary },
             { label: '총 매입 금액', val: `₩${totalPurchase.toLocaleString()}`, color: sgd },
+            { label: '총 반품 금액', val: `₩${totalReturn.toLocaleString()}`, color: totalReturn > 0 ? '#e24b4a' : c.textTertiary },
             { label: '미수금 건수', val: `${unpaidCount}건`, color: unpaidCount > 0 ? '#a32d2d' : c.textTertiary },
           ].map(card => (
             <div key={card.label} style={s.sumCard}>
               <div style={s.sumLabel}>{card.label}</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: card.color }}>{card.val}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: card.color }}>{card.val}</div>
             </div>
           ))}
         </div>
 
-        {/* 탭 */}
         <div style={{ display: 'flex', borderBottom: `1px solid ${c.cardBorder}`, padding: '0 24px', marginTop: 12, background: c.topbarBg }}>
           {TABS.map(tab => (
             <div key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, fontWeight: activeTab === tab.key ? 600 : 400, color: activeTab === tab.key ? sgd : c.textSecondary, borderBottom: activeTab === tab.key ? `2px solid ${sg}` : '2px solid transparent', marginBottom: -1, whiteSpace: 'nowrap' }}>
@@ -628,7 +812,6 @@ export default function PurchaseManagement({ setPage, dark, setDark, products, s
           ))}
         </div>
 
-        {/* 탭 콘텐츠 */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
           {activeTab === 'inspect' && (
             <InspectTab c={c} s={s} products={products} setProducts={setProducts} suppliers={suppliers} setPurchaseHistory={setPurchaseHistory} />
@@ -638,6 +821,17 @@ export default function PurchaseManagement({ setPage, dark, setDark, products, s
           )}
           {activeTab === 'history' && (
             <HistoryTab c={c} s={s} purchaseHistory={purchaseHistory} suppliers={suppliers} />
+          )}
+          {/* ✅ 반품 탭 */}
+          {activeTab === 'returns' && (
+            <ReturnsTab
+              c={c} s={s}
+              products={products} setProducts={setProducts}
+              purchaseHistory={purchaseHistory}
+              suppliers={suppliers}
+              returnHistory={returnHistory}
+              setReturnHistory={setReturnHistory}
+            />
           )}
           {activeTab === 'settlement' && (
             <SettlementTab c={c} s={s} purchaseHistory={purchaseHistory} setPurchaseHistory={setPurchaseHistory} suppliers={suppliers} />
