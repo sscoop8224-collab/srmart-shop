@@ -16,6 +16,8 @@ const STATUS_STYLE = {
 const LIGHT = { bg: '#f5f5f3', cardBg: '#ffffff', cardBorder: '#e0e0e0', metricBg: '#efefed', textPrimary: '#1a1a1a', textSecondary: '#444444', textTertiary: '#777777', topbarBg: '#ffffff', topbarBorder: '#e0e0e0', theadBg: '#f0f0ee', inputBg: '#ffffff', inputBorder: '#dddddd', thumbBg: '#efefed' };
 const DARK  = { bg: '#111111', cardBg: '#1e1e1e', cardBorder: '#2e2e2e', metricBg: '#252525', textPrimary: '#f0f0f0', textSecondary: '#bbbbbb', textTertiary: '#777777', topbarBg: '#1a1a1a', topbarBorder: '#2e2e2e', theadBg: '#252525', inputBg: '#252525', inputBorder: '#3a3a3a', thumbBg: '#333333' };
 
+const UNITS = ['개', 'ml', 'L', 'g', 'kg', 'mg', 'ea', 'box', 'pack', '세트', '장'];
+
 function DarkToggle({ dark, setDark }) {
   return (
     <div onClick={() => setDark(!dark)} title={dark ? '라이트 모드' : '다크 모드'}
@@ -29,12 +31,7 @@ function DarkToggle({ dark, setDark }) {
 
 function makeStyles(c) {
   return {
-    topbar: {
-      background: c.topbarBg, borderBottom: `1px solid ${c.topbarBorder}`,
-      paddingLeft: 24, paddingRight: 24,
-      paddingTop: 'max(12px, env(safe-area-inset-top))', paddingBottom: 12,
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0,
-    },
+    topbar: { background: c.topbarBg, borderBottom: `1px solid ${c.topbarBorder}`, paddingLeft: 24, paddingRight: 24, paddingTop: 'max(12px, env(safe-area-inset-top))', paddingBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 },
     topbarTitle: { fontSize: 15, fontWeight: 600, color: c.textPrimary },
     content: { flex: 1, overflowY: 'auto', padding: '20px 24px' },
     sumCard: { background: c.metricBg, borderRadius: 8, padding: '10px 14px' },
@@ -51,10 +48,11 @@ function makeStyles(c) {
     btnPrimary: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, border: 'none', background: sg, color: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 600 },
     btnDanger: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, border: 'none', background: '#e24b4a', color: '#fff', fontSize: 12, cursor: 'pointer', fontWeight: 600 },
     modalBg: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px 0', overflowY: 'auto' },
-    modal: { background: c.cardBg, border: `1px solid ${c.cardBorder}`, borderRadius: 12, padding: 24, width: 520, maxHeight: '90vh', overflowY: 'auto', margin: 'auto' },
+    modal: { background: c.cardBg, border: `1px solid ${c.cardBorder}`, borderRadius: 12, padding: 24, width: 540, maxHeight: '90vh', overflowY: 'auto', margin: 'auto' },
     formLabel: { fontSize: 12, color: c.textSecondary, marginBottom: 5 },
     formInput: { width: '100%', padding: '8px 10px', border: `1px solid ${c.inputBorder}`, borderRadius: 8, fontSize: 13, outline: 'none', boxSizing: 'border-box', background: c.inputBg, color: c.textPrimary },
     row2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 },
+    row3: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 },
     divider: { height: 1, background: c.cardBorder, margin: '16px 0' },
   };
 }
@@ -76,6 +74,10 @@ function normalizeProduct(p) {
     isSoldOut: p.isSoldOut || false,
     min: p.min || 20,
     lastIn: p.lastIn || '-',
+    // ✅ 규격 필드
+    spec: p.spec || '',       // 규격 숫자값 (예: 360)
+    unit: p.unit || '개',     // 단위 (예: ml)
+    isAdult: p.isAdult || false,
   };
 }
 
@@ -94,59 +96,29 @@ function CameraScanner({ onDetected, c, s }) {
     const handleResize = () => setIsLandscape(window.innerWidth > window.innerHeight);
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('orientationchange', handleResize);
-    };
+    return () => { window.removeEventListener('resize', handleResize); window.removeEventListener('orientationchange', handleResize); };
   }, []);
 
   const startScanner = async () => {
-    setError('');
-    setLoading(true);
-    setActive(true);
+    setError(''); setLoading(true); setActive(true);
     await new Promise(resolve => setTimeout(resolve, 200));
     try {
       const { Html5Qrcode } = await import('html5-qrcode');
       const scanner = new Html5Qrcode(SCANNER_ID);
       scannerRef.current = scanner;
       const landscape = window.innerWidth > window.innerHeight;
-      const boxWidth = landscape
-        ? Math.min(Math.round(window.innerWidth * 0.35), 400)
-        : Math.min(Math.round(window.innerWidth * 0.65), 300);
+      const boxWidth = landscape ? Math.min(Math.round(window.innerWidth * 0.35), 400) : Math.min(Math.round(window.innerWidth * 0.65), 300);
       const boxHeight = Math.round(boxWidth * 0.45);
-      await scanner.start(
-        { facingMode: 'environment' },
-        {
-          fps: 30,
-          qrbox: { width: boxWidth, height: boxHeight },
-          aspectRatio: landscape ? window.innerWidth / window.innerHeight : 1.7,
-          disableFlip: false,
-          experimentalFeatures: { useBarCodeDetectorIfSupported: true },
-        },
-        (decodedText) => {
-          if (navigator.vibrate) navigator.vibrate(100);
-          onDetected(decodedText);
-        },
-        () => {}
-      );
+      await scanner.start({ facingMode: 'environment' }, { fps: 30, qrbox: { width: boxWidth, height: boxHeight }, aspectRatio: landscape ? window.innerWidth / window.innerHeight : 1.7, disableFlip: false, experimentalFeatures: { useBarCodeDetectorIfSupported: true } }, (decodedText) => { if (navigator.vibrate) navigator.vibrate(100); onDetected(decodedText); }, () => {});
     } catch (err) {
       const msg = err.message || String(err);
-      if (msg.includes('permission') || msg.includes('Permission') || msg.includes('NotAllowed')) {
-        setError('카메라 권한이 없어요. 브라우저 설정에서 카메라를 허용해주세요.');
-      } else {
-        setError('카메라를 시작할 수 없어요: ' + msg);
-      }
+      if (msg.includes('permission') || msg.includes('Permission') || msg.includes('NotAllowed')) { setError('카메라 권한이 없어요.'); } else { setError('카메라를 시작할 수 없어요: ' + msg); }
       setActive(false);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const stopScanner = async () => {
-    if (scannerRef.current) {
-      try { await scannerRef.current.stop(); scannerRef.current.clear(); } catch {}
-      scannerRef.current = null;
-    }
+    if (scannerRef.current) { try { await scannerRef.current.stop(); scannerRef.current.clear(); } catch {} scannerRef.current = null; }
     setActive(false);
   };
 
@@ -159,7 +131,6 @@ function CameraScanner({ onDetected, c, s }) {
           <div style={{ background: '#e6f1fb', border: '1px solid #85b7eb', borderRadius: 10, padding: 14, marginBottom: 16, fontSize: 12, color: '#185fa5', lineHeight: 1.7 }}>
             <div style={{ fontWeight: 600, marginBottom: 6 }}>📷 카메라 바코드 스캔</div>
             <div>카메라로 상품 바코드를 비추면 자동으로 인식해요</div>
-            <div>EAN-13, EAN-8, Code-128, UPC 등 지원</div>
             <div style={{ marginTop: 6, fontSize: 11, color: '#444' }}>※ 카메라 권한 허용이 필요해요</div>
           </div>
           {error && <div style={{ background: '#fcebeb', border: '1px solid #f09595', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: '#a32d2d', marginBottom: 12 }}>⚠️ {error}</div>}
@@ -177,7 +148,7 @@ function CameraScanner({ onDetected, c, s }) {
 }
 
 // =============================================
-// 재고 실사 모드 컴포넌트
+// 재고 실사 모드
 // =============================================
 function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose }) {
   const [scanMode, setScanMode] = useState('barcode');
@@ -200,21 +171,15 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
   const addToScanList = useCallback((product) => {
     setScanList(prev => {
       const exists = prev.find(i => i.id === product.id);
-      if (exists) {
-        setScanMsg(`✅ ${product.name} — 누적 ${exists.newStock + 1}개`);
-        return prev.map(i => i.id === product.id ? { ...i, newStock: i.newStock + 1 } : i);
-      } else {
-        setScanMsg(`✅ ${product.name} — 추가됨`);
-        return [...prev, { id: product.id, name: product.name, barcode: product.barcode || '-', sku: product.sku || '-', prevStock: product.stock ?? 0, newStock: 1 }];
-      }
+      if (exists) { setScanMsg(`✅ ${product.name} — 누적 ${exists.newStock + 1}개`); return prev.map(i => i.id === product.id ? { ...i, newStock: i.newStock + 1 } : i); }
+      else { setScanMsg(`✅ ${product.name} — 추가됨`); return [...prev, { id: product.id, name: product.name, barcode: product.barcode || '-', sku: product.sku || '-', prevStock: product.stock ?? 0, newStock: 1 }]; }
     });
     setTimeout(() => setScanMsg(''), 2000);
   }, []);
 
   const handleCameraDetected = useCallback((code) => {
     const found = findByBarcode(code);
-    if (found) { addToScanList(found); }
-    else { setScanMsg(`❌ '${code}' — 등록되지 않은 바코드예요`); setTimeout(() => setScanMsg(''), 2500); }
+    if (found) { addToScanList(found); } else { setScanMsg(`❌ '${code}' — 등록되지 않은 바코드예요`); setTimeout(() => setScanMsg(''), 2500); }
   }, [findByBarcode, addToScanList]);
 
   const handleBarcodeEnter = (e) => {
@@ -222,8 +187,7 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
       const code = barcodeInput.trim();
       if (!code) return;
       const found = findByBarcode(code);
-      if (found) { addToScanList(found); }
-      else { setScanMsg(`❌ '${code}' — 등록되지 않은 바코드예요`); setTimeout(() => setScanMsg(''), 2500); }
+      if (found) { addToScanList(found); } else { setScanMsg(`❌ '${code}' — 등록되지 않은 바코드예요`); setTimeout(() => setScanMsg(''), 2500); }
       setBarcodeInput('');
     }
   };
@@ -279,12 +243,9 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
                   <div>① 블루투스 스캐너를 기기에 페어링해요</div>
                   <div>② 아래 입력란을 클릭해 포커스를 맞춰요</div>
                   <div>③ 상품 바코드를 스캔하면 자동 입력돼요</div>
-                  <div style={{ marginTop: 6, color: c.textSecondary, fontSize: 11 }}>※ PDA는 크롬 브라우저에서 이 페이지를 열면 동일하게 작동해요</div>
                 </div>
-                <div style={{ fontSize: 12, color: c.textSecondary, marginBottom: 6 }}>바코드 입력 (스캔 또는 직접 입력 후 Enter)</div>
                 <input ref={barcodeInputRef} style={{ ...s.formInput, fontSize: 16, padding: '12px 14px', border: `2px solid ${sg}` }} placeholder="바코드를 스캔하세요..." value={barcodeInput} onChange={e => setBarcodeInput(e.target.value)} onKeyDown={handleBarcodeEnter} autoFocus />
                 {scanMsg && <div style={{ padding: '8px 12px', borderRadius: 8, background: scanMsg.startsWith('✅') ? sgl : '#fcebeb', color: scanMsg.startsWith('✅') ? sgd : '#a32d2d', fontSize: 12, fontWeight: 500, marginTop: 10 }}>{scanMsg}</div>}
-                <div style={{ fontSize: 11, color: c.textTertiary, marginTop: 8 }}>스캔할 때마다 실사 목록에 자동으로 추가돼요</div>
               </div>
             )}
             {scanMode === 'camera' && (
@@ -295,10 +256,6 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
             )}
             {scanMode === 'manual' && (
               <div>
-                <div style={{ background: dark ? '#252525' : '#f5f5f3', border: `1px solid ${c.cardBorder}`, borderRadius: 10, padding: 14, marginBottom: 16, fontSize: 12, color: c.textSecondary, lineHeight: 1.7 }}>
-                  <div style={{ fontWeight: 600, color: c.textPrimary, marginBottom: 6 }}>🔍 상품명 검색</div>
-                  <div>상품명 또는 바코드 번호로 검색해서 추가해요</div>
-                </div>
                 <input style={{ ...s.formInput, marginBottom: 10 }} placeholder="상품명 검색..." value={manualSearch} onChange={e => setManualSearch(e.target.value)} autoFocus />
                 {manualResults.length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -313,7 +270,6 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
                     ))}
                   </div>
                 )}
-                {manualSearch && manualResults.length === 0 && <div style={{ textAlign: 'center', color: c.textTertiary, fontSize: 12, padding: 20 }}>검색 결과가 없어요</div>}
                 {scanMsg && <div style={{ padding: '8px 12px', borderRadius: 8, background: scanMsg.startsWith('✅') ? sgl : '#fcebeb', color: scanMsg.startsWith('✅') ? sgd : '#a32d2d', fontSize: 12, fontWeight: 500, marginTop: 10 }}>{scanMsg}</div>}
               </div>
             )}
@@ -329,7 +285,6 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
               <div style={{ textAlign: 'center', paddingTop: 60, color: c.textTertiary }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>📦</div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: c.textSecondary, marginBottom: 6 }}>스캔된 상품이 없어요</div>
-                <div style={{ fontSize: 12 }}>왼쪽에서 바코드를 스캔하거나 상품을 검색해서 추가해요</div>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -370,7 +325,7 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
 }
 
 // =============================================
-// ✅ 엑셀 업로드 모달
+// 엑셀 업로드 모달
 // =============================================
 function ExcelUploadModal({ c, s, largeCategories, setRawProducts, onClose }) {
   const [preview, setPreview] = useState([]);
@@ -378,37 +333,31 @@ function ExcelUploadModal({ c, s, largeCategories, setRawProducts, onClose }) {
   const [loading, setLoading] = useState(false);
   const excelInputRef = useRef(null);
 
-  // 엑셀 양식 다운로드
   const downloadTemplate = async () => {
     const XLSX = await import('xlsx');
     const ws = XLSX.utils.aoa_to_sheet([
-      ['상품명', '카테고리', '판매가', '재고수량', '바코드', '상태'],
-      ['예시: 신선 사과 1kg', '식품', '3500', '100', '8801234567890', '판매중'],
-      ['예시: 제주 삼다수 2L', '음료', '1200', '200', '8801051111111', '판매중'],
+      ['상품명', '카테고리', '판매가', '재고수량', '바코드', '규격', '단위', '성인상품(Y/N)', '상태'],
+      ['예시: 신선 사과 1kg', '식품', '3500', '100', '8801234567890', '1', 'kg', 'N', '판매중'],
+      ['예시: 소주 360ml', '주류', '1800', '200', '8801051111111', '360', 'ml', 'Y', '판매중'],
     ]);
-    ws['!cols'] = [{ wch: 20 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 16 }, { wch: 10 }];
+    ws['!cols'] = [{ wch: 20 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 16 }, { wch: 8 }, { wch: 8 }, { wch: 14 }, { wch: 10 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, '상품목록');
     XLSX.writeFile(wb, 'SR마트_상품등록_양식.xlsx');
   };
 
-  // 엑셀 파일 읽기
   const handleExcelFile = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    setError('');
-    setLoading(true);
+    setError(''); setLoading(true);
     try {
       const XLSX = await import('xlsx');
       const data = await file.arrayBuffer();
       const wb = XLSX.read(data);
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
-
-      // 첫 번째 행은 헤더
       const dataRows = rows.slice(1).filter(r => r[0] && String(r[0]).trim());
       if (dataRows.length === 0) { setError('데이터가 없어요. 양식을 확인해주세요.'); setLoading(false); return; }
-
       const parsed = dataRows.map((r, idx) => ({
         _idx: idx,
         name: String(r[0] || '').trim(),
@@ -416,43 +365,28 @@ function ExcelUploadModal({ c, s, largeCategories, setRawProducts, onClose }) {
         price: Number(r[2]) || 0,
         stock: Number(r[3]) || 0,
         barcode: String(r[4] || '').trim(),
-        status: String(r[5] || '판매중').trim(),
+        spec: String(r[5] || '').trim(),
+        unit: String(r[6] || '개').trim(),
+        isAdult: String(r[7] || 'N').trim().toUpperCase() === 'Y',
+        status: String(r[8] || '판매중').trim(),
         valid: !!String(r[0] || '').trim() && !!Number(r[2]),
       }));
-
       setPreview(parsed);
     } catch (err) {
       setError('파일을 읽을 수 없어요. 엑셀 파일(.xlsx)인지 확인해주세요.');
-    } finally {
-      setLoading(false);
-      e.target.value = '';
-    }
+    } finally { setLoading(false); e.target.value = ''; }
   };
 
-  // 일괄 등록
   const registerAll = () => {
     const valid = preview.filter(p => p.valid);
     if (valid.length === 0) return alert('등록 가능한 상품이 없어요');
     if (!window.confirm(`총 ${valid.length}개 상품을 등록하시겠어요?`)) return;
-    setRawProducts(prev => [
-      ...prev,
-      ...valid.map(p => ({
-        id: Date.now() + Math.random(),
-        name: p.name,
-        price: p.price,
-        large: p.large,
-        medium: '',
-        small: '',
-        stock: p.stock,
-        status: p.status === '판매중지' ? '판매중지' : '판매중',
-        isSoldOut: p.status === '판매중지',
-        barcode: p.barcode,
-        images: [],
-        image: null,
-        sold: 0,
-        rating: 0,
-      }))
-    ]);
+    setRawProducts(prev => [...prev, ...valid.map(p => ({
+      id: Date.now() + Math.random(), name: p.name, price: p.price, large: p.large,
+      medium: '', small: '', stock: p.stock, status: p.status === '판매중지' ? '판매중지' : '판매중',
+      isSoldOut: p.status === '판매중지', barcode: p.barcode, images: [], image: null,
+      sold: 0, rating: 0, spec: p.spec, unit: p.unit, isAdult: p.isAdult,
+    }))]);
     alert(`✅ ${valid.length}개 상품이 등록됐어요!`);
     onClose();
   };
@@ -462,36 +396,23 @@ function ExcelUploadModal({ c, s, largeCategories, setRawProducts, onClose }) {
 
   return (
     <div style={s.modalBg} onClick={onClose}>
-      <div style={{ ...s.modal, width: 680 }} onClick={e => e.stopPropagation()}>
+      <div style={{ ...s.modal, width: 700 }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <span style={{ fontSize: 15, fontWeight: 600, color: c.textPrimary }}>📥 엑셀 일괄 등록</span>
           <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: c.textSecondary }} onClick={onClose}>✕</button>
         </div>
-
-        {/* 1단계: 양식 다운로드 */}
         <div style={{ background: c.metricBg, borderRadius: 10, padding: 16, marginBottom: 16 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: c.textPrimary, marginBottom: 8 }}>1단계 — 양식 다운로드</div>
-          <div style={{ fontSize: 12, color: c.textSecondary, marginBottom: 10 }}>
-            엑셀 양식을 다운로드해서 상품명, 카테고리, 판매가, 재고, 바코드를 입력해요.
-          </div>
-          <button style={{ ...s.btn, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={downloadTemplate}>
-            📄 양식 다운로드 (.xlsx)
-          </button>
+          <div style={{ fontSize: 12, color: c.textSecondary, marginBottom: 10 }}>엑셀 양식을 다운로드해서 상품정보를 입력해요. (규격, 단위, 성인상품 여부 포함)</div>
+          <button style={{ ...s.btn, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={downloadTemplate}>📄 양식 다운로드 (.xlsx)</button>
         </div>
-
-        {/* 2단계: 파일 업로드 */}
         <div style={{ background: c.metricBg, borderRadius: 10, padding: 16, marginBottom: 16 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: c.textPrimary, marginBottom: 8 }}>2단계 — 파일 업로드</div>
-          <div style={{ fontSize: 12, color: c.textSecondary, marginBottom: 10 }}>작성한 엑셀 파일을 업로드하면 미리보기가 표시돼요.</div>
-          <button style={{ ...s.btnPrimary, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => excelInputRef.current?.click()}>
-            📂 엑셀 파일 선택
-          </button>
+          <button style={{ ...s.btnPrimary, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => excelInputRef.current?.click()}>📂 엑셀 파일 선택</button>
           <input ref={excelInputRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleExcelFile} />
           {loading && <div style={{ fontSize: 12, color: c.textTertiary, marginTop: 8 }}>파일 읽는 중...</div>}
           {error && <div style={{ fontSize: 12, color: '#a32d2d', marginTop: 8 }}>⚠️ {error}</div>}
         </div>
-
-        {/* 3단계: 미리보기 */}
         {preview.length > 0 && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -501,49 +422,31 @@ function ExcelUploadModal({ c, s, largeCategories, setRawProducts, onClose }) {
                 {invalidCount > 0 && <span style={{ color: '#a32d2d', marginLeft: 8 }}>오류 {invalidCount}개</span>}
               </div>
             </div>
-            <div style={{ border: `1px solid ${c.cardBorder}`, borderRadius: 10, overflow: 'hidden', maxHeight: 280, overflowY: 'auto' }}>
-              <table style={{ ...s.table }}>
+            <div style={{ border: `1px solid ${c.cardBorder}`, borderRadius: 10, overflow: 'hidden', maxHeight: 260, overflowY: 'auto' }}>
+              <table style={s.table}>
                 <thead style={{ background: c.theadBg, position: 'sticky', top: 0 }}>
-                  <tr>
-                    {['상태', '상품명', '카테고리', '판매가', '재고', '바코드'].map(h => (
-                      <th key={h} style={s.th}>{h}</th>
-                    ))}
-                  </tr>
+                  <tr>{['상태','상품명','카테고리','판매가','재고','규격','성인'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr>
                 </thead>
                 <tbody>
                   {preview.map((p, idx) => (
                     <tr key={idx} style={{ background: p.valid ? 'transparent' : '#fff5f5' }}>
-                      <td style={s.td}>
-                        {p.valid
-                          ? <span style={{ ...s.pill, background: sgl, color: sgd }}>✓ 정상</span>
-                          : <span style={{ ...s.pill, background: '#fcebeb', color: '#a32d2d' }}>⚠ 오류</span>
-                        }
-                      </td>
+                      <td style={s.td}>{p.valid ? <span style={{ ...s.pill, background: sgl, color: sgd }}>✓ 정상</span> : <span style={{ ...s.pill, background: '#fcebeb', color: '#a32d2d' }}>⚠ 오류</span>}</td>
                       <td style={{ ...s.td, fontWeight: 600 }}>{p.name || <span style={{ color: '#a32d2d' }}>상품명 없음</span>}</td>
                       <td style={{ ...s.td, color: c.textSecondary }}>{p.large}</td>
-                      <td style={{ ...s.td }}>{p.price ? `₩${Number(p.price).toLocaleString()}` : <span style={{ color: '#a32d2d' }}>가격 없음</span>}</td>
-                      <td style={{ ...s.td }}>{p.stock}개</td>
-                      <td style={{ ...s.td, fontSize: 11, color: c.textTertiary }}>{p.barcode || '-'}</td>
+                      <td style={s.td}>{p.price ? `₩${Number(p.price).toLocaleString()}` : <span style={{ color: '#a32d2d' }}>가격 없음</span>}</td>
+                      <td style={s.td}>{p.stock}개</td>
+                      <td style={{ ...s.td, color: c.textTertiary }}>{p.spec ? `${p.spec}${p.unit}` : '-'}</td>
+                      <td style={s.td}>{p.isAdult ? <span style={{ ...s.pill, background: '#fcebeb', color: '#a32d2d' }}>🔞</span> : '-'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            {invalidCount > 0 && (
-              <div style={{ fontSize: 11, color: '#a32d2d', marginTop: 8 }}>
-                ⚠️ 오류 항목은 상품명 또는 판매가가 없어요. 수정 후 다시 업로드해주세요.
-              </div>
-            )}
           </div>
         )}
-
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button style={s.btn} onClick={onClose}>취소</button>
-          {preview.length > 0 && validCount > 0 && (
-            <button style={s.btnPrimary} onClick={registerAll}>
-              ✅ {validCount}개 일괄 등록
-            </button>
-          )}
+          {preview.length > 0 && validCount > 0 && <button style={s.btnPrimary} onClick={registerAll}>✅ {validCount}개 일괄 등록</button>}
         </div>
       </div>
     </div>
@@ -563,9 +466,15 @@ export function ProductManagement({ setPage, dark, setDark, products: rawProduct
   const [catFilter, setCatFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [showExcelModal, setShowExcelModal] = useState(false); // ✅ 엑셀 업로드 모달
+  const [showExcelModal, setShowExcelModal] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ name: '', large: '식품', price: '', stock: '', status: '판매중', barcode: '', images: [] });
+  const [form, setForm] = useState({
+    name: '', large: '식품', price: '', stock: '', status: '판매중',
+    barcode: '', images: [],
+    spec: '',      // ✅ 규격
+    unit: '개',    // ✅ 단위
+    isAdult: false, // ✅ 성인상품
+  });
 
   const largeCategories = categories.length > 0 ? categories.map(c2 => c2.name) : ['식품','음료','생활용품','간식/과자','주류'];
 
@@ -576,17 +485,37 @@ export function ProductManagement({ setPage, dark, setDark, products: rawProduct
     return true;
   });
 
-  const openAdd = () => { setEditing(null); setForm({ name: '', large: largeCategories[0] || '식품', price: '', stock: '', status: '판매중', barcode: '', images: [] }); setShowModal(true); };
-  const openEdit = p => { setEditing(p.id); setForm({ name: p.name, large: p.large || largeCategories[0], price: p.price, stock: p.stock, status: p.status, barcode: p.barcode || '', images: p.images || [] }); setShowModal(true); };
+  const openAdd = () => {
+    setEditing(null);
+    setForm({ name: '', large: largeCategories[0] || '식품', price: '', stock: '', status: '판매중', barcode: '', images: [], spec: '', unit: '개', isAdult: false });
+    setShowModal(true);
+  };
+
+  const openEdit = p => {
+    setEditing(p.id);
+    setForm({ name: p.name, large: p.large || largeCategories[0], price: p.price, stock: p.stock, status: p.status, barcode: p.barcode || '', images: p.images || [], spec: p.spec || '', unit: p.unit || '개', isAdult: p.isAdult || false });
+    setShowModal(true);
+  };
 
   const save = () => {
     if (!form.name.trim()) return alert('상품명을 입력해주세요');
     if (!form.price) return alert('판매가를 입력해주세요');
     if (setRawProducts) {
       if (editing) {
-        setRawProducts(prev => prev.map(p => p.id === editing ? { ...p, name: form.name, price: Number(form.price), stock: Number(form.stock), large: form.large, status: form.status, isSoldOut: form.status === '판매중지', barcode: form.barcode, images: form.images, image: form.images.length > 0 ? form.images[0].url : p.image } : p));
+        setRawProducts(prev => prev.map(p => p.id === editing ? {
+          ...p, name: form.name, price: Number(form.price), stock: Number(form.stock),
+          large: form.large, status: form.status, isSoldOut: form.status === '판매중지',
+          barcode: form.barcode, images: form.images, image: form.images.length > 0 ? form.images[0].url : p.image,
+          spec: form.spec, unit: form.unit, isAdult: form.isAdult,
+        } : p));
       } else {
-        setRawProducts(prev => [...prev, { id: Date.now(), name: form.name, price: Number(form.price), large: form.large, medium: '', small: '', stock: Number(form.stock), status: form.status, isSoldOut: form.status === '판매중지', barcode: form.barcode, images: form.images, image: form.images.length > 0 ? form.images[0].url : null, sold: 0, rating: 0 }]);
+        setRawProducts(prev => [...prev, {
+          id: Date.now(), name: form.name, price: Number(form.price), large: form.large,
+          medium: '', small: '', stock: Number(form.stock), status: form.status,
+          isSoldOut: form.status === '판매중지', barcode: form.barcode, images: form.images,
+          image: form.images.length > 0 ? form.images[0].url : null, sold: 0, rating: 0,
+          spec: form.spec, unit: form.unit, isAdult: form.isAdult,
+        }]);
       }
     }
     setShowModal(false);
@@ -615,17 +544,19 @@ export function ProductManagement({ setPage, dark, setDark, products: rawProduct
         <div style={s.topbar}>
           <div style={s.topbarTitle}>상품 관리</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {/* ✅ 엑셀 업로드 버튼 */}
-            <button style={{ ...s.btn, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => setShowExcelModal(true)}>
-              📥 엑셀 업로드
-            </button>
+            <button style={{ ...s.btn, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => setShowExcelModal(true)}>📥 엑셀 업로드</button>
             <button style={s.btnPrimary} onClick={openAdd}>+ 상품 등록</button>
             <DarkToggle dark={dark} setDark={setDark} />
           </div>
         </div>
         <div style={s.content}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 16 }}>
-            {[{ label: '전체 상품', val: products.length, color: c.textPrimary }, { label: '판매 중', val: products.filter(p => p.status === '판매중').length, color: sgd }, { label: '품절 임박', val: products.filter(p => p.status === '품절임박').length, color: '#854f0b' }, { label: '판매 중지', val: products.filter(p => p.status === '판매중지').length, color: '#5f5e5a' }].map(card => (
+            {[
+              { label: '전체 상품', val: products.length, color: c.textPrimary },
+              { label: '판매 중', val: products.filter(p => p.status === '판매중').length, color: sgd },
+              { label: '품절 임박', val: products.filter(p => p.status === '품절임박').length, color: '#854f0b' },
+              { label: '성인 상품', val: products.filter(p => p.isAdult).length, color: '#a32d2d' },
+            ].map(card => (
               <div key={card.label} style={s.sumCard}><div style={s.sumLabel}>{card.label}</div><div style={{ fontSize: 17, fontWeight: 600, color: card.color }}>{card.val}</div></div>
             ))}
           </div>
@@ -643,11 +574,11 @@ export function ProductManagement({ setPage, dark, setDark, products: rawProduct
           <div style={s.tableCard}>
             <table style={s.table}>
               <thead style={{ background: c.theadBg }}>
-                <tr>{['상품','카테고리','바코드','판매가','재고','상태','관리'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr>
+                <tr>{['상품','카테고리','규격','바코드','판매가','재고','상태','관리'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={7} style={{ padding: 32, textAlign: 'center', color: c.textTertiary, fontSize: 13 }}>{products.length === 0 ? '등록된 상품이 없어요' : '검색 결과가 없어요'}</td></tr>
+                  <tr><td colSpan={8} style={{ padding: 32, textAlign: 'center', color: c.textTertiary, fontSize: 13 }}>{products.length === 0 ? '등록된 상품이 없어요' : '검색 결과가 없어요'}</td></tr>
                 ) : filtered.map(p => (
                   <tr key={p.id}>
                     <td style={s.td}>
@@ -655,10 +586,17 @@ export function ProductManagement({ setPage, dark, setDark, products: rawProduct
                         <div style={{ width: 36, height: 36, borderRadius: 8, background: c.thumbBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, overflow: 'hidden', flexShrink: 0 }}>
                           {p.images && p.images.length > 0 ? <img src={p.images[0].url} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : CAT_ICON_LARGE[p.large] || '📦'}
                         </div>
-                        <div><div style={{ fontWeight: 600, fontSize: 12, color: c.textPrimary }}>{p.name}</div><div style={{ fontSize: 10, color: c.textTertiary }}>{p.sku}</div></div>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 12, color: c.textPrimary }}>
+                            {p.isAdult && <span style={{ fontSize: 9, background: '#fcebeb', color: '#a32d2d', borderRadius: 4, padding: '1px 4px', marginRight: 4 }}>🔞</span>}
+                            {p.name}
+                          </div>
+                          <div style={{ fontSize: 10, color: c.textTertiary }}>{p.sku}</div>
+                        </div>
                       </div>
                     </td>
                     <td style={{ ...s.td, color: c.textSecondary }}>{p.large}</td>
+                    <td style={{ ...s.td, color: c.textTertiary, fontSize: 11 }}>{p.spec ? `${p.spec}${p.unit}` : '-'}</td>
                     <td style={{ ...s.td, color: c.textTertiary, fontSize: 11 }}>{p.barcode || '-'}</td>
                     <td style={{ ...s.td, fontWeight: 600, color: c.textPrimary }}>₩{p.price.toLocaleString()}</td>
                     <td style={{ ...s.td, color: p.stock < 20 ? '#854f0b' : c.textPrimary }}>{p.stock}개</td>
@@ -675,15 +613,7 @@ export function ProductManagement({ setPage, dark, setDark, products: rawProduct
         </div>
       </div>
 
-      {/* ✅ 엑셀 업로드 모달 */}
-      {showExcelModal && (
-        <ExcelUploadModal
-          c={c} s={s}
-          largeCategories={largeCategories}
-          setRawProducts={setRawProducts}
-          onClose={() => setShowExcelModal(false)}
-        />
-      )}
+      {showExcelModal && <ExcelUploadModal c={c} s={s} largeCategories={largeCategories} setRawProducts={setRawProducts} onClose={() => setShowExcelModal(false)} />}
 
       {showModal && (
         <div style={s.modalBg} onClick={() => setShowModal(false)}>
@@ -692,17 +622,94 @@ export function ProductManagement({ setPage, dark, setDark, products: rawProduct
               <span style={{ fontSize: 15, fontWeight: 600, color: c.textPrimary }}>{editing ? '상품 수정' : '상품 등록'}</span>
               <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: c.textSecondary }} onClick={() => setShowModal(false)}>✕</button>
             </div>
-            <div style={{ marginBottom: 12 }}><div style={s.formLabel}>상품명 *</div><input style={s.formInput} placeholder="예: 신선 사과 1kg" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} /></div>
-            <div style={s.row2}>
-              <div><div style={s.formLabel}>카테고리</div><select style={s.formInput} value={form.large} onChange={e => setForm(p => ({ ...p, large: e.target.value }))}>{largeCategories.map(c2 => <option key={c2}>{c2}</option>)}</select></div>
-              <div><div style={s.formLabel}>상태</div><select style={s.formInput} value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))}><option value="판매중">판매 중</option><option value="판매중지">판매 중지</option></select></div>
+
+            {/* 상품명 */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={s.formLabel}>상품명 *</div>
+              <input style={s.formInput} placeholder="예: 신선 사과 1kg" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
             </div>
+
+            {/* 카테고리 + 상태 */}
             <div style={s.row2}>
-              <div><div style={s.formLabel}>판매가 (원) *</div><input style={s.formInput} type="number" placeholder="0" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} /></div>
-              <div><div style={s.formLabel}>재고 수량</div><input style={s.formInput} type="number" placeholder="0" value={form.stock} onChange={e => setForm(p => ({ ...p, stock: e.target.value }))} /></div>
+              <div>
+                <div style={s.formLabel}>카테고리</div>
+                <select style={s.formInput} value={form.large} onChange={e => setForm(p => ({ ...p, large: e.target.value }))}>
+                  {largeCategories.map(c2 => <option key={c2}>{c2}</option>)}
+                </select>
+              </div>
+              <div>
+                <div style={s.formLabel}>상태</div>
+                <select style={s.formInput} value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))}>
+                  <option value="판매중">판매 중</option>
+                  <option value="판매중지">판매 중지</option>
+                </select>
+              </div>
             </div>
-            <div style={{ marginBottom: 12 }}><div style={s.formLabel}>바코드 번호</div><input style={s.formInput} placeholder="예: 8801234567890" value={form.barcode} onChange={e => setForm(p => ({ ...p, barcode: e.target.value }))} /></div>
+
+            {/* 판매가 + 재고 */}
+            <div style={s.row2}>
+              <div>
+                <div style={s.formLabel}>판매가 (원) *</div>
+                <input style={s.formInput} type="number" placeholder="0" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} />
+              </div>
+              <div>
+                <div style={s.formLabel}>재고 수량</div>
+                <input style={s.formInput} type="number" placeholder="0" value={form.stock} onChange={e => setForm(p => ({ ...p, stock: e.target.value }))} />
+              </div>
+            </div>
+
+            {/* ✅ 규격 + 단위 */}
+            <div style={s.row2}>
+              <div>
+                <div style={s.formLabel}>규격 <span style={{ color: c.textTertiary, fontWeight: 400 }}>(숫자만)</span></div>
+                <input
+                  style={s.formInput}
+                  type="text"
+                  placeholder="예: 360, 1, 500"
+                  value={form.spec}
+                  onChange={e => setForm(p => ({ ...p, spec: e.target.value }))}
+                />
+              </div>
+              <div>
+                <div style={s.formLabel}>단위</div>
+                <select style={s.formInput} value={form.unit} onChange={e => setForm(p => ({ ...p, unit: e.target.value }))}>
+                  {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* 규격 미리보기 */}
+            {form.spec && (
+              <div style={{ background: c.metricBg, borderRadius: 8, padding: '6px 12px', fontSize: 12, color: c.textSecondary, marginBottom: 12 }}>
+                규격 표시: <strong style={{ color: c.textPrimary }}>{form.spec}{form.unit}</strong>
+              </div>
+            )}
+
+            {/* 바코드 */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={s.formLabel}>바코드 번호</div>
+              <input style={s.formInput} placeholder="예: 8801234567890" value={form.barcode} onChange={e => setForm(p => ({ ...p, barcode: e.target.value }))} />
+            </div>
+
+            {/* ✅ 성인 상품 체크박스 */}
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '10px 12px', borderRadius: 8, border: `1.5px solid ${form.isAdult ? '#f09595' : c.inputBorder}`, background: form.isAdult ? '#fff3f3' : c.metricBg }}>
+                <input
+                  type="checkbox"
+                  checked={form.isAdult}
+                  onChange={e => setForm(p => ({ ...p, isAdult: e.target.checked }))}
+                  style={{ width: 16, height: 16, accentColor: '#e24b4a', cursor: 'pointer' }}
+                />
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: form.isAdult ? '#a32d2d' : c.textPrimary }}>🔞 성인 상품</div>
+                  <div style={{ fontSize: 11, color: c.textTertiary, marginTop: 2 }}>체크 시 19세 미만 구매가 차단돼요</div>
+                </div>
+              </label>
+            </div>
+
             <div style={s.divider} />
+
+            {/* 이미지 */}
             <div style={{ marginBottom: 18 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                 <div style={s.formLabel}>상품 이미지 <span style={{ color: c.textTertiary, fontWeight: 400 }}>(최대 5장)</span></div>
@@ -724,6 +731,7 @@ export function ProductManagement({ setPage, dark, setDark, products: rawProduct
               <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleImageUpload} />
               <div style={{ fontSize: 11, color: c.textTertiary, marginTop: 6 }}>JPG, PNG, WEBP · 장당 최대 10MB</div>
             </div>
+
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button style={s.btn} onClick={() => setShowModal(false)}>취소</button>
               <button style={s.btnPrimary} onClick={save}>저장</button>
@@ -761,6 +769,8 @@ export function InventoryManagement({ setPage, dark, setDark, products: rawProdu
     lastIn: p.lastIn || '-',
     status: p.status || '판매중',
     isSoldOut: p.isSoldOut || false,
+    spec: p.spec || '',
+    unit: p.unit || '개',
   }));
 
   const [search, setSearch] = useState('');
@@ -783,23 +793,19 @@ export function InventoryManagement({ setPage, dark, setDark, products: rawProdu
     const q = parseInt(qty);
     if (!q || q <= 0) return alert('수량을 입력해주세요');
     if (setRawProducts) {
-      setRawProducts(prev => prev.map(p =>
-        p.id === selected.id ? { ...p, stock: (p.stock ?? 0) + q, lastIn: new Date().toLocaleDateString('ko-KR'), status: '판매중', isSoldOut: false } : p
-      ));
+      setRawProducts(prev => prev.map(p => p.id === selected.id ? { ...p, stock: (p.stock ?? 0) + q, lastIn: new Date().toLocaleDateString('ko-KR'), status: '판매중', isSoldOut: false } : p));
     }
     setSelected(null); setQty('');
     alert(`✅ 입고 처리 완료! (+${q}개)`);
   };
 
   const processSoldout = () => {
-    if (window.confirm(`'${selected.name}'을(를) 강제 품절 처리하시겠어요?\n재고가 0으로 변경되고 모바일 앱에서 품절로 표시됩니다.`)) {
+    if (window.confirm(`'${selected.name}'을(를) 강제 품절 처리하시겠어요?`)) {
       if (setRawProducts) {
-        setRawProducts(prev => prev.map(p =>
-          p.id === selected.id ? { ...p, stock: 0, isSoldOut: true, status: '판매중지', soldoutReason: soldoutReason || '재고 소진' } : p
-        ));
+        setRawProducts(prev => prev.map(p => p.id === selected.id ? { ...p, stock: 0, isSoldOut: true, status: '판매중지', soldoutReason: soldoutReason || '재고 소진' } : p));
       }
       setSelected(null); setSoldoutReason('');
-      alert(`⛔ 품절 처리 완료!\n모바일 앱에 즉시 반영됩니다.`);
+      alert(`⛔ 품절 처리 완료!`);
     }
   };
 
@@ -814,11 +820,7 @@ export function InventoryManagement({ setPage, dark, setDark, products: rawProdu
   return (
     <>
       {showStockTaking && (
-        <StockTakingMode
-          c={c} s={s} dark={dark}
-          inv={inv} rawProducts={rawProducts} setRawProducts={setRawProducts}
-          onClose={() => setShowStockTaking(false)}
-        />
+        <StockTakingMode c={c} s={s} dark={dark} inv={inv} rawProducts={rawProducts} setRawProducts={setRawProducts} onClose={() => setShowStockTaking(false)} />
       )}
       <div style={{ display: 'flex', height: '100vh', background: c.bg, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
         <Sidebar currentPage="adminPC_inventory" setPage={setPage} dark={dark} />
@@ -848,13 +850,11 @@ export function InventoryManagement({ setPage, dark, setDark, products: rawProdu
             <div style={s.tableCard}>
               <table style={s.table}>
                 <thead style={{ background: c.theadBg }}>
-                  <tr>{['상품','현재 재고','재고 현황','최소 기준','최근 입고일','상태','관리'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr>
+                  <tr>{['상품','규격','현재 재고','재고 현황','최소 기준','최근 입고일','상태','관리'].map(h => <th key={h} style={s.th}>{h}</th>)}</tr>
                 </thead>
                 <tbody>
                   {filtered.length === 0 ? (
-                    <tr><td colSpan={7} style={{ padding: 32, textAlign: 'center', color: c.textTertiary, fontSize: 13 }}>
-                      {inv.length === 0 ? '등록된 상품이 없어요' : '검색 결과가 없어요'}
-                    </td></tr>
+                    <tr><td colSpan={8} style={{ padding: 32, textAlign: 'center', color: c.textTertiary, fontSize: 13 }}>{inv.length === 0 ? '등록된 상품이 없어요' : '검색 결과가 없어요'}</td></tr>
                   ) : filtered.map(p => {
                     const st = getStockStatus(p);
                     const pct = Math.round((p.stock / maxStock) * 100);
@@ -868,6 +868,7 @@ export function InventoryManagement({ setPage, dark, setDark, products: rawProdu
                             <div><div style={{ fontWeight: 600, fontSize: 12, color: c.textPrimary }}>{p.name}</div><div style={{ fontSize: 10, color: c.textTertiary }}>{p.sku}</div></div>
                           </div>
                         </td>
+                        <td style={{ ...s.td, color: c.textTertiary, fontSize: 11 }}>{p.spec ? `${p.spec}${p.unit}` : '-'}</td>
                         <td style={{ ...s.td, fontWeight: 600, color: st === 'out' ? '#a32d2d' : st === 'low' ? '#854f0b' : c.textPrimary }}>{p.stock}개</td>
                         <td style={s.td}><div style={{ background: dark ? '#333' : '#eee', borderRadius: 3, height: 6, width: 80 }}><div style={{ height: 6, borderRadius: 3, background: barColor, width: `${pct}%` }} /></div></td>
                         <td style={{ ...s.td, color: c.textSecondary }}>{p.min}개</td>
@@ -900,7 +901,9 @@ export function InventoryManagement({ setPage, dark, setDark, products: rawProdu
                 <div style={{ width: 36, height: 36, borderRadius: 8, background: c.cardBorder, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{CAT_ICON_LARGE[selected.cat] || '📦'}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: c.textPrimary }}>{selected.name}</div>
-                  <div style={{ fontSize: 11, color: c.textTertiary, marginTop: 2 }}>{selected.sku} · 현재 재고 <span style={{ fontWeight: 600, color: selected.stock === 0 ? '#a32d2d' : selected.stock < selected.min ? '#854f0b' : sgd }}>{selected.stock}개</span></div>
+                  <div style={{ fontSize: 11, color: c.textTertiary, marginTop: 2 }}>
+                    {selected.sku} · {selected.spec ? `${selected.spec}${selected.unit} · ` : ''}현재 재고 <span style={{ fontWeight: 600, color: selected.stock === 0 ? '#a32d2d' : selected.stock < selected.min ? '#854f0b' : sgd }}>{selected.stock}개</span>
+                  </div>
                 </div>
               </div>
               <div style={{ display: 'flex', borderBottom: `1px solid ${c.cardBorder}`, marginBottom: 18 }}>
@@ -934,14 +937,13 @@ export function InventoryManagement({ setPage, dark, setDark, products: rawProdu
                     <div style={{ fontSize: 12, color: c.textSecondary, marginBottom: 5 }}>품절 사유 <span style={{ color: c.textTertiary }}>(선택)</span></div>
                     <select style={{ width: '100%', padding: '8px 10px', border: `1px solid ${c.inputBorder}`, borderRadius: 8, fontSize: 13, outline: 'none', boxSizing: 'border-box', background: c.inputBg, color: c.textPrimary }} value={soldoutReason} onChange={e => setSoldoutReason(e.target.value)}>
                       <option value="">사유 선택...</option>
-                      <option value="재고 소진">재고 소진 (매장 판매로 인한 품절)</option>
+                      <option value="재고 소진">재고 소진</option>
                       <option value="입고 지연">입고 지연</option>
                       <option value="상품 불량">상품 불량</option>
                       <option value="시즌 종료">시즌 종료</option>
                       <option value="기타">기타</option>
                     </select>
                   </div>
-                  <div style={{ fontSize: 11, color: c.textTertiary, marginBottom: 18 }}>품절 해제는 목록에서 <strong>품절해제</strong> 버튼을 누르거나 입고 처리를 하면 돼요.</div>
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                     <button style={s.btn} onClick={() => setSelected(null)}>취소</button>
                     <button style={s.btnDanger} onClick={processSoldout}>⛔ 품절 처리</button>
