@@ -52,6 +52,9 @@ const initialProducts = [
   { id: 4, name: '콜라 1.5L', price: 3000, large: '음료', medium: '탄산음료', small: '', image: null, stock: 100, barcode: '', images: [], status: '판매중' },
   { id: 5, name: '냉동 만두', price: 7000, large: '식품', medium: '가공식품', small: '냉동식품', image: null, stock: 15, barcode: '', images: [], status: '판매중' },
   { id: 6, name: '포카칩', price: 2500, large: '간식/과자', medium: '과자/스낵', small: '', image: null, stock: 0, barcode: '', images: [], status: '판매중지' },
+  // ✅ 성인 상품 예시
+  { id: 7, name: '소주 360ml', price: 1800, large: '주류', medium: '소주/막걸리', small: '소주', image: null, stock: 100, barcode: '', images: [], status: '판매중', isAdult: true },
+  { id: 8, name: '맥주 500ml', price: 2500, large: '주류', medium: '맥주', small: '국산맥주', image: null, stock: 80, barcode: '', images: [], status: '판매중', isAdult: true },
 ];
 
 const initialCategories = [
@@ -136,6 +139,9 @@ function App() {
 
   useEffect(() => { localStorage.setItem('srmart_users', JSON.stringify(users)); }, [users]);
 
+  // ✅ 로그인된 user 정보 항상 최신으로 유지 (회원정보 수정 반영)
+  const currentUser = user ? (users.find(u => u.email === user.email) || user) : null;
+
   useEffect(() => {
     const timer = setInterval(() => {
       setBannerTransition(true);
@@ -208,6 +214,16 @@ function App() {
     if (!user) { requireLogin(); return; }
     if (product.isSoldOut) { showToast('품절된 상품이에요! 😢'); return; }
     if (product.stock !== '' && Number(product.stock) <= 0) { showToast('재고가 없어요! 😢'); return; }
+
+    // ✅ 성인 상품 차단
+    if (product.isAdult) {
+      const latestUser = users.find(u => u.email === user.email) || user;
+      if (!latestUser.isAdult) {
+        showToast('🔞 성인 상품은 19세 이상만 구매할 수 있어요!');
+        return;
+      }
+    }
+
     const existing = cart.find((item) => item.id === product.id);
     if (existing) {
       if (product.stock !== '' && existing.quantity >= Number(product.stock)) {
@@ -241,6 +257,15 @@ function App() {
 
   const handlePayment = async (finalPrice) => {
     if (cart.length === 0) { alert('장바구니가 비어있어요!'); return; }
+
+    // ✅ 결제 시 성인 상품 재확인
+    const latestUser = users.find(u => u.email === user.email) || user;
+    const hasAdultItem = cart.some(item => item.isAdult);
+    if (hasAdultItem && !latestUser.isAdult) {
+      alert('🔞 장바구니에 성인 상품이 있어요. 19세 이상만 구매할 수 있어요!');
+      return;
+    }
+
     try {
       const orderInfo = {
         orderId: 'order_' + Date.now(),
@@ -311,7 +336,7 @@ function App() {
         <div className="header-actions">
           {user && (
             <span style={{ fontSize: '12px', color: 'var(--gray-600)', maxWidth: '60px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              👤 {user.name}
+              👤 {currentUser?.name}
             </span>
           )}
           <button className="header-icon-btn" onClick={() => goToPage('search')}>🔍</button>
@@ -432,34 +457,33 @@ function App() {
                       boxShadow: '0 2px 16px rgba(0,0,0,0.07)', position: 'relative',
                       opacity: product.isSoldOut ? 0.6 : 1,
                       cursor: product.isSoldOut ? 'default' : 'pointer',
-                      border: '1px solid #f0faf5',
+                      border: product.isAdult ? '1.5px solid #ffcdd2' : '1px solid #f0faf5',
                     }}
                   >
-                    {/* 이미지 영역 */}
                     <div style={{ height: '130px', position: 'relative', overflow: 'hidden' }}>
                       <img
                         src={product.image || getCategoryImage(product.large)}
                         alt={product.name}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
-                      {/* 파스텔 초록 오버레이 */}
                       {!product.image && (
                         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,196,113,0.08)' }} />
                       )}
-                      {/* 품절 오버레이 */}
                       {product.isSoldOut && (
                         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <span style={{ color: 'white', fontWeight: '800', fontSize: '13px', background: '#ff4757', padding: '4px 12px', borderRadius: '20px' }}>품절</span>
                         </div>
                       )}
-                      {/* 찜 버튼 */}
+                      {/* ✅ 성인 상품 배지 */}
+                      {product.isAdult && (
+                        <div style={{ position: 'absolute', top: 8, left: 8, background: '#ff4757', color: 'white', fontSize: '10px', fontWeight: '800', padding: '2px 7px', borderRadius: '8px' }}>🔞 성인</div>
+                      )}
                       <button onClick={(e) => { e.stopPropagation(); toggleWishlist(product); }}
                         style={{ position: 'absolute', top: '8px', right: '8px', width: '30px', height: '30px', borderRadius: '50%', background: 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
                         {wishlist.find((item) => item.id === product.id) ? '❤️' : '🤍'}
                       </button>
                     </div>
 
-                    {/* 텍스트 영역 */}
                     <div style={{ padding: '10px 11px 12px' }}>
                       <p style={{ fontSize: '10px', color: '#00c471', margin: '0 0 3px', fontWeight: '700' }}>{product.large}</p>
                       <p style={{ fontSize: '13px', fontWeight: '700', color: '#1a1a1a', margin: '0 0 8px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.name}</p>
@@ -489,7 +513,8 @@ function App() {
         {page === 'adminHome'     && <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} />}
         {page === 'members'       && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} />}
         {page === 'adminOrders'   && <AdminOrders orders={orders} setOrders={setOrders} goBack={goBack} onPrint={(order) => setPrintOrder(order)} />}
-        {page === 'mypage'        && <MyPage user={user} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} />}
+        {/* ✅ MyPage — users, setUsers 추가 */}
+        {page === 'mypage'        && <MyPage user={currentUser} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} users={users} setUsers={setUsers} />}
         {page === 'bannerManager' && <BannerManager banners={banners} setBanners={setBanners} categories={categories} goBack={goBack} />}
         {page === 'admin'         && <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} messages={messages} setMessages={() => {}} goBack={goBack} />}
       </div>
