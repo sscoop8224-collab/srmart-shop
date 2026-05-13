@@ -27,6 +27,7 @@ import BannerManager from './pages/BannerManager';
 import Dashboard from './components/admin/Dashboard';
 import OrderManagement from './components/admin/OrderManagement';
 import { ProductManagement, InventoryManagement } from './components/admin/ProductAndInventory';
+import PurchaseManagement from './components/admin/PurchaseManagement';
 import {
   MemberManagement as AdminMembers,
   ReviewManagement as AdminReviews,
@@ -278,7 +279,11 @@ function App() {
   }
 
   // ✅ PC 관리자 페이지 — 실제 데이터 props로 전달
-  const adminPCPages = ['adminPC','adminPC_orders','adminPC_products','adminPC_inventory','adminPC_members','adminPC_reviews','adminPC_stats','adminPC_settlement','adminPC_settings'];
+  const adminPCPages = [
+    'adminPC', 'adminPC_orders', 'adminPC_products', 'adminPC_inventory',
+    'adminPC_purchase',
+    'adminPC_members', 'adminPC_reviews', 'adminPC_stats', 'adminPC_settlement', 'adminPC_settings'
+  ];
   if (adminPCPages.includes(page)) {
     return (
       <>
@@ -308,6 +313,14 @@ function App() {
         )}
         {page === 'adminPC_inventory' && (
           <InventoryManagement
+            setPage={goToPage}
+            dark={adminDark} setDark={setAdminDark}
+            products={products} setProducts={setProducts}
+          />
+        )}
+        {/* ✅ 검수 매입 */}
+        {page === 'adminPC_purchase' && (
+          <PurchaseManagement
             setPage={goToPage}
             dark={adminDark} setDark={setAdminDark}
             products={products} setProducts={setProducts}
