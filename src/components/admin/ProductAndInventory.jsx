@@ -81,7 +81,6 @@ function normalizeProduct(p) {
 
 // =============================================
 // 카메라 스캔 컴포넌트 — html5-qrcode
-// ✅ 인식률 향상 + 가로/세로 모드 자동 대응
 // =============================================
 function CameraScanner({ onDetected, c, s }) {
   const [active, setActive] = useState(false);
@@ -91,11 +90,8 @@ function CameraScanner({ onDetected, c, s }) {
   const scannerRef = useRef(null);
   const SCANNER_ID = 'srmart-barcode-scanner';
 
-  // 화면 방향 변경 감지
   useEffect(() => {
-    const handleResize = () => {
-      setIsLandscape(window.innerWidth > window.innerHeight);
-    };
+    const handleResize = () => setIsLandscape(window.innerWidth > window.innerHeight);
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleResize);
     return () => {
@@ -107,22 +103,17 @@ function CameraScanner({ onDetected, c, s }) {
   const startScanner = async () => {
     setError('');
     setLoading(true);
-    // 1단계: div 먼저 렌더링
     setActive(true);
-    // 2단계: DOM 마운트 대기
     await new Promise(resolve => setTimeout(resolve, 200));
     try {
       const { Html5Qrcode } = await import('html5-qrcode');
       const scanner = new Html5Qrcode(SCANNER_ID);
       scannerRef.current = scanner;
-
-      // ✅ 화면 방향에 따라 인식 박스 동적 조정
       const landscape = window.innerWidth > window.innerHeight;
       const boxWidth = landscape
         ? Math.min(Math.round(window.innerWidth * 0.35), 400)
         : Math.min(Math.round(window.innerWidth * 0.65), 300);
       const boxHeight = Math.round(boxWidth * 0.45);
-
       await scanner.start(
         { facingMode: 'environment' },
         {
@@ -153,18 +144,13 @@ function CameraScanner({ onDetected, c, s }) {
 
   const stopScanner = async () => {
     if (scannerRef.current) {
-      try {
-        await scannerRef.current.stop();
-        scannerRef.current.clear();
-      } catch {}
+      try { await scannerRef.current.stop(); scannerRef.current.clear(); } catch {}
       scannerRef.current = null;
     }
     setActive(false);
   };
 
-  useEffect(() => {
-    return () => { stopScanner(); };
-  }, []);
+  useEffect(() => { return () => { stopScanner(); }; }, []);
 
   return (
     <div>
@@ -176,37 +162,14 @@ function CameraScanner({ onDetected, c, s }) {
             <div>EAN-13, EAN-8, Code-128, UPC 등 지원</div>
             <div style={{ marginTop: 6, fontSize: 11, color: '#444' }}>※ 카메라 권한 허용이 필요해요</div>
           </div>
-          {error && (
-            <div style={{ background: '#fcebeb', border: '1px solid #f09595', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: '#a32d2d', marginBottom: 12 }}>
-              ⚠️ {error}
-            </div>
-          )}
-          <button style={{ ...s.btnPrimary, width: '100%', justifyContent: 'center', padding: '12px' }} onClick={startScanner}>
-            📷 카메라 시작
-          </button>
+          {error && <div style={{ background: '#fcebeb', border: '1px solid #f09595', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: '#a32d2d', marginBottom: 12 }}>⚠️ {error}</div>}
+          <button style={{ ...s.btnPrimary, width: '100%', justifyContent: 'center', padding: '12px' }} onClick={startScanner}>📷 카메라 시작</button>
         </div>
       ) : (
         <div>
-          {/* html5-qrcode가 이 div 안에 카메라를 렌더링해요 */}
-          <div
-            id={SCANNER_ID}
-            style={{
-              width: '100%',
-              borderRadius: 12,
-              overflow: 'hidden',
-              marginBottom: 12,
-              minHeight: isLandscape ? 140 : 200,
-              background: '#000',
-            }}
-          />
-          {loading && (
-            <div style={{ textAlign: 'center', fontSize: 12, color: '#666', marginBottom: 8 }}>
-              카메라 초기화 중...
-            </div>
-          )}
-          <button style={{ ...s.btn, width: '100%', justifyContent: 'center' }} onClick={stopScanner}>
-            ⏹ 카메라 종료
-          </button>
+          <div id={SCANNER_ID} style={{ width: '100%', borderRadius: 12, overflow: 'hidden', marginBottom: 12, minHeight: isLandscape ? 140 : 200, background: '#000' }} />
+          {loading && <div style={{ textAlign: 'center', fontSize: 12, color: '#666', marginBottom: 8 }}>카메라 초기화 중...</div>}
+          <button style={{ ...s.btn, width: '100%', justifyContent: 'center' }} onClick={stopScanner}>⏹ 카메라 종료</button>
         </div>
       )}
     </div>
@@ -226,18 +189,12 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
 
   const findByBarcode = useCallback((code) => {
     if (!code.trim()) return null;
-    return rawProducts.find(p =>
-      p.barcode === code.trim() ||
-      p.sku === code.trim() ||
-      String(p.id) === code.trim()
-    );
+    return rawProducts.find(p => p.barcode === code.trim() || p.sku === code.trim() || String(p.id) === code.trim());
   }, [rawProducts]);
 
   const findByName = (keyword) => {
     if (!keyword.trim()) return [];
-    return rawProducts.filter(p =>
-      p.name.includes(keyword) || (p.barcode && p.barcode.includes(keyword))
-    );
+    return rawProducts.filter(p => p.name.includes(keyword) || (p.barcode && p.barcode.includes(keyword)));
   };
 
   const addToScanList = useCallback((product) => {
@@ -248,14 +205,7 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
         return prev.map(i => i.id === product.id ? { ...i, newStock: i.newStock + 1 } : i);
       } else {
         setScanMsg(`✅ ${product.name} — 추가됨`);
-        return [...prev, {
-          id: product.id,
-          name: product.name,
-          barcode: product.barcode || '-',
-          sku: product.sku || '-',
-          prevStock: product.stock ?? 0,
-          newStock: 1,
-        }];
+        return [...prev, { id: product.id, name: product.name, barcode: product.barcode || '-', sku: product.sku || '-', prevStock: product.stock ?? 0, newStock: 1 }];
       }
     });
     setTimeout(() => setScanMsg(''), 2000);
@@ -263,12 +213,8 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
 
   const handleCameraDetected = useCallback((code) => {
     const found = findByBarcode(code);
-    if (found) {
-      addToScanList(found);
-    } else {
-      setScanMsg(`❌ '${code}' — 등록되지 않은 바코드예요`);
-      setTimeout(() => setScanMsg(''), 2500);
-    }
+    if (found) { addToScanList(found); }
+    else { setScanMsg(`❌ '${code}' — 등록되지 않은 바코드예요`); setTimeout(() => setScanMsg(''), 2500); }
   }, [findByBarcode, addToScanList]);
 
   const handleBarcodeEnter = (e) => {
@@ -276,26 +222,15 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
       const code = barcodeInput.trim();
       if (!code) return;
       const found = findByBarcode(code);
-      if (found) {
-        addToScanList(found);
-      } else {
-        setScanMsg(`❌ '${code}' — 등록되지 않은 바코드예요`);
-        setTimeout(() => setScanMsg(''), 2500);
-      }
+      if (found) { addToScanList(found); }
+      else { setScanMsg(`❌ '${code}' — 등록되지 않은 바코드예요`); setTimeout(() => setScanMsg(''), 2500); }
       setBarcodeInput('');
     }
   };
 
-  useEffect(() => {
-    if (scanMode === 'barcode') setTimeout(() => barcodeInputRef.current?.focus(), 100);
-  }, [scanMode]);
+  useEffect(() => { if (scanMode === 'barcode') setTimeout(() => barcodeInputRef.current?.focus(), 100); }, [scanMode]);
 
-  const updateQty = (id, val) => {
-    const n = parseInt(val);
-    if (isNaN(n) || n < 0) return;
-    setScanList(prev => prev.map(i => i.id === id ? { ...i, newStock: n } : i));
-  };
-
+  const updateQty = (id, val) => { const n = parseInt(val); if (isNaN(n) || n < 0) return; setScanList(prev => prev.map(i => i.id === id ? { ...i, newStock: n } : i)); };
   const removeFromList = (id) => setScanList(prev => prev.filter(i => i.id !== id));
 
   const saveAll = () => {
@@ -304,15 +239,7 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
     if (setRawProducts) {
       setRawProducts(prev => prev.map(p => {
         const scanned = scanList.find(i => i.id === p.id);
-        if (scanned) {
-          return {
-            ...p,
-            stock: scanned.newStock,
-            lastIn: new Date().toLocaleDateString('ko-KR'),
-            status: scanned.newStock === 0 ? '판매중지' : '판매중',
-            isSoldOut: scanned.newStock === 0,
-          };
-        }
+        if (scanned) return { ...p, stock: scanned.newStock, lastIn: new Date().toLocaleDateString('ko-KR'), status: scanned.newStock === 0 ? '판매중지' : '판매중', isSoldOut: scanned.newStock === 0 };
         return p;
       }));
     }
@@ -334,22 +261,16 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
           <button style={s.btn} onClick={onClose}>✕ 닫기</button>
         </div>
       </div>
-
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         <div style={{ width: 360, borderRight: `1px solid ${c.cardBorder}`, display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
           <div style={{ display: 'flex', borderBottom: `1px solid ${c.cardBorder}`, background: c.cardBg }}>
-            {[
-              { key: 'barcode', label: '📡 스캐너/PDA', desc: '방법 1·3' },
-              { key: 'camera',  label: '📷 카메라',     desc: '방법 2' },
-              { key: 'manual',  label: '🔍 수동검색',   desc: '직접입력' },
-            ].map(tab => (
+            {[{ key: 'barcode', label: '📡 스캐너/PDA', desc: '방법 1·3' }, { key: 'camera', label: '📷 카메라', desc: '방법 2' }, { key: 'manual', label: '🔍 수동검색', desc: '직접입력' }].map(tab => (
               <div key={tab.key} onClick={() => setScanMode(tab.key)} style={{ flex: 1, padding: '10px 8px', textAlign: 'center', cursor: 'pointer', borderBottom: scanMode === tab.key ? `2px solid ${sg}` : '2px solid transparent', background: scanMode === tab.key ? sgl : 'transparent', marginBottom: -1 }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: scanMode === tab.key ? sgd : c.textSecondary }}>{tab.label}</div>
                 <div style={{ fontSize: 9, color: c.textTertiary, marginTop: 2 }}>{tab.desc}</div>
               </div>
             ))}
           </div>
-
           <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
             {scanMode === 'barcode' && (
               <div>
@@ -361,48 +282,24 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
                   <div style={{ marginTop: 6, color: c.textSecondary, fontSize: 11 }}>※ PDA는 크롬 브라우저에서 이 페이지를 열면 동일하게 작동해요</div>
                 </div>
                 <div style={{ fontSize: 12, color: c.textSecondary, marginBottom: 6 }}>바코드 입력 (스캔 또는 직접 입력 후 Enter)</div>
-                <input
-                  ref={barcodeInputRef}
-                  style={{ ...s.formInput, fontSize: 16, padding: '12px 14px', border: `2px solid ${sg}` }}
-                  placeholder="바코드를 스캔하세요..."
-                  value={barcodeInput}
-                  onChange={e => setBarcodeInput(e.target.value)}
-                  onKeyDown={handleBarcodeEnter}
-                  autoFocus
-                />
-                {scanMsg && (
-                  <div style={{ padding: '8px 12px', borderRadius: 8, background: scanMsg.startsWith('✅') ? sgl : '#fcebeb', color: scanMsg.startsWith('✅') ? sgd : '#a32d2d', fontSize: 12, fontWeight: 500, marginTop: 10 }}>
-                    {scanMsg}
-                  </div>
-                )}
+                <input ref={barcodeInputRef} style={{ ...s.formInput, fontSize: 16, padding: '12px 14px', border: `2px solid ${sg}` }} placeholder="바코드를 스캔하세요..." value={barcodeInput} onChange={e => setBarcodeInput(e.target.value)} onKeyDown={handleBarcodeEnter} autoFocus />
+                {scanMsg && <div style={{ padding: '8px 12px', borderRadius: 8, background: scanMsg.startsWith('✅') ? sgl : '#fcebeb', color: scanMsg.startsWith('✅') ? sgd : '#a32d2d', fontSize: 12, fontWeight: 500, marginTop: 10 }}>{scanMsg}</div>}
                 <div style={{ fontSize: 11, color: c.textTertiary, marginTop: 8 }}>스캔할 때마다 실사 목록에 자동으로 추가돼요</div>
               </div>
             )}
-
             {scanMode === 'camera' && (
               <div>
                 <CameraScanner onDetected={handleCameraDetected} c={c} s={s} />
-                {scanMsg && (
-                  <div style={{ padding: '8px 12px', borderRadius: 8, background: scanMsg.startsWith('✅') ? sgl : '#fcebeb', color: scanMsg.startsWith('✅') ? sgd : '#a32d2d', fontSize: 12, fontWeight: 500, marginTop: 10 }}>
-                    {scanMsg}
-                  </div>
-                )}
+                {scanMsg && <div style={{ padding: '8px 12px', borderRadius: 8, background: scanMsg.startsWith('✅') ? sgl : '#fcebeb', color: scanMsg.startsWith('✅') ? sgd : '#a32d2d', fontSize: 12, fontWeight: 500, marginTop: 10 }}>{scanMsg}</div>}
               </div>
             )}
-
             {scanMode === 'manual' && (
               <div>
                 <div style={{ background: dark ? '#252525' : '#f5f5f3', border: `1px solid ${c.cardBorder}`, borderRadius: 10, padding: 14, marginBottom: 16, fontSize: 12, color: c.textSecondary, lineHeight: 1.7 }}>
                   <div style={{ fontWeight: 600, color: c.textPrimary, marginBottom: 6 }}>🔍 상품명 검색</div>
                   <div>상품명 또는 바코드 번호로 검색해서 추가해요</div>
                 </div>
-                <input
-                  style={{ ...s.formInput, marginBottom: 10 }}
-                  placeholder="상품명 검색..."
-                  value={manualSearch}
-                  onChange={e => setManualSearch(e.target.value)}
-                  autoFocus
-                />
+                <input style={{ ...s.formInput, marginBottom: 10 }} placeholder="상품명 검색..." value={manualSearch} onChange={e => setManualSearch(e.target.value)} autoFocus />
                 {manualResults.length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {manualResults.map(p => (
@@ -411,36 +308,22 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
                           <div style={{ fontSize: 12, fontWeight: 600, color: c.textPrimary }}>{p.name}</div>
                           <div style={{ fontSize: 10, color: c.textTertiary }}>재고 {p.stock ?? 0}개 · {p.barcode || '바코드없음'}</div>
                         </div>
-                        <button style={{ ...s.actionBtn, borderColor: sg, color: sgd, fontSize: 11 }} onClick={() => { addToScanList(normalizeProduct(p)); setManualSearch(''); }}>
-                          + 추가
-                        </button>
+                        <button style={{ ...s.actionBtn, borderColor: sg, color: sgd, fontSize: 11 }} onClick={() => { addToScanList(normalizeProduct(p)); setManualSearch(''); }}>+ 추가</button>
                       </div>
                     ))}
                   </div>
                 )}
-                {manualSearch && manualResults.length === 0 && (
-                  <div style={{ textAlign: 'center', color: c.textTertiary, fontSize: 12, padding: 20 }}>검색 결과가 없어요</div>
-                )}
-                {scanMsg && (
-                  <div style={{ padding: '8px 12px', borderRadius: 8, background: scanMsg.startsWith('✅') ? sgl : '#fcebeb', color: scanMsg.startsWith('✅') ? sgd : '#a32d2d', fontSize: 12, fontWeight: 500, marginTop: 10 }}>
-                    {scanMsg}
-                  </div>
-                )}
+                {manualSearch && manualResults.length === 0 && <div style={{ textAlign: 'center', color: c.textTertiary, fontSize: 12, padding: 20 }}>검색 결과가 없어요</div>}
+                {scanMsg && <div style={{ padding: '8px 12px', borderRadius: 8, background: scanMsg.startsWith('✅') ? sgl : '#fcebeb', color: scanMsg.startsWith('✅') ? sgd : '#a32d2d', fontSize: 12, fontWeight: 500, marginTop: 10 }}>{scanMsg}</div>}
               </div>
             )}
           </div>
         </div>
-
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ padding: '12px 20px', borderBottom: `1px solid ${c.cardBorder}`, background: c.cardBg, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: c.textPrimary }}>실사 목록 <span style={{ color: c.textTertiary, fontWeight: 400, fontSize: 12 }}>({scanList.length}개)</span></div>
-            {scanList.length > 0 && (
-              <button style={{ ...s.actionBtn, color: '#a32d2d', borderColor: '#f09595', fontSize: 11 }} onClick={() => { if (window.confirm('실사 목록을 초기화하시겠어요?')) setScanList([]); }}>
-                목록 초기화
-              </button>
-            )}
+            {scanList.length > 0 && <button style={{ ...s.actionBtn, color: '#a32d2d', borderColor: '#f09595', fontSize: 11 }} onClick={() => { if (window.confirm('실사 목록을 초기화하시겠어요?')) setScanList([]); }}>목록 초기화</button>}
           </div>
-
           <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
             {scanList.length === 0 ? (
               <div style={{ textAlign: 'center', paddingTop: 60, color: c.textTertiary }}>
@@ -465,9 +348,7 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
                         <button onClick={() => updateQty(item.id, item.newStock + 1)} style={{ width: 26, height: 26, borderRadius: 6, border: `1px solid ${c.cardBorder}`, background: c.metricBg, color: c.textPrimary, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                         <span style={{ fontSize: 11, color: c.textTertiary, width: 20 }}>개</span>
                       </div>
-                      <div style={{ width: 50, textAlign: 'center', fontSize: 11, fontWeight: 600, color: diff > 0 ? sgd : diff < 0 ? '#a32d2d' : c.textTertiary, flexShrink: 0 }}>
-                        {diff > 0 ? `+${diff}` : diff < 0 ? `${diff}` : '±0'}
-                      </div>
+                      <div style={{ width: 50, textAlign: 'center', fontSize: 11, fontWeight: 600, color: diff > 0 ? sgd : diff < 0 ? '#a32d2d' : c.textTertiary, flexShrink: 0 }}>{diff > 0 ? `+${diff}` : diff < 0 ? `${diff}` : '±0'}</div>
                       <button onClick={() => removeFromList(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: c.textTertiary, padding: 4, flexShrink: 0 }}>✕</button>
                     </div>
                   );
@@ -475,13 +356,193 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
               </div>
             )}
           </div>
-
           {scanList.length > 0 && (
             <div style={{ padding: '12px 16px', borderTop: `1px solid ${c.cardBorder}`, background: c.cardBg, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <div style={{ flex: 1, fontSize: 12, color: c.textSecondary, display: 'flex', alignItems: 'center' }}>총 {scanList.length}개 상품 · 재고 변경 예정</div>
               <button style={s.btn} onClick={() => { if (window.confirm('실사 목록을 초기화하시겠어요?')) setScanList([]); }}>초기화</button>
               <button style={s.btnPrimary} onClick={saveAll}>💾 실사 결과 저장</button>
             </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =============================================
+// ✅ 엑셀 업로드 모달
+// =============================================
+function ExcelUploadModal({ c, s, largeCategories, setRawProducts, onClose }) {
+  const [preview, setPreview] = useState([]);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const excelInputRef = useRef(null);
+
+  // 엑셀 양식 다운로드
+  const downloadTemplate = async () => {
+    const XLSX = await import('xlsx');
+    const ws = XLSX.utils.aoa_to_sheet([
+      ['상품명', '카테고리', '판매가', '재고수량', '바코드', '상태'],
+      ['예시: 신선 사과 1kg', '식품', '3500', '100', '8801234567890', '판매중'],
+      ['예시: 제주 삼다수 2L', '음료', '1200', '200', '8801051111111', '판매중'],
+    ]);
+    ws['!cols'] = [{ wch: 20 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 16 }, { wch: 10 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '상품목록');
+    XLSX.writeFile(wb, 'SR마트_상품등록_양식.xlsx');
+  };
+
+  // 엑셀 파일 읽기
+  const handleExcelFile = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setError('');
+    setLoading(true);
+    try {
+      const XLSX = await import('xlsx');
+      const data = await file.arrayBuffer();
+      const wb = XLSX.read(data);
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+      // 첫 번째 행은 헤더
+      const dataRows = rows.slice(1).filter(r => r[0] && String(r[0]).trim());
+      if (dataRows.length === 0) { setError('데이터가 없어요. 양식을 확인해주세요.'); setLoading(false); return; }
+
+      const parsed = dataRows.map((r, idx) => ({
+        _idx: idx,
+        name: String(r[0] || '').trim(),
+        large: String(r[1] || largeCategories[0] || '식품').trim(),
+        price: Number(r[2]) || 0,
+        stock: Number(r[3]) || 0,
+        barcode: String(r[4] || '').trim(),
+        status: String(r[5] || '판매중').trim(),
+        valid: !!String(r[0] || '').trim() && !!Number(r[2]),
+      }));
+
+      setPreview(parsed);
+    } catch (err) {
+      setError('파일을 읽을 수 없어요. 엑셀 파일(.xlsx)인지 확인해주세요.');
+    } finally {
+      setLoading(false);
+      e.target.value = '';
+    }
+  };
+
+  // 일괄 등록
+  const registerAll = () => {
+    const valid = preview.filter(p => p.valid);
+    if (valid.length === 0) return alert('등록 가능한 상품이 없어요');
+    if (!window.confirm(`총 ${valid.length}개 상품을 등록하시겠어요?`)) return;
+    setRawProducts(prev => [
+      ...prev,
+      ...valid.map(p => ({
+        id: Date.now() + Math.random(),
+        name: p.name,
+        price: p.price,
+        large: p.large,
+        medium: '',
+        small: '',
+        stock: p.stock,
+        status: p.status === '판매중지' ? '판매중지' : '판매중',
+        isSoldOut: p.status === '판매중지',
+        barcode: p.barcode,
+        images: [],
+        image: null,
+        sold: 0,
+        rating: 0,
+      }))
+    ]);
+    alert(`✅ ${valid.length}개 상품이 등록됐어요!`);
+    onClose();
+  };
+
+  const validCount = preview.filter(p => p.valid).length;
+  const invalidCount = preview.length - validCount;
+
+  return (
+    <div style={s.modalBg} onClick={onClose}>
+      <div style={{ ...s.modal, width: 680 }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <span style={{ fontSize: 15, fontWeight: 600, color: c.textPrimary }}>📥 엑셀 일괄 등록</span>
+          <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: c.textSecondary }} onClick={onClose}>✕</button>
+        </div>
+
+        {/* 1단계: 양식 다운로드 */}
+        <div style={{ background: c.metricBg, borderRadius: 10, padding: 16, marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: c.textPrimary, marginBottom: 8 }}>1단계 — 양식 다운로드</div>
+          <div style={{ fontSize: 12, color: c.textSecondary, marginBottom: 10 }}>
+            엑셀 양식을 다운로드해서 상품명, 카테고리, 판매가, 재고, 바코드를 입력해요.
+          </div>
+          <button style={{ ...s.btn, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={downloadTemplate}>
+            📄 양식 다운로드 (.xlsx)
+          </button>
+        </div>
+
+        {/* 2단계: 파일 업로드 */}
+        <div style={{ background: c.metricBg, borderRadius: 10, padding: 16, marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: c.textPrimary, marginBottom: 8 }}>2단계 — 파일 업로드</div>
+          <div style={{ fontSize: 12, color: c.textSecondary, marginBottom: 10 }}>작성한 엑셀 파일을 업로드하면 미리보기가 표시돼요.</div>
+          <button style={{ ...s.btnPrimary, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => excelInputRef.current?.click()}>
+            📂 엑셀 파일 선택
+          </button>
+          <input ref={excelInputRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleExcelFile} />
+          {loading && <div style={{ fontSize: 12, color: c.textTertiary, marginTop: 8 }}>파일 읽는 중...</div>}
+          {error && <div style={{ fontSize: 12, color: '#a32d2d', marginTop: 8 }}>⚠️ {error}</div>}
+        </div>
+
+        {/* 3단계: 미리보기 */}
+        {preview.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: c.textPrimary }}>3단계 — 미리보기</div>
+              <div style={{ fontSize: 12, color: c.textSecondary }}>
+                <span style={{ color: sgd, fontWeight: 600 }}>등록 가능 {validCount}개</span>
+                {invalidCount > 0 && <span style={{ color: '#a32d2d', marginLeft: 8 }}>오류 {invalidCount}개</span>}
+              </div>
+            </div>
+            <div style={{ border: `1px solid ${c.cardBorder}`, borderRadius: 10, overflow: 'hidden', maxHeight: 280, overflowY: 'auto' }}>
+              <table style={{ ...s.table }}>
+                <thead style={{ background: c.theadBg, position: 'sticky', top: 0 }}>
+                  <tr>
+                    {['상태', '상품명', '카테고리', '판매가', '재고', '바코드'].map(h => (
+                      <th key={h} style={s.th}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {preview.map((p, idx) => (
+                    <tr key={idx} style={{ background: p.valid ? 'transparent' : '#fff5f5' }}>
+                      <td style={s.td}>
+                        {p.valid
+                          ? <span style={{ ...s.pill, background: sgl, color: sgd }}>✓ 정상</span>
+                          : <span style={{ ...s.pill, background: '#fcebeb', color: '#a32d2d' }}>⚠ 오류</span>
+                        }
+                      </td>
+                      <td style={{ ...s.td, fontWeight: 600 }}>{p.name || <span style={{ color: '#a32d2d' }}>상품명 없음</span>}</td>
+                      <td style={{ ...s.td, color: c.textSecondary }}>{p.large}</td>
+                      <td style={{ ...s.td }}>{p.price ? `₩${Number(p.price).toLocaleString()}` : <span style={{ color: '#a32d2d' }}>가격 없음</span>}</td>
+                      <td style={{ ...s.td }}>{p.stock}개</td>
+                      <td style={{ ...s.td, fontSize: 11, color: c.textTertiary }}>{p.barcode || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {invalidCount > 0 && (
+              <div style={{ fontSize: 11, color: '#a32d2d', marginTop: 8 }}>
+                ⚠️ 오류 항목은 상품명 또는 판매가가 없어요. 수정 후 다시 업로드해주세요.
+              </div>
+            )}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button style={s.btn} onClick={onClose}>취소</button>
+          {preview.length > 0 && validCount > 0 && (
+            <button style={s.btnPrimary} onClick={registerAll}>
+              ✅ {validCount}개 일괄 등록
+            </button>
           )}
         </div>
       </div>
@@ -502,6 +563,7 @@ export function ProductManagement({ setPage, dark, setDark, products: rawProduct
   const [catFilter, setCatFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showExcelModal, setShowExcelModal] = useState(false); // ✅ 엑셀 업로드 모달
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ name: '', large: '식품', price: '', stock: '', status: '판매중', barcode: '', images: [] });
 
@@ -553,6 +615,10 @@ export function ProductManagement({ setPage, dark, setDark, products: rawProduct
         <div style={s.topbar}>
           <div style={s.topbarTitle}>상품 관리</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {/* ✅ 엑셀 업로드 버튼 */}
+            <button style={{ ...s.btn, display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => setShowExcelModal(true)}>
+              📥 엑셀 업로드
+            </button>
             <button style={s.btnPrimary} onClick={openAdd}>+ 상품 등록</button>
             <DarkToggle dark={dark} setDark={setDark} />
           </div>
@@ -608,6 +674,16 @@ export function ProductManagement({ setPage, dark, setDark, products: rawProduct
           </div>
         </div>
       </div>
+
+      {/* ✅ 엑셀 업로드 모달 */}
+      {showExcelModal && (
+        <ExcelUploadModal
+          c={c} s={s}
+          largeCategories={largeCategories}
+          setRawProducts={setRawProducts}
+          onClose={() => setShowExcelModal(false)}
+        />
+      )}
 
       {showModal && (
         <div style={s.modalBg} onClick={() => setShowModal(false)}>
