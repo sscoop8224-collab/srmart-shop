@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import srmLogo from './srm_logo.png';
 
-// 기존 페이지들
 import Admin from './pages/Admin';
 import Login from './pages/Login';
 import Orders from './pages/Orders';
@@ -23,7 +22,6 @@ import SalesStats from './pages/SalesStats';
 import MyPage from './pages/MyPage';
 import BannerManager from './pages/BannerManager';
 
-// PC 관리자 페이지들
 import Dashboard from './components/admin/Dashboard';
 import OrderManagement from './components/admin/OrderManagement';
 import { ProductManagement, InventoryManagement } from './components/admin/ProductAndInventory';
@@ -35,6 +33,17 @@ import {
   KakaoPaySettlement,
   Settings as AdminSettings,
 } from './components/admin/OtherPages';
+
+const getCategoryImage = (large) => {
+  switch(large) {
+    case '식품': return 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300&q=80';
+    case '음료': return 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=300&q=80';
+    case '생활용품': return 'https://images.unsplash.com/photo-1585421514738-01798e348b17?w=300&q=80';
+    case '간식/과자': return 'https://images.unsplash.com/photo-1599490659213-e2b9527bd087?w=300&q=80';
+    case '주류': return 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&q=80';
+    default: return 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&q=80';
+  }
+};
 
 const initialProducts = [
   { id: 1, name: '신선 사과', price: 5000, large: '식품', medium: '신선식품', small: '과일', image: null, stock: 50, barcode: '', images: [], status: '판매중' },
@@ -84,12 +93,8 @@ function App() {
   const [wishlist, setWishlist] = useState([]);
   const [notices, setNotices] = useState([]);
   const [orders, setOrders] = useState([]);
-
-  // 다크모드 상태 — App.js 한 곳에서만 관리
   const [adminDark, setAdminDark] = useState(() => localStorage.getItem('srmart_admin_dark') === 'true');
-  useEffect(() => {
-    localStorage.setItem('srmart_admin_dark', adminDark);
-  }, [adminDark]);
+  useEffect(() => { localStorage.setItem('srmart_admin_dark', adminDark); }, [adminDark]);
 
   const [users, setUsers] = useState(() => {
     const saved = localStorage.getItem('srmart_users');
@@ -129,9 +134,7 @@ function App() {
 
   const isAdmin = user && user.email === 'admin@srmart.com';
 
-  useEffect(() => {
-    localStorage.setItem('srmart_users', JSON.stringify(users));
-  }, [users]);
+  useEffect(() => { localStorage.setItem('srmart_users', JSON.stringify(users)); }, [users]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -237,10 +240,7 @@ function App() {
   const selectedMediumObj = selectedLargeObj && selectedLargeObj.children.find((m) => m.name === filterMedium);
 
   const handlePayment = async (finalPrice) => {
-    if (cart.length === 0) {
-      alert('장바구니가 비어있어요!');
-      return;
-    }
+    if (cart.length === 0) { alert('장바구니가 비어있어요!'); return; }
     try {
       const orderInfo = {
         orderId: 'order_' + Date.now(),
@@ -278,7 +278,6 @@ function App() {
     );
   }
 
-  // ✅ PC 관리자 페이지 — 실제 데이터 props로 전달
   const adminPCPages = [
     'adminPC', 'adminPC_orders', 'adminPC_products', 'adminPC_inventory',
     'adminPC_purchase',
@@ -287,80 +286,16 @@ function App() {
   if (adminPCPages.includes(page)) {
     return (
       <>
-        {page === 'adminPC' && (
-          <Dashboard
-            setPage={goToPage}
-            dark={adminDark} setDark={setAdminDark}
-            products={products}
-            orders={orders}
-            users={users}
-          />
-        )}
-        {page === 'adminPC_orders' && (
-          <OrderManagement
-            setPage={goToPage}
-            dark={adminDark} setDark={setAdminDark}
-            orders={orders} setOrders={setOrders}
-          />
-        )}
-        {page === 'adminPC_products' && (
-          <ProductManagement
-            setPage={goToPage}
-            dark={adminDark} setDark={setAdminDark}
-            products={products} setProducts={setProducts}
-            categories={categories}
-          />
-        )}
-        {page === 'adminPC_inventory' && (
-          <InventoryManagement
-            setPage={goToPage}
-            dark={adminDark} setDark={setAdminDark}
-            products={products} setProducts={setProducts}
-          />
-        )}
-        {/* ✅ 검수 매입 */}
-        {page === 'adminPC_purchase' && (
-          <PurchaseManagement
-            setPage={goToPage}
-            dark={adminDark} setDark={setAdminDark}
-            products={products} setProducts={setProducts}
-          />
-        )}
-        {page === 'adminPC_members' && (
-          <AdminMembers
-            setPage={goToPage}
-            dark={adminDark} setDark={setAdminDark}
-            users={users} setUsers={setUsers}
-          />
-        )}
-        {page === 'adminPC_reviews' && (
-          <AdminReviews
-            setPage={goToPage}
-            dark={adminDark} setDark={setAdminDark}
-          />
-        )}
-        {page === 'adminPC_stats' && (
-          <AdminSalesStats
-            setPage={goToPage}
-            dark={adminDark} setDark={setAdminDark}
-            orders={orders}
-            products={products}
-          />
-        )}
-        {page === 'adminPC_settlement' && (
-          <KakaoPaySettlement
-            setPage={goToPage}
-            dark={adminDark} setDark={setAdminDark}
-            orders={orders}
-          />
-        )}
-        {page === 'adminPC_settings' && (
-          <AdminSettings
-            setPage={goToPage}
-            dark={adminDark} setDark={setAdminDark}
-            users={users} setUsers={setUsers}
-          />
-        )}
+        {page === 'adminPC' && <Dashboard setPage={goToPage} dark={adminDark} setDark={setAdminDark} products={products} orders={orders} users={users} />}
+        {page === 'adminPC_orders' && <OrderManagement setPage={goToPage} dark={adminDark} setDark={setAdminDark} orders={orders} setOrders={setOrders} />}
+        {page === 'adminPC_products' && <ProductManagement setPage={goToPage} dark={adminDark} setDark={setAdminDark} products={products} setProducts={setProducts} categories={categories} />}
+        {page === 'adminPC_inventory' && <InventoryManagement setPage={goToPage} dark={adminDark} setDark={setAdminDark} products={products} setProducts={setProducts} />}
+        {page === 'adminPC_purchase' && <PurchaseManagement setPage={goToPage} dark={adminDark} setDark={setAdminDark} products={products} setProducts={setProducts} />}
+        {page === 'adminPC_members' && <AdminMembers setPage={goToPage} dark={adminDark} setDark={setAdminDark} users={users} setUsers={setUsers} />}
+        {page === 'adminPC_reviews' && <AdminReviews setPage={goToPage} dark={adminDark} setDark={setAdminDark} />}
+        {page === 'adminPC_stats' && <AdminSalesStats setPage={goToPage} dark={adminDark} setDark={setAdminDark} orders={orders} products={products} />}
+        {page === 'adminPC_settlement' && <KakaoPaySettlement setPage={goToPage} dark={adminDark} setDark={setAdminDark} orders={orders} />}
+        {page === 'adminPC_settings' && <AdminSettings setPage={goToPage} dark={adminDark} setDark={setAdminDark} users={users} setUsers={setUsers} />}
       </>
     );
   }
@@ -387,17 +322,14 @@ function App() {
           {user ? (
             <button onClick={handleLogout} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e53935" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
-                <line x1="12" y1="2" x2="12" y2="12"/>
+                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>
               </svg>
               <span style={{ fontSize: '10px', fontWeight: '700', color: '#868e96' }}>로그아웃</span>
             </button>
           ) : (
             <button onClick={() => setPage('login')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-                <polyline points="10 17 15 12 10 7"/>
-                <line x1="15" y1="12" x2="3" y2="12"/>
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
               </svg>
               <span style={{ fontSize: '10px', fontWeight: '700', color: '#00c471' }}>로그인</span>
             </button>
@@ -405,25 +337,23 @@ function App() {
         </div>
       </header>
 
-      {/* 페이지 콘텐츠 */}
       <div className="main-content">
         {page === 'home' && (
           <>
+            {/* 배너 */}
             <div style={{ padding: '16px' }}>
               <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden' }}>
-                <div style={{ display: 'flex', transition: bannerTransition ? '-webkit-transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none', WebkitTransform: `translateX(-${bannerIndex * 100}%)`, transform: `translateX(-${bannerIndex * 100}%)`, willChange: 'transform' }}>
+                <div style={{ display: 'flex', transition: bannerTransition ? 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none', WebkitTransform: `translateX(-${bannerIndex * 100}%)`, transform: `translateX(-${bannerIndex * 100}%)`, willChange: 'transform' }}>
                   {[...banners, banners[0]].map((slide, index) => (
-                    <div
-                      key={index}
-                      onClick={() => { if (slide.filter) { setFilterLarge(slide.filter); setFilterMedium('전체'); setFilterSmall('전체'); } }}
-                      style={{ minWidth: '100%', background: slide.bg, borderRadius: '18px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', overflow: 'hidden', position: 'relative', cursor: slide.filter ? 'pointer' : 'default', boxSizing: 'border-box' }}
-                    >
+                    <div key={index} onClick={() => { if (slide.filter) { setFilterLarge(slide.filter); setFilterMedium('전체'); setFilterSmall('전체'); } }}
+                      style={{ minWidth: '100%', background: slide.bg, borderRadius: '18px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', overflow: 'hidden', position: 'relative', cursor: slide.filter ? 'pointer' : 'default', boxSizing: 'border-box' }}>
                       <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%' }} />
                       <div style={{ position: 'relative', zIndex: 1 }}>
                         <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.85)', margin: '0 0 4px', fontWeight: '600' }}>{slide.label}</p>
                         <h2 style={{ fontSize: '18px', fontWeight: '800', color: 'white', margin: '0 0 6px', letterSpacing: '-0.5px' }}>{slide.title}</h2>
                         <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.85)', margin: '0 0 12px' }}>{slide.sub}</p>
-                        <button onClick={(e) => { e.stopPropagation(); if (slide.filter) { setFilterLarge(slide.filter); setFilterMedium('전체'); setFilterSmall('전체'); } }} style={{ background: 'white', color: '#333', border: 'none', borderRadius: '20px', padding: '7px 16px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>
+                        <button onClick={(e) => { e.stopPropagation(); if (slide.filter) { setFilterLarge(slide.filter); setFilterMedium('전체'); setFilterSmall('전체'); } }}
+                          style={{ background: 'white', color: '#333', border: 'none', borderRadius: '20px', padding: '7px 16px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>
                           {slide.filter ? slide.filter + ' 보러가기 →' : '쇼핑하기 →'}
                         </button>
                       </div>
@@ -433,15 +363,18 @@ function App() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
                   {banners.map((_, i) => (
-                    <button key={i} onClick={() => { setBannerTransition(true); setBannerIndex(i); }} style={{ width: (bannerIndex % banners.length) === i ? '20px' : '8px', height: '8px', background: bannerIndex === i ? '#00c471' : '#dee2e6', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: 0, transition: 'all 0.3s' }} />
+                    <button key={i} onClick={() => { setBannerTransition(true); setBannerIndex(i); }}
+                      style={{ width: (bannerIndex % banners.length) === i ? '20px' : '8px', height: '8px', background: bannerIndex === i ? '#00c471' : '#dee2e6', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: 0, transition: 'all 0.3s' }} />
                   ))}
                 </div>
               </div>
             </div>
 
+            {/* 카테고리 필터 */}
             <div style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto' }}>
               {['전체', ...categories.map((c) => c.name)].map((name) => (
-                <button key={name} onClick={() => { setFilterLarge(name); setFilterMedium('전체'); setFilterSmall('전체'); }} style={{ padding: '8px 18px', background: filterLarge === name ? '#00c471' : 'white', color: filterLarge === name ? 'white' : '#495057', border: filterLarge === name ? 'none' : '1.5px solid #e9ecef', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0, boxShadow: filterLarge === name ? '0 2px 8px rgba(0,196,113,0.3)' : 'none' }}>
+                <button key={name} onClick={() => { setFilterLarge(name); setFilterMedium('전체'); setFilterSmall('전체'); }}
+                  style={{ padding: '8px 18px', background: filterLarge === name ? '#00c471' : 'white', color: filterLarge === name ? 'white' : '#495057', border: filterLarge === name ? 'none' : '1.5px solid #e9ecef', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0, boxShadow: filterLarge === name ? '0 2px 8px rgba(0,196,113,0.3)' : 'none' }}>
                   {name}
                 </button>
               ))}
@@ -450,7 +383,8 @@ function App() {
             {selectedLargeObj && selectedLargeObj.children.length > 0 && (
               <div style={{ padding: '4px 16px', display: 'flex', gap: '8px', overflowX: 'auto' }}>
                 {['전체', ...selectedLargeObj.children.map((m) => m.name)].map((name) => (
-                  <button key={name} onClick={() => { setFilterMedium(name); setFilterSmall('전체'); }} style={{ padding: '6px 14px', background: filterMedium === name ? '#212529' : 'white', color: filterMedium === name ? 'white' : '#868e96', border: filterMedium === name ? 'none' : '1.5px solid #e9ecef', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0 }}>
+                  <button key={name} onClick={() => { setFilterMedium(name); setFilterSmall('전체'); }}
+                    style={{ padding: '6px 14px', background: filterMedium === name ? '#212529' : 'white', color: filterMedium === name ? 'white' : '#868e96', border: filterMedium === name ? 'none' : '1.5px solid #e9ecef', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0 }}>
                     {name}
                   </button>
                 ))}
@@ -460,18 +394,21 @@ function App() {
             {selectedMediumObj && selectedMediumObj.children.length > 0 && (
               <div style={{ padding: '4px 16px', display: 'flex', gap: '8px', overflowX: 'auto' }}>
                 {['전체', ...selectedMediumObj.children].map((name) => (
-                  <button key={name} onClick={() => setFilterSmall(name)} style={{ padding: '5px 12px', background: filterSmall === name ? '#868e96' : 'white', color: filterSmall === name ? 'white' : '#adb5bd', border: filterSmall === name ? 'none' : '1.5px solid #e9ecef', borderRadius: '20px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0 }}>
+                  <button key={name} onClick={() => setFilterSmall(name)}
+                    style={{ padding: '5px 12px', background: filterSmall === name ? '#868e96' : 'white', color: filterSmall === name ? 'white' : '#adb5bd', border: filterSmall === name ? 'none' : '1.5px solid #e9ecef', borderRadius: '20px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0 }}>
                     {name}
                   </button>
                 ))}
               </div>
             )}
 
+            {/* 상품 개수 & 정렬 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px 8px' }}>
               <p style={{ fontSize: '16px', fontWeight: '700', color: '#212529', margin: 0 }}>
                 {filterLarge === '전체' ? '전체 상품' : filterLarge} ({filteredProducts.length}개)
               </p>
-              <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} style={{ padding: '6px 12px', borderRadius: '8px', border: '1.5px solid #dee2e6', fontSize: '13px', outline: 'none', background: 'white', cursor: 'pointer' }}>
+              <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}
+                style={{ padding: '6px 12px', borderRadius: '8px', border: '1.5px solid #dee2e6', fontSize: '13px', outline: 'none', background: 'white', cursor: 'pointer' }}>
                 <option value="default">기본순</option>
                 <option value="price_asc">낮은 가격순</option>
                 <option value="price_desc">높은 가격순</option>
@@ -479,34 +416,58 @@ function App() {
               </select>
             </div>
 
+            {/* 상품 그리드 */}
             {filteredProducts.length === 0 ? (
               <div className="empty-state">
                 <span className="empty-state-icon">🛍️</span>
                 <span className="empty-state-text">해당 카테고리에 상품이 없어요!</span>
               </div>
             ) : (
-              <div className="product-grid">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', padding: '0 16px 100px' }}>
                 {filteredProducts.map((product) => (
-                  <div key={product.id} className="product-card" style={{ position: 'relative', opacity: product.isSoldOut ? 0.7 : 1 }} onClick={() => { if (!product.isSoldOut) { setSelectedProduct(product); goToPage('productDetail'); } }}>
-                    {product.image ? (
-                      <img src={product.image} alt={product.name} className="product-card-image" />
-                    ) : (
-                      <div className="product-card-image-placeholder">🛍️</div>
-                    )}
-                    {product.isSoldOut && (
-                      <div style={{ position: 'absolute', top: '8px', left: '8px', background: '#ff4757', color: 'white', fontSize: '11px', fontWeight: '700', padding: '3px 8px', borderRadius: '10px' }}>품절</div>
-                    )}
-                    <div style={{ padding: '10px 12px 12px' }}>
-                      <p style={{ fontSize: '11px', color: '#adb5bd', margin: '0 0 3px' }}>{product.large}</p>
-                      <p style={{ fontSize: '13px', fontWeight: '700', color: '#212529', margin: '0 0 6px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.name}</p>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <p style={{ fontSize: '15px', fontWeight: '800', color: '#212529', margin: 0 }}>₩{product.price.toLocaleString()}</p>
-                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                          <button onClick={(e) => { e.stopPropagation(); toggleWishlist(product); }} style={{ width: '28px', height: '28px', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
-                            {wishlist.find((item) => item.id === product.id) ? '❤️' : '🤍'}
-                          </button>
-                          <button onClick={(e) => { e.stopPropagation(); addToCart(product); }} style={{ width: '32px', height: '32px', background: product.isSoldOut ? '#dee2e6' : 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: '50%', cursor: product.isSoldOut ? 'not-allowed' : 'pointer', fontSize: '18px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: product.isSoldOut ? 'none' : '0 2px 8px rgba(0,196,113,0.3)', flexShrink: 0 }}>+</button>
+                  <div key={product.id}
+                    onClick={() => { if (!product.isSoldOut) { setSelectedProduct(product); goToPage('productDetail'); } }}
+                    style={{
+                      background: 'white', borderRadius: '20px', overflow: 'hidden',
+                      boxShadow: '0 2px 16px rgba(0,0,0,0.07)', position: 'relative',
+                      opacity: product.isSoldOut ? 0.6 : 1,
+                      cursor: product.isSoldOut ? 'default' : 'pointer',
+                      border: '1px solid #f0faf5',
+                    }}
+                  >
+                    {/* 이미지 영역 */}
+                    <div style={{ height: '130px', position: 'relative', overflow: 'hidden' }}>
+                      <img
+                        src={product.image || getCategoryImage(product.large)}
+                        alt={product.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                      {/* 파스텔 초록 오버레이 */}
+                      {!product.image && (
+                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,196,113,0.08)' }} />
+                      )}
+                      {/* 품절 오버레이 */}
+                      {product.isSoldOut && (
+                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ color: 'white', fontWeight: '800', fontSize: '13px', background: '#ff4757', padding: '4px 12px', borderRadius: '20px' }}>품절</span>
                         </div>
+                      )}
+                      {/* 찜 버튼 */}
+                      <button onClick={(e) => { e.stopPropagation(); toggleWishlist(product); }}
+                        style={{ position: 'absolute', top: '8px', right: '8px', width: '30px', height: '30px', borderRadius: '50%', background: 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+                        {wishlist.find((item) => item.id === product.id) ? '❤️' : '🤍'}
+                      </button>
+                    </div>
+
+                    {/* 텍스트 영역 */}
+                    <div style={{ padding: '10px 11px 12px' }}>
+                      <p style={{ fontSize: '10px', color: '#00c471', margin: '0 0 3px', fontWeight: '700' }}>{product.large}</p>
+                      <p style={{ fontSize: '13px', fontWeight: '700', color: '#1a1a1a', margin: '0 0 8px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.name}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <p style={{ fontSize: '14px', fontWeight: '800', color: '#1a1a1a', margin: 0 }}>₩{product.price.toLocaleString()}</p>
+                        <button onClick={(e) => { e.stopPropagation(); addToCart(product); }}
+                          disabled={product.isSoldOut}
+                          style={{ width: '30px', height: '30px', borderRadius: '50%', background: product.isSoldOut ? '#dee2e6' : 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', cursor: product.isSoldOut ? 'not-allowed' : 'pointer', fontSize: '20px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: product.isSoldOut ? 'none' : '0 2px 8px rgba(0,196,113,0.4)', lineHeight: 1, fontWeight: '300' }}>+</button>
                       </div>
                     </div>
                   </div>
@@ -536,14 +497,39 @@ function App() {
       {/* 고객 하단 탭 */}
       {!isAdmin && (
         <nav className="bottom-nav">
-          <button className={'bottom-nav-item' + (page === 'home' ? ' active' : '')} onClick={() => goToPage('home')}><span>🏠</span><span>홈</span></button>
-          <button className={'bottom-nav-item' + (page === 'notice' ? ' active' : '')} onClick={() => user ? goToPage('notice') : requireLogin()}><span>📢{!user && <span style={{ fontSize: '8px' }}>🔒</span>}</span><span>공지</span></button>
+          <button className={'bottom-nav-item' + (page === 'home' ? ' active' : '')} onClick={() => goToPage('home')}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'home' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <span>홈</span>
+          </button>
+          <button className={'bottom-nav-item' + (page === 'notice' ? ' active' : '')} onClick={() => user ? goToPage('notice') : requireLogin()}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'notice' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span>공지</span>
+          </button>
           <button className={'bottom-nav-item' + (page === 'cart' ? ' active' : '')} onClick={() => user ? goToPage('cart') : requireLogin()}>
-            <span style={{ position: 'relative' }}>🛒{!user && <span style={{ fontSize: '8px' }}>🔒</span>}{cart.length > 0 && <span className="badge">{cart.length}</span>}</span>
+            <div style={{ position: 'relative' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'cart' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+              </svg>
+              {cart.length > 0 && <span className="badge">{cart.length}</span>}
+            </div>
             <span>장바구니</span>
           </button>
-          <button className={'bottom-nav-item' + (page === 'wishlist' ? ' active' : '')} onClick={() => user ? goToPage('wishlist') : requireLogin()}><span>❤️{!user && <span style={{ fontSize: '8px' }}>🔒</span>}</span><span>찜</span></button>
-          <button className={'bottom-nav-item' + (page === 'mypage' ? ' active' : '')} onClick={() => user ? goToPage('mypage') : requireLogin()}><span>👤{!user && <span style={{ fontSize: '8px' }}>🔒</span>}</span><span>마이</span></button>
+          <button className={'bottom-nav-item' + (page === 'wishlist' ? ' active' : '')} onClick={() => user ? goToPage('wishlist') : requireLogin()}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill={page === 'wishlist' ? '#00c471' : 'none'} stroke={page === 'wishlist' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            <span>찜</span>
+          </button>
+          <button className={'bottom-nav-item' + (page === 'mypage' ? ' active' : '')} onClick={() => user ? goToPage('mypage') : requireLogin()}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'mypage' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+            <span>마이</span>
+          </button>
         </nav>
       )}
 
