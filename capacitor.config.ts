@@ -8,9 +8,17 @@ const config: CapacitorConfig = {
     allowMixedContent: true,
     captureInput: true,
     webContentsDebuggingEnabled: false,
+    loggingBehavior: 'none',
   },
   server: {
     androidScheme: 'https',
+  },
+  plugins: {
+    Keyboard: {
+      resize: 'body',
+      style: 'default',
+      resizeOnFullScreen: true,
+    },
   },
 };
 
