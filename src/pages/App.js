@@ -267,7 +267,8 @@ function App() {
     'adminPC', 'adminPC_orders', 'adminPC_products', 'adminPC_inventory',
     'adminPC_purchase', 'adminPC_members', 'adminPC_reviews',
     'adminPC_stats', 'adminPC_settlement', 'adminPC_settings',
-    'adminPC_banners', 'adminPC_coupons',  // ✅ 추가
+    'adminPC_banners', 'adminPC_coupons',
+    'simpleInventory', 'simplePurchase',  // ✅ 앱용 독립 페이지
   ];
   if (adminPCPages.includes(page)) {
     return (
@@ -299,6 +300,9 @@ function App() {
             </div>
           </div>
         )}
+        {/* ✅ 앱용 재고관리 / 검수매입 — 독립 전체화면 */}
+        {page === 'simpleInventory' && <SimpleInventory products={products} setProducts={setProducts} goBack={goBack} />}
+        {page === 'simplePurchase'  && <SimplePurchase products={products} setProducts={setProducts} goBack={goBack} />}
       </>
     );
   }
@@ -463,9 +467,6 @@ function App() {
         {page === 'mypage'          && <MyPage user={currentUser} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} users={users} setUsers={setUsers} />}
         {page === 'bannerManager'   && <BannerManager banners={banners} setBanners={setBanners} categories={categories} goBack={goBack} />}
         {page === 'admin'           && <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} messages={messages} setMessages={() => {}} goBack={goBack} />}
-        {/* ✅ 앱용 재고관리 / 검수매입 */}
-        {page === 'simpleInventory' && <SimpleInventory products={products} setProducts={setProducts} goBack={goBack} />}
-        {page === 'simplePurchase'  && <SimplePurchase products={products} setProducts={setProducts} goBack={goBack} />}
       </div>
 
       {/* 고객 하단 탭 */}

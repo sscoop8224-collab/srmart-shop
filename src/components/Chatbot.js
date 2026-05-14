@@ -72,13 +72,21 @@ const Chatbot = () => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         style={{
-          position: 'fixed', bottom: '76px', right: 'calc(50% - 393px)',
-          width: '56px', height: '56px', borderRadius: '50%',
-          backgroundColor: '#FEE500', border: 'none',
-          cursor: 'pointer', fontSize: '26px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-          zIndex: 1000, display: 'flex',
-          alignItems: 'center', justifyContent: 'center'
+          position: 'fixed',
+          bottom: '76px',
+          right: '16px',
+          width: '52px',
+          height: '52px',
+          borderRadius: '50%',
+          backgroundColor: '#00c471',
+          border: 'none',
+          cursor: 'pointer',
+          fontSize: '22px',
+          boxShadow: '0 4px 12px rgba(0,196,113,0.4)',
+          zIndex: 1001,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
         {isOpen ? '✕' : '💬'}
@@ -87,18 +95,30 @@ const Chatbot = () => {
       {/* 챗봇 창 */}
       {isOpen && (
         <div style={{
-          position: 'fixed', bottom: '140px', right: 'calc(50% - 393px)',
-          width: '320px', height: '460px',
-          backgroundColor: '#fff', borderRadius: '16px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-          display: 'flex', flexDirection: 'column',
-          zIndex: 1000, overflow: 'hidden'
+          position: 'fixed',
+          bottom: '136px',
+          right: '16px',
+          width: 'min(320px, calc(100vw - 32px))',
+          height: 'min(460px, calc(100vh - 180px))',
+          backgroundColor: '#fff',
+          borderRadius: '20px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+          display: 'flex',
+          flexDirection: 'column',
+          zIndex: 1001,
+          overflow: 'hidden',
+          border: '1px solid #f0faf5',
         }}>
           {/* 헤더 */}
           <div style={{
-            backgroundColor: '#FEE500', padding: '14px 16px',
-            fontWeight: 'bold', fontSize: '15px',
-            display: 'flex', alignItems: 'center', gap: '8px'
+            background: 'linear-gradient(135deg, #00c471, #00a85e)',
+            padding: '14px 16px',
+            fontWeight: 'bold',
+            fontSize: '15px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            color: 'white',
           }}>
             🛒 SR Mart 쇼핑 도우미
           </div>
@@ -106,7 +126,8 @@ const Chatbot = () => {
           {/* 메시지 목록 */}
           <div style={{
             flex: 1, overflowY: 'auto', padding: '12px',
-            display: 'flex', flexDirection: 'column', gap: '8px'
+            display: 'flex', flexDirection: 'column', gap: '8px',
+            background: '#f8fffe',
           }}>
             {messages.map((msg, idx) => (
               <div key={idx} style={{
@@ -116,9 +137,11 @@ const Chatbot = () => {
                 <div style={{
                   maxWidth: '80%', padding: '10px 13px',
                   borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                  backgroundColor: msg.role === 'user' ? '#FEE500' : '#f1f1f1',
+                  backgroundColor: msg.role === 'user' ? '#00c471' : 'white',
+                  color: msg.role === 'user' ? 'white' : '#1a1a1a',
                   fontSize: '13px', lineHeight: '1.5',
-                  whiteSpace: 'pre-wrap'
+                  whiteSpace: 'pre-wrap',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
                 }}>
                   {msg.content}
                 </div>
@@ -128,7 +151,8 @@ const Chatbot = () => {
               <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
                 <div style={{
                   padding: '10px 13px', borderRadius: '16px 16px 16px 4px',
-                  backgroundColor: '#f1f1f1', fontSize: '13px'
+                  backgroundColor: 'white', fontSize: '13px',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
                 }}>
                   ⏳ 생각 중...
                 </div>
@@ -139,8 +163,8 @@ const Chatbot = () => {
 
           {/* 입력창 */}
           <div style={{
-            padding: '10px', borderTop: '1px solid #eee',
-            display: 'flex', gap: '8px'
+            padding: '10px', borderTop: '1px solid #f0faf5',
+            display: 'flex', gap: '8px', background: 'white',
           }}>
             <input
               value={input}
@@ -149,8 +173,8 @@ const Chatbot = () => {
               placeholder="메시지를 입력하세요..."
               style={{
                 flex: 1, padding: '8px 12px', borderRadius: '20px',
-                border: '1px solid #ddd', fontSize: '13px',
-                outline: 'none'
+                border: '1.5px solid #e8faf3', fontSize: '13px',
+                outline: 'none', background: '#f8fffe',
               }}
             />
             <button
@@ -158,8 +182,10 @@ const Chatbot = () => {
               disabled={loading}
               style={{
                 padding: '8px 14px', borderRadius: '20px',
-                backgroundColor: '#FEE500', border: 'none',
-                cursor: 'pointer', fontWeight: 'bold', fontSize: '13px'
+                background: 'linear-gradient(135deg, #00c471, #00a85e)',
+                border: 'none', cursor: 'pointer',
+                fontWeight: 'bold', fontSize: '13px',
+                color: 'white',
               }}
             >
               전송
