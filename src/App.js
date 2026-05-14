@@ -335,20 +335,25 @@ function App() {
         </div>
         <div className="header-actions">
           {user && (
-            <span style={{ fontSize: '12px', color: 'var(--gray-600)', maxWidth: '60px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              👤 {currentUser?.name}
-            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', padding: '4px 6px' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#495057" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+              <span style={{ fontSize: '10px', fontWeight: '700', color: '#868e96', maxWidth: '40px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name}</span>
+            </div>
           )}
-          <button className="header-icon-btn" onClick={() => goToPage('search')}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#495057" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <button className="header-icon-btn" onClick={() => goToPage('search')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', padding: '4px 6px' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#495057" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
+            <span style={{ fontSize: '10px', fontWeight: '700', color: '#868e96' }}>검색</span>
           </button>
-          <button className="header-icon-btn" onClick={() => user ? goToPage('cart') : requireLogin()} style={{ position: 'relative' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#495057" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <button className="header-icon-btn" onClick={() => user ? goToPage('cart') : requireLogin()} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', padding: '4px 6px' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#495057" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
               <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
             </svg>
+            <span style={{ fontSize: '9px', fontWeight: '700', color: '#868e96' }}>담기</span>
             {cart.length > 0 && <span className="badge">{cart.length}</span>}
           </button>
           {user ? (

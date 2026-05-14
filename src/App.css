@@ -164,6 +164,22 @@ body {
   font-size: 20px;
   position: relative;
   transition: var(--transition);
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 6px;
+  width: auto;
+}
+
+.header-icon-btn:hover svg {
+  stroke: var(--primary);
+}
+
+.header-icon-btn {
+  color: #868e96;
+}
+
+.header-icon-btn:hover {
+  color: var(--primary);
 }
 
 .header-icon-btn:hover {
