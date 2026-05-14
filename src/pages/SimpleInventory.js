@@ -1,0 +1,188 @@
+import { useState } from 'react';
+
+function SimpleInventory({ products, setProducts, goBack }) {
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('전체');
+  const [selected, setSelected] = useState(null);
+  const [qty, setQty] = useState('');
+  const [mode, setMode] = useState('receive'); // receive | soldout
+
+  const filtered = products.filter(p => {
+    const matchSearch = !search || p.name.includes(search) || (p.barcode && p.barcode.includes(search));
+    const stock = p.stock ?? 0;
+    if (filter === '품절') return matchSearch && (p.isSoldOut || stock === 0);
+    if (filter === '품절임박') return matchSearch && stock > 0 && stock < 20;
+    if (filter === '정상') return matchSearch && stock >= 20;
+    return matchSearch;
+  });
+
+  const getStatus = (p) => {
+    const stock = p.stock ?? 0;
+    if (p.isSoldOut || stock === 0) return { label: '품절', color: '#ff4757', bg: '#fff0f1' };
+    if (stock < 20) return { label: '임박', color: '#f0a500', bg: '#fff3cd' };
+    return { label: '정상', color: '#00c471', bg: '#e8faf3' };
+  };
+
+  const handleReceive = () => {
+    const q = parseInt(qty);
+    if (!q || q <= 0) return alert('수량을 입력해주세요');
+    setProducts(prev => prev.map(p =>
+      p.id === selected.id ? { ...p, stock: (p.stock ?? 0) + q, isSoldOut: false, status: '판매중', lastIn: new Date().toLocaleDateString('ko-KR') } : p
+    ));
+    alert(`✅ ${selected.name} +${q}개 입고 완료!`);
+    setSelected(null); setQty('');
+  };
+
+  const handleSoldout = () => {
+    if (!window.confirm(`'${selected.name}'을 품절 처리할까요?`)) return;
+    setProducts(prev => prev.map(p =>
+      p.id === selected.id ? { ...p, stock: 0, isSoldOut: true, status: '판매중지' } : p
+    ));
+    alert(`⛔ ${selected.name} 품절 처리됐어요!`);
+    setSelected(null);
+  };
+
+  const handleCancelSoldout = (p) => {
+    if (!window.confirm(`'${p.name}' 품절을 해제할까요?`)) return;
+    setProducts(prev => prev.map(pr =>
+      pr.id === p.id ? { ...pr, isSoldOut: false, status: '판매중' } : pr
+    ));
+  };
+
+  const lowCount = products.filter(p => { const s = p.stock ?? 0; return s === 0 || p.isSoldOut; }).length;
+  const nearCount = products.filter(p => { const s = p.stock ?? 0; return s > 0 && s < 20 && !p.isSoldOut; }).length;
+
+  return (
+    <div style={{ background: '#f8fffe', minHeight: '100vh', paddingBottom: 100 }}>
+      {/* 헤더 */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: 'white', borderBottom: '1px solid #f0faf5', position: 'sticky', top: 0, zIndex: 10 }}>
+        <button onClick={goBack} style={{ width: 38, height: 38, background: '#f0faf5', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00a85e' }}>←</button>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#1a1a1a' }}>재고 관리</h2>
+      </div>
+
+      {/* 요약 */}
+      <div style={{ padding: '12px 16px', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+        {[
+          { label: '전체', val: products.length, color: '#1a1a1a', bg: 'white' },
+          { label: '품절', val: lowCount, color: '#ff4757', bg: '#fff0f1' },
+          { label: '품절임박', val: nearCount, color: '#f0a500', bg: '#fff3cd' },
+        ].map(c => (
+          <div key={c.label} style={{ background: c.bg, borderRadius: 14, padding: '12px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', border: '1px solid #f0faf5' }}>
+            <div style={{ fontSize: 22, fontWeight: 900, color: c.color }}>{c.val}</div>
+            <div style={{ fontSize: 11, color: '#adb5bd', fontWeight: 600, marginTop: 2 }}>{c.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* 검색 + 필터 */}
+      <div style={{ padding: '0 16px 12px' }}>
+        <input
+          style={{ width: '100%', padding: '11px 14px', borderRadius: 12, border: '1.5px solid #e8faf3', fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#f8fffe', marginBottom: 10 }}
+          placeholder="상품명 또는 바코드 검색..."
+          value={search} onChange={e => setSearch(e.target.value)}
+        />
+        <div style={{ display: 'flex', gap: 8 }}>
+          {['전체', '정상', '품절임박', '품절'].map(f => (
+            <button key={f} onClick={() => setFilter(f)}
+              style={{ padding: '6px 14px', borderRadius: 20, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: filter === f ? '#00c471' : 'white', color: filter === f ? 'white' : '#868e96', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+              {f}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 상품 목록 */}
+      <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {filtered.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 40, color: '#adb5bd' }}>
+            <div style={{ fontSize: 36, marginBottom: 8 }}>📦</div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>해당하는 상품이 없어요</div>
+          </div>
+        ) : filtered.map(p => {
+          const st = getStatus(p);
+          return (
+            <div key={p.id} style={{ background: 'white', borderRadius: 16, padding: '14px 16px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', border: '1px solid #f0faf5' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                  <div style={{ fontSize: 11, color: '#adb5bd' }}>
+                    재고 <span style={{ fontWeight: 700, color: st.color }}>{p.stock ?? 0}개</span>
+                    {p.spec && <span> · {p.spec}{p.unit}</span>}
+                  </div>
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 10, background: st.bg, color: st.color, marginLeft: 8, flexShrink: 0 }}>{st.label}</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => { setSelected(p); setMode('receive'); setQty(''); }}
+                  style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', background: '#e8faf3', color: '#00a85e', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                  📦 입고
+                </button>
+                {p.isSoldOut || (p.stock ?? 0) === 0 ? (
+                  <button onClick={() => handleCancelSoldout(p)}
+                    style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', background: '#e8f0fe', color: '#1a73e8', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                    품절해제
+                  </button>
+                ) : (
+                  <button onClick={() => { setSelected(p); setMode('soldout'); }}
+                    style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', background: '#fff0f1', color: '#ff4757', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                    ⛔ 품절처리
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 입고/품절 모달 */}
+      {selected && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setSelected(null)}>
+          <div style={{ background: 'white', borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: 480 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <span style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a' }}>
+                {mode === 'receive' ? '📦 입고 처리' : '⛔ 품절 처리'}
+              </span>
+              <button style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#adb5bd' }} onClick={() => setSelected(null)}>✕</button>
+            </div>
+            <div style={{ background: '#f8fffe', borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{selected.name}</div>
+              <div style={{ fontSize: 12, color: '#adb5bd', marginTop: 4 }}>현재 재고: <strong style={{ color: '#00c471' }}>{selected.stock ?? 0}개</strong></div>
+            </div>
+            {mode === 'receive' ? (
+              <>
+                <div style={{ fontSize: 12, color: '#495057', marginBottom: 8, fontWeight: 600 }}>입고 수량</div>
+                <input
+                  type="number"
+                  style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1.5px solid #e8faf3', fontSize: 16, outline: 'none', boxSizing: 'border-box', marginBottom: 12 }}
+                  placeholder="추가할 수량 입력"
+                  value={qty} onChange={e => setQty(e.target.value)} autoFocus
+                />
+                {qty && Number(qty) > 0 && (
+                  <div style={{ background: '#e8faf3', borderRadius: 10, padding: '8px 14px', fontSize: 13, color: '#00a85e', fontWeight: 600, marginBottom: 16 }}>
+                    입고 후 재고: {selected.stock ?? 0} + {qty} = <strong>{(selected.stock ?? 0) + Number(qty)}개</strong>
+                  </div>
+                )}
+                <button onClick={handleReceive}
+                  style={{ width: '100%', padding: 14, background: 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: 14, fontSize: 15, fontWeight: 700, color: 'white', cursor: 'pointer' }}>
+                  입고 처리
+                </button>
+              </>
+            ) : (
+              <>
+                <div style={{ background: '#fff0f1', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#ff4757', marginBottom: 16 }}>
+                  ⚠️ 재고가 0으로 변경되고 앱에서 품절로 표시돼요.
+                </div>
+                <button onClick={handleSoldout}
+                  style={{ width: '100%', padding: 14, background: '#ff4757', border: 'none', borderRadius: 14, fontSize: 15, fontWeight: 700, color: 'white', cursor: 'pointer' }}>
+                  품절 처리
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default SimpleInventory;
