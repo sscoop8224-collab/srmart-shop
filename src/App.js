@@ -1,3 +1,4 @@
+import { login as apiLogin } from './api';
 import Chatbot from './components/Chatbot';
 import { useState, useEffect, useCallback } from 'react';
 import './App.css';
@@ -102,7 +103,6 @@ function App() {
   const [adminDark, setAdminDark] = useState(() => localStorage.getItem('srmart_admin_dark') === 'true');
   useEffect(() => { localStorage.setItem('srmart_admin_dark', adminDark); }, [adminDark]);
 
-  // ✅ AuthContext 연결
   const { login: authLogin, logout: authLogout } = useAuth();
   const isAdmin = user && user.email === 'admin@srmart.com';
 
@@ -174,7 +174,7 @@ function App() {
   const goToPage = (newPage) => {
     setPageHistory((prev) => [...prev, page]);
     setPage(newPage);
-  window.scrollTo(0, 0);
+    window.scrollTo(0, 0);
   };
 
   const goBack = () => {
@@ -184,12 +184,27 @@ function App() {
     setPage(prevPage);
   };
 
-  // ✅ AuthContext 동기화
-  const handleLogin = (loggedInUser) => {
-    setUser(loggedInUser);
-    authLogin(loggedInUser);
-    if (loggedInUser.email === 'admin@srmart.com') goToPage('adminHome');
-    else goToPage('home');
+  const handleLogin = async (loggedInUser) => {
+    try {
+      const res = await apiLogin(loggedInUser.email, loggedInUser.password);
+      const { token, user: dbUser } = res.data;
+      localStorage.setItem('srmart_token', token);
+      setUser(dbUser);
+      authLogin(dbUser);
+      if (dbUser.email === 'admin@srmart.com' || dbUser.grade === '관리자') {
+        goToPage('adminHome');
+      } else {
+        goToPage('home');
+      }
+    } catch (err) {
+      setUser(loggedInUser);
+      authLogin(loggedInUser);
+      if (loggedInUser.email === 'admin@srmart.com' || loggedInUser.grade === '관리자') {
+        goToPage('adminHome');
+      } else {
+        goToPage('home');
+      }
+    }
   };
 
   const handleLogout = () => {
@@ -267,7 +282,6 @@ function App() {
     return <div className="App"><Login onLogin={handleLogin} onGuest={() => setPage('home')} /></div>;
   }
 
-  // ✅ PC 관리자 페이지 목록
   const adminPCPages = [
     'adminPC', 'adminPC_orders', 'adminPC_products', 'adminPC_inventory',
     'adminPC_purchase', 'adminPC_members', 'adminPC_reviews',
@@ -279,7 +293,6 @@ function App() {
   if (adminPCPages.includes(page)) {
     return (
       <>
-        {/* ✅ 모든 페이지에 user={user} 전달 — Sidebar 권한 작동 */}
         {page === 'adminPC'           && <Dashboard         setPage={goToPage} dark={adminDark} setDark={setAdminDark} products={products} orders={orders} users={users} user={user} />}
         {page === 'adminPC_orders'    && <OrderManagement   setPage={goToPage} dark={adminDark} setDark={setAdminDark} orders={orders} setOrders={setOrders} user={user} />}
         {page === 'adminPC_products'  && <ProductManagement  setPage={goToPage} dark={adminDark} setDark={setAdminDark} products={products} setProducts={setProducts} categories={categories} user={user} />}
@@ -290,8 +303,6 @@ function App() {
         {page === 'adminPC_stats'     && <AdminSalesStats    setPage={goToPage} dark={adminDark} setDark={setAdminDark} orders={orders} products={products} user={user} />}
         {page === 'adminPC_settlement'&& <KakaoPaySettlement setPage={goToPage} dark={adminDark} setDark={setAdminDark} orders={orders} user={user} />}
         {page === 'adminPC_settings'  && <AdminSettings      setPage={goToPage} dark={adminDark} setDark={setAdminDark} users={users} setUsers={setUsers} user={user} />}
-
-        {/* ✅ 배너/쿠폰 — Sidebar에 user 전달 */}
         {page === 'adminPC_banners' && (
           <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
             <Sidebar currentPage="adminPC_banners" setPage={goToPage} dark={adminDark} user={user} />
@@ -308,7 +319,6 @@ function App() {
             </div>
           </div>
         )}
-
         {page === 'simpleInventory' && <SimpleInventory products={products} setProducts={setProducts} goBack={goBack} />}
         {page === 'simplePurchase'  && <SimplePurchase  products={products} setProducts={setProducts} goBack={goBack} />}
       </>
@@ -324,20 +334,41 @@ function App() {
           <span style={{ fontFamily: "'Nanum Pen Script', cursive", fontSize: 'clamp(16px, 5vw, 26px)', color: '#1b5e20', fontWeight: '700', lineHeight: '1', marginTop: '2px', whiteSpace: 'nowrap' }}>에스알마트</span>
         </div>
         <div className="header-actions">
-          {user && <span style={{ fontSize: '12px', color: 'var(--gray-600)', maxWidth: '60px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>👤 {currentUser?.name}</span>}
-          <button className="header-icon-btn" onClick={() => goToPage('search')}>🔍</button>
-          <button className="header-icon-btn" onClick={() => user ? goToPage('cart') : requireLogin()}>
-            🛒{cart.length > 0 && <span className="badge">{cart.length}</span>}
+          {user && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', padding: '4px 8px' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#adb5bd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+              <span style={{ fontSize: '10px', fontWeight: '600', color: '#adb5bd', maxWidth: '44px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.name}</span>
+            </div>
+          )}
+          <button className="header-icon-btn" onClick={() => goToPage('search')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', padding: '4px 8px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#adb5bd' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <span style={{ fontSize: '10px', fontWeight: '600' }}>검색</span>
+          </button>
+          <button className="header-icon-btn" onClick={() => user ? goToPage('cart') : requireLogin()} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', padding: '4px 8px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#adb5bd' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+            <span style={{ fontSize: '10px', fontWeight: '600' }}>장바구니</span>
+            {cart.length > 0 && <span className="badge">{cart.length}</span>}
           </button>
           {user ? (
             <button onClick={handleLogout} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e53935" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
-              <span style={{ fontSize: '10px', fontWeight: '700', color: '#868e96' }}>로그아웃</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e53935" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>
+              </svg>
+              <span style={{ fontSize: '10px', fontWeight: '600', color: '#adb5bd' }}>로그아웃</span>
             </button>
           ) : (
             <button onClick={() => setPage('login')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-              <span style={{ fontSize: '10px', fontWeight: '700', color: '#00c471' }}>로그인</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+              </svg>
+              <span style={{ fontSize: '10px', fontWeight: '600', color: '#00c471' }}>로그인</span>
             </button>
           )}
         </div>
@@ -348,21 +379,21 @@ function App() {
           <>
             <div style={{ padding: '16px' }}>
               <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden' }}>
-               <div
-  onTouchStart={(e) => { window._touchStartX = e.touches[0].clientX; }}
-  onTouchEnd={(e) => {
-    const diff = window._touchStartX - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 40) {
-      if (diff > 0) {
-        setBannerTransition(true);
-        setBannerIndex((prev) => (prev + 1 >= banners.length ? 0 : prev + 1));
-      } else {
-        setBannerTransition(true);
-        setBannerIndex((prev) => (prev - 1 < 0 ? banners.length - 1 : prev - 1));
-      }
-    }
-  }}
-  style={{ display: 'flex', transition: bannerTransition ? 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none', WebkitTransform: `translateX(-${bannerIndex * 100}%)`, transform: `translateX(-${bannerIndex * 100}%)`, willChange: 'transform' }}>
+                <div
+                  onTouchStart={(e) => { window._touchStartX = e.touches[0].clientX; }}
+                  onTouchEnd={(e) => {
+                    const diff = window._touchStartX - e.changedTouches[0].clientX;
+                    if (Math.abs(diff) > 40) {
+                      if (diff > 0) {
+                        setBannerTransition(true);
+                        setBannerIndex((prev) => (prev + 1 >= banners.length ? 0 : prev + 1));
+                      } else {
+                        setBannerTransition(true);
+                        setBannerIndex((prev) => (prev - 1 < 0 ? banners.length - 1 : prev - 1));
+                      }
+                    }
+                  }}
+                  style={{ display: 'flex', transition: bannerTransition ? 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none', WebkitTransform: `translateX(-${bannerIndex * 100}%)`, transform: `translateX(-${bannerIndex * 100}%)`, willChange: 'transform' }}>
                   {[...banners, banners[0]].map((slide, index) => (
                     <div key={index} onClick={() => { if (slide.filter) { setFilterLarge(slide.filter); setFilterMedium('전체'); setFilterSmall('전체'); } }}
                       style={{ minWidth: '100%', background: slide.bg, borderRadius: '18px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', overflow: 'hidden', position: 'relative', cursor: slide.filter ? 'pointer' : 'default', boxSizing: 'border-box' }}>
@@ -475,7 +506,7 @@ function App() {
         )}
 
         {page === 'notice'          && <Notice notices={notices} setNotices={setNotices} isAdmin={isAdmin} goBack={goBack} goToHome={() => goToPage('home')} />}
-        {page === 'wishlist'        && <Wishlist wishlist={wishlist} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWishlist={toggleWishlist} />}
+        {page === 'wishlist'        && <Wishlist wishlist={wishlist} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWishlist={toggleWishlist} goBack={goBack} goToHome={() => goToPage('home')} />}
         {page === 'search'          && <Search products={products} categories={categories} goBack={goBack} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} />}
         {page === 'productDetail'   && <ProductDetail product={selectedProduct} onBack={goBack} onAddToCart={addToCart} />}
         {page === 'cart'            && <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} coupons={coupons} user={currentUser} appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon} />}
@@ -520,17 +551,41 @@ function App() {
         </nav>
       )}
 
-      {/* 관리자 하단 탭 */}
+      {/* ✅ 관리자 하단 탭 — SVG 아이콘으로 통일 */}
       {isAdmin && (
         <nav className="bottom-nav">
-          <button className={'bottom-nav-item' + (page === 'adminHome' ? ' active' : '')} onClick={() => goToPage('adminHome')}><span>🏠</span><span>대시보드</span></button>
-          <button className={'bottom-nav-item' + (page === 'notice' ? ' active' : '')} onClick={() => goToPage('notice')}><span>📢</span><span>공지</span></button>
-          <button className={'bottom-nav-item' + (page === 'bannerManager' ? ' active' : '')} onClick={() => goToPage('bannerManager')}><span>🖼️</span><span>배너관리</span></button>
-          <button className={'bottom-nav-item' + (page === 'couponManager' ? ' active' : '')} onClick={() => goToPage('couponManager')}><span>🎟️</span><span>쿠폰관리</span></button>
-          <button className={'bottom-nav-item' + (page === 'salesStats' ? ' active' : '')} onClick={() => goToPage('salesStats')}><span>📊</span><span>매출통계</span></button>
-          <button className={'bottom-nav-item' + (page === 'admin' ? ' active' : '')} onClick={() => goToPage('admin')}><span>📦</span><span>상품관리</span></button>
-          <button className={'bottom-nav-item' + (page === 'members' ? ' active' : '')} onClick={() => goToPage('members')}><span>👥</span><span>회원관리</span></button>
-          <button className="bottom-nav-item" onClick={() => goToPage('adminPC')}><span>🖥️</span><span>PC관리</span></button>
+          <button className={'bottom-nav-item' + (page === 'adminHome' ? ' active' : '')} onClick={() => goToPage('adminHome')}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'adminHome' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span>대시보드</span>
+          </button>
+          <button className={'bottom-nav-item' + (page === 'notice' ? ' active' : '')} onClick={() => goToPage('notice')}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'notice' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span>공지</span>
+          </button>
+          <button className={'bottom-nav-item' + (page === 'bannerManager' ? ' active' : '')} onClick={() => goToPage('bannerManager')}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'bannerManager' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span>배너관리</span>
+          </button>
+          <button className={'bottom-nav-item' + (page === 'couponManager' ? ' active' : '')} onClick={() => goToPage('couponManager')}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'couponManager' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            <span>쿠폰관리</span>
+          </button>
+          <button className={'bottom-nav-item' + (page === 'salesStats' ? ' active' : '')} onClick={() => goToPage('salesStats')}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'salesStats' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <span>매출통계</span>
+          </button>
+          <button className={'bottom-nav-item' + (page === 'admin' ? ' active' : '')} onClick={() => goToPage('admin')}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'admin' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            <span>상품관리</span>
+          </button>
+          <button className={'bottom-nav-item' + (page === 'members' ? ' active' : '')} onClick={() => goToPage('members')}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'members' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>회원관리</span>
+          </button>
+          <button className={'bottom-nav-item' + (page === 'adminPC' ? ' active' : '')} onClick={() => goToPage('adminPC')}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'adminPC' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            <span>PC관리</span>
+          </button>
         </nav>
       )}
 
