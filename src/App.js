@@ -21,6 +21,8 @@ import PrintReceipt from './pages/PrintReceipt';
 import SalesStats from './pages/SalesStats';
 import MyPage from './pages/MyPage';
 import BannerManager from './pages/BannerManager';
+import SimpleInventory from './pages/SimpleInventory';
+import SimplePurchase from './pages/SimplePurchase';
 
 import Dashboard from './components/admin/Dashboard';
 import OrderManagement from './components/admin/OrderManagement';
@@ -33,6 +35,8 @@ import {
   KakaoPaySettlement,
   Settings as AdminSettings,
 } from './components/admin/OtherPages';
+import Sidebar from './components/layout/Sidebar';
+import { useAuth } from './AuthContext';
 
 const getCategoryImage = (large) => {
   switch(large) {
@@ -52,9 +56,8 @@ const initialProducts = [
   { id: 4, name: '콜라 1.5L', price: 3000, large: '음료', medium: '탄산음료', small: '', image: null, stock: 100, barcode: '', images: [], status: '판매중' },
   { id: 5, name: '냉동 만두', price: 7000, large: '식품', medium: '가공식품', small: '냉동식품', image: null, stock: 15, barcode: '', images: [], status: '판매중' },
   { id: 6, name: '포카칩', price: 2500, large: '간식/과자', medium: '과자/스낵', small: '', image: null, stock: 0, barcode: '', images: [], status: '판매중지' },
-  // ✅ 성인 상품 예시
-  { id: 7, name: '소주 360ml', price: 1800, large: '주류', medium: '소주/막걸리', small: '소주', image: null, stock: 100, barcode: '', images: [], status: '판매중', isAdult: true },
-  { id: 8, name: '맥주 500ml', price: 2500, large: '주류', medium: '맥주', small: '국산맥주', image: null, stock: 80, barcode: '', images: [], status: '판매중', isAdult: true },
+  { id: 7, name: '소주 360ml', price: 1800, large: '주류', medium: '소주/막걸리', small: '소주', image: null, stock: 100, barcode: '', images: [], status: '판매중', isAdult: true, spec: '360', unit: 'ml' },
+  { id: 8, name: '맥주 500ml', price: 2500, large: '주류', medium: '맥주', small: '국산맥주', image: null, stock: 80, barcode: '', images: [], status: '판매중', isAdult: true, spec: '500', unit: 'ml' },
 ];
 
 const initialCategories = [
@@ -99,6 +102,10 @@ function App() {
   const [adminDark, setAdminDark] = useState(() => localStorage.getItem('srmart_admin_dark') === 'true');
   useEffect(() => { localStorage.setItem('srmart_admin_dark', adminDark); }, [adminDark]);
 
+  // ✅ AuthContext 연결
+  const { login: authLogin, logout: authLogout } = useAuth();
+  const isAdmin = user && user.email === 'admin@srmart.com';
+
   const [users, setUsers] = useState(() => {
     const saved = localStorage.getItem('srmart_users');
     return saved ? JSON.parse(saved) : [
@@ -135,11 +142,8 @@ function App() {
     { id: 4, label: '간식/과자', title: '맛있는 간식 특가!', sub: '달콤한 간식을 지금 담아보세요', emoji: '🍿', bg: 'linear-gradient(135deg, #fdcb6e, #e17055)', filter: '간식/과자' },
   ]);
 
-  const isAdmin = user && user.email === 'admin@srmart.com';
-
   useEffect(() => { localStorage.setItem('srmart_users', JSON.stringify(users)); }, [users]);
 
-  // ✅ 로그인된 user 정보 항상 최신으로 유지 (회원정보 수정 반영)
   const currentUser = user ? (users.find(u => u.email === user.email) || user) : null;
 
   useEffect(() => {
@@ -152,10 +156,7 @@ function App() {
 
   useEffect(() => {
     if (bannerIndex === banners.length) {
-      setTimeout(() => {
-        setBannerTransition(false);
-        setBannerIndex(0);
-      }, 600);
+      setTimeout(() => { setBannerTransition(false); setBannerIndex(0); }, 600);
     }
   }, [bannerIndex, banners.length]);
 
@@ -166,11 +167,8 @@ function App() {
 
   const toggleWishlist = (product) => {
     const exists = wishlist.find((item) => item.id === product.id);
-    if (exists) {
-      setWishlist(wishlist.filter((item) => item.id !== product.id));
-    } else {
-      setWishlist([...wishlist, product]);
-    }
+    if (exists) setWishlist(wishlist.filter((item) => item.id !== product.id));
+    else setWishlist([...wishlist, product]);
   };
 
   const goToPage = (newPage) => {
@@ -185,53 +183,37 @@ function App() {
     setPage(prevPage);
   };
 
+  // ✅ AuthContext 동기화
   const handleLogin = (loggedInUser) => {
     setUser(loggedInUser);
-    if (loggedInUser.email === 'admin@srmart.com') {
-      goToPage('adminHome');
-    } else {
-      goToPage('home');
-    }
+    authLogin(loggedInUser);
+    if (loggedInUser.email === 'admin@srmart.com') goToPage('adminHome');
+    else goToPage('home');
   };
 
   const handleLogout = () => {
     if (window.confirm('정말 로그아웃 하시겠어요?')) {
       localStorage.removeItem('srmart_auto_login');
-      setUser(null);
-      setCart([]);
-      setPageHistory([]);
-      setPage('login');
+      authLogout();
+      setUser(null); setCart([]); setPageHistory([]); setPage('login');
       alert(messages.logout);
     }
   };
 
-  const requireLogin = () => {
-    alert('로그인이 필요해요! 😊');
-    setPage('login');
-  };
+  const requireLogin = () => { alert('로그인이 필요해요! 😊'); setPage('login'); };
 
   const addToCart = (product) => {
     if (!user) { requireLogin(); return; }
     if (product.isSoldOut) { showToast('품절된 상품이에요! 😢'); return; }
     if (product.stock !== '' && Number(product.stock) <= 0) { showToast('재고가 없어요! 😢'); return; }
-
-    // ✅ 성인 상품 차단
     if (product.isAdult) {
       const latestUser = users.find(u => u.email === user.email) || user;
-      if (!latestUser.isAdult) {
-        showToast('🔞 성인 상품은 19세 이상만 구매할 수 있어요!');
-        return;
-      }
+      if (!latestUser.isAdult) { showToast('🔞 성인 상품은 19세 이상만 구매할 수 있어요!'); return; }
     }
-
     const existing = cart.find((item) => item.id === product.id);
     if (existing) {
-      if (product.stock !== '' && existing.quantity >= Number(product.stock)) {
-        showToast('재고 수량을 초과했어요! 😢'); return;
-      }
-      setCart(cart.map((item) =>
-        item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-      ));
+      if (product.stock !== '' && existing.quantity >= Number(product.stock)) { showToast('재고 수량을 초과했어요! 😢'); return; }
+      setCart(cart.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item));
     } else {
       setCart([...cart, { ...product, quantity: 1 }]);
     }
@@ -257,36 +239,21 @@ function App() {
 
   const handlePayment = async (finalPrice) => {
     if (cart.length === 0) { alert('장바구니가 비어있어요!'); return; }
-
-    // ✅ 결제 시 성인 상품 재확인
     const latestUser = users.find(u => u.email === user.email) || user;
-    const hasAdultItem = cart.some(item => item.isAdult);
-    if (hasAdultItem && !latestUser.isAdult) {
-      alert('🔞 장바구니에 성인 상품이 있어요. 19세 이상만 구매할 수 있어요!');
-      return;
+    if (cart.some(item => item.isAdult) && !latestUser.isAdult) {
+      alert('🔞 장바구니에 성인 상품이 있어요. 19세 이상만 구매할 수 있어요!'); return;
     }
-
     try {
       const orderInfo = {
-        orderId: 'order_' + Date.now(),
-        userId: user.email,
+        orderId: 'order_' + Date.now(), userId: user.email,
         itemName: cart.length === 1 ? cart[0].name : cart[0].name + ' 외 ' + (cart.length - 1) + '건',
         quantity: cart.reduce((sum, item) => sum + item.quantity, 0),
         totalAmount: finalPrice || totalPrice,
       };
       const result = await kakaoPayReady(orderInfo);
       if (result.next_redirect_pc_url) {
-        const newOrder = {
-          id: orderInfo.orderId,
-          date: new Date().toLocaleString('ko-KR'),
-          items: [...cart],
-          totalPrice: finalPrice || totalPrice,
-          userId: user.email,
-          status: '결제완료',
-        };
-        setOrders([newOrder, ...orders]);
-        setLastOrder(newOrder);
-        setCart([]);
+        const newOrder = { id: orderInfo.orderId, date: new Date().toLocaleString('ko-KR'), items: [...cart], totalPrice: finalPrice || totalPrice, userId: user.email, status: '결제완료' };
+        setOrders([newOrder, ...orders]); setLastOrder(newOrder); setCart([]);
         window.open(result.next_redirect_pc_url, '_blank');
         goToPage('receipt');
       }
@@ -296,31 +263,53 @@ function App() {
   };
 
   if (page === 'login') {
-    return (
-      <div className="App">
-        <Login onLogin={handleLogin} onGuest={() => setPage('home')} />
-      </div>
-    );
+    return <div className="App"><Login onLogin={handleLogin} onGuest={() => setPage('home')} /></div>;
   }
 
+  // ✅ PC 관리자 페이지 목록
   const adminPCPages = [
     'adminPC', 'adminPC_orders', 'adminPC_products', 'adminPC_inventory',
-    'adminPC_purchase',
-    'adminPC_members', 'adminPC_reviews', 'adminPC_stats', 'adminPC_settlement', 'adminPC_settings'
+    'adminPC_purchase', 'adminPC_members', 'adminPC_reviews',
+    'adminPC_stats', 'adminPC_settlement', 'adminPC_settings',
+    'adminPC_banners', 'adminPC_coupons',
+    'simpleInventory', 'simplePurchase',
   ];
+
   if (adminPCPages.includes(page)) {
     return (
       <>
-        {page === 'adminPC' && <Dashboard setPage={goToPage} dark={adminDark} setDark={setAdminDark} products={products} orders={orders} users={users} />}
-        {page === 'adminPC_orders' && <OrderManagement setPage={goToPage} dark={adminDark} setDark={setAdminDark} orders={orders} setOrders={setOrders} />}
-        {page === 'adminPC_products' && <ProductManagement setPage={goToPage} dark={adminDark} setDark={setAdminDark} products={products} setProducts={setProducts} categories={categories} />}
-        {page === 'adminPC_inventory' && <InventoryManagement setPage={goToPage} dark={adminDark} setDark={setAdminDark} products={products} setProducts={setProducts} />}
-        {page === 'adminPC_purchase' && <PurchaseManagement setPage={goToPage} dark={adminDark} setDark={setAdminDark} products={products} setProducts={setProducts} />}
-        {page === 'adminPC_members' && <AdminMembers setPage={goToPage} dark={adminDark} setDark={setAdminDark} users={users} setUsers={setUsers} />}
-        {page === 'adminPC_reviews' && <AdminReviews setPage={goToPage} dark={adminDark} setDark={setAdminDark} />}
-        {page === 'adminPC_stats' && <AdminSalesStats setPage={goToPage} dark={adminDark} setDark={setAdminDark} orders={orders} products={products} />}
-        {page === 'adminPC_settlement' && <KakaoPaySettlement setPage={goToPage} dark={adminDark} setDark={setAdminDark} orders={orders} />}
-        {page === 'adminPC_settings' && <AdminSettings setPage={goToPage} dark={adminDark} setDark={setAdminDark} users={users} setUsers={setUsers} />}
+        {/* ✅ 모든 페이지에 user={user} 전달 — Sidebar 권한 작동 */}
+        {page === 'adminPC'           && <Dashboard         setPage={goToPage} dark={adminDark} setDark={setAdminDark} products={products} orders={orders} users={users} user={user} />}
+        {page === 'adminPC_orders'    && <OrderManagement   setPage={goToPage} dark={adminDark} setDark={setAdminDark} orders={orders} setOrders={setOrders} user={user} />}
+        {page === 'adminPC_products'  && <ProductManagement  setPage={goToPage} dark={adminDark} setDark={setAdminDark} products={products} setProducts={setProducts} categories={categories} user={user} />}
+        {page === 'adminPC_inventory' && <InventoryManagement setPage={goToPage} dark={adminDark} setDark={setAdminDark} products={products} setProducts={setProducts} user={user} />}
+        {page === 'adminPC_purchase'  && <PurchaseManagement setPage={goToPage} dark={adminDark} setDark={setAdminDark} products={products} setProducts={setProducts} user={user} />}
+        {page === 'adminPC_members'   && <AdminMembers       setPage={goToPage} dark={adminDark} setDark={setAdminDark} users={users} setUsers={setUsers} user={user} />}
+        {page === 'adminPC_reviews'   && <AdminReviews       setPage={goToPage} dark={adminDark} setDark={setAdminDark} user={user} />}
+        {page === 'adminPC_stats'     && <AdminSalesStats    setPage={goToPage} dark={adminDark} setDark={setAdminDark} orders={orders} products={products} user={user} />}
+        {page === 'adminPC_settlement'&& <KakaoPaySettlement setPage={goToPage} dark={adminDark} setDark={setAdminDark} orders={orders} user={user} />}
+        {page === 'adminPC_settings'  && <AdminSettings      setPage={goToPage} dark={adminDark} setDark={setAdminDark} users={users} setUsers={setUsers} user={user} />}
+
+        {/* ✅ 배너/쿠폰 — Sidebar에 user 전달 */}
+        {page === 'adminPC_banners' && (
+          <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+            <Sidebar currentPage="adminPC_banners" setPage={goToPage} dark={adminDark} user={user} />
+            <div style={{ flex: 1, overflowY: 'auto', background: adminDark ? '#111' : '#f5f5f3' }}>
+              <BannerManager banners={banners} setBanners={setBanners} categories={categories} goBack={() => goToPage('adminPC')} />
+            </div>
+          </div>
+        )}
+        {page === 'adminPC_coupons' && (
+          <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+            <Sidebar currentPage="adminPC_coupons" setPage={goToPage} dark={adminDark} user={user} />
+            <div style={{ flex: 1, overflowY: 'auto', background: adminDark ? '#111' : '#f5f5f3' }}>
+              <CouponManager coupons={coupons} setCoupons={setCoupons} goBack={() => goToPage('adminPC')} />
+            </div>
+          </div>
+        )}
+
+        {page === 'simpleInventory' && <SimpleInventory products={products} setProducts={setProducts} goBack={goBack} />}
+        {page === 'simplePurchase'  && <SimplePurchase  products={products} setProducts={setProducts} goBack={goBack} />}
       </>
     );
   }
@@ -334,41 +323,20 @@ function App() {
           <span style={{ fontFamily: "'Nanum Pen Script', cursive", fontSize: 'clamp(16px, 5vw, 26px)', color: '#1b5e20', fontWeight: '700', lineHeight: '1', marginTop: '2px', whiteSpace: 'nowrap' }}>에스알마트</span>
         </div>
         <div className="header-actions">
-          {user && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', padding: '4px 8px', cursor: 'default' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#adb5bd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-              </svg>
-              <span style={{ fontSize: '10px', fontWeight: '600', color: '#adb5bd', maxWidth: '44px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name}</span>
-            </div>
-          )}
-          <button className="header-icon-btn" onClick={() => goToPage('search')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', padding: '4px 8px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#adb5bd' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <span style={{ fontSize: '10px', fontWeight: '600' }}>검색</span>
-          </button>
-          <button className="header-icon-btn" onClick={() => user ? goToPage('cart') : requireLogin()} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', padding: '4px 8px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#adb5bd' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-            </svg>
-            <span style={{ fontSize: '10px', fontWeight: '600' }}>장바구니</span>
-            {cart.length > 0 && <span className="badge">{cart.length}</span>}
+          {user && <span style={{ fontSize: '12px', color: 'var(--gray-600)', maxWidth: '60px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>👤 {currentUser?.name}</span>}
+          <button className="header-icon-btn" onClick={() => goToPage('search')}>🔍</button>
+          <button className="header-icon-btn" onClick={() => user ? goToPage('cart') : requireLogin()}>
+            🛒{cart.length > 0 && <span className="badge">{cart.length}</span>}
           </button>
           {user ? (
             <button onClick={handleLogout} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e53935" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>
-              </svg>
-              <span style={{ fontSize: '10px', fontWeight: '600', color: '#adb5bd' }}>로그아웃</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e53935" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+              <span style={{ fontSize: '10px', fontWeight: '700', color: '#868e96' }}>로그아웃</span>
             </button>
           ) : (
             <button onClick={() => setPage('login')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
-              </svg>
-              <span style={{ fontSize: '10px', fontWeight: '600', color: '#00c471' }}>로그인</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+              <span style={{ fontSize: '10px', fontWeight: '700', color: '#00c471' }}>로그인</span>
             </button>
           )}
         </div>
@@ -377,7 +345,6 @@ function App() {
       <div className="main-content">
         {page === 'home' && (
           <>
-            {/* 배너 */}
             <div style={{ padding: '16px' }}>
               <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', transition: bannerTransition ? 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none', WebkitTransform: `translateX(-${bannerIndex * 100}%)`, transform: `translateX(-${bannerIndex * 100}%)`, willChange: 'transform' }}>
@@ -407,7 +374,6 @@ function App() {
               </div>
             </div>
 
-            {/* 카테고리 필터 */}
             <div style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto' }}>
               {['전체', ...categories.map((c) => c.name)].map((name) => (
                 <button key={name} onClick={() => { setFilterLarge(name); setFilterMedium('전체'); setFilterSmall('전체'); }}
@@ -439,7 +405,6 @@ function App() {
               </div>
             )}
 
-            {/* 상품 개수 & 정렬 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px 8px' }}>
               <p style={{ fontSize: '16px', fontWeight: '700', color: '#212529', margin: 0 }}>
                 {filterLarge === '전체' ? '전체 상품' : filterLarge} ({filteredProducts.length}개)
@@ -453,7 +418,6 @@ function App() {
               </select>
             </div>
 
-            {/* 상품 그리드 */}
             {filteredProducts.length === 0 ? (
               <div className="empty-state">
                 <span className="empty-state-icon">🛍️</span>
@@ -464,45 +428,27 @@ function App() {
                 {filteredProducts.map((product) => (
                   <div key={product.id}
                     onClick={() => { if (!product.isSoldOut) { setSelectedProduct(product); goToPage('productDetail'); } }}
-                    style={{
-                      background: 'white', borderRadius: '20px', overflow: 'hidden',
-                      boxShadow: '0 2px 16px rgba(0,0,0,0.07)', position: 'relative',
-                      opacity: product.isSoldOut ? 0.6 : 1,
-                      cursor: product.isSoldOut ? 'default' : 'pointer',
-                      border: product.isAdult ? '1.5px solid #ffcdd2' : '1px solid #f0faf5',
-                    }}
-                  >
+                    style={{ background: 'white', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', position: 'relative', opacity: product.isSoldOut ? 0.6 : 1, cursor: product.isSoldOut ? 'default' : 'pointer', border: product.isAdult ? '1.5px solid #ffcdd2' : '1px solid #f0faf5' }}>
                     <div style={{ height: '130px', position: 'relative', overflow: 'hidden' }}>
-                      <img
-                        src={product.image || getCategoryImage(product.large)}
-                        alt={product.name}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                      {!product.image && (
-                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,196,113,0.08)' }} />
-                      )}
+                      <img src={product.image || getCategoryImage(product.large)} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      {!product.image && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,196,113,0.08)' }} />}
                       {product.isSoldOut && (
                         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <span style={{ color: 'white', fontWeight: '800', fontSize: '13px', background: '#ff4757', padding: '4px 12px', borderRadius: '20px' }}>품절</span>
                         </div>
                       )}
-                      {/* ✅ 성인 상품 배지 */}
-                      {product.isAdult && (
-                        <div style={{ position: 'absolute', top: 8, left: 8, background: '#ff4757', color: 'white', fontSize: '10px', fontWeight: '800', padding: '2px 7px', borderRadius: '8px' }}>🔞 성인</div>
-                      )}
+                      {product.isAdult && <div style={{ position: 'absolute', top: 8, left: 8, background: '#ff4757', color: 'white', fontSize: '10px', fontWeight: '800', padding: '2px 7px', borderRadius: '8px' }}>🔞 성인</div>}
                       <button onClick={(e) => { e.stopPropagation(); toggleWishlist(product); }}
                         style={{ position: 'absolute', top: '8px', right: '8px', width: '30px', height: '30px', borderRadius: '50%', background: 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
                         {wishlist.find((item) => item.id === product.id) ? '❤️' : '🤍'}
                       </button>
                     </div>
-
                     <div style={{ padding: '10px 11px 12px' }}>
                       <p style={{ fontSize: '10px', color: '#00c471', margin: '0 0 3px', fontWeight: '700' }}>{product.large}</p>
                       <p style={{ fontSize: '13px', fontWeight: '700', color: '#1a1a1a', margin: '0 0 8px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.name}</p>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <p style={{ fontSize: '14px', fontWeight: '800', color: '#1a1a1a', margin: 0 }}>₩{product.price.toLocaleString()}</p>
-                        <button onClick={(e) => { e.stopPropagation(); addToCart(product); }}
-                          disabled={product.isSoldOut}
+                        <button onClick={(e) => { e.stopPropagation(); addToCart(product); }} disabled={product.isSoldOut}
                           style={{ width: '30px', height: '30px', borderRadius: '50%', background: product.isSoldOut ? '#dee2e6' : 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', cursor: product.isSoldOut ? 'not-allowed' : 'pointer', fontSize: '20px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: product.isSoldOut ? 'none' : '0 2px 8px rgba(0,196,113,0.4)', lineHeight: 1, fontWeight: '300' }}>+</button>
                       </div>
                     </div>
@@ -513,58 +459,47 @@ function App() {
           </>
         )}
 
-        {page === 'notice'        && <Notice notices={notices} setNotices={setNotices} isAdmin={isAdmin} goBack={goBack} />}
-        {page === 'wishlist'      && <Wishlist wishlist={wishlist} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWishlist={toggleWishlist} />}
-        {page === 'search'        && <Search products={products} categories={categories} goBack={goBack} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} />}
-        {page === 'productDetail' && <ProductDetail product={selectedProduct} onBack={goBack} onAddToCart={addToCart} />}
-        {page === 'cart'          && <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} coupons={coupons} appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon} />}
-        {page === 'orders'        && <Orders orders={orders} goBack={goBack} />}
-        {page === 'receipt'       && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
-        {page === 'couponManager' && <CouponManager coupons={coupons} setCoupons={setCoupons} goBack={goBack} />}
-        {page === 'salesStats'    && <SalesStats orders={orders} products={products} goBack={goBack} />}
-        {page === 'adminHome'     && <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} />}
-        {page === 'members'       && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} />}
-        {page === 'adminOrders'   && <AdminOrders orders={orders} setOrders={setOrders} goBack={goBack} onPrint={(order) => setPrintOrder(order)} />}
-        {/* ✅ MyPage — users, setUsers 추가 */}
-        {page === 'mypage'        && <MyPage user={currentUser} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} users={users} setUsers={setUsers} />}
-        {page === 'bannerManager' && <BannerManager banners={banners} setBanners={setBanners} categories={categories} goBack={goBack} />}
-        {page === 'admin'         && <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} messages={messages} setMessages={() => {}} goBack={goBack} />}
+        {page === 'notice'          && <Notice notices={notices} setNotices={setNotices} isAdmin={isAdmin} goBack={goBack} goToHome={() => goToPage('home')} />}
+        {page === 'wishlist'        && <Wishlist wishlist={wishlist} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWishlist={toggleWishlist} />}
+        {page === 'search'          && <Search products={products} categories={categories} goBack={goBack} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} />}
+        {page === 'productDetail'   && <ProductDetail product={selectedProduct} onBack={goBack} onAddToCart={addToCart} />}
+        {page === 'cart'            && <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} coupons={coupons} user={currentUser} appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon} />}
+        {page === 'orders'          && <Orders orders={orders} goBack={goBack} />}
+        {page === 'receipt'         && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
+        {page === 'couponManager'   && <CouponManager coupons={coupons} setCoupons={setCoupons} goBack={goBack} />}
+        {page === 'salesStats'      && <SalesStats orders={orders} products={products} goBack={goBack} />}
+        {page === 'adminHome'       && <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} />}
+        {page === 'members'         && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} />}
+        {page === 'adminOrders'     && <AdminOrders orders={orders} setOrders={setOrders} goBack={goBack} onPrint={(order) => setPrintOrder(order)} />}
+        {page === 'mypage'          && <MyPage user={currentUser} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} users={users} setUsers={setUsers} />}
+        {page === 'bannerManager'   && <BannerManager banners={banners} setBanners={setBanners} categories={categories} goBack={goBack} />}
+        {page === 'admin'           && <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} messages={messages} setMessages={() => {}} goBack={goBack} />}
       </div>
 
       {/* 고객 하단 탭 */}
       {!isAdmin && (
         <nav className="bottom-nav">
           <button className={'bottom-nav-item' + (page === 'home' ? ' active' : '')} onClick={() => goToPage('home')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'home' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-            </svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'home' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             <span>홈</span>
           </button>
           <button className={'bottom-nav-item' + (page === 'notice' ? ' active' : '')} onClick={() => user ? goToPage('notice') : requireLogin()}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'notice' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'notice' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             <span>공지</span>
           </button>
           <button className={'bottom-nav-item' + (page === 'cart' ? ' active' : '')} onClick={() => user ? goToPage('cart') : requireLogin()}>
             <div style={{ position: 'relative' }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'cart' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-              </svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'cart' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
               {cart.length > 0 && <span className="badge">{cart.length}</span>}
             </div>
             <span>장바구니</span>
           </button>
           <button className={'bottom-nav-item' + (page === 'wishlist' ? ' active' : '')} onClick={() => user ? goToPage('wishlist') : requireLogin()}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill={page === 'wishlist' ? '#00c471' : 'none'} stroke={page === 'wishlist' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill={page === 'wishlist' ? '#00c471' : 'none'} stroke={page === 'wishlist' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             <span>찜</span>
           </button>
           <button className={'bottom-nav-item' + (page === 'mypage' ? ' active' : '')} onClick={() => user ? goToPage('mypage') : requireLogin()}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'mypage' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-            </svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'mypage' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             <span>마이</span>
           </button>
         </nav>
@@ -573,54 +508,14 @@ function App() {
       {/* 관리자 하단 탭 */}
       {isAdmin && (
         <nav className="bottom-nav">
-          <button className={'bottom-nav-item' + (page === 'adminHome' ? ' active' : '')} onClick={() => goToPage('adminHome')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'adminHome' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-            </svg>
-            <span>대시보드</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'notice' ? ' active' : '')} onClick={() => goToPage('notice')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'notice' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
-            <span>공지</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'bannerManager' ? ' active' : '')} onClick={() => goToPage('bannerManager')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'bannerManager' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-            </svg>
-            <span>배너관리</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'couponManager' ? ' active' : '')} onClick={() => goToPage('couponManager')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'couponManager' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
-            </svg>
-            <span>쿠폰관리</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'salesStats' ? ' active' : '')} onClick={() => goToPage('salesStats')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'salesStats' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
-            </svg>
-            <span>매출통계</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'admin' ? ' active' : '')} onClick={() => goToPage('admin')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'admin' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-            </svg>
-            <span>상품관리</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'members' ? ' active' : '')} onClick={() => goToPage('members')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'members' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-            <span>회원관리</span>
-          </button>
-          <button className="bottom-nav-item" onClick={() => goToPage('adminPC')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'adminPC' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-            </svg>
-            <span>PC관리</span>
-          </button>
+          <button className={'bottom-nav-item' + (page === 'adminHome' ? ' active' : '')} onClick={() => goToPage('adminHome')}><span>🏠</span><span>대시보드</span></button>
+          <button className={'bottom-nav-item' + (page === 'notice' ? ' active' : '')} onClick={() => goToPage('notice')}><span>📢</span><span>공지</span></button>
+          <button className={'bottom-nav-item' + (page === 'bannerManager' ? ' active' : '')} onClick={() => goToPage('bannerManager')}><span>🖼️</span><span>배너관리</span></button>
+          <button className={'bottom-nav-item' + (page === 'couponManager' ? ' active' : '')} onClick={() => goToPage('couponManager')}><span>🎟️</span><span>쿠폰관리</span></button>
+          <button className={'bottom-nav-item' + (page === 'salesStats' ? ' active' : '')} onClick={() => goToPage('salesStats')}><span>📊</span><span>매출통계</span></button>
+          <button className={'bottom-nav-item' + (page === 'admin' ? ' active' : '')} onClick={() => goToPage('admin')}><span>📦</span><span>상품관리</span></button>
+          <button className={'bottom-nav-item' + (page === 'members' ? ' active' : '')} onClick={() => goToPage('members')}><span>👥</span><span>회원관리</span></button>
+          <button className="bottom-nav-item" onClick={() => goToPage('adminPC')}><span>🖥️</span><span>PC관리</span></button>
         </nav>
       )}
 
@@ -631,9 +526,7 @@ function App() {
       )}
 
       {printOrder && <PrintReceipt order={printOrder} onClose={() => setPrintOrder(null)} />}
-
       <Chatbot />
-
       <footer style={{ textAlign: 'center', padding: '16px', fontSize: '12px', color: 'var(--gray-400)', borderTop: '1px solid var(--gray-200)' }}>
         © 2026 Dongsin Market. All rights reserved.
       </footer>

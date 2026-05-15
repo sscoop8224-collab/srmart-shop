@@ -9,7 +9,7 @@ const getCategoryImage = (large) => {
   }
 };
 
-function Wishlist({ wishlist, onProductClick, onAddToCart, onToggleWishlist }) {
+function Wishlist({ wishlist, onProductClick, onAddToCart, onToggleWishlist, goBack, goToHome }) {
   const handleAddAll = () => {
     if (wishlist.length === 0) return;
     wishlist.forEach((product) => onAddToCart(product));
@@ -22,6 +22,12 @@ function Wishlist({ wishlist, onProductClick, onAddToCart, onToggleWishlist }) {
       {/* 헤더 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'white', borderBottom: '1px solid #f0faf5', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* ✅ 뒤로가기 버튼 */}
+          <button onClick={goBack} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="#ff4757" stroke="#ff4757" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
           </svg>
@@ -35,6 +41,7 @@ function Wishlist({ wishlist, onProductClick, onAddToCart, onToggleWishlist }) {
       </div>
 
       {wishlist.length === 0 ? (
+        // ✅ 빈 목록일 때 쇼핑하러 가기 버튼 추가
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', gap: '12px' }}>
           <div style={{ width: '80px', height: '80px', background: '#fff0f1', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ff4757" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -43,6 +50,9 @@ function Wishlist({ wishlist, onProductClick, onAddToCart, onToggleWishlist }) {
           </div>
           <p style={{ fontSize: '16px', fontWeight: '700', color: '#1a1a1a', margin: 0 }}>찜한 상품이 없어요!</p>
           <p style={{ fontSize: '13px', color: '#adb5bd', margin: 0 }}>마음에 드는 상품을 찜해보세요</p>
+          <button onClick={goToHome} style={{ marginTop: '8px', padding: '14px 32px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '20px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
+            쇼핑하러 가기 🛍️
+          </button>
         </div>
       ) : (
         <>
@@ -63,7 +73,6 @@ function Wishlist({ wishlist, onProductClick, onAddToCart, onToggleWishlist }) {
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                   {!product.image && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,196,113,0.06)' }} />}
-                  {/* 찜 해제 버튼 */}
                   <button onClick={(e) => { e.stopPropagation(); onToggleWishlist(product); }}
                     style={{ position: 'absolute', top: '8px', right: '8px', width: '30px', height: '30px', borderRadius: '50%', background: 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="#ff4757" stroke="#ff4757" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -16,7 +16,13 @@ function Search({ products, categories, goBack, onProductClick, onAddToCart }) {
   const [filterLarge, setFilterLarge] = useState('전체');
 
   const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch = q === '' || 
+      product.name.toLowerCase().includes(q) ||
+      (product.large && product.large.toLowerCase().includes(q)) ||
+      (product.medium && product.medium.toLowerCase().includes(q)) ||
+      (product.small && product.small.toLowerCase().includes(q)) ||
+      (product.barcode && product.barcode.includes(q));
     const matchesLarge = filterLarge === '전체' || product.large === filterLarge;
     return matchesSearch && matchesLarge;
   });
@@ -38,7 +44,7 @@ function Search({ products, categories, goBack, onProductClick, onAddToCart }) {
           </svg>
           <input
             type="text"
-            placeholder="상품명으로 검색해보세요"
+            placeholder="상품명, 카테고리, 바코드로 검색해보세요"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{ flex: 1, border: 'none', background: 'transparent', fontSize: '14px', outline: 'none', fontFamily: 'inherit', color: '#1a1a1a' }}
@@ -82,7 +88,7 @@ function Search({ products, categories, goBack, onProductClick, onAddToCart }) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
             {filteredProducts.map((product) => (
               <div key={product.id}
-                style={{ background: 'white', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', cursor: 'pointer', border: '1px solid #f0faf5' }}
+                style={{ background: 'white', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', cursor: 'pointer', border: '1px solid #f0faf5', opacity: product.status === '판매중지' ? 0.6 : 1 }}
                 onClick={() => onProductClick(product)}>
                 <div style={{ height: '130px', position: 'relative', overflow: 'hidden' }}>
                   <img
@@ -91,14 +97,24 @@ function Search({ products, categories, goBack, onProductClick, onAddToCart }) {
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                   {!product.image && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,196,113,0.06)' }} />}
+                  {product.stock === 0 && (
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ color: 'white', fontWeight: '800', fontSize: '13px', background: '#ff4757', padding: '4px 12px', borderRadius: '20px' }}>품절</span>
+                    </div>
+                  )}
+                  {product.isAdult && (
+                    <div style={{ position: 'absolute', top: 8, left: 8, background: '#ff4757', color: 'white', fontSize: '10px', fontWeight: '800', padding: '2px 7px', borderRadius: '8px' }}>🔞 성인</div>
+                  )}
                 </div>
                 <div style={{ padding: '10px 11px 12px' }}>
                   <p style={{ fontSize: '10px', color: '#00c471', margin: '0 0 3px', fontWeight: '700' }}>{product.large}</p>
                   <p style={{ fontSize: '13px', fontWeight: '700', color: '#1a1a1a', margin: '0 0 8px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.name}</p>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <p style={{ fontSize: '14px', fontWeight: '800', color: '#1a1a1a', margin: 0 }}>₩{product.price.toLocaleString()}</p>
-                    <button onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-                      style={{ width: '30px', height: '30px', background: 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '20px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,196,113,0.4)', lineHeight: 1, fontWeight: '300' }}>+</button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
+                      disabled={product.stock === 0 || product.status === '판매중지'}
+                      style={{ width: '30px', height: '30px', background: (product.stock === 0 || product.status === '판매중지') ? '#dee2e6' : 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: '50%', cursor: (product.stock === 0 || product.status === '판매중지') ? 'not-allowed' : 'pointer', fontSize: '20px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: (product.stock === 0 || product.status === '판매중지') ? 'none' : '0 2px 8px rgba(0,196,113,0.4)', lineHeight: 1, fontWeight: '300' }}>+</button>
                   </div>
                 </div>
               </div>

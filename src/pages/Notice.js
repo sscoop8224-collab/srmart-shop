@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-function Notice({ notices, setNotices, isAdmin, goBack }) {
+function Notice({ notices, setNotices, isAdmin, goBack, goToHome }) {
   const [form, setForm] = useState({ title: '', content: '' });
   const [expanded, setExpanded] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -68,11 +68,17 @@ function Notice({ notices, setNotices, isAdmin, goBack }) {
             </svg>
           </div>
           <p style={{ fontSize: '16px', fontWeight: '700', color: '#1a1a1a', margin: '0 0 6px' }}>등록된 공지사항이 없어요!</p>
-          <p style={{ fontSize: '13px', color: '#adb5bd', margin: 0 }}>새로운 소식을 기다려주세요</p>
+          <p style={{ fontSize: '13px', color: '#adb5bd', margin: '0 0 20px' }}>새로운 소식을 기다려주세요</p>
+          {/* ✅ 홈으로 가기 버튼 */}
+          {goToHome && (
+            <button onClick={goToHome} style={{ padding: '14px 32px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '20px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
+              쇼핑하러 가기 🛍️
+            </button>
+          )}
         </div>
       ) : (
         <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {notices.map((notice, index) => (
+          {notices.map((notice) => (
             <div key={notice.id} style={{ background: 'white', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: '1px solid #f0faf5' }}>
               <div onClick={() => setExpanded(expanded === notice.id ? null : notice.id)}
                 style={{ padding: '16px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

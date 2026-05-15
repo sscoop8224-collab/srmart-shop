@@ -42,7 +42,7 @@ const STATUS_COLOR = {
   취소: { bg: '#fcebeb', color: '#a32d2d' },
 };
 
-export default function Dashboard({ setPage, dark, setDark }) {
+export default function Dashboard({ setPage, dark, setDark, user }) {
   // ✅ dark 는 오직 props 에서만 받음 — useState/localStorage 없음
   const c = dark ? DARK : LIGHT;
 
@@ -52,7 +52,7 @@ export default function Dashboard({ setPage, dark, setDark }) {
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: c.bg, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-      <Sidebar currentPage="adminPC" setPage={setPage} dark={dark} />
+      <Sidebar currentPage="adminPC" setPage={setPage} dark={dark} user={user} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
         {/* ✅ 상단바 — paddingTop으로 상태바 겹침 방지 */}

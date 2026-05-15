@@ -268,7 +268,7 @@ function App() {
     'adminPC_purchase', 'adminPC_members', 'adminPC_reviews',
     'adminPC_stats', 'adminPC_settlement', 'adminPC_settings',
     'adminPC_banners', 'adminPC_coupons',
-    'simpleInventory', 'simplePurchase',  // ✅ 앱용 독립 페이지
+    'simpleInventory', 'simplePurchase',
   ];
   if (adminPCPages.includes(page)) {
     return (
@@ -283,7 +283,6 @@ function App() {
         {page === 'adminPC_stats' && <AdminSalesStats setPage={goToPage} dark={adminDark} setDark={setAdminDark} orders={orders} products={products} />}
         {page === 'adminPC_settlement' && <KakaoPaySettlement setPage={goToPage} dark={adminDark} setDark={setAdminDark} orders={orders} />}
         {page === 'adminPC_settings' && <AdminSettings setPage={goToPage} dark={adminDark} setDark={setAdminDark} users={users} setUsers={setUsers} />}
-        {/* ✅ PC 배너/쿠폰 — 앱용 페이지를 PC 레이아웃으로 감싸서 재활용 */}
         {page === 'adminPC_banners' && (
           <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
             {(() => { const Sidebar = require('./components/layout/Sidebar').default; return <Sidebar currentPage="adminPC_banners" setPage={goToPage} dark={adminDark} />; })()}
