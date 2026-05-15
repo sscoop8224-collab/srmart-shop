@@ -174,6 +174,7 @@ function App() {
   const goToPage = (newPage) => {
     setPageHistory((prev) => [...prev, page]);
     setPage(newPage);
+  window.scrollTo(0, 0);
   };
 
   const goBack = () => {
@@ -347,7 +348,21 @@ function App() {
           <>
             <div style={{ padding: '16px' }}>
               <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden' }}>
-                <div style={{ display: 'flex', transition: bannerTransition ? 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none', WebkitTransform: `translateX(-${bannerIndex * 100}%)`, transform: `translateX(-${bannerIndex * 100}%)`, willChange: 'transform' }}>
+               <div
+  onTouchStart={(e) => { window._touchStartX = e.touches[0].clientX; }}
+  onTouchEnd={(e) => {
+    const diff = window._touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) {
+        setBannerTransition(true);
+        setBannerIndex((prev) => (prev + 1 >= banners.length ? 0 : prev + 1));
+      } else {
+        setBannerTransition(true);
+        setBannerIndex((prev) => (prev - 1 < 0 ? banners.length - 1 : prev - 1));
+      }
+    }
+  }}
+  style={{ display: 'flex', transition: bannerTransition ? 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none', WebkitTransform: `translateX(-${bannerIndex * 100}%)`, transform: `translateX(-${bannerIndex * 100}%)`, willChange: 'transform' }}>
                   {[...banners, banners[0]].map((slide, index) => (
                     <div key={index} onClick={() => { if (slide.filter) { setFilterLarge(slide.filter); setFilterMedium('전체'); setFilterSmall('전체'); } }}
                       style={{ minWidth: '100%', background: slide.bg, borderRadius: '18px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', overflow: 'hidden', position: 'relative', cursor: slide.filter ? 'pointer' : 'default', boxSizing: 'border-box' }}>
