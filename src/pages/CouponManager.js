@@ -13,16 +13,25 @@ const emptyForm = {
   minAmount: '', maxDiscount: '', usageLimit: '',
 };
 
-const inputStyle = {
-  width: '100%', padding: '12px 14px', borderRadius: '12px',
-  border: '1.5px solid #e8faf3', fontSize: '14px', outline: 'none',
-  fontFamily: 'inherit', background: '#f8fffe', boxSizing: 'border-box'
-};
-
-function CouponManager({ coupons, setCoupons, goBack }) {
+function CouponManager({ coupons, setCoupons, goBack, darkMode }) {
   const [form, setForm] = useState({ ...emptyForm });
   const [showForm, setShowForm] = useState(false);
   const [editCode, setEditCode] = useState(null);
+
+  const bg = darkMode ? '#1a1a1a' : '#f8fffe';
+  const cardBg = darkMode ? '#242424' : 'white';
+  const headerBg = darkMode ? '#1a1a1a' : 'white';
+  const borderColor = darkMode ? '#2e2e2e' : '#f0faf5';
+  const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
+  const subTextColor = darkMode ? '#9e9e9e' : '#adb5bd';
+  const inputBg = darkMode ? '#2e2e2e' : '#f8fffe';
+  const inputBorder = darkMode ? '#3a3a3a' : '#e8faf3';
+
+  const inputStyle = {
+    width: '100%', padding: '12px 14px', borderRadius: '12px',
+    border: `1.5px solid ${inputBorder}`, fontSize: '14px', outline: 'none',
+    fontFamily: 'inherit', background: inputBg, boxSizing: 'border-box', color: textColor
+  };
 
   const handleAdd = () => {
     if (!form.code || !form.discount || !form.description) { alert('코드, 할인값, 설명은 필수예요!'); return; }
@@ -61,32 +70,36 @@ function CouponManager({ coupons, setCoupons, goBack }) {
   const isNotStarted = (coupon) => coupon.startDate && new Date(coupon.startDate) > new Date();
 
   const getCouponStatus = (coupon) => {
-    if (!coupon.isActive) return { label: '비활성', bg: '#f1f3f5', color: '#868e96' };
-    if (isExpired(coupon)) return { label: '만료', bg: '#fff0f1', color: '#ff4757' };
-    if (isNotStarted(coupon)) return { label: '예정', bg: '#fff3cd', color: '#f0a500' };
-    if (coupon.usageLimit > 0 && coupon.usageCount >= coupon.usageLimit) return { label: '소진', bg: '#fff0f1', color: '#ff4757' };
-    return { label: '사용중', bg: '#f0faf5', color: '#00a85e' };
+    if (!coupon.isActive) return { label: '비활성', bg: darkMode ? '#2e2e2e' : '#f1f3f5', color: '#868e96' };
+    if (isExpired(coupon)) return { label: '만료', bg: darkMode ? '#2a1010' : '#fff0f1', color: '#ff4757' };
+    if (isNotStarted(coupon)) return { label: '예정', bg: darkMode ? '#2a2010' : '#fff3cd', color: '#f0a500' };
+    if (coupon.usageLimit > 0 && coupon.usageCount >= coupon.usageLimit) return { label: '소진', bg: darkMode ? '#2a1010' : '#fff0f1', color: '#ff4757' };
+    return { label: '사용중', bg: darkMode ? '#1e2e24' : '#f0faf5', color: '#00a85e' };
   };
 
   return (
-    <div style={{ background: '#f8fffe', minHeight: '100vh', paddingBottom: '80px' }}>
+    <div style={{ background: bg, minHeight: '100vh', paddingBottom: '80px' }}>
 
       {/* 헤더 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'white', borderBottom: '1px solid #f0faf5', position: 'sticky', top: 0, zIndex: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: headerBg, borderBottom: `1px solid ${borderColor}`, position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={goBack} style={{ width: '38px', height: '38px', background: '#f0faf5', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00a85e' }}>←</button>
-          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#1a1a1a' }}>쿠폰 관리</h2>
+          <button onClick={goBack} style={{ width: '38px', height: '38px', background: darkMode ? '#2e2e2e' : '#f0faf5', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#f0f0f0' : '#1a1a1a'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
+          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: textColor }}>쿠폰 관리</h2>
         </div>
         <button onClick={() => { setShowForm(!showForm); if (showForm) handleCancel(); }}
-          style={{ padding: '8px 16px', background: showForm ? '#f0faf5' : 'linear-gradient(135deg, #00c471, #00a85e)', color: showForm ? '#00a85e' : 'white', border: showForm ? '1.5px solid #e8faf3' : 'none', borderRadius: '20px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+          style={{ padding: '8px 16px', background: showForm ? (darkMode ? '#2e2e2e' : '#f0faf5') : 'linear-gradient(135deg, #00c471, #00a85e)', color: showForm ? '#00a85e' : 'white', border: showForm ? `1.5px solid ${inputBorder}` : 'none', borderRadius: '20px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
           {showForm ? '취소' : '+ 추가'}
         </button>
       </div>
 
       {/* 등록/수정 폼 */}
       {showForm && (
-        <div style={{ padding: '16px', background: 'white', borderBottom: '8px solid #f8fffe' }}>
-          <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#1a1a1a', margin: '0 0 16px' }}>
+        <div style={{ padding: '16px', background: cardBg, borderBottom: `8px solid ${bg}` }}>
+          <h3 style={{ fontSize: '15px', fontWeight: '800', color: textColor, margin: '0 0 16px' }}>
             {editCode ? '쿠폰 수정' : '쿠폰 등록'}
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -116,7 +129,7 @@ function CouponManager({ coupons, setCoupons, goBack }) {
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {COUPON_TARGETS.map((t) => (
                   <button key={t.value} onClick={() => setForm({ ...form, target: t.value })}
-                    style={{ padding: '7px 14px', background: form.target === t.value ? '#00c471' : 'white', color: form.target === t.value ? 'white' : '#495057', border: form.target === t.value ? 'none' : '1.5px solid #e8faf3', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    style={{ padding: '7px 14px', background: form.target === t.value ? '#00c471' : cardBg, color: form.target === t.value ? 'white' : textColor, border: form.target === t.value ? 'none' : `1.5px solid ${inputBorder}`, borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>
                     {t.label}
                   </button>
                 ))}
@@ -126,7 +139,7 @@ function CouponManager({ coupons, setCoupons, goBack }) {
               <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '6px' }}>사용 기간</label>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <input value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} type="date" style={inputStyle} />
-                <span style={{ fontSize: '13px', color: '#adb5bd', flexShrink: 0 }}>~</span>
+                <span style={{ fontSize: '13px', color: subTextColor, flexShrink: 0 }}>~</span>
                 <input value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} type="date" style={inputStyle} />
               </div>
             </div>
@@ -145,10 +158,10 @@ function CouponManager({ coupons, setCoupons, goBack }) {
               <input value={form.usageLimit} onChange={(e) => setForm({ ...form, usageLimit: e.target.value })} placeholder="예: 100" type="number" style={inputStyle} />
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={handleAdd} style={{ flex: 1, padding: '14px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
+              <button onClick={handleAdd} style={{ flex: 1, padding: '14px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>
                 {editCode ? '수정 완료' : '쿠폰 등록'}
               </button>
-              <button onClick={handleCancel} style={{ padding: '14px 20px', background: '#f8fffe', color: '#adb5bd', border: '1.5px solid #e8faf3', borderRadius: '14px', fontSize: '15px', cursor: 'pointer', fontWeight: '600' }}>취소</button>
+              <button onClick={handleCancel} style={{ padding: '14px 20px', background: inputBg, color: subTextColor, border: `1.5px solid ${inputBorder}`, borderRadius: '14px', fontSize: '15px', cursor: 'pointer', fontWeight: '600' }}>취소</button>
             </div>
           </div>
         </div>
@@ -158,59 +171,59 @@ function CouponManager({ coupons, setCoupons, goBack }) {
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {coupons.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 20px' }}>
-            <div style={{ width: '72px', height: '72px', background: '#f0faf5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+            <div style={{ width: '72px', height: '72px', background: darkMode ? '#2e2e2e' : '#f0faf5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
               </svg>
             </div>
-            <p style={{ fontSize: '15px', fontWeight: '700', color: '#1a1a1a', margin: 0 }}>등록된 쿠폰이 없어요!</p>
+            <p style={{ fontSize: '15px', fontWeight: '700', color: textColor, margin: 0 }}>등록된 쿠폰이 없어요!</p>
           </div>
         ) : (
           coupons.map((coupon) => {
             const status = getCouponStatus(coupon);
             return (
-              <div key={coupon.code} style={{ background: 'white', borderRadius: '18px', padding: '16px 18px', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: '1px solid #f0faf5', opacity: !coupon.isActive || isExpired(coupon) ? 0.7 : 1 }}>
+              <div key={coupon.code} style={{ background: cardBg, borderRadius: '18px', padding: '16px 18px', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: `1px solid ${borderColor}`, opacity: !coupon.isActive || isExpired(coupon) ? 0.7 : 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
                   <div>
-                    <p style={{ fontSize: '16px', fontWeight: '800', color: '#1a1a1a', margin: '0 0 4px', fontFamily: 'monospace' }}>{coupon.code}</p>
-                    <p style={{ fontSize: '13px', color: '#adb5bd', margin: 0 }}>{coupon.description}</p>
+                    <p style={{ fontSize: '16px', fontWeight: '800', color: textColor, margin: '0 0 4px', fontFamily: 'monospace' }}>{coupon.code}</p>
+                    <p style={{ fontSize: '13px', color: subTextColor, margin: 0 }}>{coupon.description}</p>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
                     <span style={{ background: status.bg, color: status.color, padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>{status.label}</span>
-                    <span style={{ background: coupon.type === 'percent' ? '#f0faf5' : '#e8f0fe', color: coupon.type === 'percent' ? '#00a85e' : '#1a73e8', padding: '4px 10px', borderRadius: '20px', fontSize: '13px', fontWeight: '800' }}>
+                    <span style={{ background: coupon.type === 'percent' ? (darkMode ? '#1e2e24' : '#f0faf5') : (darkMode ? '#1a2030' : '#e8f0fe'), color: coupon.type === 'percent' ? '#00a85e' : '#1a73e8', padding: '4px 10px', borderRadius: '20px', fontSize: '13px', fontWeight: '800' }}>
                       {coupon.type === 'percent' ? `-${coupon.discount}%` : `-₩${coupon.discount.toLocaleString()}`}
                     </span>
                   </div>
                 </div>
 
-                <div style={{ background: '#f8fffe', borderRadius: '12px', padding: '10px 12px', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '4px', border: '1px solid #f0faf5' }}>
+                <div style={{ background: darkMode ? '#1e1e1e' : '#f8fffe', borderRadius: '12px', padding: '10px 12px', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '4px', border: `1px solid ${borderColor}` }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                    <span style={{ color: '#adb5bd' }}>적용 대상</span>
-                    <span style={{ fontWeight: '600', color: '#1a1a1a' }}>{COUPON_TARGETS.find((t) => t.value === (coupon.target || 'all'))?.label}</span>
+                    <span style={{ color: subTextColor }}>적용 대상</span>
+                    <span style={{ fontWeight: '600', color: textColor }}>{COUPON_TARGETS.find((t) => t.value === (coupon.target || 'all'))?.label}</span>
                   </div>
                   {(coupon.startDate || coupon.endDate) && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                      <span style={{ color: '#adb5bd' }}>사용 기간</span>
-                      <span style={{ fontWeight: '600', color: '#1a1a1a' }}>{coupon.startDate || '~'} ~ {coupon.endDate || '제한없음'}</span>
+                      <span style={{ color: subTextColor }}>사용 기간</span>
+                      <span style={{ fontWeight: '600', color: textColor }}>{coupon.startDate || '~'} ~ {coupon.endDate || '제한없음'}</span>
                     </div>
                   )}
                   {coupon.minAmount > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                      <span style={{ color: '#adb5bd' }}>최소 주문금액</span>
-                      <span style={{ fontWeight: '600', color: '#1a1a1a' }}>₩{coupon.minAmount.toLocaleString()} 이상</span>
+                      <span style={{ color: subTextColor }}>최소 주문금액</span>
+                      <span style={{ fontWeight: '600', color: textColor }}>₩{coupon.minAmount.toLocaleString()} 이상</span>
                     </div>
                   )}
                   {coupon.usageLimit > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                      <span style={{ color: '#adb5bd' }}>사용 횟수</span>
-                      <span style={{ fontWeight: '600', color: '#1a1a1a' }}>{coupon.usageCount || 0} / {coupon.usageLimit}회</span>
+                      <span style={{ color: subTextColor }}>사용 횟수</span>
+                      <span style={{ fontWeight: '600', color: textColor }}>{coupon.usageCount || 0} / {coupon.usageLimit}회</span>
                     </div>
                   )}
                 </div>
 
                 <div style={{ display: 'flex', gap: '6px' }}>
-                  <button onClick={() => handleEdit(coupon)} style={{ padding: '7px 12px', background: '#e8f0fe', color: '#1a73e8', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>수정</button>
-                  <button onClick={() => handleToggle(coupon.code)} style={{ padding: '7px 12px', background: coupon.isActive ? '#fff3cd' : '#f0faf5', color: coupon.isActive ? '#f0a500' : '#00a85e', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
+                  <button onClick={() => handleEdit(coupon)} style={{ padding: '7px 12px', background: darkMode ? '#1a2030' : '#e8f0fe', color: '#1a73e8', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>수정</button>
+                  <button onClick={() => handleToggle(coupon.code)} style={{ padding: '7px 12px', background: coupon.isActive ? (darkMode ? '#2a2010' : '#fff3cd') : (darkMode ? '#1e2e24' : '#f0faf5'), color: coupon.isActive ? '#f0a500' : '#00a85e', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
                     {coupon.isActive ? '비활성화' : '활성화'}
                   </button>
                   <button onClick={() => handleDelete(coupon.code)} style={{ padding: '7px 12px', background: '#fff0f1', color: '#ff4757', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>삭제</button>

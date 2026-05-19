@@ -1,12 +1,21 @@
 import { useState } from 'react';
 
-function Members({ users, setUsers, goBack }) {
+function Members({ users, setUsers, goBack, darkMode }) {
   const [search, setSearch] = useState('');
   const [editId, setEditId] = useState(null);
   const [editGrade, setEditGrade] = useState('');
   const [editMemo, setEditMemo] = useState('');
 
   const grades = ['일반', 'VIP', '장기미고객', '관리자'];
+
+  const bg = darkMode ? '#1a1a1a' : '#f8fffe';
+  const cardBg = darkMode ? '#242424' : 'white';
+  const headerBg = darkMode ? '#1a1a1a' : 'white';
+  const borderColor = darkMode ? '#2e2e2e' : '#f0faf5';
+  const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
+  const subTextColor = darkMode ? '#9e9e9e' : '#adb5bd';
+  const inputBg = darkMode ? '#2e2e2e' : '#f8fffe';
+  const inputBorder = darkMode ? '#3a3a3a' : '#e8faf3';
 
   const filteredUsers = users.filter((u) =>
     u.name.includes(search) || u.email.includes(search)
@@ -31,10 +40,10 @@ function Members({ users, setUsers, goBack }) {
   };
 
   const gradeColor = (grade) => {
-    if (grade === 'VIP') return { bg: '#fff3e0', color: '#e65100' };
-    if (grade === '장기미고객') return { bg: '#fff0f1', color: '#ff4757' };
-    if (grade === '관리자') return { bg: '#f0faf5', color: '#00a85e' };
-    return { bg: '#f1f3f5', color: '#868e96' };
+    if (grade === 'VIP') return { bg: darkMode ? '#2a1e10' : '#fff3e0', color: '#e65100' };
+    if (grade === '장기미고객') return { bg: darkMode ? '#2a1010' : '#fff0f1', color: '#ff4757' };
+    if (grade === '관리자') return { bg: darkMode ? '#1e2e24' : '#f0faf5', color: '#00a85e' };
+    return { bg: darkMode ? '#2e2e2e' : '#f1f3f5', color: '#868e96' };
   };
 
   const gradeIcon = (grade) => {
@@ -56,25 +65,28 @@ function Members({ users, setUsers, goBack }) {
   };
 
   return (
-    <div style={{ background: '#f8fffe', minHeight: '100vh', paddingBottom: '80px' }}>
-
+    <div style={{ background: bg, minHeight: '100vh', paddingBottom: '80px' }}>
       {/* 헤더 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', background: 'white', borderBottom: '1px solid #f0faf5', position: 'sticky', top: 0, zIndex: 10 }}>
-        <button onClick={goBack} style={{ width: '38px', height: '38px', background: '#f0faf5', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00a85e' }}>←</button>
-        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#1a1a1a' }}>회원 관리</h2>
-        <span style={{ marginLeft: 'auto', fontSize: '13px', color: '#adb5bd', fontWeight: '600' }}>{users.length}명</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', background: headerBg, borderBottom: `1px solid ${borderColor}`, position: 'sticky', top: 0, zIndex: 10 }}>
+        <button onClick={goBack} style={{ width: '38px', height: '38px', background: darkMode ? '#2e2e2e' : '#f0faf5', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#f0f0f0' : '#1a1a1a'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: textColor }}>회원 관리</h2>
+        <span style={{ marginLeft: 'auto', fontSize: '13px', color: subTextColor, fontWeight: '600' }}>{users.length}명</span>
       </div>
 
       {/* 통계 */}
       <div style={{ padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
         {[
-          { label: '전체', value: users.length, bg: '#f0faf5', color: '#00a85e' },
-          { label: 'VIP', value: users.filter((u) => u.grade === 'VIP').length, bg: '#fff3e0', color: '#e65100' },
-          { label: '장기미고객', value: users.filter((u) => u.grade === '장기미고객').length, bg: '#fff0f1', color: '#ff4757' },
-          { label: '일반', value: users.filter((u) => !u.grade || u.grade === '일반').length, bg: '#f1f3f5', color: '#868e96' },
+          { label: '전체', value: users.length, bg: darkMode ? '#1e2e24' : '#f0faf5', color: '#00a85e' },
+          { label: 'VIP', value: users.filter((u) => u.grade === 'VIP').length, bg: darkMode ? '#2a1e10' : '#fff3e0', color: '#e65100' },
+          { label: '장기미고객', value: users.filter((u) => u.grade === '장기미고객').length, bg: darkMode ? '#2a1010' : '#fff0f1', color: '#ff4757' },
+          { label: '일반', value: users.filter((u) => !u.grade || u.grade === '일반').length, bg: darkMode ? '#2e2e2e' : '#f1f3f5', color: '#868e96' },
         ].map((stat) => (
-          <div key={stat.label} style={{ background: stat.bg, borderRadius: '14px', padding: '12px 8px', textAlign: 'center', border: '1px solid rgba(0,0,0,0.04)' }}>
-            <p style={{ fontSize: '10px', color: '#adb5bd', margin: '0 0 4px', fontWeight: '700' }}>{stat.label}</p>
+          <div key={stat.label} style={{ background: stat.bg, borderRadius: '14px', padding: '12px 8px', textAlign: 'center' }}>
+            <p style={{ fontSize: '10px', color: subTextColor, margin: '0 0 4px', fontWeight: '700' }}>{stat.label}</p>
             <p style={{ fontSize: '20px', fontWeight: '900', margin: 0, color: stat.color }}>{stat.value}</p>
           </div>
         ))}
@@ -82,15 +94,15 @@ function Members({ users, setUsers, goBack }) {
 
       {/* 검색 */}
       <div style={{ padding: '0 16px 16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'white', borderRadius: '14px', padding: '12px 16px', border: '1.5px solid #e8faf3' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: cardBg, borderRadius: '14px', padding: '12px 16px', border: `1.5px solid ${inputBorder}` }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="이름 또는 이메일로 검색"
-            style={{ flex: 1, border: 'none', background: 'transparent', fontSize: '14px', outline: 'none', fontFamily: 'inherit', color: '#1a1a1a' }} />
+            style={{ flex: 1, border: 'none', background: 'transparent', fontSize: '14px', outline: 'none', fontFamily: 'inherit', color: textColor }} />
           {search && (
-            <button onClick={() => setSearch('')} style={{ background: '#f0faf5', border: 'none', cursor: 'pointer', color: '#00a85e', fontSize: '12px', padding: '4px 8px', borderRadius: '8px', fontWeight: '700' }}>지우기</button>
+            <button onClick={() => setSearch('')} style={{ background: darkMode ? '#2e2e2e' : '#f0faf5', border: 'none', cursor: 'pointer', color: '#00a85e', fontSize: '12px', padding: '4px 8px', borderRadius: '8px', fontWeight: '700' }}>지우기</button>
           )}
         </div>
       </div>
@@ -98,31 +110,23 @@ function Members({ users, setUsers, goBack }) {
       {/* 회원 목록 */}
       {filteredUsers.length === 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 20px' }}>
-          <div style={{ width: '72px', height: '72px', background: '#f0faf5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-          </div>
-          <p style={{ fontSize: '15px', fontWeight: '700', color: '#1a1a1a', margin: 0 }}>검색 결과가 없어요!</p>
+          <p style={{ fontSize: '15px', fontWeight: '700', color: textColor, margin: 0 }}>검색 결과가 없어요!</p>
         </div>
       ) : (
         <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {filteredUsers.map((user, index) => {
             const gc = gradeColor(user.grade || '일반');
             return (
-              <div key={user.email} style={{ background: user.grade === '장기미고객' ? '#fff8f8' : 'white', borderRadius: '18px', border: user.grade === '장기미고객' ? '1px solid #ffd0d4' : '1px solid #f0faf5', padding: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
-
-                {/* 회원 정보 */}
+              <div key={user.email} style={{ background: user.grade === '장기미고객' ? (darkMode ? '#2a1010' : '#fff8f8') : cardBg, borderRadius: '18px', border: user.grade === '장기미고객' ? '1px solid #ffd0d4' : `1px solid ${borderColor}`, padding: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '44px', height: '44px', background: gc.bg, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       {gradeIcon(user.grade)}
                     </div>
                     <div>
-                      <p style={{ fontWeight: '700', fontSize: '15px', color: '#1a1a1a', margin: '0 0 3px' }}>{user.name}</p>
-                      <p style={{ fontSize: '12px', color: '#adb5bd', margin: '0 0 2px' }}>{user.email}</p>
-                      {user.phone && <p style={{ fontSize: '12px', color: '#adb5bd', margin: 0 }}>{user.phone}</p>}
+                      <p style={{ fontWeight: '700', fontSize: '15px', color: textColor, margin: '0 0 3px' }}>{user.name}</p>
+                      <p style={{ fontSize: '12px', color: subTextColor, margin: '0 0 2px' }}>{user.email}</p>
+                      {user.phone && <p style={{ fontSize: '12px', color: subTextColor, margin: 0 }}>{user.phone}</p>}
                     </div>
                   </div>
                   <span style={{ background: gc.bg, color: gc.color, padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', flexShrink: 0 }}>
@@ -130,31 +134,29 @@ function Members({ users, setUsers, goBack }) {
                   </span>
                 </div>
 
-                {/* 메모 */}
                 {user.memo && (
-                  <div style={{ background: '#f8fffe', borderRadius: '10px', padding: '8px 12px', marginBottom: '12px', border: '1px solid #f0faf5' }}>
-                    <p style={{ fontSize: '12px', color: '#495057', margin: 0 }}>📝 {user.memo}</p>
+                  <div style={{ background: darkMode ? '#2e2e2e' : '#f8fffe', borderRadius: '10px', padding: '8px 12px', marginBottom: '12px', border: `1px solid ${borderColor}` }}>
+                    <p style={{ fontSize: '12px', color: darkMode ? '#c0c0c0' : '#495057', margin: 0 }}>📝 {user.memo}</p>
                   </div>
                 )}
 
-                {/* 등급 수정 폼 */}
                 {editId === index ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <select value={editGrade} onChange={(e) => setEditGrade(e.target.value)}
-                      style={{ width: '100%', padding: '10px 14px', borderRadius: '12px', border: '1.5px solid #e8faf3', fontSize: '14px', outline: 'none', background: '#f8fffe', fontFamily: 'inherit' }}>
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: '12px', border: `1.5px solid ${inputBorder}`, fontSize: '14px', outline: 'none', background: inputBg, fontFamily: 'inherit', color: textColor }}>
                       {grades.map((g) => <option key={g} value={g}>{g}</option>)}
                     </select>
                     <input value={editMemo} onChange={(e) => setEditMemo(e.target.value)}
                       placeholder="메모 (선택)"
-                      style={{ width: '100%', padding: '10px 14px', borderRadius: '12px', border: '1.5px solid #e8faf3', fontSize: '14px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', background: '#f8fffe' }} />
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: '12px', border: `1.5px solid ${inputBorder}`, fontSize: '14px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', background: inputBg, color: textColor }} />
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button onClick={() => handleGradeSave(index)} style={{ flex: 1, padding: '10px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', boxShadow: '0 2px 8px rgba(0,196,113,0.3)' }}>저장</button>
-                      <button onClick={() => setEditId(null)} style={{ padding: '10px 16px', background: '#f8fffe', color: '#adb5bd', border: '1.5px solid #e8faf3', borderRadius: '12px', cursor: 'pointer', fontSize: '14px' }}>취소</button>
+                      <button onClick={() => handleGradeSave(index)} style={{ flex: 1, padding: '10px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '14px', fontWeight: '700' }}>저장</button>
+                      <button onClick={() => setEditId(null)} style={{ padding: '10px 16px', background: inputBg, color: subTextColor, border: `1.5px solid ${inputBorder}`, borderRadius: '12px', cursor: 'pointer', fontSize: '14px' }}>취소</button>
                     </div>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={() => handleGradeEdit(index)} style={{ padding: '7px 14px', background: '#e8f0fe', color: '#1a73e8', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>등급 변경</button>
+                    <button onClick={() => handleGradeEdit(index)} style={{ padding: '7px 14px', background: darkMode ? '#1a2030' : '#e8f0fe', color: '#1a73e8', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>등급 변경</button>
                     {user.email !== 'admin@srmart.com' && (
                       <button onClick={() => handleDelete(index)} style={{ padding: '7px 14px', background: '#fff0f1', color: '#ff4757', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>삭제</button>
                     )}

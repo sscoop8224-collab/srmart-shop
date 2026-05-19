@@ -53,7 +53,8 @@ function Login({ onLogin, onGuest }) {
   const [users, setUsers] = useState(() => {
     const saved = localStorage.getItem('srmart_users');
     return saved ? JSON.parse(saved) : [
-      { name: '관리자', email: 'admin@srmart.com', password: '1234' }
+      { name: '관리자', email: 'admin@srmart.com', password: '1234', grade: '관리자' },
+      { name: '이민우', email: 'sscoop@naver.com', password: '1234', grade: '일반' },
     ];
   });
 
