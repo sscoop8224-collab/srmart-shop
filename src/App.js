@@ -1,4 +1,5 @@
 import { login as apiLogin } from './api';
+import API from './api';
 import Chatbot from './components/Chatbot';
 import { useState, useEffect, useCallback } from 'react';
 import './App.css';
@@ -154,7 +155,8 @@ function App() {
     banner: 'SR Mart에 오신 것을 환영해요!',
     bannerSub: '신선하고 다양한 상품을 만나보세요',
   });
-  const [filterLarge, setFilterLarge] = useState('전체');
+  const [filterLarge, setFilterLarge] = useState('행사중');
+  const [eventProducts, setEventProducts] = useState([]);
   const [filterMedium, setFilterMedium] = useState('전체');
   const [filterSmall, setFilterSmall] = useState('전체');
   const [sortOrder, setSortOrder] = useState('default');
@@ -179,7 +181,7 @@ function App() {
 
   useEffect(() => { localStorage.setItem('srmart_users', JSON.stringify(users)); }, [users]);
 
-  const currentUser = user ? (users.find(u => u.email === user.email) || user) : null;
+  const currentUser = user || null;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -272,6 +274,41 @@ function App() {
   };
 
   const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  useEffect(() => {
+    if (filterLarge === '행사중') {
+      API.get('/events/active').then(res => {
+        const eventsData = res.data;
+        const productEventMap = {};
+        eventsData.forEach(e => {
+          const prods = typeof e.products === 'string' ? JSON.parse(e.products) : (e.products || []);
+          prods.forEach(p => {
+            productEventMap[p.id] = {
+              eventType: e.event_type,
+              discountValue: e.discount_value,
+              bundleQty: e.bundle_qty,
+              bundlePrice: e.bundle_price,
+              eventName: e.name,
+            };
+          });
+        });
+        const filtered = products
+          .filter(p => productEventMap[p.id])
+          .map(p => {
+            const ev = productEventMap[p.id];
+            let salePrice = p.price;
+            if (ev.eventType === '정액할인') salePrice = Math.max(0, p.price - Number(ev.discountValue));
+            else if (ev.eventType === '퍼센트할인') salePrice = Math.floor(p.price * (1 - Number(ev.discountValue) / 100));
+            else if (ev.eventType === '단품행사') salePrice = Number(ev.discountValue);
+            else if (ev.eventType === '묶음가') salePrice = Number(ev.bundlePrice);
+            return { ...p, salePrice, eventLabel: ev.eventName, eventType: ev.eventType };
+          });
+        setEventProducts(filtered);
+      }).catch(() => {
+        console.log('행사 상품 불러오기 실패');
+      });
+    }
+  }, [filterLarge, products]);
 
   const filteredProducts = products.filter((p) => {
     if (filterLarge !== '전체' && p.large !== filterLarge) return false;
