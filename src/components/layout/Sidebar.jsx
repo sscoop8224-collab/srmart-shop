@@ -41,9 +41,19 @@ const DEFAULT_PERMISSIONS = {
   home:               { staff: true,  manager: true  },
 };
 
+function isOwner(user) {
+  return (
+    user?.role === 'owner' ||
+    user?.role === 'admin' ||
+    user?.role === 'manager' ||
+    user?.grade === '관리자'
+  );
+}
+
 function canAccess(page, user) {
   const role = getUserRole(user);
-  if (role === 'owner') return true;
+  console.log('[canAccess] user:', user, '| isOwner:', isOwner(user));
+  if (isOwner(user)) return true;
   const saved = localStorage.getItem('srmart_role_perms');
   const perms = saved ? JSON.parse(saved) : DEFAULT_PERMISSIONS;
   const pagePerm = perms[page] || DEFAULT_PERMISSIONS[page];
@@ -90,7 +100,7 @@ export default function Sidebar({ currentPage, setPage, dark, user }) {
             if (!item.section) return <div key={i} style={{ height: 1, background: c.border, margin: '8px 0' }} />;
             return <div key={i} style={{ fontSize: 10, color: c.sectionText, padding: '8px 20px 4px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>{item.section}</div>;
           }
-          if (item.ownerOnly && role !== 'owner') return null;
+          if (item.ownerOnly && !isOwner(user)) return null;
           const accessible = canAccess(item.page, user);
           const isActive = currentPage === item.page;
           const isShop = item.page === 'home';

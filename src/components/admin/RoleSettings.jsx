@@ -41,7 +41,7 @@ const DARK = {
   theadBg: '#252525',
 };
 
-export default function RoleSettings({ setPage, dark, setDark }) {
+export default function RoleSettings({ setPage, dark, setDark, user }) {
   const c = dark ? DARK : LIGHT;
 
   const [perms, setPerms] = useState(() => {
@@ -78,7 +78,7 @@ export default function RoleSettings({ setPage, dark, setDark }) {
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: c.bg }}>
-      <Sidebar currentPage="adminPC_roles" setPage={setPage} dark={dark} />
+      <Sidebar currentPage="adminPC_roles" setPage={setPage} dark={dark} user={user} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* 상단바 */}

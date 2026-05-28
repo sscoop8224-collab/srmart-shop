@@ -207,10 +207,7 @@ function Login({ onLogin, onGuest }) {
 
   const doLogin = async (username, password) => {
     try {
-      const res = await import('../api').then(m => m.login(username, password));
-      const { token, user } = res.data;
-      localStorage.setItem('srmart_token', token);
-      onLogin(user);
+      await onLogin({ username, password });
     } catch (err) {}
   };
 
@@ -223,15 +220,12 @@ function Login({ onLogin, onGuest }) {
 
     try {
       setLoginLoading(true);
-      const res = await import('../api').then(m => m.login(loginForm.username, loginForm.password));
-      const { token, user } = res.data;
-      localStorage.setItem('srmart_token', token);
       if (remember) {
         localStorage.setItem('srmart_auto_login', JSON.stringify({ username: loginForm.username, password: loginForm.password }));
       } else {
         localStorage.removeItem('srmart_auto_login');
       }
-      onLogin(user);
+      await onLogin({ username: loginForm.username, password: loginForm.password });
     } catch (err) {
       setLoginErrors({ password: err.response?.data?.error || '아이디 또는 비밀번호가 틀려요!' });
     } finally {

@@ -58,7 +58,7 @@ const MEMBER_STATUS = { 활성: { bg: sgl, color: sgd }, 휴면: { bg: '#f1efe8'
 const GRADE_STYLE = { VIP: { bg: '#eeedfe', color: '#534ab7' }, 일반: { bg: '#f1efe8', color: '#5f5e5a' }, 관리자: { bg: '#e6f1fb', color: '#185fa5' } };
 const AVATAR_COLORS = [{ bg: sgl, color: sgd }, { bg: '#e6f1fb', color: '#185fa5' }, { bg: '#faeeda', color: '#854f0b' }, { bg: '#fbeaf0', color: '#993556' }, { bg: '#eeedfe', color: '#534ab7' }];
 
-export function MemberManagement({ setPage, dark, setDark, users = [], setUsers }) {
+export function MemberManagement({ setPage, dark, setDark, users = [], setUsers, user }) {
   const c = dark ? DARK : LIGHT;
   const s = makeStyles(c);
   const [search, setSearch] = useState('');
@@ -96,7 +96,7 @@ export function MemberManagement({ setPage, dark, setDark, users = [], setUsers 
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: c.bg, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-      <Sidebar currentPage="adminPC_members" setPage={setPage} dark={dark} />
+      <Sidebar currentPage="adminPC_members" setPage={setPage} dark={dark} user={user} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={s.topbar}>
           <div style={s.topbarTitle}>회원 관리</div>
@@ -216,7 +216,7 @@ const INIT_REVIEWS = [
   { id: 5, name: '강민서', product: '계란 30구', rating: 2, body: '생각보다 많이 시들어 왔어요. 냉장 보관이 제대로 안 된 것 같습니다.', date: '2026.05.02', status: 'hidden', reply: '' },
 ];
 
-export function ReviewManagement({ setPage, dark, setDark }) {
+export function ReviewManagement({ setPage, dark, setDark, user }) {
   const c = dark ? DARK : LIGHT;
   const s = makeStyles(c);
   const [reviews, setReviews] = useState(INIT_REVIEWS);
@@ -245,7 +245,7 @@ export function ReviewManagement({ setPage, dark, setDark }) {
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: c.bg, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-      <Sidebar currentPage="adminPC_reviews" setPage={setPage} dark={dark} />
+      <Sidebar currentPage="adminPC_reviews" setPage={setPage} dark={dark} user={user} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={s.topbar}>
           <div style={s.topbarTitle}>리뷰 관리</div>
@@ -302,7 +302,7 @@ export function ReviewManagement({ setPage, dark, setDark }) {
 // =============================================
 const CATS = [{ icon: '🍎', name: '과일', pct: 32 }, { icon: '🥩', name: '육류', pct: 26 }, { icon: '🥦', name: '채소', pct: 19 }, { icon: '🥛', name: '유제품', pct: 13 }, { icon: '🧃', name: '음료', pct: 9 }];
 
-export function SalesStats({ setPage, dark, setDark, orders = [] }) {
+export function SalesStats({ setPage, dark, setDark, orders = [], user }) {
   const c = dark ? DARK : LIGHT;
   const s = makeStyles(c);
   const [period, setPeriod] = useState('month');
@@ -332,7 +332,7 @@ export function SalesStats({ setPage, dark, setDark, orders = [] }) {
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: c.bg, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-      <Sidebar currentPage="adminPC_stats" setPage={setPage} dark={dark} />
+      <Sidebar currentPage="adminPC_stats" setPage={setPage} dark={dark} user={user} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={s.topbar}>
           <div style={s.topbarTitle}>매출 통계</div>
@@ -388,7 +388,7 @@ export function SalesStats({ setPage, dark, setDark, orders = [] }) {
 // =============================================
 const PAY_STYLE = { 결제완료: { bg: '#faeeda', color: '#854f0b' }, 정산완료: { bg: sgl, color: sgd }, 취소: { bg: '#fcebeb', color: '#a32d2d' } };
 
-export function KakaoPaySettlement({ setPage, dark, setDark, orders = [] }) {
+export function KakaoPaySettlement({ setPage, dark, setDark, orders = [], user }) {
   const c = dark ? DARK : LIGHT;
   const s = makeStyles(c);
 
@@ -407,7 +407,7 @@ export function KakaoPaySettlement({ setPage, dark, setDark, orders = [] }) {
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: c.bg, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-      <Sidebar currentPage="adminPC_settlement" setPage={setPage} dark={dark} />
+      <Sidebar currentPage="adminPC_settlement" setPage={setPage} dark={dark} user={user} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={s.topbar}>
           <div style={s.topbarTitle}>카카오페이 정산</div>
@@ -659,7 +659,7 @@ function AdminAccountTab({ c, s, dark, users = [], setUsers }) {
   );
 }
 
-export function Settings({ setPage, dark, setDark, users = [], setUsers }) {
+export function Settings({ setPage, dark, setDark, users = [], setUsers, user }) {
   const c = dark ? DARK : LIGHT;
   const s = makeStyles(c);
   const [activePage, setActivePage] = useState(0);
@@ -694,7 +694,7 @@ export function Settings({ setPage, dark, setDark, users = [], setUsers }) {
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: c.bg, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-      <Sidebar currentPage="adminPC_settings" setPage={setPage} dark={dark} />
+      <Sidebar currentPage="adminPC_settings" setPage={setPage} dark={dark} user={user} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={s.topbar}>
           <div style={s.topbarTitle}>설정</div>

@@ -230,26 +230,23 @@ function App() {
 
   // ✅ 로그인 - username 또는 email로 백엔드 연동
   const handleLogin = async (loggedInUser) => {
-    try {
-      const identifier = loggedInUser.username || loggedInUser.email;
-      const res = await apiLogin(identifier, loggedInUser.password);
-      const { token, user: dbUser } = res.data;
-      localStorage.setItem('srmart_token', token);
-      setUser(dbUser);
-      authLogin(dbUser);
-      if (
-        dbUser.email === 'admin@srmart.com' ||
-        dbUser.role === 'owner' ||
-        dbUser.role === 'admin' ||
-        dbUser.role === 'manager' ||
-        dbUser.grade === '관리자'
-      ) {
-        goToPage('adminHome');
-      } else {
-        goToPage('home');
-      }
-    } catch (err) {
-      alert(err.response?.data?.error || '아이디 또는 비밀번호가 틀려요!');
+    const identifier = loggedInUser.username || loggedInUser.email;
+    const res = await apiLogin(identifier, loggedInUser.password);
+    const { token, user: dbUser } = res.data;
+    console.log('[handleLogin] 백엔드 user:', dbUser);
+    localStorage.setItem('srmart_token', token);
+    setUser(dbUser);
+    authLogin(dbUser);
+    if (
+      dbUser.email === 'admin@srmart.com' ||
+      dbUser.role === 'owner' ||
+      dbUser.role === 'admin' ||
+      dbUser.role === 'manager' ||
+      dbUser.grade === '관리자'
+    ) {
+      goToPage('adminHome');
+    } else {
+      goToPage('home');
     }
   };
 

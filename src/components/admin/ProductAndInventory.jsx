@@ -456,7 +456,7 @@ function ExcelUploadModal({ c, s, largeCategories, setRawProducts, onClose }) {
 // =============================================
 // ProductManagement — 상품 관리
 // =============================================
-export function ProductManagement({ setPage, dark, setDark, products: rawProducts = [], setProducts: setRawProducts, categories = [] }) {
+export function ProductManagement({ setPage, dark, setDark, products: rawProducts = [], setProducts: setRawProducts, categories = [], user }) {
   const c = dark ? DARK : LIGHT;
   const s = makeStyles(c);
   const fileInputRef = useRef(null);
@@ -539,7 +539,7 @@ export function ProductManagement({ setPage, dark, setDark, products: rawProduct
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: c.bg, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-      <Sidebar currentPage="adminPC_products" setPage={setPage} dark={dark} />
+      <Sidebar currentPage="adminPC_products" setPage={setPage} dark={dark} user={user} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={s.topbar}>
           <div style={s.topbarTitle}>상품 관리</div>
@@ -757,7 +757,7 @@ const STOCK_STYLE = {
   out: { bg: '#fcebeb', color: '#a32d2d', label: '품절' },
 };
 
-export function InventoryManagement({ setPage, dark, setDark, products: rawProducts = [], setProducts: setRawProducts }) {
+export function InventoryManagement({ setPage, dark, setDark, products: rawProducts = [], setProducts: setRawProducts, user }) {
   const c = dark ? DARK : LIGHT;
   const s = makeStyles(c);
 
@@ -823,7 +823,7 @@ export function InventoryManagement({ setPage, dark, setDark, products: rawProdu
         <StockTakingMode c={c} s={s} dark={dark} inv={inv} rawProducts={rawProducts} setRawProducts={setRawProducts} onClose={() => setShowStockTaking(false)} />
       )}
       <div style={{ display: 'flex', height: '100vh', background: c.bg, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-        <Sidebar currentPage="adminPC_inventory" setPage={setPage} dark={dark} />
+        <Sidebar currentPage="adminPC_inventory" setPage={setPage} dark={dark} user={user} />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={s.topbar}>
             <div style={s.topbarTitle}>재고 관리</div>

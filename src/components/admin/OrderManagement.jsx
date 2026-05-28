@@ -56,7 +56,7 @@ function makeStyles(c) {
 }
 
 // ✅ orders, setOrders → App.js 실제 데이터 사용
-export default function OrderManagement({ setPage, dark, setDark, orders = [], setOrders }) {
+export default function OrderManagement({ setPage, dark, setDark, orders = [], setOrders, user }) {
   const c = dark ? DARK : LIGHT;
   const s = makeStyles(c);
   const [activeTab, setActiveTab] = useState('전체');
@@ -105,7 +105,7 @@ export default function OrderManagement({ setPage, dark, setDark, orders = [], s
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: c.bg, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-      <Sidebar currentPage="adminPC_orders" setPage={setPage} dark={dark} />
+      <Sidebar currentPage="adminPC_orders" setPage={setPage} dark={dark} user={user} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={s.topbar}>
           <div style={s.topbarTitle}>주문 관리</div>

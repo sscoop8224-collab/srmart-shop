@@ -756,7 +756,7 @@ function SettlementTab({ c, s, purchaseHistory, setPurchaseHistory, suppliers })
 // =============================================
 // PurchaseManagement — 메인
 // =============================================
-export default function PurchaseManagement({ setPage, dark, setDark, products, setProducts }) {
+export default function PurchaseManagement({ setPage, dark, setDark, products, setProducts, user }) {
   const c = dark ? DARK : LIGHT;
   const s = makeStyles(c);
 
@@ -774,7 +774,7 @@ export default function PurchaseManagement({ setPage, dark, setDark, products, s
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: c.bg, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-      <Sidebar currentPage="adminPC_purchase" setPage={setPage} dark={dark} />
+      <Sidebar currentPage="adminPC_purchase" setPage={setPage} dark={dark} user={user} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={s.topbar}>
           <div style={s.topbarTitle}>🚚 검수 매입 관리</div>
