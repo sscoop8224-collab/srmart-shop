@@ -1,4 +1,5 @@
 import { login as apiLogin } from './api';
+import API from './api';
 import Chatbot from './components/Chatbot';
 import { useState, useEffect, useCallback } from 'react';
 import './App.css';
@@ -22,6 +23,7 @@ import PrintReceipt from './pages/PrintReceipt';
 import SalesStats from './pages/SalesStats';
 import MyPage from './pages/MyPage';
 import BannerManager from './pages/BannerManager';
+import EventManager from './pages/EventManager';
 import SimpleInventory from './pages/SimpleInventory';
 import SimplePurchase from './pages/SimplePurchase';
 
@@ -104,13 +106,7 @@ function App() {
   useEffect(() => { localStorage.setItem('srmart_admin_dark', adminDark); }, [adminDark]);
 
   // ✅ 고객용 다크모드
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem('srmart_dark_manual');
-    if (saved === 'off') return false; // 수동으로 껐으면 라이트
-    if (saved === 'on') return true;   // 수동으로 켰으면 다크
-    // 기본값: 시스템 다크모드 따라가기
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
+  const [darkMode, setDarkMode] = useState(false);
   useEffect(() => {
     localStorage.setItem('srmart_dark', darkMode);
     if (darkMode) {
@@ -159,7 +155,8 @@ function App() {
     banner: 'SR Mart에 오신 것을 환영해요!',
     bannerSub: '신선하고 다양한 상품을 만나보세요',
   });
-  const [filterLarge, setFilterLarge] = useState('전체');
+  const [filterLarge, setFilterLarge] = useState('행사중');
+  const [eventProducts, setEventProducts] = useState([]);
   const [filterMedium, setFilterMedium] = useState('전체');
   const [filterSmall, setFilterSmall] = useState('전체');
   const [sortOrder, setSortOrder] = useState('default');
@@ -174,6 +171,7 @@ function App() {
     { code: 'FRESH20', discount: 20, type: 'percent', description: '신선식품 20% 할인', isActive: true },
   ]);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [events, setEvents] = useState([]);
   const [banners, setBanners] = useState([
     { id: 1, label: '특별 할인', title: 'SR Mart에 오신 것을 환영해요!', sub: '신선하고 다양한 상품을 만나보세요', emoji: '🛒', bg: 'linear-gradient(135deg, #00c471, #00a85e)', filter: null },
     { id: 2, label: '신선식품', title: '신선한 채소와 과일!', sub: '오늘의 특가 상품을 확인해보세요', emoji: '🥦', bg: 'linear-gradient(135deg, #ff6b6b, #ee5a24)', filter: '식품' },
@@ -183,7 +181,7 @@ function App() {
 
   useEffect(() => { localStorage.setItem('srmart_users', JSON.stringify(users)); }, [users]);
 
-  const currentUser = user ? (users.find(u => u.email === user.email) || user) : null;
+  const currentUser = user || null;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -277,6 +275,41 @@ function App() {
 
   const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
+  useEffect(() => {
+    if (filterLarge === '행사중') {
+      API.get('/events/active').then(res => {
+        const eventsData = res.data;
+        const productEventMap = {};
+        eventsData.forEach(e => {
+          const prods = typeof e.products === 'string' ? JSON.parse(e.products) : (e.products || []);
+          prods.forEach(p => {
+            productEventMap[p.id] = {
+              eventType: e.event_type,
+              discountValue: e.discount_value,
+              bundleQty: e.bundle_qty,
+              bundlePrice: e.bundle_price,
+              eventName: e.name,
+            };
+          });
+        });
+        const filtered = products
+          .filter(p => productEventMap[p.id])
+          .map(p => {
+            const ev = productEventMap[p.id];
+            let salePrice = p.price;
+            if (ev.eventType === '정액할인') salePrice = Math.max(0, p.price - Number(ev.discountValue));
+            else if (ev.eventType === '퍼센트할인') salePrice = Math.floor(p.price * (1 - Number(ev.discountValue) / 100));
+            else if (ev.eventType === '단품행사') salePrice = Number(ev.discountValue);
+            else if (ev.eventType === '묶음가') salePrice = Number(ev.bundlePrice);
+            return { ...p, salePrice, eventLabel: ev.eventName, eventType: ev.eventType };
+          });
+        setEventProducts(filtered);
+      }).catch(() => {
+        console.log('행사 상품 불러오기 실패');
+      });
+    }
+  }, [filterLarge, products]);
+
   const filteredProducts = products.filter((p) => {
     if (filterLarge !== '전체' && p.large !== filterLarge) return false;
     if (filterMedium !== '전체' && p.medium !== filterMedium) return false;
@@ -368,8 +401,8 @@ function App() {
     <div className="App">
       {/* 헤더 */}
       <header className="header">
-        <div className="header-logo" onClick={() => goToPage(isAdmin ? 'adminHome' : 'home')} style={{ height: '60px' }}>
-          <img src={srmLogo} alt="SR Mart" style={{ height: '60px', width: 'auto', objectFit: 'contain', display: 'block' }} />
+        <div className="header-logo" onClick={() => goToPage(isAdmin ? 'adminHome' : 'home')}>
+          <img src={srmLogo} alt="SR Mart" style={{ height: '34px', objectFit: 'contain' }} />
           <span style={{ fontFamily: "'Nanum Pen Script', cursive", fontSize: 'clamp(16px, 5vw, 26px)', color: '#1b5e20', fontWeight: '700', lineHeight: '1', marginTop: '2px', whiteSpace: 'nowrap' }}>에스알마트</span>
         </div>
         <div className="header-actions">
@@ -381,19 +414,11 @@ function App() {
               <span style={{ fontSize: '10px', fontWeight: '600', color: '#adb5bd', maxWidth: '44px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.name}</span>
             </div>
           )}
-          <button className="header-icon-btn" onClick={() => goToPage('search')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', padding: '4px 8px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#adb5bd' }}>
+          <button className="header-icon-btn" onClick={() => user ? goToPage('notice') : requireLogin()} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', padding: '4px 8px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#adb5bd' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
             </svg>
-            <span style={{ fontSize: '10px', fontWeight: '600' }}>검색</span>
-          </button>
-          <button className="header-icon-btn" onClick={() => user ? goToPage('cart') : requireLogin()} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', padding: '4px 8px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#adb5bd' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-            </svg>
-            <span style={{ fontSize: '10px', fontWeight: '600' }}>장바구니</span>
-            {cart.length > 0 && <span className="badge">{cart.length}</span>}
+            <span style={{ fontSize: '10px', fontWeight: '600' }}>공지</span>
           </button>
           {user ? (
             <button onClick={handleLogout} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
@@ -552,13 +577,14 @@ function App() {
         {page === 'cart'            && <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} coupons={coupons} user={currentUser} appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon} darkMode={darkMode} />}
         {page === 'orders'          && <Orders orders={orders} goBack={goBack} />}
         {page === 'receipt'         && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
-        {page === 'couponManager'   && <CouponManager coupons={coupons} setCoupons={setCoupons} goBack={goBack} darkMode={darkMode} />}
-        {page === 'salesStats'      && <SalesStats orders={orders} products={products} goBack={goBack} darkMode={darkMode} />}
-        {page === 'adminHome'       && <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} darkMode={darkMode} setDarkMode={setDarkMode} />}
-        {page === 'members'         && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} darkMode={darkMode} />}
-        {page === 'adminOrders'     && <AdminOrders orders={orders} setOrders={setOrders} goBack={goBack} onPrint={(order) => setPrintOrder(order)} darkMode={darkMode} />}
+        {page === 'couponManager'   && <CouponManager coupons={coupons} setCoupons={setCoupons} goBack={goBack} />}
+        {page === 'salesStats'      && <SalesStats orders={orders} products={products} goBack={goBack} />}
+        {page === 'adminHome'       && <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} />}
+        {page === 'members'         && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} />}
+        {page === 'adminOrders'     && <AdminOrders orders={orders} setOrders={setOrders} goBack={goBack} onPrint={(order) => setPrintOrder(order)} />}
         {page === 'mypage'          && <MyPage user={currentUser} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} users={users} setUsers={setUsers} darkMode={darkMode} setDarkMode={setDarkMode} />}
         {page === 'bannerManager'   && <BannerManager banners={banners} setBanners={setBanners} categories={categories} goBack={goBack} darkMode={darkMode} />}
+        {page === 'eventManager'    && <EventManager products={products} goBack={goBack} darkMode={darkMode} events={events} setEvents={setEvents} />}
         {page === 'admin'           && <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} messages={messages} setMessages={() => {}} goBack={goBack} />}
       </div>
 
@@ -569,16 +595,22 @@ function App() {
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'home' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             <span>홈</span>
           </button>
-          <button className={'bottom-nav-item' + (page === 'notice' ? ' active' : '')} onClick={() => user ? goToPage('notice') : requireLogin()}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'notice' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            <span>공지</span>
-          </button>
           <button className={'bottom-nav-item' + (page === 'cart' ? ' active' : '')} onClick={() => user ? goToPage('cart') : requireLogin()}>
             <div style={{ position: 'relative' }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'cart' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
               {cart.length > 0 && <span className="badge">{cart.length}</span>}
             </div>
             <span>장바구니</span>
+          </button>
+          {/* 검색 중앙 포인트 버튼 */}
+          <button onClick={() => goToPage('search')}
+            style={{ flex: 1, height: '100%', border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px', position: 'relative' }}>
+            <div style={{ width: '48px', height: '48px', background: 'linear-gradient(135deg, #00c471, #00a85e)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,196,113,0.4)', marginTop: '-20px' }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+            </div>
+            <span style={{ fontSize: '10px', fontWeight: '600', color: '#00c471' }}>검색</span>
           </button>
           <button className={'bottom-nav-item' + (page === 'wishlist' ? ' active' : '')} onClick={() => user ? goToPage('wishlist') : requireLogin()}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill={page === 'wishlist' ? '#00c471' : 'none'} stroke={page === 'wishlist' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>

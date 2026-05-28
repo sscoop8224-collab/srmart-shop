@@ -5,6 +5,7 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, d
   const [showPwModal, setShowPwModal] = useState(false);
   const [form, setForm] = useState({
     name: user?.name || '',
+    email: user?.email || '',
     phone: user?.phone || '',
     address: user?.address || '',
     addressDetail: user?.addressDetail || '',
@@ -13,6 +14,9 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, d
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
   const [pwError, setPwError] = useState('');
   const [saveMsg, setSaveMsg] = useState('');
+  const [myCoupons, setMyCoupons] = useState([]);
+  const [showCoupons, setShowCoupons] = useState(false);
+  const [couponsLoading, setCouponsLoading] = useState(false);
 
   const bg = darkMode ? '#1a1a1a' : '#f8fffe';
   const cardBg = darkMode ? '#242424' : 'white';
@@ -40,6 +44,24 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, d
     borderRadius: '12px', fontSize: '14px', outline: 'none',
     boxSizing: 'border-box', background: inputBg, fontFamily: 'inherit',
     color: textColor
+  };
+
+  const fetchMyCoupons = async () => {
+    setCouponsLoading(true);
+    try {
+      const API = (await import('../api')).default;
+      const res = await API.get('/coupons/my');
+      setMyCoupons(res.data);
+    } catch (err) {
+      console.error('쿠폰 불러오기 실패', err);
+    } finally {
+      setCouponsLoading(false);
+    }
+  };
+
+  const handleShowCoupons = () => {
+    setShowCoupons(true);
+    fetchMyCoupons();
   };
 
   const saveProfile = () => {
@@ -89,7 +111,7 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, d
       </div>
 
       {/* 통계 카드 */}
-      <div style={{ margin: '-28px 16px 0', background: cardBg, borderRadius: '20px', padding: '4px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', position: 'relative', zIndex: 2, border: `1px solid ${borderColor}` }}>
+      <div style={{ margin: '-28px 16px 0', background: cardBg, borderRadius: '20px', padding: '4px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', position: 'relative', zIndex: 2, border: `1px solid ${borderColor}` }}>
         <div style={{ textAlign: 'center', padding: '20px 16px', cursor: 'pointer', borderRadius: '16px' }} onClick={() => goToPage('orders')}>
           <p style={{ fontSize: '28px', fontWeight: '900', color: '#00c471', margin: '0 0 4px' }}>{orders.length}</p>
           <p style={{ fontSize: '12px', color: subTextColor, margin: 0, fontWeight: '600' }}>주문내역</p>
@@ -98,12 +120,16 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, d
           <p style={{ fontSize: '28px', fontWeight: '900', color: '#ff4757', margin: '0 0 4px' }}>{wishlist.length}</p>
           <p style={{ fontSize: '12px', color: subTextColor, margin: 0, fontWeight: '600' }}>찜 목록</p>
         </div>
+        <div style={{ textAlign: 'center', padding: '20px 16px', cursor: 'pointer', borderLeft: `1px solid ${borderColor}`, borderRadius: '16px' }} onClick={handleShowCoupons}>
+          <p style={{ fontSize: '28px', fontWeight: '900', color: '#f0a500', margin: '0 0 4px' }}>{myCoupons.length}</p>
+          <p style={{ fontSize: '12px', color: subTextColor, margin: 0, fontWeight: '600' }}>내 쿠폰</p>
+        </div>
       </div>
 
       {/* 회원정보 수정 버튼 */}
       <div style={{ margin: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
         <button onClick={() => {
-          setForm({ name: currentUser?.name || '', phone: currentUser?.phone || '', address: currentUser?.address || '', addressDetail: currentUser?.addressDetail || '', zipCode: currentUser?.zipCode || '' });
+          setForm({ name: currentUser?.name || '', email: currentUser?.email || '', phone: currentUser?.phone || '', address: currentUser?.address || '', addressDetail: currentUser?.addressDetail || '', zipCode: currentUser?.zipCode || '' });
           setShowEditModal(true);
         }} style={{ background: cardBg, border: '1.5px solid #00c471', borderRadius: '14px', padding: '14px 0', fontSize: '14px', fontWeight: '600', color: '#00c471', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 2px 8px rgba(0,196,113,0.1)' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -152,11 +178,7 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, d
             </div>
             <span style={{ fontSize: '15px', fontWeight: '600', color: textColor }}>다크모드</span>
           </div>
-          <div onClick={() => {
-              const next = !darkMode;
-              setDarkMode(next);
-              localStorage.setItem('srmart_dark_manual', next ? 'on' : 'off');
-            }}
+          <div onClick={() => setDarkMode(!darkMode)}
             style={{ width: '50px', height: '28px', borderRadius: '14px', background: darkMode ? '#00c471' : '#ddd', position: 'relative', cursor: 'pointer', transition: 'all 0.3s' }}>
             <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'white', position: 'absolute', top: '3px', left: darkMode ? '25px' : '3px', transition: 'all 0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }} />
           </div>
@@ -168,7 +190,7 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, d
         <div onClick={onLogout} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px 20px', cursor: 'pointer' }}>
           <div style={{ width: '40px', height: '40px', background: '#fff0f1', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff4757" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
             </svg>
           </div>
           <span style={{ fontSize: '15px', fontWeight: '600', color: '#ff4757' }}>로그아웃</span>
@@ -176,6 +198,54 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, d
       </div>
 
       <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '11px', color: subTextColor }}>© 2026 Dongsin Market. All rights reserved.</p>
+
+      {/* 내 쿠폰 모달 */}
+      {showCoupons && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setShowCoupons(false)}>
+          <div style={{ background: modalBg, borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: '480px', maxHeight: '80vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <span style={{ fontSize: '17px', fontWeight: '700', color: modalTextColor }}>🎫 내 쿠폰함</span>
+              <button style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: subTextColor }} onClick={() => setShowCoupons(false)}>✕</button>
+            </div>
+            {couponsLoading ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: subTextColor }}>로딩 중...</div>
+            ) : myCoupons.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <div style={{ fontSize: '48px', marginBottom: '12px' }}>🎫</div>
+                <p style={{ color: subTextColor, fontSize: '14px' }}>보유한 쿠폰이 없어요</p>
+              </div>
+            ) : myCoupons.map(coupon => {
+              const isExpired = coupon.expires_at && new Date(coupon.expires_at) < new Date();
+              return (
+                <div key={coupon.id} style={{ background: darkMode ? '#2e2e2e' : '#f8fffe', borderRadius: '16px', padding: '16px', marginBottom: '10px', border: `1.5px solid ${coupon.is_used || isExpired ? borderColor : '#00c471'}`, opacity: coupon.is_used || isExpired ? 0.6 : 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <p style={{ fontSize: '16px', fontWeight: '800', color: coupon.is_used || isExpired ? subTextColor : '#00c471', margin: '0 0 4px' }}>
+                        {coupon.type === 'percent' ? `${coupon.discount}% 할인` : `₩${Number(coupon.discount).toLocaleString()} 할인`}
+                      </p>
+                      <p style={{ fontSize: '13px', fontWeight: '700', color: modalTextColor, margin: '0 0 4px', fontFamily: 'monospace' }}>{coupon.code}</p>
+                      {coupon.description && <p style={{ fontSize: '12px', color: subTextColor, margin: '0 0 4px' }}>{coupon.description}</p>}
+                      {coupon.min_order_amount > 0 && <p style={{ fontSize: '11px', color: subTextColor, margin: 0 }}>최소 ₩{Number(coupon.min_order_amount).toLocaleString()} 이상 주문 시</p>}
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '20px', fontWeight: '700',
+                        background: coupon.is_used ? '#f0f0f0' : isExpired ? '#fff0f1' : '#e6f9f1',
+                        color: coupon.is_used ? '#aaa' : isExpired ? '#ff4757' : '#009a58' }}>
+                        {coupon.is_used ? '사용완료' : isExpired ? '만료됨' : '사용가능'}
+                      </span>
+                      {coupon.expires_at && !coupon.is_used && (
+                        <p style={{ fontSize: '11px', color: subTextColor, margin: '6px 0 0' }}>
+                          {isExpired ? '만료됨' : `${new Date(coupon.expires_at).toLocaleDateString('ko-KR')} 까지`}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* 회원정보 수정 모달 */}
       {showEditModal && (
@@ -186,13 +256,32 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, d
               <button style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: subTextColor }} onClick={() => setShowEditModal(false)}>✕</button>
             </div>
             <div style={{ marginBottom: '14px' }}>
-              <div style={{ fontSize: '12px', color: subTextColor, marginBottom: '6px', fontWeight: '600' }}>이메일 (변경 불가)</div>
-              <div style={{ padding: '12px 14px', background: inputBg, borderRadius: '12px', fontSize: '14px', color: subTextColor, border: `1.5px solid ${borderColor}` }}>{currentUser?.email}</div>
+              <div style={{ fontSize: '12px', color: subTextColor, marginBottom: '6px', fontWeight: '600' }}>아이디 (변경 불가)</div>
+              <div style={{ padding: '12px 14px', background: inputBg, borderRadius: '12px', fontSize: '14px', color: subTextColor, border: `1.5px solid ${borderColor}` }}>{currentUser?.username || currentUser?.email}</div>
             </div>
-            {[{ key: 'name', label: '이름 *', placeholder: '이름 입력' }, { key: 'phone', label: '연락처', placeholder: '010-0000-0000' }, { key: 'zipCode', label: '우편번호', placeholder: '예: 21565' }, { key: 'address', label: '주소', placeholder: '예: 인천시 서구 검암동' }, { key: 'addressDetail', label: '상세주소', placeholder: '예: 101동 1001호' }].map(f => (
+            {[{ key: 'name', label: '이름 *', placeholder: '이름 입력' }, { key: 'email', label: '이메일', placeholder: 'example@email.com' }, { key: 'phone', label: '연락처', placeholder: '010-0000-0000' }, { key: 'zipCode', label: '우편번호', placeholder: '주소 검색 시 자동 입력' }, { key: 'address', label: '주소', placeholder: '주소 찾기 버튼을 눌러주세요' }, { key: 'addressDetail', label: '상세주소', placeholder: '예: 101동 1001호' }].map(f => (
               <div key={f.key} style={{ marginBottom: '14px' }}>
                 <div style={{ fontSize: '12px', color: '#00a85e', marginBottom: '6px', fontWeight: '700' }}>{f.label}</div>
-                <input style={inputStyle} placeholder={f.placeholder} value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
+                {f.key === 'address' ? (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input style={{ ...inputStyle, flex: 1 }} placeholder={f.placeholder} value={form[f.key]} readOnly onClick={() => {
+                      if (window.daum) {
+                        new window.daum.Postcode({ oncomplete: (data) => setForm(p => ({ ...p, address: data.roadAddress || data.jibunAddress, zipCode: data.zonecode || '' })) }).open();
+                      } else { alert('주소 검색 서비스를 불러오는 중이에요!'); }
+                    }} />
+                    <button type="button" onClick={() => {
+                      if (window.daum) {
+                        new window.daum.Postcode({ oncomplete: (data) => setForm(p => ({ ...p, address: data.roadAddress || data.jibunAddress, zipCode: data.zonecode || '' })) }).open();
+                      } else { alert('주소 검색 서비스를 불러오는 중이에요!'); }
+                    }} style={{ padding: '12px 14px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '12px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      주소 찾기
+                    </button>
+                  </div>
+                ) : f.key === 'zipCode' ? (
+                  <input style={{ ...inputStyle, background: inputBg, color: subTextColor }} placeholder={f.placeholder} value={form[f.key] || ''} readOnly />
+                ) : (
+                  <input style={inputStyle} placeholder={f.placeholder} value={form[f.key] || ''} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
+                )}
               </div>
             ))}
             {saveMsg && (
@@ -222,7 +311,7 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, d
               </div>
             ))}
             {pwError && (
-              <div style={{ background: darkMode ? '#2e2e2e' : '#fff0f1', border: '1px solid #ff4757', borderRadius: '12px', padding: '10px 14px', fontSize: '13px', color: '#ff4757', marginBottom: '14px' }}>
+              <div style={{ background: '#fff0f1', border: '1px solid #ff4757', borderRadius: '12px', padding: '10px 14px', fontSize: '13px', color: '#ff4757', marginBottom: '14px' }}>
                 ⚠️ {pwError}
               </div>
             )}

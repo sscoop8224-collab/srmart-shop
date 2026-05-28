@@ -53,7 +53,8 @@ function Login({ onLogin, onGuest }) {
   const [users, setUsers] = useState(() => {
     const saved = localStorage.getItem('srmart_users');
     return saved ? JSON.parse(saved) : [
-      { name: '관리자', email: 'admin@srmart.com', password: '1234' }
+      { name: '관리자', email: 'admin@srmart.com', password: '1234', grade: '관리자' },
+      { name: '이민우', email: 'sscoop@naver.com', password: '1234', grade: '일반' },
     ];
   });
 
@@ -82,21 +83,20 @@ function Login({ onLogin, onGuest }) {
   };
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleLogin = () => {
-    const user = users.find((u) => u.email === form.email && u.password === form.password);
-    if (user) {
-      if (user.grade === '장기미고객') {
-        alert('이용이 제한된 계정이에요. 관리자에게 문의해주세요!');
-        return;
-      }
+  const handleLogin = async () => {
+    if (!form.email || !form.password) { alert('아이디와 비밀번호를 입력해주세요!'); return; }
+    try {
+      const res = await import('../api').then(m => m.login(form.email, form.password));
+      const { token, user } = res.data;
+      localStorage.setItem('srmart_token', token);
       if (autoLogin) {
         localStorage.setItem('srmart_auto_login', JSON.stringify({ email: form.email, password: form.password }));
       } else {
         localStorage.removeItem('srmart_auto_login');
       }
       onLogin(user);
-    } else {
-      alert('아이디 또는 비밀번호가 틀렸어요!');
+    } catch (err) {
+      alert(err.response?.data?.error || '아이디 또는 비밀번호가 틀렸어요!');
     }
   };
 

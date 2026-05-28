@@ -53,7 +53,7 @@
   --font-main: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
 
   --bottom-nav-height: 68px;
-  --header-height: 70px;
+  --header-height: 58px;
   --max-width: 100%;
 
   --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -107,11 +107,12 @@ body {
   z-index: 100;
   background: var(--white);
   border-bottom: 1px solid var(--gray-100);
-  min-height: var(--header-height);
+  height: var(--header-height);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
+  padding-top: env(safe-area-inset-top);
   backdrop-filter: blur(10px);
 }
 
@@ -124,7 +125,6 @@ body {
   align-items: center;
   gap: 6px;
   letter-spacing: -0.5px;
-  height: 100%;
 }
 
 .header-actions {

@@ -62,12 +62,22 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
 
   const finalPrice = Math.max(0, totalPrice - discountAmount);
 
-  const handleApplyCoupon = () => {
-    const coupon = coupons.find((c) => c.code === couponInput.toUpperCase() && c.isActive);
-    if (!coupon) { alert('유효하지 않은 쿠폰 코드예요!'); return; }
-    setAppliedCoupon(coupon);
-    alert(coupon.description + ' 적용됐어요! 😊');
-    setCouponInput('');
+  const handleApplyCoupon = async () => {
+    if (!couponInput) { alert('쿠폰 코드를 입력해주세요!'); return; }
+    try {
+      const API = (await import('../api')).default;
+      const res = await API.post('/coupons/check', { code: couponInput.toUpperCase() });
+      const coupon = res.data;
+      if (coupon.min_order_amount > 0 && totalPrice < coupon.min_order_amount) {
+        alert(`최소 주문금액 ₩${coupon.min_order_amount.toLocaleString()} 이상이어야 해요!`);
+        return;
+      }
+      setAppliedCoupon(coupon);
+      alert((coupon.description || coupon.code) + ' 쿠폰이 적용됐어요! 😊');
+      setCouponInput('');
+    } catch (err) {
+      alert(err.response?.data?.error || '유효하지 않은 쿠폰 코드예요!');
+    }
   };
 
   const handleRemoveCoupon = () => { setAppliedCoupon(null); setCouponInput(''); };

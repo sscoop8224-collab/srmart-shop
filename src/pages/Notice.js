@@ -84,7 +84,7 @@ function Notice({ notices, setNotices, isAdmin, goBack, goToHome, darkMode }) {
           <p style={{ fontSize: '13px', color: subTextColor, margin: '0 0 20px' }}>새로운 소식을 기다려주세요</p>
           {goToHome && (
             <button onClick={goToHome} style={{ padding: '14px 32px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '20px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
-              쇼핑 계속하기
+              쇼핑하러 가기
             </button>
           )}
         </div>

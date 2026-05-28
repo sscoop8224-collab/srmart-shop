@@ -1,4 +1,4 @@
-function AdminHome({ setPage, products, orders, users, goBack, darkMode, setDarkMode }) {
+function AdminHome({ setPage, products, orders, users, goBack, darkMode }) {
   const todaySales = orders
     .filter((o) => new Date(o.date).toDateString() === new Date().toDateString())
     .reduce((sum, o) => sum + o.totalPrice, 0);
@@ -42,6 +42,8 @@ function AdminHome({ setPage, products, orders, users, goBack, darkMode, setDark
       icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
     { label: 'PC 관리자', desc: '통합 관리 시스템', page: 'adminPC',
       icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> },
+    { label: '행사 관리', desc: '행사 등록/관리', page: 'eventManager',
+      icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/><line x1="12" y1="12" x2="20" y2="4"/></svg> },
     { label: '쇼핑몰 보기', desc: '고객 화면 미리보기', page: 'home',
       icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> },
   ];
@@ -64,21 +66,8 @@ function AdminHome({ setPage, products, orders, users, goBack, darkMode, setDark
       <div style={{ background: 'linear-gradient(135deg, #00c471, #00a85e)', padding: '24px 20px 36px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '180px', height: '180px', background: 'rgba(255,255,255,0.08)', borderRadius: '50%' }} />
         <div style={{ position: 'absolute', bottom: '-30px', left: '-20px', width: '120px', height: '120px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
-          <div>
-            <h2 style={{ margin: 0, color: 'white', fontSize: '20px', fontWeight: '800' }}>관리자 대시보드</h2>
-            <p style={{ margin: '4px 0 0', color: 'rgba(255,255,255,0.8)', fontSize: '13px' }}>에스알마트 관리 시스템</p>
-          </div>
-          <div onClick={() => setDarkMode && setDarkMode(!darkMode)}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.15)', borderRadius: '20px', padding: '8px 14px', cursor: 'pointer' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-            </svg>
-            <div style={{ width: '36px', height: '20px', borderRadius: '10px', background: darkMode ? 'white' : 'rgba(255,255,255,0.3)', position: 'relative', transition: 'all 0.3s' }}>
-              <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: darkMode ? '#00c471' : 'white', position: 'absolute', top: '2px', left: darkMode ? '18px' : '2px', transition: 'all 0.3s' }} />
-            </div>
-          </div>
-        </div>
+        <h2 style={{ margin: 0, color: 'white', fontSize: '20px', fontWeight: '800', position: 'relative', zIndex: 1 }}>관리자 대시보드</h2>
+        <p style={{ margin: '4px 0 0', color: 'rgba(255,255,255,0.8)', fontSize: '13px', position: 'relative', zIndex: 1 }}>에스알마트 관리 시스템</p>
       </div>
 
       {/* 통계 카드 */}
