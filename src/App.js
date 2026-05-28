@@ -105,7 +105,6 @@ function App() {
   const [adminDark, setAdminDark] = useState(() => localStorage.getItem('srmart_admin_dark') === 'true');
   useEffect(() => { localStorage.setItem('srmart_admin_dark', adminDark); }, [adminDark]);
 
-  // ✅ 고객용 다크모드
   const [darkMode, setDarkMode] = useState(false);
   useEffect(() => {
     localStorage.setItem('srmart_dark', darkMode);
@@ -139,7 +138,15 @@ function App() {
   }, [darkMode]);
 
   const { login: authLogin, logout: authLogout } = useAuth();
-  const isAdmin = user && user.email === 'admin@srmart.com';
+
+  // ✅ 관리자 판별 - role, grade 모두 체크
+  const isAdmin = user && (
+    user.email === 'admin@srmart.com' ||
+    user.role === 'owner' ||
+    user.role === 'admin' ||
+    user.role === 'manager' ||
+    user.grade === '관리자'
+  );
 
   const [users, setUsers] = useState(() => {
     const saved = localStorage.getItem('srmart_users');
@@ -221,26 +228,28 @@ function App() {
     setPage(prevPage);
   };
 
+  // ✅ 로그인 - username 또는 email로 백엔드 연동
   const handleLogin = async (loggedInUser) => {
     try {
-      const res = await apiLogin(loggedInUser.email, loggedInUser.password);
+      const identifier = loggedInUser.username || loggedInUser.email;
+      const res = await apiLogin(identifier, loggedInUser.password);
       const { token, user: dbUser } = res.data;
       localStorage.setItem('srmart_token', token);
       setUser(dbUser);
       authLogin(dbUser);
-      if (dbUser.email === 'admin@srmart.com' || dbUser.grade === '관리자') {
+      if (
+        dbUser.email === 'admin@srmart.com' ||
+        dbUser.role === 'owner' ||
+        dbUser.role === 'admin' ||
+        dbUser.role === 'manager' ||
+        dbUser.grade === '관리자'
+      ) {
         goToPage('adminHome');
       } else {
         goToPage('home');
       }
     } catch (err) {
-      setUser(loggedInUser);
-      authLogin(loggedInUser);
-      if (loggedInUser.email === 'admin@srmart.com' || loggedInUser.grade === '관리자') {
-        goToPage('adminHome');
-      } else {
-        goToPage('home');
-      }
+      alert(err.response?.data?.error || '아이디 또는 비밀번호가 틀려요!');
     }
   };
 
@@ -569,7 +578,6 @@ function App() {
           </>
         )}
 
-        {/* ✅ darkMode props 전달 */}
         {page === 'notice'          && <Notice notices={notices} setNotices={setNotices} isAdmin={isAdmin} goBack={goBack} goToHome={() => goToPage('home')} darkMode={darkMode} />}
         {page === 'wishlist'        && <Wishlist wishlist={wishlist} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWishlist={toggleWishlist} goBack={goBack} goToHome={() => goToPage('home')} darkMode={darkMode} />}
         {page === 'search'          && <Search products={products} categories={categories} goBack={goBack} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} />}
@@ -602,7 +610,6 @@ function App() {
             </div>
             <span>장바구니</span>
           </button>
-          {/* 검색 중앙 포인트 버튼 */}
           <button onClick={() => goToPage('search')}
             style={{ flex: 1, height: '100%', border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px', position: 'relative' }}>
             <div style={{ width: '48px', height: '48px', background: 'linear-gradient(135deg, #00c471, #00a85e)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,196,113,0.4)', marginTop: '-20px' }}>
