@@ -103,6 +103,45 @@ function App() {
   const [adminDark, setAdminDark] = useState(() => localStorage.getItem('srmart_admin_dark') === 'true');
   useEffect(() => { localStorage.setItem('srmart_admin_dark', adminDark); }, [adminDark]);
 
+  // ✅ 고객용 다크모드
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('srmart_dark_manual');
+    if (saved === 'off') return false; // 수동으로 껐으면 라이트
+    if (saved === 'on') return true;   // 수동으로 켰으면 다크
+    // 기본값: 시스템 다크모드 따라가기
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+  useEffect(() => {
+    localStorage.setItem('srmart_dark', darkMode);
+    if (darkMode) {
+      document.body.classList.add('dark');
+      document.documentElement.style.setProperty('--white', '#1a1a1a');
+      document.documentElement.style.setProperty('--gray-50', '#1e1e1e');
+      document.documentElement.style.setProperty('--gray-100', '#242424');
+      document.documentElement.style.setProperty('--gray-200', '#2e2e2e');
+      document.documentElement.style.setProperty('--gray-300', '#3a3a3a');
+      document.documentElement.style.setProperty('--gray-400', '#4a4a4a');
+      document.documentElement.style.setProperty('--gray-500', '#6e6e6e');
+      document.documentElement.style.setProperty('--gray-600', '#9e9e9e');
+      document.documentElement.style.setProperty('--gray-700', '#c0c0c0');
+      document.documentElement.style.setProperty('--gray-800', '#d4d4d4');
+      document.documentElement.style.setProperty('--gray-900', '#f0f0f0');
+    } else {
+      document.body.classList.remove('dark');
+      document.documentElement.style.setProperty('--white', '#ffffff');
+      document.documentElement.style.setProperty('--gray-50', '#f8f9fa');
+      document.documentElement.style.setProperty('--gray-100', '#f1f3f5');
+      document.documentElement.style.setProperty('--gray-200', '#e9ecef');
+      document.documentElement.style.setProperty('--gray-300', '#dee2e6');
+      document.documentElement.style.setProperty('--gray-400', '#ced4da');
+      document.documentElement.style.setProperty('--gray-500', '#adb5bd');
+      document.documentElement.style.setProperty('--gray-600', '#868e96');
+      document.documentElement.style.setProperty('--gray-700', '#495057');
+      document.documentElement.style.setProperty('--gray-800', '#343a40');
+      document.documentElement.style.setProperty('--gray-900', '#212529');
+    }
+  }, [darkMode]);
+
   const { login: authLogin, logout: authLogout } = useAuth();
   const isAdmin = user && user.email === 'admin@srmart.com';
 
@@ -329,8 +368,8 @@ function App() {
     <div className="App">
       {/* 헤더 */}
       <header className="header">
-        <div className="header-logo" onClick={() => goToPage(isAdmin ? 'adminHome' : 'home')}>
-          <img src={srmLogo} alt="SR Mart" style={{ height: '34px', objectFit: 'contain' }} />
+        <div className="header-logo" onClick={() => goToPage(isAdmin ? 'adminHome' : 'home')} style={{ height: '60px' }}>
+          <img src={srmLogo} alt="SR Mart" style={{ height: '60px', width: 'auto', objectFit: 'contain', display: 'block' }} />
           <span style={{ fontFamily: "'Nanum Pen Script', cursive", fontSize: 'clamp(16px, 5vw, 26px)', color: '#1b5e20', fontWeight: '700', lineHeight: '1', marginTop: '2px', whiteSpace: 'nowrap' }}>에스알마트</span>
         </div>
         <div className="header-actions">
@@ -505,20 +544,21 @@ function App() {
           </>
         )}
 
-        {page === 'notice'          && <Notice notices={notices} setNotices={setNotices} isAdmin={isAdmin} goBack={goBack} goToHome={() => goToPage('home')} />}
-        {page === 'wishlist'        && <Wishlist wishlist={wishlist} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWishlist={toggleWishlist} goBack={goBack} goToHome={() => goToPage('home')} />}
+        {/* ✅ darkMode props 전달 */}
+        {page === 'notice'          && <Notice notices={notices} setNotices={setNotices} isAdmin={isAdmin} goBack={goBack} goToHome={() => goToPage('home')} darkMode={darkMode} />}
+        {page === 'wishlist'        && <Wishlist wishlist={wishlist} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWishlist={toggleWishlist} goBack={goBack} goToHome={() => goToPage('home')} darkMode={darkMode} />}
         {page === 'search'          && <Search products={products} categories={categories} goBack={goBack} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} />}
         {page === 'productDetail'   && <ProductDetail product={selectedProduct} onBack={goBack} onAddToCart={addToCart} />}
-        {page === 'cart'            && <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} coupons={coupons} user={currentUser} appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon} />}
+        {page === 'cart'            && <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} coupons={coupons} user={currentUser} appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon} darkMode={darkMode} />}
         {page === 'orders'          && <Orders orders={orders} goBack={goBack} />}
         {page === 'receipt'         && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
-        {page === 'couponManager'   && <CouponManager coupons={coupons} setCoupons={setCoupons} goBack={goBack} />}
-        {page === 'salesStats'      && <SalesStats orders={orders} products={products} goBack={goBack} />}
-        {page === 'adminHome'       && <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} />}
-        {page === 'members'         && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} />}
-        {page === 'adminOrders'     && <AdminOrders orders={orders} setOrders={setOrders} goBack={goBack} onPrint={(order) => setPrintOrder(order)} />}
-        {page === 'mypage'          && <MyPage user={currentUser} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} users={users} setUsers={setUsers} />}
-        {page === 'bannerManager'   && <BannerManager banners={banners} setBanners={setBanners} categories={categories} goBack={goBack} />}
+        {page === 'couponManager'   && <CouponManager coupons={coupons} setCoupons={setCoupons} goBack={goBack} darkMode={darkMode} />}
+        {page === 'salesStats'      && <SalesStats orders={orders} products={products} goBack={goBack} darkMode={darkMode} />}
+        {page === 'adminHome'       && <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} darkMode={darkMode} setDarkMode={setDarkMode} />}
+        {page === 'members'         && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} darkMode={darkMode} />}
+        {page === 'adminOrders'     && <AdminOrders orders={orders} setOrders={setOrders} goBack={goBack} onPrint={(order) => setPrintOrder(order)} darkMode={darkMode} />}
+        {page === 'mypage'          && <MyPage user={currentUser} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} users={users} setUsers={setUsers} darkMode={darkMode} setDarkMode={setDarkMode} />}
+        {page === 'bannerManager'   && <BannerManager banners={banners} setBanners={setBanners} categories={categories} goBack={goBack} darkMode={darkMode} />}
         {page === 'admin'           && <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} messages={messages} setMessages={() => {}} goBack={goBack} />}
       </div>
 
@@ -551,7 +591,7 @@ function App() {
         </nav>
       )}
 
-      {/* ✅ 관리자 하단 탭 — SVG 아이콘으로 통일 */}
+      {/* 관리자 하단 탭 */}
       {isAdmin && (
         <nav className="bottom-nav">
           <button className={'bottom-nav-item' + (page === 'adminHome' ? ' active' : '')} onClick={() => goToPage('adminHome')}>

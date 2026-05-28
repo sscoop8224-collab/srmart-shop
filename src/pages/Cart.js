@@ -11,13 +11,22 @@ const getCategoryImage = (large) => {
   }
 };
 
-function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon, setAppliedCoupon, user }) {
+function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon, setAppliedCoupon, user, darkMode }) {
   const [couponInput, setCouponInput] = useState('');
   const [showAddress, setShowAddress] = useState(false);
   const [useDefaultAddress, setUseDefaultAddress] = useState(true);
   const [address, setAddress] = useState({ name: '', phone: '', address: '', detail: '' });
 
-  // ✅ 회원 정보에서 기본 주소 자동 불러오기
+  const bg = darkMode ? '#1a1a1a' : '#f8fffe';
+  const cardBg = darkMode ? '#242424' : 'white';
+  const headerBg = darkMode ? '#1a1a1a' : 'white';
+  const borderColor = darkMode ? '#2e2e2e' : '#f0faf5';
+  const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
+  const subTextColor = darkMode ? '#9e9e9e' : '#adb5bd';
+  const inputBg = darkMode ? '#2e2e2e' : '#f8fffe';
+  const inputBorder = darkMode ? '#3a3a3a' : '#e8faf3';
+  const fixedBg = darkMode ? '#1a1a1a' : 'white';
+
   const defaultAddress = {
     name: user?.name || '',
     phone: user?.phone || '',
@@ -26,7 +35,6 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
   };
   const hasDefaultAddress = defaultAddress.address && defaultAddress.address.trim() !== '';
 
-  // ✅ 배송지 초기값 설정
   useEffect(() => {
     if (hasDefaultAddress) {
       setAddress(defaultAddress);
@@ -64,7 +72,6 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
 
   const handleRemoveCoupon = () => { setAppliedCoupon(null); setCouponInput(''); };
 
-  // ✅ 다른 주소로 변경할 때
   const handleSwitchAddress = (useDefault) => {
     setUseDefaultAddress(useDefault);
     if (useDefault) {
@@ -78,22 +85,27 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
   const isAddressComplete = currentAddress.name && currentAddress.phone && currentAddress.address;
 
   const inputStyle = {
-    padding: '11px 14px', borderRadius: '12px', border: '1.5px solid #e8faf3',
+    padding: '11px 14px', borderRadius: '12px', border: `1.5px solid ${inputBorder}`,
     fontSize: '14px', outline: 'none', fontFamily: 'inherit',
-    background: '#f8fffe', width: '100%', boxSizing: 'border-box'
+    background: inputBg, width: '100%', boxSizing: 'border-box',
+    color: textColor
   };
 
   return (
-    <div style={{ background: '#f8fffe', minHeight: '100vh', paddingBottom: '180px' }}>
+    <div style={{ background: bg, minHeight: '100vh', paddingBottom: '180px' }}>
 
       {/* 헤더 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'white', borderBottom: '1px solid #f0faf5', position: 'sticky', top: 0, zIndex: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: headerBg, borderBottom: `1px solid ${borderColor}`, position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={goBack} style={{ width: '38px', height: '38px', background: '#f0faf5', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00a85e' }}>←</button>
-          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#1a1a1a' }}>장바구니</h2>
+          <button onClick={goBack} style={{ width: '38px', height: '38px', background: darkMode ? '#2e2e2e' : '#f0faf5', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#f0f0f0' : '#1a1a1a'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
+          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: textColor }}>장바구니</h2>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '13px', color: '#adb5bd', fontWeight: '600' }}>{cart.length}개 상품</span>
+          <span style={{ fontSize: '13px', color: subTextColor, fontWeight: '600' }}>{cart.length}개 상품</span>
           {cart.length > 0 && (
             <button onClick={() => { if (window.confirm('장바구니를 비울까요?')) setCart([]); }}
               style={{ fontSize: '12px', color: '#ff4757', background: '#fff0f1', border: 'none', borderRadius: '20px', padding: '5px 12px', cursor: 'pointer', fontWeight: '700' }}>
@@ -105,14 +117,14 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
 
       {cart.length === 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px' }}>
-          <div style={{ width: '80px', height: '80px', background: '#f0faf5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+          <div style={{ width: '80px', height: '80px', background: darkMode ? '#2e2e2e' : '#f0faf5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
               <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
             </svg>
           </div>
-          <p style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 8px', color: '#1a1a1a' }}>장바구니가 비어있어요!</p>
-          <p style={{ fontSize: '13px', color: '#adb5bd', margin: '0 0 24px' }}>상품을 담아보세요</p>
+          <p style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 8px', color: textColor }}>장바구니가 비어있어요!</p>
+          <p style={{ fontSize: '13px', color: subTextColor, margin: '0 0 24px' }}>상품을 담아보세요</p>
           <button onClick={onHome} style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '14px', cursor: 'pointer', fontSize: '15px', fontWeight: '700', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
             쇼핑 계속하기
           </button>
@@ -122,20 +134,20 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
           {/* 상품 목록 */}
           <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {cart.map((item) => (
-              <div key={item.id} style={{ background: 'white', borderRadius: '18px', padding: '14px', display: 'flex', gap: '12px', alignItems: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #f0faf5' }}>
+              <div key={item.id} style={{ background: cardBg, borderRadius: '18px', padding: '14px', display: 'flex', gap: '12px', alignItems: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: `1px solid ${borderColor}` }}>
                 <div style={{ width: '72px', height: '72px', borderRadius: '14px', overflow: 'hidden', flexShrink: 0 }}>
                   <img src={item.image || getCategoryImage(item.large)} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: '11px', color: '#00c471', margin: '0 0 3px', fontWeight: '700' }}>{item.large}</p>
-                  <p style={{ fontSize: '14px', fontWeight: '700', color: '#1a1a1a', margin: '0 0 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</p>
+                  <p style={{ fontSize: '14px', fontWeight: '700', color: textColor, margin: '0 0 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</p>
                   <p style={{ fontSize: '15px', fontWeight: '800', color: '#00c471', margin: 0 }}>₩{(item.price * item.quantity).toLocaleString()}</p>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                   <button onClick={() => removeFromCart(item.id)} style={{ background: '#fff0f1', border: 'none', cursor: 'pointer', color: '#ff4757', fontSize: '12px', padding: '4px 8px', borderRadius: '8px', fontWeight: '700' }}>삭제</button>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8fffe', border: '1px solid #e8faf3', borderRadius: '20px', padding: '4px 8px' }}>
-                    <button onClick={() => updateQuantity(item.id, -1)} style={{ width: '24px', height: '24px', background: 'white', border: '1.5px solid #e8faf3', borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#495057', fontWeight: 'bold' }}>-</button>
-                    <span style={{ fontSize: '14px', fontWeight: '700', minWidth: '20px', textAlign: 'center', color: '#1a1a1a' }}>{item.quantity}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: darkMode ? '#1a1a1a' : '#f8fffe', border: `1px solid ${inputBorder}`, borderRadius: '20px', padding: '4px 8px' }}>
+                    <button onClick={() => updateQuantity(item.id, -1)} style={{ width: '24px', height: '24px', background: darkMode ? '#2e2e2e' : 'white', border: `1.5px solid ${inputBorder}`, borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: textColor, fontWeight: 'bold' }}>-</button>
+                    <span style={{ fontSize: '14px', fontWeight: '700', minWidth: '20px', textAlign: 'center', color: textColor }}>{item.quantity}</span>
                     <button onClick={() => updateQuantity(item.id, 1)} style={{ width: '24px', height: '24px', background: 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
                   </div>
                 </div>
@@ -144,15 +156,15 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
           </div>
 
           {/* 쿠폰 */}
-          <div style={{ margin: '0 16px 10px', background: 'white', borderRadius: '18px', padding: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: '1px solid #f0faf5' }}>
-            <p style={{ fontSize: '14px', fontWeight: '700', color: '#1a1a1a', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ margin: '0 16px 10px', background: cardBg, borderRadius: '18px', padding: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: `1px solid ${borderColor}` }}>
+            <p style={{ fontSize: '14px', fontWeight: '700', color: textColor, margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
               </svg>
               쿠폰 코드
             </p>
             {appliedCoupon ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f0faf5', borderRadius: '12px', padding: '12px 14px', border: '1px solid #e8faf3' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: darkMode ? '#2e2e2e' : '#f0faf5', borderRadius: '12px', padding: '12px 14px', border: `1px solid ${inputBorder}` }}>
                 <div>
                   <p style={{ fontSize: '13px', fontWeight: '700', color: '#00a85e', margin: '0 0 2px' }}>{appliedCoupon.code}</p>
                   <p style={{ fontSize: '12px', color: '#00a85e', margin: 0 }}>{appliedCoupon.description}</p>
@@ -169,46 +181,41 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
             )}
           </div>
 
-          {/* ✅ 배송지 */}
-          <div style={{ margin: '0 16px 10px', background: 'white', borderRadius: '18px', padding: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: '1px solid #f0faf5' }}>
+          {/* 배송지 */}
+          <div style={{ margin: '0 16px 10px', background: cardBg, borderRadius: '18px', padding: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: `1px solid ${borderColor}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <p style={{ fontSize: '14px', fontWeight: '700', color: '#1a1a1a', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <p style={{ fontSize: '14px', fontWeight: '700', color: textColor, margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
                 </svg>
                 배송지
               </p>
-              <button onClick={() => setShowAddress(!showAddress)} style={{ padding: '6px 14px', background: '#f0faf5', border: 'none', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', color: '#00a85e' }}>
+              <button onClick={() => setShowAddress(!showAddress)} style={{ padding: '6px 14px', background: darkMode ? '#2e2e2e' : '#f0faf5', border: 'none', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', color: '#00a85e' }}>
                 {showAddress ? '접기' : '변경'}
               </button>
             </div>
 
-            {/* ✅ 기본 주소가 있으면 탭 선택 */}
             {hasDefaultAddress && (
               <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
-                <button
-                  onClick={() => handleSwitchAddress(true)}
-                  style={{ flex: 1, padding: '10px', borderRadius: '12px', border: useDefaultAddress ? '2px solid #00c471' : '1.5px solid #e8faf3', background: useDefaultAddress ? '#f0faf5' : 'white', color: useDefaultAddress ? '#00a85e' : '#adb5bd', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+                <button onClick={() => handleSwitchAddress(true)}
+                  style={{ flex: 1, padding: '10px', borderRadius: '12px', border: useDefaultAddress ? '2px solid #00c471' : `1.5px solid ${inputBorder}`, background: useDefaultAddress ? (darkMode ? '#2e2e2e' : '#f0faf5') : cardBg, color: useDefaultAddress ? '#00a85e' : subTextColor, fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
                   기본 주소
                 </button>
-                <button
-                  onClick={() => handleSwitchAddress(false)}
-                  style={{ flex: 1, padding: '10px', borderRadius: '12px', border: !useDefaultAddress ? '2px solid #00c471' : '1.5px solid #e8faf3', background: !useDefaultAddress ? '#f0faf5' : 'white', color: !useDefaultAddress ? '#00a85e' : '#adb5bd', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+                <button onClick={() => handleSwitchAddress(false)}
+                  style={{ flex: 1, padding: '10px', borderRadius: '12px', border: !useDefaultAddress ? '2px solid #00c471' : `1.5px solid ${inputBorder}`, background: !useDefaultAddress ? (darkMode ? '#2e2e2e' : '#f0faf5') : cardBg, color: !useDefaultAddress ? '#00a85e' : subTextColor, fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
                   다른 주소
                 </button>
               </div>
             )}
 
-            {/* ✅ 기본 주소 표시 */}
             {useDefaultAddress && hasDefaultAddress && (
-              <div style={{ background: '#f0faf5', borderRadius: '12px', padding: '12px 14px', border: '1px solid #e8faf3' }}>
+              <div style={{ background: darkMode ? '#2e2e2e' : '#f0faf5', borderRadius: '12px', padding: '12px 14px', border: `1px solid ${inputBorder}` }}>
                 <p style={{ fontSize: '13px', fontWeight: '700', color: '#00a85e', margin: '0 0 4px' }}>✅ 기본 배송지</p>
-                <p style={{ fontSize: '13px', color: '#1a1a1a', margin: '0 0 2px', fontWeight: '600' }}>{defaultAddress.name} · {defaultAddress.phone}</p>
-                <p style={{ fontSize: '13px', color: '#495057', margin: 0 }}>{defaultAddress.address} {defaultAddress.detail}</p>
+                <p style={{ fontSize: '13px', color: textColor, margin: '0 0 2px', fontWeight: '600' }}>{defaultAddress.name} · {defaultAddress.phone}</p>
+                <p style={{ fontSize: '13px', color: darkMode ? '#c0c0c0' : '#495057', margin: 0 }}>{defaultAddress.address} {defaultAddress.detail}</p>
               </div>
             )}
 
-            {/* ✅ 다른 주소 입력 폼 */}
             {(!useDefaultAddress || !hasDefaultAddress) && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <input value={address.name} onChange={(e) => setAddress({ ...address, name: e.target.value })} placeholder="받는 분 이름" style={inputStyle} />
@@ -222,28 +229,20 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
                         }).open();
                       } else {
                         alert('주소 검색 서비스를 불러오는 중이에요. 직접 입력해주세요.');
-                        setAddress((prev) => ({ ...prev, address: '' }));
                       }
                     }}
                   />
-                  <button
-                    onClick={() => {
-                      if (window.daum) {
-                        new window.daum.Postcode({
-                          oncomplete: (data) => setAddress((prev) => ({ ...prev, address: data.roadAddress || data.jibunAddress, detail: '' }))
-                        }).open();
-                      }
-                    }}
+                  <button onClick={() => { if (window.daum) { new window.daum.Postcode({ oncomplete: (data) => setAddress((prev) => ({ ...prev, address: data.roadAddress || data.jibunAddress, detail: '' })) }).open(); } }}
                     style={{ padding: '11px 14px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', whiteSpace: 'nowrap' }}>
                     주소 찾기
                   </button>
                 </div>
                 <input value={address.detail} onChange={(e) => setAddress({ ...address, detail: e.target.value })} placeholder="상세 주소 (동/호수 등)" style={inputStyle} />
                 {address.name && address.phone && address.address && (
-                  <div style={{ background: '#f0faf5', borderRadius: '12px', padding: '12px 14px', border: '1px solid #e8faf3' }}>
+                  <div style={{ background: darkMode ? '#2e2e2e' : '#f0faf5', borderRadius: '12px', padding: '12px 14px', border: `1px solid ${inputBorder}` }}>
                     <p style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', margin: '0 0 4px' }}>✅ 배송지 입력 완료</p>
-                    <p style={{ fontSize: '12px', color: '#495057', margin: 0 }}>{address.name} · {address.phone}</p>
-                    <p style={{ fontSize: '12px', color: '#495057', margin: 0 }}>{address.address} {address.detail}</p>
+                    <p style={{ fontSize: '12px', color: darkMode ? '#c0c0c0' : '#495057', margin: 0 }}>{address.name} · {address.phone}</p>
+                    <p style={{ fontSize: '12px', color: darkMode ? '#c0c0c0' : '#495057', margin: 0 }}>{address.address} {address.detail}</p>
                   </div>
                 )}
               </div>
@@ -251,10 +250,10 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
           </div>
 
           {/* 결제 영역 */}
-          <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: 'white', padding: '16px 20px 36px', borderTop: '1px solid #f0faf5', boxShadow: '0 -4px 20px rgba(0,0,0,0.08)' }}>
+          <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: fixedBg, padding: '16px 20px 36px', borderTop: `1px solid ${borderColor}`, boxShadow: '0 -4px 20px rgba(0,0,0,0.08)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-              <span style={{ fontSize: '13px', color: '#adb5bd' }}>상품 금액</span>
-              <span style={{ fontSize: '13px', color: '#1a1a1a', fontWeight: '600' }}>₩{totalPrice.toLocaleString()}</span>
+              <span style={{ fontSize: '13px', color: subTextColor }}>상품 금액</span>
+              <span style={{ fontSize: '13px', color: textColor, fontWeight: '600' }}>₩{totalPrice.toLocaleString()}</span>
             </div>
             {appliedCoupon && (
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
@@ -262,16 +261,13 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
                 <span style={{ fontSize: '13px', color: '#00a85e', fontWeight: '700' }}>-₩{discountAmount.toLocaleString()}</span>
               </div>
             )}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', paddingTop: '10px', borderTop: '1px solid #f0faf5' }}>
-              <span style={{ fontSize: '15px', fontWeight: '700', color: '#1a1a1a' }}>총 결제금액</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', paddingTop: '10px', borderTop: `1px solid ${borderColor}` }}>
+              <span style={{ fontSize: '15px', fontWeight: '700', color: textColor }}>총 결제금액</span>
               <span style={{ fontSize: '22px', fontWeight: '900', color: '#00c471' }}>₩{finalPrice.toLocaleString()}</span>
             </div>
             <button
               onClick={() => {
-                if (!isAddressComplete) {
-                  alert('배송지 정보를 입력해주세요! 📦');
-                  return;
-                }
+                if (!isAddressComplete) { alert('배송지 정보를 입력해주세요! 📦'); return; }
                 onPayment(finalPrice);
               }}
               style={{ width: '100%', padding: '16px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '16px', fontSize: '16px', cursor: 'pointer', fontWeight: '800', boxShadow: '0 4px 20px rgba(0,196,113,0.35)', letterSpacing: '-0.3px' }}>
