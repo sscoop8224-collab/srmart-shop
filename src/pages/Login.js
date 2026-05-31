@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import FindAccount from './FindAccount';
-import srmLogo from '../srm_logo.png';
+import srmLogo from '../srm-logo-transparent.png';
 
 // ── 나이 계산 함수 ──────────────────────────────────────────
 function calcAgeFromId(frontId, genderDigit) {
@@ -138,22 +138,11 @@ function GreenHero() {
 
       <div style={{ position: 'relative', zIndex: 1 }}>
         <div style={{
-          width: 84, height: 84, borderRadius: 22, overflow: 'hidden',
-          margin: '0 auto',
-          boxShadow: '0 14px 30px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.10)',
-          background: COLORS.green, border: '3px solid rgba(255,255,255,0.6)',
+          width: 280, margin: '0 auto',
         }}>
-          <img src={srmLogo} alt="SR Mart" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          <img src={srmLogo} alt="SR Mart" style={{ width: '240px', display: 'block', transform: 'translateX(30px)', marginLeft: '-5px' }} />
         </div>
-        <div style={{
-          marginTop: 16,
-          fontFamily: '"Nanum Pen Script", cursive',
-          fontSize: 34, lineHeight: 1, letterSpacing: '0.02em',
-          color: '#fff', textShadow: '0 2px 6px rgba(0,0,0,0.1)',
-        }}>
-          에스알마트
-        </div>
-        <div style={{ marginTop: 8, fontSize: 12.5, fontWeight: 500, color: 'rgba(255,255,255,0.92)', letterSpacing: '-0.01em' }}>
+        <div style={{ marginTop: 2, fontSize: 24, fontWeight: 600, color: 'rgba(255,255,255,0.92)', letterSpacing: '-0.01em' }}>
           신선하고 다양한 상품을 만나보세요
         </div>
       </div>

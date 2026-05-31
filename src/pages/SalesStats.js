@@ -41,13 +41,13 @@ function SalesStats({ orders, products, goBack, darkMode }) {
   return (
     <div style={{ background: bg, minHeight: '100vh', paddingBottom: '80px' }}>
       {/* 헤더 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', background: headerBg, borderBottom: `1px solid ${borderColor}`, position: 'sticky', top: 0, zIndex: 10 }}>
-        <button onClick={goBack} style={{ width: '38px', height: '38px', background: darkMode ? '#2e2e2e' : '#f0faf5', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#f0f0f0' : '#1a1a1a'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', background: darkMode ? 'linear-gradient(135deg, #0d4d2a 0%, #1a5c2a 100%)' : 'linear-gradient(135deg, #00c471 0%, #00a85e 100%)', position: 'sticky', top: 0, zIndex: 10 }}>
+        <button onClick={goBack} style={{ width: 40, height: 40, flexShrink: 0, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6"/>
           </svg>
         </button>
-        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: textColor }}>매출 통계</h2>
+        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: 'white' }}>매출 통계</h2>
       </div>
 
       {/* 요약 카드 */}

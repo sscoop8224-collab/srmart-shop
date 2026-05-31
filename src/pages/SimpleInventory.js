@@ -1,6 +1,14 @@
 import { useState } from 'react';
 
-function SimpleInventory({ products, setProducts, goBack }) {
+function SimpleInventory({ products, setProducts, goBack, darkMode }) {
+  const bg        = darkMode ? '#1a1a1a' : '#f8fffe';
+  const cardBg    = darkMode ? '#2a2a2a' : 'white';
+  const headerBg  = darkMode ? '#222' : 'white';
+  const border    = darkMode ? '#3a3a3a' : '#f0faf5';
+  const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
+  const subColor  = darkMode ? '#9e9e9e' : '#adb5bd';
+  const inputBg   = darkMode ? '#2a2a2a' : 'white';
+
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('전체');
   const [selected, setSelected] = useState(null);
@@ -53,23 +61,25 @@ function SimpleInventory({ products, setProducts, goBack }) {
   const nearCount = products.filter(p => { const s = p.stock ?? 0; return s > 0 && s < 20 && !p.isSoldOut; }).length;
 
   return (
-    <div style={{ background: '#f8fffe', minHeight: '100vh', paddingBottom: 100 }}>
+    <div style={{ background: bg, minHeight: '100vh', paddingBottom: 100, maxWidth: 480, margin: '0 auto' }}>
       {/* 헤더 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: 'white', borderBottom: '1px solid #f0faf5', position: 'sticky', top: 0, zIndex: 10 }}>
-        <button onClick={goBack} style={{ width: 38, height: 38, background: '#f0faf5', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00a85e' }}>←</button>
-        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#1a1a1a' }}>재고 관리</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: darkMode ? '#0d4d2a' : 'linear-gradient(135deg, #00c471, #00a85e)', position: 'sticky', top: 0, zIndex: 10 }}>
+        <button onClick={goBack} style={{ width: 40, height: 40, flexShrink: 0, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'white' }}>재고 관리</h2>
       </div>
 
       {/* 요약 */}
       <div style={{ padding: '12px 16px', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
         {[
-          { label: '전체', val: products.length, color: '#1a1a1a', bg: 'white' },
-          { label: '품절', val: lowCount, color: '#ff4757', bg: '#fff0f1' },
-          { label: '품절임박', val: nearCount, color: '#f0a500', bg: '#fff3cd' },
+          { label: '전체', val: products.length, color: textColor, bg: cardBg },
+          { label: '품절', val: lowCount, color: '#ff4757', bg: darkMode ? '#3a1a1a' : '#fff0f1' },
+          { label: '품절임박', val: nearCount, color: '#f0a500', bg: darkMode ? '#2a2010' : '#fff3cd' },
         ].map(c => (
-          <div key={c.label} style={{ background: c.bg, borderRadius: 14, padding: '12px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', border: '1px solid #f0faf5' }}>
+          <div key={c.label} style={{ background: c.bg, borderRadius: 14, padding: '12px', textAlign: 'center', boxShadow: darkMode ? 'none' : '0 2px 8px rgba(0,0,0,0.05)', border: `1px solid ${border}` }}>
             <div style={{ fontSize: 22, fontWeight: 900, color: c.color }}>{c.val}</div>
-            <div style={{ fontSize: 11, color: '#adb5bd', fontWeight: 600, marginTop: 2 }}>{c.label}</div>
+            <div style={{ fontSize: 11, color: subColor, fontWeight: 600, marginTop: 2 }}>{c.label}</div>
           </div>
         ))}
       </div>
@@ -77,14 +87,14 @@ function SimpleInventory({ products, setProducts, goBack }) {
       {/* 검색 + 필터 */}
       <div style={{ padding: '0 16px 12px' }}>
         <input
-          style={{ width: '100%', padding: '11px 14px', borderRadius: 12, border: '1.5px solid #e8faf3', fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#f8fffe', marginBottom: 10 }}
+          style={{ width: '100%', padding: '11px 14px', borderRadius: 12, border: `1.5px solid ${border}`, fontSize: 14, outline: 'none', boxSizing: 'border-box', background: inputBg, color: textColor, marginBottom: 10 }}
           placeholder="상품명 또는 바코드 검색..."
           value={search} onChange={e => setSearch(e.target.value)}
         />
         <div style={{ display: 'flex', gap: 8 }}>
           {['전체', '정상', '품절임박', '품절'].map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              style={{ padding: '6px 14px', borderRadius: 20, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: filter === f ? '#00c471' : 'white', color: filter === f ? 'white' : '#868e96', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+              style={{ padding: '6px 14px', borderRadius: 20, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: filter === f ? '#00c471' : cardBg, color: filter === f ? 'white' : subColor, boxShadow: darkMode ? 'none' : '0 1px 4px rgba(0,0,0,0.08)' }}>
               {f}
             </button>
           ))}
@@ -101,10 +111,10 @@ function SimpleInventory({ products, setProducts, goBack }) {
         ) : filtered.map(p => {
           const st = getStatus(p);
           return (
-            <div key={p.id} style={{ background: 'white', borderRadius: 16, padding: '14px 16px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', border: '1px solid #f0faf5' }}>
+            <div key={p.id} style={{ background: cardBg, borderRadius: 16, padding: '14px 16px', boxShadow: darkMode ? 'none' : '0 2px 8px rgba(0,0,0,0.05)', border: `1px solid ${border}` }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: textColor, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
                   <div style={{ fontSize: 11, color: '#adb5bd' }}>
                     재고 <span style={{ fontWeight: 700, color: st.color }}>{p.stock ?? 0}개</span>
                     {p.spec && <span> · {p.spec}{p.unit}</span>}
@@ -137,23 +147,23 @@ function SimpleInventory({ products, setProducts, goBack }) {
       {/* 입고/품절 모달 */}
       {selected && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setSelected(null)}>
-          <div style={{ background: 'white', borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: 480 }} onClick={e => e.stopPropagation()}>
+          <div style={{ background: cardBg, borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: 480 }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <span style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a' }}>
+              <span style={{ fontSize: 16, fontWeight: 700, color: textColor }}>
                 {mode === 'receive' ? '📦 입고 처리' : '⛔ 품절 처리'}
               </span>
-              <button style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#adb5bd' }} onClick={() => setSelected(null)}>✕</button>
+              <button style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: subColor }} onClick={() => setSelected(null)}>✕</button>
             </div>
-            <div style={{ background: '#f8fffe', borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{selected.name}</div>
-              <div style={{ fontSize: 12, color: '#adb5bd', marginTop: 4 }}>현재 재고: <strong style={{ color: '#00c471' }}>{selected.stock ?? 0}개</strong></div>
+            <div style={{ background: bg, borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: textColor }}>{selected.name}</div>
+              <div style={{ fontSize: 12, color: subColor, marginTop: 4 }}>현재 재고: <strong style={{ color: '#00c471' }}>{selected.stock ?? 0}개</strong></div>
             </div>
             {mode === 'receive' ? (
               <>
-                <div style={{ fontSize: 12, color: '#495057', marginBottom: 8, fontWeight: 600 }}>입고 수량</div>
+                <div style={{ fontSize: 12, color: subColor, marginBottom: 8, fontWeight: 600 }}>입고 수량</div>
                 <input
                   type="number"
-                  style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1.5px solid #e8faf3', fontSize: 16, outline: 'none', boxSizing: 'border-box', marginBottom: 12 }}
+                  style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1.5px solid ${border}`, fontSize: 16, outline: 'none', boxSizing: 'border-box', marginBottom: 12, background: inputBg, color: textColor }}
                   placeholder="추가할 수량 입력"
                   value={qty} onChange={e => setQty(e.target.value)} autoFocus
                 />

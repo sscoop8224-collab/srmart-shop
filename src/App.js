@@ -4,6 +4,7 @@ import Chatbot from './components/Chatbot';
 import { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import srmLogo from './srm_logo.png';
+import { ThemeProvider, useTheme } from './ThemeContext';
 
 import Admin from './pages/Admin';
 import Login from './pages/Login';
@@ -26,6 +27,7 @@ import BannerManager from './pages/BannerManager';
 import EventManager from './pages/EventManager';
 import SimpleInventory from './pages/SimpleInventory';
 import SimplePurchase from './pages/SimplePurchase';
+import VendorManagement from './pages/VendorManagement';
 
 import Dashboard from './components/admin/Dashboard';
 import OrderManagement from './components/admin/OrderManagement';
@@ -91,7 +93,10 @@ const initialCategories = [
   ]},
 ];
 
-function App() {
+function AppContent() {
+  const { darkMode, setDarkMode } = useTheme();
+  const handleSetDark = (val) => setDarkMode(val);
+
   const [page, setPage] = useState('login');
   const [pageHistory, setPageHistory] = useState([]);
   const [products, setProducts] = useState(initialProducts);
@@ -102,40 +107,6 @@ function App() {
   const [wishlist, setWishlist] = useState([]);
   const [notices, setNotices] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [adminDark, setAdminDark] = useState(() => localStorage.getItem('srmart_admin_dark') === 'true');
-  useEffect(() => { localStorage.setItem('srmart_admin_dark', adminDark); }, [adminDark]);
-
-  const [darkMode, setDarkMode] = useState(false);
-  useEffect(() => {
-    localStorage.setItem('srmart_dark', darkMode);
-    if (darkMode) {
-      document.body.classList.add('dark');
-      document.documentElement.style.setProperty('--white', '#1a1a1a');
-      document.documentElement.style.setProperty('--gray-50', '#1e1e1e');
-      document.documentElement.style.setProperty('--gray-100', '#242424');
-      document.documentElement.style.setProperty('--gray-200', '#2e2e2e');
-      document.documentElement.style.setProperty('--gray-300', '#3a3a3a');
-      document.documentElement.style.setProperty('--gray-400', '#4a4a4a');
-      document.documentElement.style.setProperty('--gray-500', '#6e6e6e');
-      document.documentElement.style.setProperty('--gray-600', '#9e9e9e');
-      document.documentElement.style.setProperty('--gray-700', '#c0c0c0');
-      document.documentElement.style.setProperty('--gray-800', '#d4d4d4');
-      document.documentElement.style.setProperty('--gray-900', '#f0f0f0');
-    } else {
-      document.body.classList.remove('dark');
-      document.documentElement.style.setProperty('--white', '#ffffff');
-      document.documentElement.style.setProperty('--gray-50', '#f8f9fa');
-      document.documentElement.style.setProperty('--gray-100', '#f1f3f5');
-      document.documentElement.style.setProperty('--gray-200', '#e9ecef');
-      document.documentElement.style.setProperty('--gray-300', '#dee2e6');
-      document.documentElement.style.setProperty('--gray-400', '#ced4da');
-      document.documentElement.style.setProperty('--gray-500', '#adb5bd');
-      document.documentElement.style.setProperty('--gray-600', '#868e96');
-      document.documentElement.style.setProperty('--gray-700', '#495057');
-      document.documentElement.style.setProperty('--gray-800', '#343a40');
-      document.documentElement.style.setProperty('--gray-900', '#212529');
-    }
-  }, [darkMode]);
 
   const { login: authLogin, logout: authLogout } = useAuth();
 
@@ -365,40 +336,37 @@ function App() {
     'adminPC_purchase', 'adminPC_members', 'adminPC_reviews',
     'adminPC_stats', 'adminPC_settlement', 'adminPC_settings',
     'adminPC_banners', 'adminPC_coupons',
-    'simpleInventory', 'simplePurchase',
   ];
 
   if (adminPCPages.includes(page)) {
     return (
       <>
-        {page === 'adminPC'           && <Dashboard         setPage={goToPage} dark={adminDark} setDark={setAdminDark} products={products} orders={orders} users={users} user={user} />}
-        {page === 'adminPC_orders'    && <OrderManagement   setPage={goToPage} dark={adminDark} setDark={setAdminDark} orders={orders} setOrders={setOrders} user={user} />}
-        {page === 'adminPC_products'  && <ProductManagement  setPage={goToPage} dark={adminDark} setDark={setAdminDark} products={products} setProducts={setProducts} categories={categories} user={user} />}
-        {page === 'adminPC_inventory' && <InventoryManagement setPage={goToPage} dark={adminDark} setDark={setAdminDark} products={products} setProducts={setProducts} user={user} />}
-        {page === 'adminPC_purchase'  && <PurchaseManagement setPage={goToPage} dark={adminDark} setDark={setAdminDark} products={products} setProducts={setProducts} user={user} />}
-        {page === 'adminPC_members'   && <AdminMembers       setPage={goToPage} dark={adminDark} setDark={setAdminDark} users={users} setUsers={setUsers} user={user} />}
-        {page === 'adminPC_reviews'   && <AdminReviews       setPage={goToPage} dark={adminDark} setDark={setAdminDark} user={user} />}
-        {page === 'adminPC_stats'     && <AdminSalesStats    setPage={goToPage} dark={adminDark} setDark={setAdminDark} orders={orders} products={products} user={user} />}
-        {page === 'adminPC_settlement'&& <KakaoPaySettlement setPage={goToPage} dark={adminDark} setDark={setAdminDark} orders={orders} user={user} />}
-        {page === 'adminPC_settings'  && <AdminSettings      setPage={goToPage} dark={adminDark} setDark={setAdminDark} users={users} setUsers={setUsers} user={user} />}
+        {page === 'adminPC'           && <Dashboard         setPage={goToPage} dark={darkMode} setDark={handleSetDark} products={products} orders={orders} users={users} user={user} />}
+        {page === 'adminPC_orders'    && <OrderManagement   setPage={goToPage} dark={darkMode} setDark={handleSetDark} orders={orders} setOrders={setOrders} user={user} />}
+        {page === 'adminPC_products'  && <ProductManagement  setPage={goToPage} dark={darkMode} setDark={handleSetDark} products={products} setProducts={setProducts} categories={categories} user={user} />}
+        {page === 'adminPC_inventory' && <InventoryManagement setPage={goToPage} dark={darkMode} setDark={handleSetDark} products={products} setProducts={setProducts} user={user} />}
+        {page === 'adminPC_purchase'  && <PurchaseManagement setPage={goToPage} dark={darkMode} setDark={handleSetDark} products={products} setProducts={setProducts} user={user} />}
+        {page === 'adminPC_members'   && <AdminMembers       setPage={goToPage} dark={darkMode} setDark={handleSetDark} users={users} setUsers={setUsers} user={user} />}
+        {page === 'adminPC_reviews'   && <AdminReviews       setPage={goToPage} dark={darkMode} setDark={handleSetDark} user={user} />}
+        {page === 'adminPC_stats'     && <AdminSalesStats    setPage={goToPage} dark={darkMode} setDark={handleSetDark} orders={orders} products={products} user={user} />}
+        {page === 'adminPC_settlement'&& <KakaoPaySettlement setPage={goToPage} dark={darkMode} setDark={handleSetDark} orders={orders} user={user} />}
+        {page === 'adminPC_settings'  && <AdminSettings      setPage={goToPage} dark={darkMode} setDark={handleSetDark} users={users} setUsers={setUsers} user={user} />}
         {page === 'adminPC_banners' && (
           <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-            <Sidebar currentPage="adminPC_banners" setPage={goToPage} dark={adminDark} user={user} />
-            <div style={{ flex: 1, overflowY: 'auto', background: adminDark ? '#111' : '#f5f5f3' }}>
+            <Sidebar currentPage="adminPC_banners" setPage={goToPage} dark={darkMode} user={user} />
+            <div style={{ flex: 1, overflowY: 'auto', background: darkMode ? '#111' : '#f5f5f3' }}>
               <BannerManager banners={banners} setBanners={setBanners} categories={categories} goBack={() => goToPage('adminPC')} />
             </div>
           </div>
         )}
         {page === 'adminPC_coupons' && (
           <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-            <Sidebar currentPage="adminPC_coupons" setPage={goToPage} dark={adminDark} user={user} />
-            <div style={{ flex: 1, overflowY: 'auto', background: adminDark ? '#111' : '#f5f5f3' }}>
+            <Sidebar currentPage="adminPC_coupons" setPage={goToPage} dark={darkMode} user={user} />
+            <div style={{ flex: 1, overflowY: 'auto', background: darkMode ? '#111' : '#f5f5f3' }}>
               <CouponManager coupons={coupons} setCoupons={setCoupons} goBack={() => goToPage('adminPC')} />
             </div>
           </div>
         )}
-        {page === 'simpleInventory' && <SimpleInventory products={products} setProducts={setProducts} goBack={goBack} />}
-        {page === 'simplePurchase'  && <SimplePurchase  products={products} setProducts={setProducts} goBack={goBack} />}
       </>
     );
   }
@@ -491,19 +459,25 @@ function App() {
             </div>
 
             <div style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto' }}>
-              {['전체', ...categories.map((c) => c.name)].map((name) => (
-                <button key={name} onClick={() => { setFilterLarge(name); setFilterMedium('전체'); setFilterSmall('전체'); }}
-                  style={{ padding: '8px 18px', background: filterLarge === name ? '#00c471' : 'white', color: filterLarge === name ? 'white' : '#495057', border: filterLarge === name ? 'none' : '1.5px solid #e9ecef', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0, boxShadow: filterLarge === name ? '0 2px 8px rgba(0,196,113,0.3)' : 'none' }}>
-                  {name}
-                </button>
-              ))}
+              {['행사상품', ...categories.map((c) => c.name)].map((name) => {
+                const isActive = name === '행사상품' ? filterLarge === '행사중' : filterLarge === name;
+                return (
+                  <button key={name} onClick={() => {
+                    setFilterLarge(name === '행사상품' ? '행사중' : name);
+                    setFilterMedium('전체'); setFilterSmall('전체');
+                  }}
+                    style={{ padding: '8px 18px', background: isActive ? '#00c471' : (darkMode ? '#2a2a2a' : 'white'), color: isActive ? 'white' : (darkMode ? '#a0a0a0' : '#495057'), border: isActive ? 'none' : `1.5px solid ${darkMode ? '#3a3a3a' : '#e9ecef'}`, borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0, boxShadow: isActive ? '0 2px 8px rgba(0,196,113,0.3)' : 'none' }}>
+                    {name}
+                  </button>
+                );
+              })}
             </div>
 
             {selectedLargeObj && selectedLargeObj.children.length > 0 && (
               <div style={{ padding: '4px 16px', display: 'flex', gap: '8px', overflowX: 'auto' }}>
                 {['전체', ...selectedLargeObj.children.map((m) => m.name)].map((name) => (
                   <button key={name} onClick={() => { setFilterMedium(name); setFilterSmall('전체'); }}
-                    style={{ padding: '6px 14px', background: filterMedium === name ? '#212529' : 'white', color: filterMedium === name ? 'white' : '#868e96', border: filterMedium === name ? 'none' : '1.5px solid #e9ecef', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0 }}>
+                    style={{ padding: '6px 14px', background: filterMedium === name ? (darkMode ? '#0d4d2a' : '#212529') : (darkMode ? '#2a2a2a' : 'white'), color: filterMedium === name ? 'white' : (darkMode ? '#a0a0a0' : '#868e96'), border: filterMedium === name ? 'none' : `1.5px solid ${darkMode ? '#3a3a3a' : '#e9ecef'}`, borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0 }}>
                     {name}
                   </button>
                 ))}
@@ -514,7 +488,7 @@ function App() {
               <div style={{ padding: '4px 16px', display: 'flex', gap: '8px', overflowX: 'auto' }}>
                 {['전체', ...selectedMediumObj.children].map((name) => (
                   <button key={name} onClick={() => setFilterSmall(name)}
-                    style={{ padding: '5px 12px', background: filterSmall === name ? '#868e96' : 'white', color: filterSmall === name ? 'white' : '#adb5bd', border: filterSmall === name ? 'none' : '1.5px solid #e9ecef', borderRadius: '20px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0 }}>
+                    style={{ padding: '5px 12px', background: filterSmall === name ? (darkMode ? '#1a5c2a' : '#868e96') : (darkMode ? '#2a2a2a' : 'white'), color: filterSmall === name ? 'white' : (darkMode ? '#808080' : '#adb5bd'), border: filterSmall === name ? 'none' : `1.5px solid ${darkMode ? '#3a3a3a' : '#e9ecef'}`, borderRadius: '20px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0 }}>
                     {name}
                   </button>
                 ))}
@@ -522,11 +496,11 @@ function App() {
             )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px 8px' }}>
-              <p style={{ fontSize: '16px', fontWeight: '700', color: '#212529', margin: 0 }}>
-                {filterLarge === '전체' ? '전체 상품' : filterLarge} ({filteredProducts.length}개)
+              <p style={{ fontSize: '16px', fontWeight: '700', color: darkMode ? '#f0f0f0' : '#212529', margin: 0 }}>
+                {filterLarge === '행사중' ? '🎉 행사 상품' : filterLarge} ({(filterLarge === '행사중' ? eventProducts : filteredProducts).length}개)
               </p>
               <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}
-                style={{ padding: '6px 12px', borderRadius: '8px', border: '1.5px solid #dee2e6', fontSize: '13px', outline: 'none', background: 'white', cursor: 'pointer' }}>
+                style={{ padding: '6px 12px', borderRadius: '8px', border: `1.5px solid ${darkMode ? '#3a3a3a' : '#dee2e6'}`, fontSize: '13px', outline: 'none', background: darkMode ? '#2a2a2a' : 'white', color: darkMode ? '#f0f0f0' : '#212529', cursor: 'pointer' }}>
                 <option value="default">기본순</option>
                 <option value="price_asc">낮은 가격순</option>
                 <option value="price_desc">높은 가격순</option>
@@ -534,17 +508,17 @@ function App() {
               </select>
             </div>
 
-            {filteredProducts.length === 0 ? (
+            {(filterLarge === '행사중' ? eventProducts : filteredProducts).length === 0 ? (
               <div className="empty-state">
-                <span className="empty-state-icon">🛍️</span>
-                <span className="empty-state-text">해당 카테고리에 상품이 없어요!</span>
+                <span className="empty-state-icon">{filterLarge === '행사중' ? '🎁' : '🛍️'}</span>
+                <span className="empty-state-text">{filterLarge === '행사중' ? '현재 진행중인 행사가 없어요!' : '해당 카테고리에 상품이 없어요!'}</span>
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', padding: '0 16px 100px' }}>
-                {filteredProducts.map((product) => (
+                {(filterLarge === '행사중' ? eventProducts : filteredProducts).map((product) => (
                   <div key={product.id}
                     onClick={() => { if (!product.isSoldOut) { setSelectedProduct(product); goToPage('productDetail'); } }}
-                    style={{ background: 'white', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', position: 'relative', opacity: product.isSoldOut ? 0.6 : 1, cursor: product.isSoldOut ? 'default' : 'pointer', border: product.isAdult ? '1.5px solid #ffcdd2' : '1px solid #f0faf5' }}>
+                    style={{ background: darkMode ? '#2a2a2a' : 'white', borderRadius: '20px', overflow: 'hidden', boxShadow: darkMode ? '0 2px 16px rgba(0,0,0,0.4)' : '0 2px 16px rgba(0,0,0,0.07)', position: 'relative', opacity: product.isSoldOut ? 0.6 : 1, cursor: product.isSoldOut ? 'default' : 'pointer', border: product.isAdult ? '1.5px solid #ffcdd2' : `1px solid ${darkMode ? '#3a3a3a' : '#f0faf5'}` }}>
                     <div style={{ height: '130px', position: 'relative', overflow: 'hidden' }}>
                       <img src={product.image || getCategoryImage(product.large)} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       {!product.image && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,196,113,0.08)' }} />}
@@ -553,17 +527,29 @@ function App() {
                           <span style={{ color: 'white', fontWeight: '800', fontSize: '13px', background: '#ff4757', padding: '4px 12px', borderRadius: '20px' }}>품절</span>
                         </div>
                       )}
-                      {product.isAdult && <div style={{ position: 'absolute', top: 8, left: 8, background: '#ff4757', color: 'white', fontSize: '10px', fontWeight: '800', padding: '2px 7px', borderRadius: '8px' }}>🔞 성인</div>}
+                      {product.eventLabel && (
+                        <div style={{ position: 'absolute', top: 8, left: 8, background: '#ff4757', color: 'white', fontSize: '10px', fontWeight: '800', padding: '2px 7px', borderRadius: '8px' }}>{product.eventLabel}</div>
+                      )}
+                      {product.isAdult && !product.eventLabel && <div style={{ position: 'absolute', top: 8, left: 8, background: '#ff4757', color: 'white', fontSize: '10px', fontWeight: '800', padding: '2px 7px', borderRadius: '8px' }}>🔞 성인</div>}
                       <button onClick={(e) => { e.stopPropagation(); toggleWishlist(product); }}
-                        style={{ position: 'absolute', top: '8px', right: '8px', width: '30px', height: '30px', borderRadius: '50%', background: 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+                        style={{ position: 'absolute', top: '8px', right: '8px', width: '30px', height: '30px', borderRadius: '50%', background: darkMode ? '#3a3a3a' : 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
                         {wishlist.find((item) => item.id === product.id) ? '❤️' : '🤍'}
                       </button>
                     </div>
                     <div style={{ padding: '10px 11px 12px' }}>
                       <p style={{ fontSize: '10px', color: '#00c471', margin: '0 0 3px', fontWeight: '700' }}>{product.large}</p>
-                      <p style={{ fontSize: '13px', fontWeight: '700', color: '#1a1a1a', margin: '0 0 8px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.name}</p>
+                      <p style={{ fontSize: '13px', fontWeight: '700', color: darkMode ? '#f0f0f0' : '#1a1a1a', margin: '0 0 8px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.name}</p>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <p style={{ fontSize: '14px', fontWeight: '800', color: '#1a1a1a', margin: 0 }}>₩{product.price.toLocaleString()}</p>
+                        <div>
+                          {product.salePrice != null && product.salePrice !== product.price ? (
+                            <>
+                              <p style={{ fontSize: '10px', color: '#adb5bd', margin: 0, textDecoration: 'line-through' }}>₩{product.price.toLocaleString()}</p>
+                              <p style={{ fontSize: '14px', fontWeight: '800', color: '#ff4757', margin: 0 }}>₩{product.salePrice.toLocaleString()}</p>
+                            </>
+                          ) : (
+                            <p style={{ fontSize: '14px', fontWeight: '800', color: darkMode ? '#f0f0f0' : '#1a1a1a', margin: 0 }}>₩{product.price.toLocaleString()}</p>
+                          )}
+                        </div>
                         <button onClick={(e) => { e.stopPropagation(); addToCart(product); }} disabled={product.isSoldOut}
                           style={{ width: '30px', height: '30px', borderRadius: '50%', background: product.isSoldOut ? '#dee2e6' : 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', cursor: product.isSoldOut ? 'not-allowed' : 'pointer', fontSize: '20px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: product.isSoldOut ? 'none' : '0 2px 8px rgba(0,196,113,0.4)', lineHeight: 1, fontWeight: '300' }}>+</button>
                       </div>
@@ -578,19 +564,22 @@ function App() {
         {page === 'notice'          && <Notice notices={notices} setNotices={setNotices} isAdmin={isAdmin} goBack={goBack} goToHome={() => goToPage('home')} darkMode={darkMode} />}
         {page === 'wishlist'        && <Wishlist wishlist={wishlist} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWishlist={toggleWishlist} goBack={goBack} goToHome={() => goToPage('home')} darkMode={darkMode} />}
         {page === 'search'          && <Search products={products} categories={categories} goBack={goBack} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} />}
-        {page === 'productDetail'   && <ProductDetail product={selectedProduct} onBack={goBack} onAddToCart={addToCart} />}
+        {page === 'productDetail'   && <ProductDetail product={selectedProduct} onBack={goBack} onAddToCart={addToCart} darkMode={darkMode} />}
         {page === 'cart'            && <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} coupons={coupons} user={currentUser} appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon} darkMode={darkMode} />}
         {page === 'orders'          && <Orders orders={orders} goBack={goBack} />}
         {page === 'receipt'         && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
-        {page === 'couponManager'   && <CouponManager coupons={coupons} setCoupons={setCoupons} goBack={goBack} />}
-        {page === 'salesStats'      && <SalesStats orders={orders} products={products} goBack={goBack} />}
+        {page === 'couponManager'   && <CouponManager coupons={coupons} setCoupons={setCoupons} goBack={goBack} darkMode={darkMode} />}
+        {page === 'salesStats'      && <SalesStats orders={orders} products={products} goBack={goBack} darkMode={darkMode} />}
         {page === 'adminHome'       && <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} />}
-        {page === 'members'         && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} />}
-        {page === 'adminOrders'     && <AdminOrders orders={orders} setOrders={setOrders} goBack={goBack} onPrint={(order) => setPrintOrder(order)} />}
-        {page === 'mypage'          && <MyPage user={currentUser} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} users={users} setUsers={setUsers} darkMode={darkMode} setDarkMode={setDarkMode} />}
+        {page === 'members'         && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} darkMode={darkMode} />}
+        {page === 'adminOrders'     && <AdminOrders orders={orders} setOrders={setOrders} goBack={goBack} onPrint={(order) => setPrintOrder(order)} darkMode={darkMode} />}
+        {page === 'mypage'          && <MyPage user={currentUser} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} users={users} setUsers={setUsers} />}
         {page === 'bannerManager'   && <BannerManager banners={banners} setBanners={setBanners} categories={categories} goBack={goBack} darkMode={darkMode} />}
         {page === 'eventManager'    && <EventManager products={products} goBack={goBack} darkMode={darkMode} events={events} setEvents={setEvents} />}
-        {page === 'admin'           && <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} messages={messages} setMessages={() => {}} goBack={goBack} />}
+        {page === 'admin'           && <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} messages={messages} setMessages={() => {}} goBack={goBack} darkMode={darkMode} />}
+        {page === 'simpleInventory' && <SimpleInventory products={products} setProducts={setProducts} goBack={goBack} darkMode={darkMode} />}
+        {page === 'simplePurchase'  && <SimplePurchase  products={products} setProducts={setProducts} goBack={goBack} darkMode={darkMode} />}
+        {page === 'vendorManagement' && <VendorManagement goBack={goBack} darkMode={darkMode} />}
       </div>
 
       {/* 고객 하단 탭 */}
@@ -677,6 +666,14 @@ function App() {
         © 2026 Dongsin Market. All rights reserved.
       </footer>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
 

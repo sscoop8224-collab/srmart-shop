@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useTheme } from '../ThemeContext';
 
-function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, darkMode, setDarkMode }) {
+function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers }) {
+  const { darkMode, setDarkMode, resetToSystem } = useTheme();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPwModal, setShowPwModal] = useState(false);
   const [form, setForm] = useState({
@@ -178,11 +180,21 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, d
             </div>
             <span style={{ fontSize: '15px', fontWeight: '600', color: textColor }}>다크모드</span>
           </div>
-          <div onClick={() => setDarkMode(!darkMode)}
+          <div onClick={() => {
+            setDarkMode(!darkMode);
+          }}
             style={{ width: '50px', height: '28px', borderRadius: '14px', background: darkMode ? '#00c471' : '#ddd', position: 'relative', cursor: 'pointer', transition: 'all 0.3s' }}>
             <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'white', position: 'absolute', top: '3px', left: darkMode ? '25px' : '3px', transition: 'all 0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }} />
           </div>
         </div>
+        {localStorage.getItem('srmart_dark_manual') === 'true' && (
+          <div style={{ padding: '10px 20px 14px', borderTop: `1px solid ${borderColor}` }}>
+            <button onClick={resetToSystem}
+              style={{ width: '100%', padding: '9px', borderRadius: '10px', border: `1px solid ${borderColor}`, background: 'transparent', color: '#00a85e', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>
+              🔄 시스템 설정 따르기
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 로그아웃 */}
