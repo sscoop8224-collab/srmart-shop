@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import CategoryManager from './CategoryManager';
+import BarcodeQRScanner, { ScanButtonIcon } from '../components/common/BarcodeQRScanner';
 
 function ImageUploadMulti({ images, onImagesChange, darkMode }) {
   const handleAdd = (e) => {
@@ -72,6 +73,12 @@ function Admin({ products, setProducts, categories, setCategories, messages, set
   const dynSelectStyle = { ...selectStyle, background: inputBg, border: `1.5px solid ${inputBorder}`, color: textColor };
 
   const [tab, setTab] = useState('products');
+  const [showScanner, setShowScanner] = useState(false);
+
+  const handleBarcodeScan = (result) => {
+    setForm(prev => ({ ...prev, barcode: result.value }));
+    setShowScanner(false);
+  };
   const [form, setForm] = useState({ ...emptyForm });
   const [editId, setEditId] = useState(null);
   const [msgForm, setMsgForm] = useState({ ...messages });
@@ -182,7 +189,13 @@ function Admin({ products, setProducts, categories, setCategories, messages, set
                 />
                 <input name="name" value={form.name} onChange={handleChange} placeholder="상품명 *" style={dynInputStyle} />
                 <input name="price" value={form.price} onChange={handleChange} placeholder="가격 (숫자만) *" type="number" style={dynInputStyle} />
-                <input name="barcode" value={form.barcode} onChange={handleChange} placeholder="바코드 번호 (선택)" style={dynInputStyle} />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input name="barcode" value={form.barcode} onChange={handleChange} placeholder="바코드 번호 (선택)" style={{ ...dynInputStyle, flex: 1 }} />
+                  <button type="button" onClick={() => setShowScanner(true)}
+                    style={{ width: 48, height: 48, flexShrink: 0, background: '#00c471', border: 'none', borderRadius: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                    <ScanButtonIcon />
+                  </button>
+                </div>
                 <input name="stock" value={form.stock} onChange={handleChange} placeholder="재고 수량 (선택)" type="number" style={dynInputStyle} />
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 14px', background: darkMode ? '#3a1a1a' : '#fff5f5', borderRadius: '12px', border: `1.5px solid ${darkMode ? '#5a2a2a' : '#ffcdd2'}` }}>
@@ -316,6 +329,14 @@ function Admin({ products, setProducts, categories, setCategories, messages, set
           </div>
         )}
       </div>
+
+      {showScanner && (
+        <BarcodeQRScanner
+          onScanSuccess={handleBarcodeScan}
+          onClose={() => setShowScanner(false)}
+          darkMode={darkMode}
+        />
+      )}
     </div>
   );
 }

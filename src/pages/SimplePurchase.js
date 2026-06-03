@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import BarcodeQRScanner, { ScanButtonIcon } from '../components/common/BarcodeQRScanner';
 
 function SimplePurchase({ products, setProducts, goBack, darkMode }) {
   const bg        = darkMode ? '#1a1a1a' : '#f8fffe';
@@ -14,7 +15,13 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
   const [search, setSearch] = useState('');
   const [scanList, setScanList] = useState([]);
   const [supplier, setSupplier] = useState('');
-  const [payType, setPayType] = useState('현금');
+  const [payType, setPayType] = useState('매입');
+  const [showScanner, setShowScanner] = useState(false);
+
+  const handleScan = (result) => {
+    setSearch(result.value);
+    setShowScanner(false);
+  };
   const [memo, setMemo] = useState('');
   const [history, setHistory] = useState([]);
   const [returnHistory, setReturnHistory] = useState([]);
@@ -57,20 +64,37 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
   const saveInspect = () => {
     if (scanList.length === 0) return alert('검수 상품을 추가해주세요');
     if (!supplier) return alert('거래처를 선택해주세요');
-    setProducts(prev => prev.map(p => {
-      const item = scanList.find(i => i.id === p.id);
-      if (item) return { ...p, stock: (p.stock ?? 0) + item.qty, isSoldOut: false, status: '판매중', lastIn: new Date().toLocaleDateString('ko-KR') };
-      return p;
-    }));
-    const record = {
-      id: Date.now(),
-      date: new Date().toLocaleString('ko-KR'),
-      supplier, items: [...scanList], totalAmount, payType, memo,
-      status: payType === '외상' ? '미수금' : '완료',
-    };
-    setHistory(prev => [record, ...prev]);
-    alert(`✅ 입고 완료! ${scanList.length}개 품목, ₩${totalAmount.toLocaleString()}`);
-    setScanList([]); setMemo(''); setSupplier(''); setPayType('현금');
+
+    if (payType === '매입') {
+      // 입고 처리 (재고 증가)
+      setProducts(prev => prev.map(p => {
+        const item = scanList.find(i => i.id === p.id);
+        if (item) return { ...p, stock: (p.stock ?? 0) + item.qty, isSoldOut: false, status: '판매중', lastIn: new Date().toLocaleDateString('ko-KR') };
+        return p;
+      }));
+      const record = {
+        id: Date.now(),
+        date: new Date().toLocaleString('ko-KR'),
+        supplier, items: [...scanList], totalAmount, payType, memo, status: '완료',
+      };
+      setHistory(prev => [record, ...prev]);
+      alert(`✅ 매입 입고 완료! ${scanList.length}개 품목, ₩${totalAmount.toLocaleString()}`);
+    } else {
+      // 반품 처리 (재고 차감)
+      setProducts(prev => prev.map(p => {
+        const item = scanList.find(i => i.id === p.id);
+        if (item) return { ...p, stock: Math.max(0, (p.stock ?? 0) - item.qty) };
+        return p;
+      }));
+      setReturnHistory(prev => [{
+        id: Date.now(),
+        date: new Date().toLocaleString('ko-KR'),
+        supplier, items: [...scanList], totalAmount, reason: memo || '반품',
+      }, ...prev]);
+      alert(`✅ 반품 출고 완료! ${scanList.length}개 품목, ₩${totalAmount.toLocaleString()}`);
+    }
+
+    setScanList([]); setMemo(''); setSupplier(''); setPayType('매입');
   };
 
   const openReturn = (record) => {
@@ -141,10 +165,11 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
             </select>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <div>
-                <div style={{ fontSize: 11, color: subColor, marginBottom: 5, fontWeight: 600 }}>결제 방식</div>
+                <div style={{ fontSize: 11, color: subColor, marginBottom: 5, fontWeight: 600 }}>매입 방식</div>
                 <select style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: `1.5px solid ${inputBorder}`, fontSize: 13, outline: 'none', background: inputBg, color: textColor }}
                   value={payType} onChange={e => setPayType(e.target.value)}>
-                  <option>현금</option><option>계좌이체</option><option>외상</option><option>카드</option>
+                  <option value="매입">매입 (입고)</option>
+                  <option value="반품">반품 (출고)</option>
                 </select>
               </div>
               <div>
@@ -158,11 +183,17 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
           {/* 상품 검색 */}
           <div style={{ background: cardBg, borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: darkMode ? 'none' : '0 2px 8px rgba(0,0,0,0.05)', border: `1px solid ${border}` }}>
             <div style={{ fontSize: 12, color: subColor, fontWeight: 600, marginBottom: 8 }}>상품 검색</div>
-            <input
-              style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: `1.5px solid ${inputBorder}`, fontSize: 14, outline: 'none', boxSizing: 'border-box', background: inputBg, color: textColor }}
-              placeholder="상품명 검색..."
-              value={search} onChange={e => setSearch(e.target.value)}
-            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                style={{ flex: 1, padding: '10px 14px', borderRadius: 10, border: `1.5px solid ${inputBorder}`, fontSize: 14, outline: 'none', boxSizing: 'border-box', background: inputBg, color: textColor }}
+                placeholder="상품명 또는 바코드 검색..."
+                value={search} onChange={e => setSearch(e.target.value)}
+              />
+              <button onClick={() => setShowScanner(true)}
+                style={{ width: 44, height: 44, flexShrink: 0, background: '#00c471', border: 'none', borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                <ScanButtonIcon />
+              </button>
+            </div>
             {searchResults.length > 0 && (
               <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 200, overflowY: 'auto' }}>
                 {searchResults.map(p => (
@@ -227,7 +258,7 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
                 </div>
                 <button onClick={saveInspect}
                   style={{ padding: '12px 20px', background: 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: 14, fontSize: 14, fontWeight: 700, color: 'white', cursor: 'pointer' }}>
-                  ✅ 입고 처리
+                  {payType === '매입' ? '✅ 매입 입고' : '↩ 반품 출고'}
                 </button>
               </div>
             </div>
@@ -340,6 +371,14 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
             </button>
           </div>
         </div>
+      )}
+
+      {showScanner && (
+        <BarcodeQRScanner
+          onScanSuccess={handleScan}
+          onClose={() => setShowScanner(false)}
+          darkMode={darkMode}
+        />
       )}
     </div>
   );

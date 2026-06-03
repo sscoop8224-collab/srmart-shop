@@ -7,7 +7,10 @@ const GD = '#00a85e';
 const EMPTY_FORM = {
   name: '', business_number: '', phone: '', email: '',
   address: '', contact_person: '', memo: '', status: '거래중',
+  payment_method: '현금',
 };
+
+const PAYMENT_METHODS = ['현금', '카드', '계좌이체', '외상', '어음'];
 
 const FILTERS = ['전체', '거래중', '거래중지'];
 
@@ -49,6 +52,7 @@ export default function VendorManagement({ goBack, darkMode }) {
       phone: v.phone || '', email: v.email || '',
       address: v.address || '', contact_person: v.contact_person || '',
       memo: v.memo || '', status: v.status || '거래중',
+      payment_method: v.payment_method || '현금',
     });
     setEditTarget(v);
     setShowModal(true);
@@ -195,6 +199,7 @@ export default function VendorManagement({ goBack, darkMode }) {
                     { label: '담당자', value: v.contact_person },
                     { label: '전화', value: v.phone },
                     { label: '이메일', value: v.email },
+                    { label: '결제방식', value: v.payment_method },
                   ].filter(r => r.value).map(r => (
                     <div key={r.label} style={{ display: 'flex', gap: 8 }}>
                       <span style={{ fontSize: 11, color: sub, fontWeight: 600, minWidth: 56, flexShrink: 0 }}>{r.label}</span>
@@ -236,6 +241,15 @@ export default function VendorManagement({ goBack, darkMode }) {
                     placeholder={f.placeholder} style={inputStyle} />
                 </div>
               ))}
+
+              {/* 결제 방식 드롭다운 */}
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: GD, marginBottom: 5 }}>결제 방식</div>
+                <select value={form.payment_method} onChange={e => setForm({ ...form, payment_method: e.target.value })}
+                  style={{ ...inputStyle, cursor: 'pointer' }}>
+                  {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
 
               {/* 거래 상태 드롭다운 */}
               <div>
