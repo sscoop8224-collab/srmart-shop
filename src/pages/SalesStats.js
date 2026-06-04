@@ -4,12 +4,11 @@ function SalesStats({ orders, products, goBack, darkMode }) {
   const completedOrders = orders.filter((o) => o.status === '배송완료').length;
   const canceledOrders = orders.filter((o) => o.status === '취소').length;
 
-  const bg = darkMode ? '#1a1a1a' : '#f8fffe';
-  const cardBg = darkMode ? '#242424' : 'white';
-  const headerBg = darkMode ? '#1a1a1a' : 'white';
-  const borderColor = darkMode ? '#2e2e2e' : '#f0faf5';
-  const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
-  const subTextColor = darkMode ? '#9e9e9e' : '#adb5bd';
+  const bg           = darkMode ? '#1a1a1a' : '#f8f9fa';
+  const cardBg       = darkMode ? '#2a2a2a' : '#ffffff';
+  const borderColor  = darkMode ? '#3a3a3a' : '#dee2e6';
+  const textColor    = darkMode ? '#f0f0f0' : '#212529';
+  const subTextColor = darkMode ? '#a0a0a0' : '#6c757d';
 
   const productSales = {};
   orders.forEach((order) => {

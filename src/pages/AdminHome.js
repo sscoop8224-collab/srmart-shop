@@ -51,6 +51,8 @@ function AdminHome({ setPage, products, orders, users, goBack }) {
       icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> },
     { label: '매출 통계', desc: '매출 분석', page: 'salesStats',
       icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
+    { label: '매출 관리', desc: '매출 데이터 관리', page: 'salesManagement',
+      icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><path d="M6 14a6 6 0 0 0 12 0"/></svg> },
     { label: 'PC 관리자', desc: '통합 관리 시스템', page: 'adminPC',
       icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> },
     { label: '행사 관리', desc: '행사 등록/관리', page: 'eventManager',

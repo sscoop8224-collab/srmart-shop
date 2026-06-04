@@ -169,32 +169,53 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers })
         ))}
       </div>
 
-      {/* 다크모드 토글 */}
+      {/* 테마 설정 */}
       <div style={{ margin: '0 16px 12px', background: cardBg, borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: `1px solid ${borderColor}` }}>
+        {/* 다크모드 토글 행 */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <div style={{ width: '40px', height: '40px', background: darkMode ? '#2e2e2e' : '#f0f0f0', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#f0f0f0' : '#555'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-              </svg>
+            <div style={{ width: '40px', height: '40px', background: darkMode ? '#1a3a2a' : '#f0f0f0', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {darkMode ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f0a500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+              )}
             </div>
-            <span style={{ fontSize: '15px', fontWeight: '600', color: textColor }}>다크모드</span>
+            <div>
+              <div style={{ fontSize: '15px', fontWeight: '600', color: textColor }}>
+                {darkMode ? '다크 모드' : '라이트 모드'}
+              </div>
+              <div style={{ fontSize: '11px', color: subTextColor, marginTop: 1 }}>
+                {localStorage.getItem('srmart_dark_manual') === 'true' ? '수동 설정 중' : '시스템 설정 따르는 중'}
+              </div>
+            </div>
           </div>
-          <div onClick={() => {
-            setDarkMode(!darkMode);
-          }}
+          <div onClick={() => setDarkMode(!darkMode)}
             style={{ width: '50px', height: '28px', borderRadius: '14px', background: darkMode ? '#00c471' : '#ddd', position: 'relative', cursor: 'pointer', transition: 'all 0.3s' }}>
             <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'white', position: 'absolute', top: '3px', left: darkMode ? '25px' : '3px', transition: 'all 0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }} />
           </div>
         </div>
-        {localStorage.getItem('srmart_dark_manual') === 'true' && (
-          <div style={{ padding: '10px 20px 14px', borderTop: `1px solid ${borderColor}` }}>
-            <button onClick={resetToSystem}
-              style={{ width: '100%', padding: '9px', borderRadius: '10px', border: `1px solid ${borderColor}`, background: 'transparent', color: '#00a85e', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>
-              🔄 시스템 설정 따르기
-            </button>
-          </div>
-        )}
+
+        {/* 시스템 설정 따르기 행 */}
+        <div style={{ padding: '0 20px 14px', borderTop: `1px solid ${borderColor}`, paddingTop: 12 }}>
+          <button
+            onClick={resetToSystem}
+            disabled={localStorage.getItem('srmart_dark_manual') !== 'true'}
+            style={{
+              width: '100%', padding: '9px', borderRadius: '10px',
+              border: `1px solid ${localStorage.getItem('srmart_dark_manual') === 'true' ? '#00a85e' : borderColor}`,
+              background: localStorage.getItem('srmart_dark_manual') === 'true' ? (darkMode ? '#1a3a2a' : '#f0faf5') : 'transparent',
+              color: localStorage.getItem('srmart_dark_manual') === 'true' ? '#00a85e' : subTextColor,
+              fontSize: '13px', fontWeight: '600', cursor: localStorage.getItem('srmart_dark_manual') === 'true' ? 'pointer' : 'default',
+              fontFamily: 'inherit', opacity: localStorage.getItem('srmart_dark_manual') === 'true' ? 1 : 0.45,
+            }}>
+            🔄 시스템 설정 따르기
+          </button>
+        </div>
       </div>
 
       {/* 로그아웃 */}

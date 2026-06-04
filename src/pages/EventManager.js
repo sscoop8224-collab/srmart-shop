@@ -27,14 +27,13 @@ function EventManager({ products, goBack, darkMode, events, setEvents }) {
   const [editId, setEditId] = useState(null);
   const [productSearch, setProductSearch] = useState('');
 
-  const bg = darkMode ? '#1a1a1a' : '#f8fffe';
-  const cardBg = darkMode ? '#242424' : 'white';
-  const headerBg = darkMode ? '#1a1a1a' : 'white';
-  const borderColor = darkMode ? '#2e2e2e' : '#f0faf5';
-  const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
-  const subTextColor = darkMode ? '#9e9e9e' : '#adb5bd';
-  const inputBg = darkMode ? '#2e2e2e' : '#f8fffe';
-  const inputBorder = darkMode ? '#3a3a3a' : '#e8faf3';
+  const bg           = darkMode ? '#1a1a1a' : '#f8f9fa';
+  const cardBg       = darkMode ? '#2a2a2a' : '#ffffff';
+  const borderColor  = darkMode ? '#3a3a3a' : '#dee2e6';
+  const textColor    = darkMode ? '#f0f0f0' : '#212529';
+  const subTextColor = darkMode ? '#a0a0a0' : '#6c757d';
+  const inputBg      = darkMode ? '#2a2a2a' : '#ffffff';
+  const inputBorder  = darkMode ? '#3a3a3a' : '#dee2e6';
 
   const inputStyle = {
     width: '100%', padding: '12px 14px', borderRadius: '12px',

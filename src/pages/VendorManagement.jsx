@@ -15,16 +15,22 @@ const PAYMENT_METHODS = ['현금', '카드', '계좌이체', '외상', '어음']
 const FILTERS = ['전체', '거래중', '거래중지'];
 
 export default function VendorManagement({ goBack, darkMode }) {
-  const dark     = darkMode;
-  const bg       = dark ? '#1a1a1a' : '#f8fffe';
-  const cardBg   = dark ? '#2a2a2a' : 'white';
-  const headerBg = dark ? '#222' : 'white';
-  const border   = dark ? '#333' : '#f0faf5';
-  const text     = dark ? '#f0f0f0' : '#1a1a1a';
-  const sub      = dark ? '#888' : '#adb5bd';
-  const inputBg  = dark ? '#333' : '#f2fbf6';
-  const inputBorder = dark ? '#444' : '#e0f5eb';
-  const modalBg  = dark ? '#2a2a2a' : 'white';
+  const dark        = darkMode;
+  const bg          = dark ? '#1a1a1a' : '#f8f9fa';
+  const cardBg      = dark ? '#2a2a2a' : '#ffffff';
+  const border      = dark ? '#3a3a3a' : '#dee2e6';
+  const text        = dark ? '#f0f0f0' : '#212529';
+  const sub         = dark ? '#a0a0a0' : '#6c757d';
+  const inputBg     = dark ? '#2a2a2a' : '#ffffff';
+  const inputBorder = dark ? '#3a3a3a' : '#dee2e6';
+  const modalBg     = dark ? '#2a2a2a' : '#ffffff';
+  // 추가된 변수들 (darkMode 기반)
+  const textColor = darkMode ? '#f0f0f0' : '#212529';
+  const subTextColor = darkMode ? '#a0a0a0' : '#6c757d';
+  const borderColor = darkMode ? '#3a3a3a' : '#dee2e6';
+  const headerBg = darkMode
+    ? 'linear-gradient(135deg, #0d4d2a 0%, #1a5c2a 100%)'
+    : 'linear-gradient(135deg, #00c471 0%, #00a85e 100%)';
 
   const [vendors, setVendors]     = useState([]);
   const [loading, setLoading]     = useState(true);
@@ -124,14 +130,14 @@ export default function VendorManagement({ goBack, darkMode }) {
       </div>
 
       {/* 필터 탭 */}
-      <div style={{ display: 'flex', gap: 8, padding: '12px 20px 0', background: headerBg, borderBottom: `1px solid ${border}` }}>
+      <div style={{ display: 'flex', gap: 8, padding: '12px 20px 0', background: headerBg, borderBottom: `1px solid ${borderColor || border}` }}>
         {FILTERS.map(f => (
           <button key={f} onClick={() => setFilterTab(f)}
             style={{
               padding: '7px 16px', borderRadius: 20, border: 'none', cursor: 'pointer',
               fontSize: 13, fontWeight: 600, fontFamily: 'inherit',
               background: filterTab === f ? G : (dark ? '#333' : '#f0faf5'),
-              color: filterTab === f ? 'white' : sub,
+              color: filterTab === f ? 'white' : subTextColor,
               marginBottom: 12,
             }}>
             {f}
@@ -162,7 +168,7 @@ export default function VendorManagement({ goBack, darkMode }) {
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40, color: sub }}>
             <div style={{ fontSize: 36, marginBottom: 8 }}>🏢</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: text }}>거래처가 없어요</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: textColor }}>거래처가 없어요</div>
             <div style={{ fontSize: 12, marginTop: 4 }}>+ 추가 버튼으로 등록해보세요</div>
           </div>
         ) : (

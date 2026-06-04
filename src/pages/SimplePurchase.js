@@ -2,14 +2,19 @@ import { useState } from 'react';
 import BarcodeQRScanner, { ScanButtonIcon } from '../components/common/BarcodeQRScanner';
 
 function SimplePurchase({ products, setProducts, goBack, darkMode }) {
-  const bg        = darkMode ? '#1a1a1a' : '#f8fffe';
-  const cardBg    = darkMode ? '#2a2a2a' : 'white';
-  const headerBg  = darkMode ? '#222' : 'white';
-  const border    = darkMode ? '#3a3a3a' : '#f0faf5';
-  const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
-  const subColor  = darkMode ? '#9e9e9e' : '#adb5bd';
-  const inputBg   = darkMode ? '#2a2a2a' : '#f8fffe';
-  const inputBorder = darkMode ? '#3a3a3a' : '#e8faf3';
+  const bg          = darkMode ? '#1a1a1a' : '#f8f9fa';
+  const cardBg      = darkMode ? '#2a2a2a' : '#ffffff';
+  const border      = darkMode ? '#3a3a3a' : '#dee2e6';
+  const textColor   = darkMode ? '#f0f0f0' : '#212529';
+  const subColor    = darkMode ? '#a0a0a0' : '#6c757d';
+  const inputBg     = darkMode ? '#2a2a2a' : '#ffffff';
+  const inputBorder = darkMode ? '#3a3a3a' : '#dee2e6';
+  // 추가된 변수들 (darkMode 기반)
+  const subTextColor = darkMode ? '#a0a0a0' : '#6c757d';
+  const borderColor = darkMode ? '#3a3a3a' : '#dee2e6';
+  const headerBg = darkMode
+    ? 'linear-gradient(135deg, #0d4d2a 0%, #1a5c2a 100%)'
+    : 'linear-gradient(135deg, #00c471 0%, #00a85e 100%)';
 
   const [tab, setTab] = useState('inspect'); // inspect | history | returns
   const [search, setSearch] = useState('');
@@ -135,7 +140,7 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
   return (
     <div style={{ background: bg, minHeight: '100vh', paddingBottom: 100, maxWidth: 480, margin: '0 auto' }}>
       {/* 헤더 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: darkMode ? 'linear-gradient(135deg, #0d4d2a 0%, #1a5c2a 100%)' : 'linear-gradient(135deg, #00c471 0%, #00a85e 100%)', position: 'sticky', top: 0, zIndex: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: headerBg, position: 'sticky', top: 0, zIndex: 10 }}>
         <button onClick={goBack} style={{ width: 40, height: 40, flexShrink: 0, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
@@ -143,10 +148,10 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
       </div>
 
       {/* 탭 */}
-      <div style={{ display: 'flex', background: headerBg, borderBottom: `1px solid ${border}` }}>
+      <div style={{ display: 'flex', background: headerBg, borderBottom: `1px solid ${borderColor}` }}>
         {[{ key: 'inspect', label: '🔍 검수 입고' }, { key: 'history', label: '📋 매입 내역' }, { key: 'returns', label: '↩ 반품' }].map(t => (
           <div key={t.key} onClick={() => setTab(t.key)}
-            style={{ flex: 1, padding: '12px 0', textAlign: 'center', fontSize: 13, fontWeight: tab === t.key ? 700 : 400, color: tab === t.key ? '#00a85e' : subColor, borderBottom: tab === t.key ? '2px solid #00c471' : '2px solid transparent', cursor: 'pointer' }}>
+            style={{ flex: 1, padding: '12px 0', textAlign: 'center', fontSize: 13, fontWeight: tab === t.key ? 700 : 400, color: tab === t.key ? '#00a85e' : subTextColor, borderBottom: tab === t.key ? '2px solid #00c471' : '2px solid transparent', cursor: 'pointer' }}>
             {t.label}
           </div>
         ))}

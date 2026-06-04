@@ -34,8 +34,10 @@ function applyDarkVars(dark) {
 
 export function ThemeProvider({ children }) {
   const [darkMode, setDarkModeState] = useState(() => {
-    const saved = localStorage.getItem('srmart_dark_mode');
-    if (saved !== null) return saved === 'true';
+    const isManual = localStorage.getItem('srmart_dark_manual') === 'true';
+    if (isManual) {
+      return localStorage.getItem('srmart_dark_mode') === 'true';
+    }
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
@@ -57,10 +59,11 @@ export function ThemeProvider({ children }) {
     applyDarkVars(darkMode);
   }, [darkMode]);
 
-  // 수동 토글 (manual 플래그 저장)
+  // 수동 토글 (manual 플래그 + 값 저장)
   const setDarkMode = (val) => {
     const next = typeof val === 'function' ? val(darkMode) : val;
     setDarkModeState(next);
+    localStorage.setItem('srmart_dark_mode', String(next));
     localStorage.setItem('srmart_dark_manual', 'true');
   };
 

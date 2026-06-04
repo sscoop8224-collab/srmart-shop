@@ -22,6 +22,7 @@ import Receipt from './pages/Receipt';
 import CouponManager from './pages/CouponManager';
 import PrintReceipt from './pages/PrintReceipt';
 import SalesStats from './pages/SalesStats';
+import SalesManagement from './pages/SalesManagement';
 import MyPage from './pages/MyPage';
 import BannerManager from './pages/BannerManager';
 import EventManager from './pages/EventManager';
@@ -570,6 +571,7 @@ function AppContent() {
         {page === 'receipt'         && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
         {page === 'couponManager'   && <CouponManager coupons={coupons} setCoupons={setCoupons} goBack={goBack} darkMode={darkMode} />}
         {page === 'salesStats'      && <SalesStats orders={orders} products={products} goBack={goBack} darkMode={darkMode} />}
+        {page === 'salesManagement' && <SalesManagement goBack={goBack} darkMode={darkMode} />}
         {page === 'adminHome'       && <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} />}
         {page === 'members'         && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} darkMode={darkMode} />}
         {page === 'adminOrders'     && <AdminOrders orders={orders} setOrders={setOrders} goBack={goBack} onPrint={(order) => setPrintOrder(order)} darkMode={darkMode} />}
