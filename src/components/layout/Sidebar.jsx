@@ -1,4 +1,5 @@
 import { getUserRole } from '../../AuthContext';
+import DarkModeToggle from '../DarkModeToggle';
 
 const NAV = [
   { section: '메인' },
@@ -117,6 +118,9 @@ export default function Sidebar({ currentPage, setPage, dark, user }) {
       </nav>
 
       <div style={{ padding: '12px 20px', paddingBottom: 'max(16px, env(safe-area-inset-bottom))', borderTop: `1px solid ${c.border}`, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <DarkModeToggle />
+        </div>
         <div onClick={() => setPage('adminHome')} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 8, border: `1px solid ${c.backBtnBorder}`, background: c.backBtn, cursor: 'pointer' }}>
           <i className="ti ti-arrow-left" style={{ fontSize: 15, color: c.backBtnText, flexShrink: 0 }} />
           <span style={{ fontSize: 12, color: c.backBtnText, fontWeight: 500 }}>앱으로 돌아가기</span>
