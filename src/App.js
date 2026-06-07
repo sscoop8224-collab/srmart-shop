@@ -356,7 +356,7 @@ function AppContent() {
           <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
             <Sidebar currentPage="adminPC_banners" setPage={goToPage} dark={darkMode} user={user} />
             <div style={{ flex: 1, overflowY: 'auto', background: darkMode ? '#111' : '#f5f5f3' }}>
-              <BannerManager banners={banners} setBanners={setBanners} categories={categories} goBack={() => goToPage('adminPC')} />
+              <BannerManager banners={banners} setBanners={setBanners} categories={categories} goBack={() => goToPage('adminPC')} darkMode={darkMode} />
             </div>
           </div>
         )}
@@ -364,7 +364,7 @@ function AppContent() {
           <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
             <Sidebar currentPage="adminPC_coupons" setPage={goToPage} dark={darkMode} user={user} />
             <div style={{ flex: 1, overflowY: 'auto', background: darkMode ? '#111' : '#f5f5f3' }}>
-              <CouponManager coupons={coupons} setCoupons={setCoupons} goBack={() => goToPage('adminPC')} />
+              <CouponManager coupons={coupons} setCoupons={setCoupons} goBack={() => goToPage('adminPC')} darkMode={darkMode} />
             </div>
           </div>
         )}
@@ -662,7 +662,7 @@ function AppContent() {
         </div>
       )}
 
-      {printOrder && <PrintReceipt order={printOrder} onClose={() => setPrintOrder(null)} />}
+      {printOrder && <PrintReceipt order={printOrder} onClose={() => setPrintOrder(null)} darkMode={darkMode} />}
       <Chatbot />
       <footer style={{ textAlign: 'center', padding: '16px', fontSize: '12px', color: 'var(--gray-400)', borderTop: '1px solid var(--gray-200)' }}>
         © 2026 Dongsin Market. All rights reserved.
