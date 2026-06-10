@@ -6,6 +6,7 @@ import './App.css';
 import srmLogo from './srm_logo.png';
 import { ThemeProvider, useTheme } from './ThemeContext';
 
+import HomePage from './pages/HomePage';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
 import Orders from './pages/Orders';
@@ -98,7 +99,7 @@ function AppContent() {
   const { darkMode, setDarkMode } = useTheme();
   const handleSetDark = (val) => setDarkMode(val);
 
-  const [page, setPage] = useState('login');
+  const [page, setPage] = useState('homepage');
   const [pageHistory, setPageHistory] = useState([]);
   const [products, setProducts] = useState(initialProducts);
   const [categories, setCategories] = useState(initialCategories);
@@ -327,6 +328,18 @@ function AppContent() {
       alert('결제 준비 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.');
     }
   };
+
+  if (page === 'homepage') {
+    return (
+      <div style={{ width: '100%', minHeight: '100vh' }}>
+        <HomePage
+          onShop={() => setPage('login')}
+          onLogin={() => setPage('login')}
+          darkMode={darkMode}
+        />
+      </div>
+    );
+  }
 
   if (page === 'login') {
     return <div className="App"><Login onLogin={handleLogin} onGuest={() => setPage('home')} /></div>;
