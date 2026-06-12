@@ -39,12 +39,14 @@ export default function HomePage({ onShop, onLogin, darkMode }) {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         {/* 로고 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          <div style={{ width: 34, height: 34, background: 'linear-gradient(135deg, #00c471, #00a85e)', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ color: 'white', fontWeight: 900, fontSize: 13, letterSpacing: '-0.5px' }}>SR</span>
-          </div>
-          <span style={{ fontSize: 17, fontWeight: 800, color: '#00c471', letterSpacing: '-0.3px' }}>에스알마트</span>
-        </div>
+        <a href="/" style={{ display: 'flex', alignItems: 'center', flexShrink: 0, textDecoration: 'none' }}>
+          <img
+            src="/srm-logo-transparent.png"
+            alt="에스알마트 로고"
+            style={{ height: 40, width: 'auto' }}
+            onError={e => { e.currentTarget.src = '/srm-logo.svg'; }}
+          />
+        </a>
 
         {/* 우측 메뉴 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -202,25 +204,25 @@ export default function HomePage({ onShop, onLogin, darkMode }) {
         }}>
           {/* 사업자 정보 */}
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#f0f0f0', marginBottom: 14 }}>동신마켓</div>
-            <div style={{ fontSize: 13, color: '#777', lineHeight: 1.9 }}>
-              <div>대표자: 이민우</div>
-              <div>사업자등록번호: 732-57-00964</div>
-              <div>주소: 인천시 강화군 내가면 고비고개로 878-30, 2층</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#ffffff', marginBottom: 14 }}>동신마켓</div>
+            <div style={{ fontSize: 13, lineHeight: 1.9 }}>
+              <div><span style={{ color: '#e0e0e0' }}>대표자:</span> <span style={{ color: '#cccccc' }}>이민우</span></div>
+              <div><span style={{ color: '#e0e0e0' }}>사업자등록번호:</span> <span style={{ color: '#cccccc' }}>732-57-00964</span></div>
+              <div><span style={{ color: '#e0e0e0' }}>주소:</span> <span style={{ color: '#cccccc' }}>인천시 강화군 내가면 고비고개로 878-30, 2층</span></div>
             </div>
           </div>
 
           {/* 고객센터 */}
           <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#aaa', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 12 }}>고객센터</div>
-            <div style={{ fontSize: 13, color: '#777', lineHeight: 2 }}>
-              <div>전화: <span style={{ color: '#00c471', fontWeight: 700 }}>032-328-2850</span></div>
-              <div>팩스: 032-562-2858</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#ffffff', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 12 }}>고객센터</div>
+            <div style={{ fontSize: 13, lineHeight: 2 }}>
+              <div><span style={{ color: '#e0e0e0' }}>전화:</span> <span style={{ color: '#00c471', fontWeight: 700 }}>032-328-2850</span></div>
+              <div><span style={{ color: '#e0e0e0' }}>팩스:</span> <span style={{ color: '#cccccc' }}>032-562-2858</span></div>
             </div>
           </div>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: 28, fontSize: 12, color: '#444' }}>
+        <div style={{ textAlign: 'center', marginTop: 28, fontSize: 12, color: '#888' }}>
           © 2026 Dongsin Market. All rights reserved.
         </div>
       </footer>
