@@ -120,8 +120,15 @@ export default function HomePage({ onShop, onLogin, darkMode }) {
               padding: '14px 30px', fontSize: 16, fontWeight: 700,
               cursor: 'pointer', fontFamily: 'inherit',
               boxShadow: '0 6px 24px rgba(0,196,113,0.38)',
+              display: 'flex', alignItems: 'center', gap: 8,
             }}>
-              🛒 지금 쇼핑하러 가기
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <path d="M3 6h18l-2 13H5L3 6z"/>
+                <path d="M3 6L2 3H0"/>
+                <circle cx="9" cy="20" r="1"/>
+                <circle cx="17" cy="20" r="1"/>
+              </svg>
+              지금 쇼핑하러 가기
             </button>
             <button style={{
               background: 'transparent',
