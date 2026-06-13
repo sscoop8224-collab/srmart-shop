@@ -7,42 +7,16 @@ import srmLogo from './srm_logo.png';
 import { ThemeProvider, useTheme } from './ThemeContext';
 
 import HomePage from './pages/HomePage';
-import Admin from './pages/Admin';
 import Login from './pages/Login';
 import Orders from './pages/Orders';
 import Cart from './pages/Cart';
 import { kakaoPayReady } from './pages/KakaoPay';
-import AdminHome from './pages/AdminHome';
-import Members from './pages/Members';
-import AdminOrders from './pages/AdminOrders';
 import Search from './pages/Search';
 import ProductDetail from './pages/ProductDetail';
 import Wishlist from './pages/Wishlist';
 import Notice from './pages/Notice';
 import Receipt from './pages/Receipt';
-import CouponManager from './pages/CouponManager';
-import PrintReceipt from './pages/PrintReceipt';
-import SalesStats from './pages/SalesStats';
-import SalesManagement from './pages/SalesManagement';
 import MyPage from './pages/MyPage';
-import BannerManager from './pages/BannerManager';
-import EventManager from './pages/EventManager';
-import SimpleInventory from './pages/SimpleInventory';
-import SimplePurchase from './pages/SimplePurchase';
-import VendorManagement from './pages/VendorManagement';
-
-import Dashboard from './components/admin/Dashboard';
-import OrderManagement from './components/admin/OrderManagement';
-import { ProductManagement, InventoryManagement } from './components/admin/ProductAndInventory';
-import PurchaseManagement from './components/admin/PurchaseManagement';
-import {
-  MemberManagement as AdminMembers,
-  ReviewManagement as AdminReviews,
-  SalesStats as AdminSalesStats,
-  KakaoPaySettlement,
-  Settings as AdminSettings,
-} from './components/admin/OtherPages';
-import Sidebar from './components/layout/Sidebar';
 import { useAuth } from './AuthContext';
 
 const getCategoryImage = (large) => {
@@ -144,7 +118,6 @@ function AppContent() {
   const [bannerIndex, setBannerIndex] = useState(0);
   const [bannerTransition, setBannerTransition] = useState(true);
   const [lastOrder, setLastOrder] = useState(null);
-  const [printOrder, setPrintOrder] = useState(null);
   const [coupons, setCoupons] = useState([
     { code: 'WELCOME10', discount: 10, type: 'percent', description: '신규 회원 10% 할인', isActive: true },
     { code: 'SAVE5000', discount: 5000, type: 'fixed', description: '5,000원 할인 쿠폰', isActive: true },
@@ -210,17 +183,7 @@ function AppContent() {
     localStorage.setItem('srmart_token', token);
     setUser(dbUser);
     authLogin(dbUser);
-    if (
-      dbUser.email === 'admin@srmart.com' ||
-      dbUser.role === 'owner' ||
-      dbUser.role === 'admin' ||
-      dbUser.role === 'manager' ||
-      dbUser.grade === '관리자'
-    ) {
-      goToPage('adminHome');
-    } else {
-      goToPage('home');
-    }
+    goToPage('home');
   };
 
   const handleLogout = () => {
@@ -345,51 +308,11 @@ function AppContent() {
     return <div className="App"><Login onLogin={handleLogin} onGuest={() => setPage('home')} /></div>;
   }
 
-  const adminPCPages = [
-    'adminPC', 'adminPC_orders', 'adminPC_products', 'adminPC_inventory',
-    'adminPC_purchase', 'adminPC_members', 'adminPC_reviews',
-    'adminPC_stats', 'adminPC_settlement', 'adminPC_settings',
-    'adminPC_banners', 'adminPC_coupons',
-  ];
-
-  if (adminPCPages.includes(page)) {
-    return (
-      <>
-        {page === 'adminPC'           && <Dashboard         setPage={goToPage} dark={darkMode} setDark={handleSetDark} products={products} orders={orders} users={users} user={user} />}
-        {page === 'adminPC_orders'    && <OrderManagement   setPage={goToPage} dark={darkMode} setDark={handleSetDark} orders={orders} setOrders={setOrders} user={user} />}
-        {page === 'adminPC_products'  && <ProductManagement  setPage={goToPage} dark={darkMode} setDark={handleSetDark} products={products} setProducts={setProducts} categories={categories} user={user} />}
-        {page === 'adminPC_inventory' && <InventoryManagement setPage={goToPage} dark={darkMode} setDark={handleSetDark} products={products} setProducts={setProducts} user={user} />}
-        {page === 'adminPC_purchase'  && <PurchaseManagement setPage={goToPage} dark={darkMode} setDark={handleSetDark} products={products} setProducts={setProducts} user={user} />}
-        {page === 'adminPC_members'   && <AdminMembers       setPage={goToPage} dark={darkMode} setDark={handleSetDark} users={users} setUsers={setUsers} user={user} />}
-        {page === 'adminPC_reviews'   && <AdminReviews       setPage={goToPage} dark={darkMode} setDark={handleSetDark} user={user} />}
-        {page === 'adminPC_stats'     && <AdminSalesStats    setPage={goToPage} dark={darkMode} setDark={handleSetDark} orders={orders} products={products} user={user} />}
-        {page === 'adminPC_settlement'&& <KakaoPaySettlement setPage={goToPage} dark={darkMode} setDark={handleSetDark} orders={orders} user={user} />}
-        {page === 'adminPC_settings'  && <AdminSettings      setPage={goToPage} dark={darkMode} setDark={handleSetDark} users={users} setUsers={setUsers} user={user} />}
-        {page === 'adminPC_banners' && (
-          <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-            <Sidebar currentPage="adminPC_banners" setPage={goToPage} dark={darkMode} user={user} />
-            <div style={{ flex: 1, overflowY: 'auto', background: darkMode ? '#111' : '#f5f5f3' }}>
-              <BannerManager banners={banners} setBanners={setBanners} categories={categories} goBack={() => goToPage('adminPC')} darkMode={darkMode} />
-            </div>
-          </div>
-        )}
-        {page === 'adminPC_coupons' && (
-          <div style={{ display: 'flex', height: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-            <Sidebar currentPage="adminPC_coupons" setPage={goToPage} dark={darkMode} user={user} />
-            <div style={{ flex: 1, overflowY: 'auto', background: darkMode ? '#111' : '#f5f5f3' }}>
-              <CouponManager coupons={coupons} setCoupons={setCoupons} goBack={() => goToPage('adminPC')} darkMode={darkMode} />
-            </div>
-          </div>
-        )}
-      </>
-    );
-  }
-
   return (
     <div className="App">
       {/* 헤더 */}
       <header className="header">
-        <div className="header-logo" onClick={() => goToPage(isAdmin ? 'adminHome' : 'home')}>
+        <div className="header-logo" onClick={() => goToPage('home')}>
           <img src={srmLogo} alt="SR Mart" style={{ height: '34px', objectFit: 'contain' }} />
           <span style={{ fontFamily: "'Nanum Pen Script', cursive", fontSize: 'clamp(16px, 5vw, 26px)', color: '#1b5e20', fontWeight: '700', lineHeight: '1', marginTop: '2px', whiteSpace: 'nowrap' }}>에스알마트</span>
         </div>
@@ -582,23 +505,11 @@ function AppContent() {
         {page === 'cart'            && <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} coupons={coupons} user={currentUser} appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon} darkMode={darkMode} />}
         {page === 'orders'          && <Orders orders={orders} goBack={goBack} />}
         {page === 'receipt'         && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
-        {page === 'couponManager'   && <CouponManager coupons={coupons} setCoupons={setCoupons} goBack={goBack} darkMode={darkMode} />}
-        {page === 'salesStats'      && <SalesStats orders={orders} products={products} goBack={goBack} darkMode={darkMode} />}
-        {page === 'salesManagement' && <SalesManagement goBack={goBack} darkMode={darkMode} />}
-        {page === 'adminHome'       && <AdminHome setPage={goToPage} products={products} orders={orders} users={users} goBack={goBack} />}
-        {page === 'members'         && <Members users={users} setUsers={setUsers} setPage={goToPage} goBack={goBack} darkMode={darkMode} />}
-        {page === 'adminOrders'     && <AdminOrders orders={orders} setOrders={setOrders} goBack={goBack} onPrint={(order) => setPrintOrder(order)} darkMode={darkMode} />}
-        {page === 'mypage'          && <MyPage user={currentUser} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} users={users} setUsers={setUsers} />}
-        {page === 'bannerManager'   && <BannerManager banners={banners} setBanners={setBanners} categories={categories} goBack={goBack} darkMode={darkMode} />}
-        {page === 'eventManager'    && <EventManager products={products} goBack={goBack} darkMode={darkMode} events={events} setEvents={setEvents} />}
-        {page === 'admin'           && <Admin products={products} setProducts={setProducts} categories={categories} setCategories={setCategories} messages={messages} setMessages={() => {}} goBack={goBack} darkMode={darkMode} />}
-        {page === 'simpleInventory' && <SimpleInventory products={products} setProducts={setProducts} goBack={goBack} darkMode={darkMode} />}
-        {page === 'simplePurchase'  && <SimplePurchase  products={products} setProducts={setProducts} goBack={goBack} darkMode={darkMode} />}
-        {page === 'vendorManagement' && <VendorManagement goBack={goBack} darkMode={darkMode} />}
+        {page === 'mypage'          && <MyPage user={currentUser} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} users={users} setUsers={setUsers} isAdmin={isAdmin} />}
       </div>
 
-      {/* 고객 하단 탭 */}
-      {!isAdmin && (
+      {/* 하단 탭 */}
+      {(
         <nav className="bottom-nav">
           <button className={'bottom-nav-item' + (page === 'home' ? ' active' : '')} onClick={() => goToPage('home')}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'home' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -631,51 +542,12 @@ function AppContent() {
         </nav>
       )}
 
-      {/* 관리자 하단 탭 */}
-      {isAdmin && (
-        <nav className="bottom-nav">
-          <button className={'bottom-nav-item' + (page === 'adminHome' ? ' active' : '')} onClick={() => goToPage('adminHome')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'adminHome' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            <span>대시보드</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'notice' ? ' active' : '')} onClick={() => goToPage('notice')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'notice' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            <span>공지</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'bannerManager' ? ' active' : '')} onClick={() => goToPage('bannerManager')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'bannerManager' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            <span>배너관리</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'couponManager' ? ' active' : '')} onClick={() => goToPage('couponManager')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'couponManager' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-            <span>쿠폰관리</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'salesStats' ? ' active' : '')} onClick={() => goToPage('salesStats')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'salesStats' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-            <span>매출통계</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'admin' ? ' active' : '')} onClick={() => goToPage('admin')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'admin' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-            <span>상품관리</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'members' ? ' active' : '')} onClick={() => goToPage('members')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'members' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            <span>회원관리</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'adminPC' ? ' active' : '')} onClick={() => goToPage('adminPC')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'adminPC' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            <span>PC관리</span>
-          </button>
-        </nav>
-      )}
-
       {toast && (
         <div style={{ position: 'fixed', bottom: '90px', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.75)', color: 'white', padding: '12px 24px', borderRadius: '24px', fontSize: '14px', fontWeight: '600', zIndex: 9999, whiteSpace: 'nowrap', boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}>
           {toast}
         </div>
       )}
 
-      {printOrder && <PrintReceipt order={printOrder} onClose={() => setPrintOrder(null)} darkMode={darkMode} />}
       <Chatbot />
       <footer style={{ textAlign: 'center', padding: '16px', fontSize: '12px', color: 'var(--gray-400)', borderTop: '1px solid var(--gray-200)' }}>
         © 2026 Dongsin Market. All rights reserved.

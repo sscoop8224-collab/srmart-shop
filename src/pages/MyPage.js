@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTheme } from '../ThemeContext';
 
-function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers }) {
+function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, isAdmin }) {
   const { darkMode, setDarkMode, resetToSystem } = useTheme();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPwModal, setShowPwModal] = useState(false);
@@ -168,6 +168,24 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers })
           </div>
         ))}
       </div>
+
+      {/* 관리자 링크 */}
+      {isAdmin && (
+        <div style={{ margin: '0 16px 12px' }}>
+          <a href="/admin" target="_blank" rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: darkMode ? '#1a2e1a' : '#e6f9f1', borderRadius: '20px', border: '1.5px solid #00c471', textDecoration: 'none', cursor: 'pointer' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{ width: '40px', height: '40px', background: darkMode ? '#1e3a2a' : '#c8f5e0', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>
+                🔧
+              </div>
+              <span style={{ fontSize: '15px', fontWeight: '700', color: '#00a85e' }}>관리자 페이지로 이동</span>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+          </a>
+        </div>
+      )}
 
       {/* 테마 설정 */}
       <div style={{ margin: '0 16px 12px', background: cardBg, borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: `1px solid ${borderColor}` }}>
