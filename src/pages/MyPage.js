@@ -105,9 +105,8 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
           </div>
           <div>
             <p style={{ fontSize: '20px', fontWeight: '800', color: 'white', margin: '0 0 4px' }}>{currentUser?.name}님</p>
-            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', margin: '0 0 2px' }}>{currentUser?.email}</p>
-            {currentUser?.phone && <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', margin: 0 }}>{currentUser.phone}</p>}
-            {currentUser?.address && <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', margin: 0 }}>{currentUser.address}</p>}
+            {currentUser?.username && <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.9)', margin: '0 0 3px', fontWeight: '600' }}>@{currentUser.username}</p>}
+            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', margin: 0 }}>{currentUser?.email}</p>
           </div>
         </div>
       </div>
@@ -308,9 +307,11 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
             </div>
             <div style={{ marginBottom: '14px' }}>
               <div style={{ fontSize: '12px', color: subTextColor, marginBottom: '6px', fontWeight: '600' }}>아이디 (변경 불가)</div>
-              <div style={{ padding: '12px 14px', background: inputBg, borderRadius: '12px', fontSize: '14px', color: subTextColor, border: `1.5px solid ${borderColor}` }}>{currentUser?.username || currentUser?.email}</div>
+              <div style={{ padding: '12px 14px', background: inputBg, borderRadius: '12px', fontSize: '14px', color: subTextColor, border: `1.5px solid ${borderColor}` }}>
+                {currentUser?.username ? `@${currentUser.username}` : '(미설정)'}
+              </div>
             </div>
-            {[{ key: 'name', label: '이름 *', placeholder: '이름 입력' }, { key: 'email', label: '이메일', placeholder: 'example@email.com' }, { key: 'phone', label: '연락처', placeholder: '010-0000-0000' }, { key: 'zipCode', label: '우편번호', placeholder: '주소 검색 시 자동 입력' }, { key: 'address', label: '주소', placeholder: '주소 찾기 버튼을 눌러주세요' }, { key: 'addressDetail', label: '상세주소', placeholder: '예: 101동 1001호' }].map(f => (
+            {[{ key: 'name', label: '이름 *', placeholder: '이름 입력' }, { key: 'email', label: '이메일 (선택사항)', placeholder: 'example@email.com' }, { key: 'phone', label: '연락처', placeholder: '010-0000-0000' }, { key: 'zipCode', label: '우편번호', placeholder: '주소 검색 시 자동 입력' }, { key: 'address', label: '주소', placeholder: '주소 찾기 버튼을 눌러주세요' }, { key: 'addressDetail', label: '상세주소', placeholder: '예: 101동 1001호' }].map(f => (
               <div key={f.key} style={{ marginBottom: '14px' }}>
                 <div style={{ fontSize: '12px', color: '#00a85e', marginBottom: '6px', fontWeight: '700' }}>{f.label}</div>
                 {f.key === 'address' ? (
