@@ -182,6 +182,7 @@ function Login({ onLogin, onGuest }) {
   const [stores, setStores] = useState([]);
   const [selectedStoreId, setSelectedStoreId] = useState('');
   const [storesLoading, setStoresLoading] = useState(false);
+  const [signupZipcode, setSignupZipcode] = useState('');
 
   const emptyForm = {
     name: '', username: '', email: '', password: '', phone: '',
@@ -293,6 +294,7 @@ function Login({ onLogin, onGuest }) {
           isAdult,
           age,
           store_id: Number(selectedStoreId),
+          zipcode: signupZipcode || null,
         }),
       });
       const data = await res.json();
@@ -320,6 +322,7 @@ function Login({ onLogin, onGuest }) {
     setInputCode('');
     setCodeMsg('');
     setSelectedStoreId('');
+    setSignupZipcode('');
   };
 
   const inputStyle = {
@@ -548,7 +551,7 @@ function Login({ onLogin, onGuest }) {
                       style={{ ...inputStyle, flex: 1 }} />
                     <button type="button" onClick={() => {
                       new window.daum.Postcode({
-                        oncomplete: (data) => setForm(p => ({ ...p, address: data.roadAddress || data.jibunAddress, addressDetail: '' }))
+                        oncomplete: (data) => { setForm(p => ({ ...p, address: data.roadAddress || data.jibunAddress, addressDetail: '' })); setSignupZipcode(data.zonecode || ''); }
                       }).open();
                     }} style={{ padding: '0 14px', height: 52, background: `linear-gradient(135deg, ${COLORS.green}, ${COLORS.greenDark})`, color: 'white', border: 'none', borderRadius: 14, fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                       주소 찾기
@@ -556,6 +559,14 @@ function Login({ onLogin, onGuest }) {
                   </div>
                   <input name="addressDetail" value={form.addressDetail} onChange={e => setForm({ ...form, addressDetail: e.target.value })}
                     placeholder="상세 주소 (동/호수 등)" style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
+                  {signupZipcode && (
+                    <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <input value={signupZipcode} readOnly
+                        placeholder="우편번호"
+                        style={{ ...inputStyle, width: 120, flexShrink: 0, background: '#f1f3f5', color: COLORS.ink500, cursor: 'default' }} />
+                      <span style={{ fontSize: 12, color: COLORS.ink500 }}>우편번호 (자동 입력)</span>
+                    </div>
+                  )}
                 </div>
 
               </div>
