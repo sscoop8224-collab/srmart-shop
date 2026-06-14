@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { matchZipcode } from '../api';
+import { useStore } from '../StoreContext';
 
 const getCategoryImage = (large) => {
   switch(large) {
@@ -12,10 +14,14 @@ const getCategoryImage = (large) => {
 };
 
 function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon, setAppliedCoupon, user, darkMode }) {
+  const { currentStore } = useStore();
   const [couponInput, setCouponInput] = useState('');
   const [showAddress, setShowAddress] = useState(false);
   const [useDefaultAddress, setUseDefaultAddress] = useState(true);
   const [address, setAddress] = useState({ name: '', phone: '', address: '', detail: '' });
+  const [zipcode, setZipcode] = useState('');
+  const [deliveryInfo, setDeliveryInfo] = useState(null);
+  const [matchingZipcode, setMatchingZipcode] = useState(false);
 
   const bg = darkMode ? '#1a1a1a' : '#f8fffe';
   const cardBg = darkMode ? '#242424' : 'white';
@@ -60,7 +66,36 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
       : appliedCoupon.discount
     : 0;
 
-  const finalPrice = Math.max(0, totalPrice - discountAmount);
+  const baseDeliveryFeeRule = currentStore?.base_delivery_fee ?? 0;
+  const freeDeliveryMin = currentStore?.free_delivery_min ?? 0;
+  const extraDeliveryFee = deliveryInfo?.deliveryFee ?? 0;
+  const baseFee = (freeDeliveryMin > 0 && totalPrice >= freeDeliveryMin) ? 0 : baseDeliveryFeeRule;
+  const totalDeliveryFee = baseFee + extraDeliveryFee;
+
+  const finalPrice = Math.max(0, totalPrice - discountAmount + totalDeliveryFee);
+
+  const handleZipcodeCheck = async () => {
+    if (!zipcode || zipcode.length < 3) return;
+    setMatchingZipcode(true);
+    try {
+      const res = await matchZipcode(zipcode);
+      if (res.data.matched) {
+        setDeliveryInfo({ zoneName: res.data.zone.zone_name, deliveryFee: res.data.delivery_fee });
+      } else {
+        setDeliveryInfo({ error: res.data.message || '배송 불가 지역이에요' });
+      }
+    } catch (err) {
+      if (err.response?.status === 401) {
+        setDeliveryInfo({ error: '로그인이 필요해요' });
+      } else if (err.response?.status === 400) {
+        setDeliveryInfo({ error: err.response.data.error });
+      } else {
+        setDeliveryInfo({ error: '주소 확인 중 오류가 발생했어요' });
+      }
+    } finally {
+      setMatchingZipcode(false);
+    }
+  };
 
   const handleApplyCoupon = async () => {
     if (!couponInput) { alert('쿠폰 코드를 입력해주세요!'); return; }
@@ -84,6 +119,8 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
 
   const handleSwitchAddress = (useDefault) => {
     setUseDefaultAddress(useDefault);
+    setZipcode('');
+    setDeliveryInfo(null);
     if (useDefault) {
       setAddress(defaultAddress);
     } else {
@@ -235,14 +272,14 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
                     onClick={() => {
                       if (window.daum) {
                         new window.daum.Postcode({
-                          oncomplete: (data) => setAddress((prev) => ({ ...prev, address: data.roadAddress || data.jibunAddress, detail: '' }))
+                          oncomplete: (data) => { setAddress((prev) => ({ ...prev, address: data.roadAddress || data.jibunAddress, detail: '' })); if (data.zonecode) { setZipcode(data.zonecode); setDeliveryInfo(null); } }
                         }).open();
                       } else {
                         alert('주소 검색 서비스를 불러오는 중이에요. 직접 입력해주세요.');
                       }
                     }}
                   />
-                  <button onClick={() => { if (window.daum) { new window.daum.Postcode({ oncomplete: (data) => setAddress((prev) => ({ ...prev, address: data.roadAddress || data.jibunAddress, detail: '' })) }).open(); } }}
+                  <button onClick={() => { if (window.daum) { new window.daum.Postcode({ oncomplete: (data) => { setAddress((prev) => ({ ...prev, address: data.roadAddress || data.jibunAddress, detail: '' })); if (data.zonecode) { setZipcode(data.zonecode); setDeliveryInfo(null); } } }).open(); } }}
                     style={{ padding: '11px 14px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', whiteSpace: 'nowrap' }}>
                     주소 찾기
                   </button>
@@ -257,6 +294,37 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
                 )}
               </div>
             )}
+
+            {/* 우편번호 + 배송 구역 확인 */}
+            <div style={{ marginTop: 12 }}>
+              <p style={{ fontSize: '13px', fontWeight: '700', color: textColor, margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+                </svg>
+                우편번호 (배송료 확인)
+              </p>
+              <input
+                type="text"
+                value={zipcode}
+                onChange={(e) => { setZipcode(e.target.value.replace(/[^0-9]/g, '').slice(0, 5)); setDeliveryInfo(null); }}
+                onBlur={handleZipcodeCheck}
+                placeholder="우편번호 5자리"
+                maxLength={5}
+                style={inputStyle}
+              />
+              {matchingZipcode && <p style={{ fontSize: 12, color: subTextColor, margin: '4px 0 0' }}>배송 구역 확인 중...</p>}
+              {deliveryInfo?.zoneName && (
+                <div style={{ fontSize: 13, marginTop: 6, color: '#00a85e', fontWeight: 600 }}>
+                  ✓ {deliveryInfo.zoneName} 배송 가능
+                  {deliveryInfo.deliveryFee > 0 && <span style={{ color: '#178a2d' }}> (지역 추가 +{deliveryInfo.deliveryFee.toLocaleString()}원)</span>}
+                </div>
+              )}
+              {deliveryInfo?.error && (
+                <div style={{ fontSize: 13, marginTop: 6, color: '#d32f2f', fontWeight: 600 }}>
+                  ✗ {deliveryInfo.error}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 결제 영역 */}
@@ -271,17 +339,39 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
                 <span style={{ fontSize: '13px', color: '#00a85e', fontWeight: '700' }}>-₩{discountAmount.toLocaleString()}</span>
               </div>
             )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+              <span style={{ fontSize: '13px', color: subTextColor }}>
+                기본 배송료
+                {freeDeliveryMin > 0 && baseFee === 0 && <span style={{ color: '#00a85e', marginLeft: 6, fontWeight: 700 }}>무료배송 적용</span>}
+              </span>
+              <span style={{ fontSize: '13px', color: textColor, fontWeight: '600' }}>₩{baseFee.toLocaleString()}</span>
+            </div>
+            {extraDeliveryFee > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <span style={{ fontSize: '13px', color: subTextColor }}>지역 추가 배송료</span>
+                <span style={{ fontSize: '13px', color: textColor, fontWeight: '600' }}>+₩{extraDeliveryFee.toLocaleString()}</span>
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', paddingTop: '10px', borderTop: `1px solid ${borderColor}` }}>
               <span style={{ fontSize: '15px', fontWeight: '700', color: textColor }}>총 결제금액</span>
               <span style={{ fontSize: '22px', fontWeight: '900', color: '#00c471' }}>₩{finalPrice.toLocaleString()}</span>
             </div>
             <button
+              disabled={!isAddressComplete || !zipcode || !deliveryInfo?.zoneName || matchingZipcode}
               onClick={() => {
-                if (!isAddressComplete) { alert('배송지 정보를 입력해주세요! 📦'); return; }
-                onPayment(finalPrice);
+                const currentAddress = useDefaultAddress ? defaultAddress : address;
+                onPayment(finalPrice, {
+                  zipcode,
+                  baseDeliveryFee: baseFee,
+                  extraDeliveryFee,
+                  address: currentAddress.address,
+                  addressDetail: currentAddress.detail,
+                  receiverName: currentAddress.name,
+                  receiverPhone: currentAddress.phone,
+                });
               }}
-              style={{ width: '100%', padding: '16px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '16px', fontSize: '16px', cursor: 'pointer', fontWeight: '800', boxShadow: '0 4px 20px rgba(0,196,113,0.35)', letterSpacing: '-0.3px' }}>
-              카카오페이로 결제하기 💳
+              style={{ width: '100%', padding: '16px', background: (!isAddressComplete || !zipcode || !deliveryInfo?.zoneName || matchingZipcode) ? '#dee2e6' : 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '16px', fontSize: '16px', cursor: (!isAddressComplete || !zipcode || !deliveryInfo?.zoneName || matchingZipcode) ? 'not-allowed' : 'pointer', fontWeight: '800', boxShadow: (!isAddressComplete || !zipcode || !deliveryInfo?.zoneName || matchingZipcode) ? 'none' : '0 4px 20px rgba(0,196,113,0.35)', letterSpacing: '-0.3px' }}>
+              {!zipcode ? '우편번호를 입력해주세요' : !deliveryInfo?.zoneName ? '배송 구역을 확인해주세요' : '카카오페이로 결제하기 💳'}
             </button>
           </div>
         </>

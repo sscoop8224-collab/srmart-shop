@@ -338,30 +338,34 @@ function AppContent() {
   const selectedLargeObj = categories.find((c) => c.name === filterLarge);
   const selectedMediumObj = selectedLargeObj && selectedLargeObj.children.find((m) => m.name === filterMedium);
 
-  const handlePayment = async (finalPrice) => {
+  const handlePayment = async (finalPrice, orderExtras = {}) => {
     if (cart.length === 0) { alert('장바구니가 비어있어요!'); return; }
     const latestUser = users.find(u => u.email === user.email) || user;
     if (cart.some(item => item.isAdult) && !latestUser.isAdult) {
       alert('🔞 장바구니에 성인 상품이 있어요. 19세 이상만 구매할 수 있어요!'); return;
     }
     try {
+      const orderId = 'order_' + Date.now();
       const orderInfo = {
-        orderId: 'order_' + Date.now(), userId: user.email,
+        orderId, userId: user.email,
         itemName: cart.length === 1 ? cart[0].name : cart[0].name + ' 외 ' + (cart.length - 1) + '건',
         quantity: cart.reduce((sum, item) => sum + item.quantity, 0),
         totalAmount: finalPrice || totalPrice,
       };
       const result = await kakaoPayReady(orderInfo);
       if (result.next_redirect_pc_url) {
-        const newOrder = { id: orderInfo.orderId, date: new Date().toLocaleString('ko-KR'), items: [...cart], totalPrice: finalPrice || totalPrice, userId: user.email, status: '결제완료' };
+        const newOrder = { id: orderId, date: new Date().toLocaleString('ko-KR'), items: [...cart], totalPrice: finalPrice || totalPrice, userId: user.email, status: '결제완료' };
         createOrder({
-          id: orderInfo.orderId,
+          id: orderId,
           totalPrice: finalPrice || totalPrice,
           status: '결제완료',
-          address: user.address || '',
-          addressDetail: user.address_detail || '',
-          receiverName: user.name,
-          receiverPhone: user.phone || '',
+          address: orderExtras.address || user.address || '',
+          addressDetail: orderExtras.addressDetail || user.address_detail || '',
+          zipcode: orderExtras.zipcode || '',
+          baseDeliveryFee: orderExtras.baseDeliveryFee || 0,
+          extraDeliveryFee: orderExtras.extraDeliveryFee || 0,
+          receiverName: orderExtras.receiverName || user.name,
+          receiverPhone: orderExtras.receiverPhone || user.phone || '',
           items: cart.map(item => ({ id: item.id, name: item.name, price: item.price, quantity: item.quantity })),
         }).catch(err => console.error('주문 저장 실패:', err));
         setOrders([newOrder, ...orders]); setLastOrder(newOrder); setCart([]);
