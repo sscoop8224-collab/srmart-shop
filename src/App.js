@@ -1,4 +1,4 @@
-import { login as apiLogin } from './api';
+import { login as apiLogin, getActiveProducts, getMyOrders, createOrder, getCoupons } from './api';
 import API from './api';
 import Chatbot from './components/Chatbot';
 import { useState, useEffect, useCallback } from 'react';
@@ -75,7 +75,8 @@ function AppContent() {
 
   const [page, setPage] = useState('homepage');
   const [pageHistory, setPageHistory] = useState([]);
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(false);
   const [categories, setCategories] = useState(initialCategories);
   const [cart, setCart] = useState([]);
   const [user, setUser] = useState(null);
@@ -118,11 +119,7 @@ function AppContent() {
   const [bannerIndex, setBannerIndex] = useState(0);
   const [bannerTransition, setBannerTransition] = useState(true);
   const [lastOrder, setLastOrder] = useState(null);
-  const [coupons, setCoupons] = useState([
-    { code: 'WELCOME10', discount: 10, type: 'percent', description: '신규 회원 10% 할인', isActive: true },
-    { code: 'SAVE5000', discount: 5000, type: 'fixed', description: '5,000원 할인 쿠폰', isActive: true },
-    { code: 'FRESH20', discount: 20, type: 'percent', description: '신선식품 20% 할인', isActive: true },
-  ]);
+  const [coupons, setCoupons] = useState([]);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [events, setEvents] = useState([]);
   const [banners, setBanners] = useState([
@@ -174,6 +171,50 @@ function AppContent() {
     setPage(prevPage);
   };
 
+  const loadProducts = async () => {
+    try {
+      setProductsLoading(true);
+      const res = await getActiveProducts();
+      setProducts(res.data.map(p => ({
+        ...p,
+        isAdult: !!p.is_adult,
+        isSoldOut: !p.is_available || p.stock <= 0,
+        images: [],
+      })));
+    } catch (err) {
+      console.error('상품 로드 실패:', err);
+      setProducts(initialProducts);
+    } finally {
+      setProductsLoading(false);
+    }
+  };
+
+  const loadMyOrders = async () => {
+    try {
+      const res = await getMyOrders();
+      setOrders(res.data.map(o => ({
+        ...o,
+        date: new Date(o.created_at).toLocaleString('ko-KR'),
+        totalPrice: o.total_price,
+        items: [],
+      })));
+    } catch (err) {
+      console.error('주문 내역 로드 실패:', err);
+    }
+  };
+
+  const loadCoupons = async () => {
+    try {
+      const res = await getCoupons();
+      setCoupons(res.data.map(c => ({
+        ...c,
+        isActive: !!c.is_active,
+      })));
+    } catch (err) {
+      console.error('쿠폰 로드 실패:', err);
+    }
+  };
+
   // ✅ 로그인 - username 또는 email로 백엔드 연동
   const handleLogin = async (loggedInUser) => {
     const identifier = loggedInUser.username || loggedInUser.email;
@@ -183,14 +224,22 @@ function AppContent() {
     localStorage.setItem('srmart_token', token);
     setUser(dbUser);
     authLogin(dbUser);
+    await Promise.all([loadProducts(), loadMyOrders(), loadCoupons()]);
     goToPage('home');
+  };
+
+  const handleGuest = async () => {
+    await loadProducts();
+    await loadCoupons();
+    setPage('home');
   };
 
   const handleLogout = () => {
     if (window.confirm('정말 로그아웃 하시겠어요?')) {
       localStorage.removeItem('srmart_auto_login');
+      localStorage.removeItem('srmart_token');
       authLogout();
-      setUser(null); setCart([]); setPageHistory([]); setPage('login');
+      setUser(null); setCart([]); setOrders([]); setProducts([]); setPageHistory([]); setPage('login');
       alert(messages.logout);
     }
   };
@@ -283,6 +332,16 @@ function AppContent() {
       const result = await kakaoPayReady(orderInfo);
       if (result.next_redirect_pc_url) {
         const newOrder = { id: orderInfo.orderId, date: new Date().toLocaleString('ko-KR'), items: [...cart], totalPrice: finalPrice || totalPrice, userId: user.email, status: '결제완료' };
+        createOrder({
+          id: orderInfo.orderId,
+          totalPrice: finalPrice || totalPrice,
+          status: '결제완료',
+          address: user.address || '',
+          addressDetail: user.address_detail || '',
+          receiverName: user.name,
+          receiverPhone: user.phone || '',
+          items: cart.map(item => ({ id: item.id, name: item.name, price: item.price, quantity: item.quantity })),
+        }).catch(err => console.error('주문 저장 실패:', err));
         setOrders([newOrder, ...orders]); setLastOrder(newOrder); setCart([]);
         window.open(result.next_redirect_pc_url, '_blank');
         goToPage('receipt');
@@ -305,7 +364,7 @@ function AppContent() {
   }
 
   if (page === 'login') {
-    return <div className="App"><Login onLogin={handleLogin} onGuest={() => setPage('home')} /></div>;
+    return <div className="App"><Login onLogin={handleLogin} onGuest={handleGuest} /></div>;
   }
 
   return (
@@ -445,7 +504,12 @@ function AppContent() {
               </select>
             </div>
 
-            {(filterLarge === '행사중' ? eventProducts : filteredProducts).length === 0 ? (
+            {productsLoading ? (
+              <div className="empty-state">
+                <span className="empty-state-icon">⏳</span>
+                <span className="empty-state-text">상품을 불러오는 중이에요...</span>
+              </div>
+            ) : (filterLarge === '행사중' ? eventProducts : filteredProducts).length === 0 ? (
               <div className="empty-state">
                 <span className="empty-state-icon">{filterLarge === '행사중' ? '🎁' : '🛍️'}</span>
                 <span className="empty-state-text">{filterLarge === '행사중' ? '현재 진행중인 행사가 없어요!' : '해당 카테고리에 상품이 없어요!'}</span>

@@ -14,7 +14,10 @@ export const register = (data) => API.post('/register', data);
 export const login = (username, password) => API.post('/login', { username, password });
 export const getStores = () => API.get('/stores');
 export const getProducts = () => API.get('/products');
+export const getActiveProducts = () => API.get('/products/active');
 export const getOrders = () => API.get('/orders');
+export const getMyOrders = () => API.get('/orders/my');
 export const createOrder = (data) => API.post('/orders', data);
+export const getCoupons = () => API.get('/coupons');
 
 export default API;
