@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import FindAccount from './FindAccount';
 import srmLogo from '../srm-logo-transparent.png';
+import { getStores } from '../api';
 
 // ── 나이 계산 함수 ──────────────────────────────────────────
 function calcAgeFromId(frontId, genderDigit) {
@@ -178,11 +179,27 @@ function Login({ onLogin, onGuest }) {
   const [codeStep, setCodeStep] = useState(false);
   const [codeMsg, setCodeMsg] = useState('');
   const [signupLoading, setSignupLoading] = useState(false);
+  const [stores, setStores] = useState([]);
+  const [selectedStoreId, setSelectedStoreId] = useState('');
+  const [storesLoading, setStoresLoading] = useState(false);
 
   const emptyForm = {
     name: '', username: '', email: '', password: '', phone: '',
     address: '', addressDetail: '', idFront: '', idGender: '',
   };
+
+  useEffect(() => {
+    if (mode === 'signup') {
+      setStoresLoading(true);
+      getStores()
+        .then(res => setStores(res.data || []))
+        .catch(err => {
+          console.error('점포 목록 조회 실패:', err);
+          alert('점포 목록을 불러오지 못했어요. 잠시 후 다시 시도해주세요.');
+        })
+        .finally(() => setStoresLoading(false));
+    }
+  }, [mode]);
 
   useEffect(() => {
     const saved = localStorage.getItem('srmart_auto_login');
@@ -247,6 +264,7 @@ function Login({ onLogin, onGuest }) {
     if (!form.name || !form.username || !form.email || !form.password || !form.phone) {
       alert('이름, 아이디, 이메일, 비밀번호, 전화번호는 필수예요!'); return;
     }
+    if (!selectedStoreId) { alert('가입점포를 선택해주세요!'); return; }
     if (!phoneVerified) { alert('전화번호 인증을 완료해주세요!'); return; }
     if (!form.idFront || form.idFront.length !== 6 || !form.idGender) {
       alert('주민번호를 올바르게 입력해주세요!'); return;
@@ -274,6 +292,7 @@ function Login({ onLogin, onGuest }) {
           idGender: form.idGender,
           isAdult,
           age,
+          store_id: Number(selectedStoreId),
         }),
       });
       const data = await res.json();
@@ -300,6 +319,7 @@ function Login({ onLogin, onGuest }) {
     setVerifyCode('');
     setInputCode('');
     setCodeMsg('');
+    setSelectedStoreId('');
   };
 
   const inputStyle = {
@@ -420,6 +440,32 @@ function Login({ onLogin, onGuest }) {
                 </div>
 
                 <div>
+                  <label style={labelStyle}>가입점포 *</label>
+                  {storesLoading ? (
+                    <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', color: COLORS.ink300, cursor: 'default', userSelect: 'none' }}>
+                      불러오는 중...
+                    </div>
+                  ) : stores.length === 0 ? (
+                    <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', color: COLORS.danger, fontSize: 13, cursor: 'default' }}>
+                      현재 가입 가능한 점포가 없어요
+                    </div>
+                  ) : (
+                    <select
+                      value={selectedStoreId}
+                      onChange={e => setSelectedStoreId(e.target.value)}
+                      style={{ ...inputStyle, cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B6259' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', paddingRight: 40 }}
+                      onFocus={inputFocus}
+                      onBlur={inputBlur}
+                    >
+                      <option value="">가입점포를 선택해주세요</option>
+                      {stores.map(s => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                <div>
                   <label style={labelStyle}>아이디</label>
                   <input name="username" value={form.username} onChange={e => setForm({ ...form, username: e.target.value })}
                     placeholder="아이디를 입력해주세요" style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
@@ -514,13 +560,13 @@ function Login({ onLogin, onGuest }) {
 
               </div>
 
-              <button onClick={handleSignup} disabled={signupLoading}
+              <button onClick={handleSignup} disabled={signupLoading || stores.length === 0}
                 style={{
                   marginTop: 20, height: 52, borderRadius: 14, border: 'none',
-                  background: signupLoading ? COLORS.ink300 : `linear-gradient(180deg, #2BC047 0%, ${COLORS.greenDark} 100%)`,
+                  background: (signupLoading || stores.length === 0) ? COLORS.ink300 : `linear-gradient(180deg, #2BC047 0%, ${COLORS.greenDark} 100%)`,
                   color: '#fff', fontSize: 16, fontWeight: 700,
-                  cursor: signupLoading ? 'default' : 'pointer',
-                  boxShadow: signupLoading ? 'none' : '0 10px 24px rgba(23,138,45,0.32)',
+                  cursor: (signupLoading || stores.length === 0) ? 'default' : 'pointer',
+                  boxShadow: (signupLoading || stores.length === 0) ? 'none' : '0 10px 24px rgba(23,138,45,0.32)',
                 }}>
                 {signupLoading ? '가입 중...' : '회원가입'}
               </button>

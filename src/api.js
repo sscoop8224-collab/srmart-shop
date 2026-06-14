@@ -12,6 +12,7 @@ API.interceptors.request.use((config) => {
 
 export const register = (data) => API.post('/register', data);
 export const login = (username, password) => API.post('/login', { username, password });
+export const getStores = () => API.get('/stores');
 export const getProducts = () => API.get('/products');
 export const getOrders = () => API.get('/orders');
 export const createOrder = (data) => API.post('/orders', data);
