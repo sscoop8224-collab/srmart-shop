@@ -1,6 +1,7 @@
 import { login as apiLogin, getActiveProducts, getMyOrders, createOrder, getCoupons } from './api';
 import API from './api';
 import Chatbot from './components/Chatbot';
+import StoreSelectionModal from './components/StoreSelectionModal';
 import { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import srmLogo from './srm_logo.png';
@@ -18,6 +19,7 @@ import Notice from './pages/Notice';
 import Receipt from './pages/Receipt';
 import MyPage from './pages/MyPage';
 import { useAuth } from './AuthContext';
+import { useStore } from './StoreContext';
 
 const getCategoryImage = (large) => {
   switch(large) {
@@ -72,9 +74,11 @@ const initialCategories = [
 function AppContent() {
   const { darkMode, setDarkMode } = useTheme();
   const handleSetDark = (val) => setDarkMode(val);
+  const { guestStoreId, currentStoreId, currentStore, isGuest, setGuestStoreId } = useStore();
 
   const [page, setPage] = useState('homepage');
   const [pageHistory, setPageHistory] = useState([]);
+  const [showStoreModal, setShowStoreModal] = useState(false);
   const [products, setProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [categories, setCategories] = useState(initialCategories);
@@ -171,10 +175,10 @@ function AppContent() {
     setPage(prevPage);
   };
 
-  const loadProducts = async () => {
+  const loadProducts = async (storeId) => {
     try {
       setProductsLoading(true);
-      const res = await getActiveProducts();
+      const res = await getActiveProducts(storeId);
       setProducts(res.data.map(p => ({
         ...p,
         isAdult: !!p.is_adult,
@@ -215,6 +219,13 @@ function AppContent() {
     }
   };
 
+  // 점포 변경 시 상품 자동 갱신
+  useEffect(() => {
+    if (currentStoreId && page === 'home') {
+      loadProducts(currentStoreId);
+    }
+  }, [currentStoreId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ✅ 로그인 - username 또는 email로 백엔드 연동
   const handleLogin = async (loggedInUser) => {
     const identifier = loggedInUser.username || loggedInUser.email;
@@ -224,12 +235,23 @@ function AppContent() {
     localStorage.setItem('srmart_token', token);
     setUser(dbUser);
     authLogin(dbUser);
-    await Promise.all([loadProducts(), loadMyOrders(), loadCoupons()]);
+    await Promise.all([loadProducts(dbUser.store_id), loadMyOrders(), loadCoupons()]);
     goToPage('home');
   };
 
-  const handleGuest = async () => {
-    await loadProducts();
+  const handleGuest = () => {
+    if (!guestStoreId) {
+      setShowStoreModal(true);
+      return;
+    }
+    loadProducts(guestStoreId);
+    loadCoupons();
+    setPage('home');
+  };
+
+  const handleStoreSelected = async (storeId) => {
+    setShowStoreModal(false);
+    await loadProducts(storeId);
     await loadCoupons();
     setPage('home');
   };
@@ -364,17 +386,34 @@ function AppContent() {
   }
 
   if (page === 'login') {
-    return <div className="App"><Login onLogin={handleLogin} onGuest={handleGuest} /></div>;
+    return (
+      <div className="App">
+        <Login onLogin={handleLogin} onGuest={handleGuest} />
+        {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
+      </div>
+    );
   }
 
   return (
     <div className="App">
+      {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
       {/* 헤더 */}
       <header className="header">
         <div className="header-logo" onClick={() => goToPage('home')}>
           <img src={srmLogo} alt="SR Mart" style={{ height: '34px', objectFit: 'contain' }} />
           <span style={{ fontFamily: "'Nanum Pen Script', cursive", fontSize: 'clamp(16px, 5vw, 26px)', color: '#1b5e20', fontWeight: '700', lineHeight: '1', marginTop: '2px', whiteSpace: 'nowrap' }}>에스알마트</span>
         </div>
+        {currentStore && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: '#e8f8ee', borderRadius: 16, fontSize: 12, color: '#178a2d', fontWeight: 600, flexShrink: 0 }}>
+            🏪 <span style={{ maxWidth: 72, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentStore.name}</span>
+            {isGuest && (
+              <button onClick={() => { setGuestStoreId(null); setShowStoreModal(true); }}
+                style={{ background: 'transparent', border: 'none', color: '#178a2d', cursor: 'pointer', padding: '0 0 0 2px', textDecoration: 'underline', fontSize: 11, fontWeight: 600 }}>
+                변경
+              </button>
+            )}
+          </div>
+        )}
         <div className="header-actions">
           {user && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', padding: '4px 8px' }}>

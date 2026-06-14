@@ -1,7 +1,7 @@
 // src/AuthContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 export const ROLES = {
   STAFF: "staff",
