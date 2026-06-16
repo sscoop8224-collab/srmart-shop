@@ -111,10 +111,26 @@ function Search({ products, categories, goBack, onProductClick, onAddToCart }) {
                   )}
                 </div>
                 <div style={{ padding: '10px 11px 12px' }}>
-                  <p style={{ fontSize: '10px', color: '#00c471', margin: '0 0 3px', fontWeight: '700' }}>{product.large}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '3px', flexWrap: 'wrap' }}>
+                    <p style={{ fontSize: '10px', color: '#00c471', margin: 0, fontWeight: '700' }}>{product.large}</p>
+                    {product.origin_country && (
+                      <span style={{ fontSize: '9px', color: '#888', background: '#f1f3f5', padding: '1px 5px', borderRadius: '6px', fontWeight: '600' }}>{product.origin_country}</span>
+                    )}
+                    {product.box_price_override && (
+                      <span style={{ fontSize: '9px', color: '#e17055', background: '#fff3f0', padding: '1px 5px', borderRadius: '6px', fontWeight: '700' }}>박스</span>
+                    )}
+                  </div>
                   <p style={{ fontSize: '13px', fontWeight: '700', color: '#1a1a1a', margin: '0 0 8px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.name}</p>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <p style={{ fontSize: '14px', fontWeight: '800', color: '#1a1a1a', margin: 0 }}>₩{product.price.toLocaleString()}</p>
+                    <div>
+                      {product.pricing_type === 'weight' ? (
+                        <p style={{ fontSize: '12px', fontWeight: '800', color: '#1a1a1a', margin: 0 }}>
+                          100g당 ₩{(product.unit_price || product.price).toLocaleString()}
+                        </p>
+                      ) : (
+                        <p style={{ fontSize: '14px', fontWeight: '800', color: '#1a1a1a', margin: 0 }}>₩{product.price.toLocaleString()}</p>
+                      )}
+                    </div>
                     <button
                       onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
                       disabled={product.stock === 0 || product.status === '판매중지'}

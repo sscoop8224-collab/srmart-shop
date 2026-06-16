@@ -60,9 +60,20 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
     ));
   };
 
+  const updateGrams = (id, delta) => {
+    setCart(cart.map((item) =>
+      item.id === id ? { ...item, grams: Math.max(100, (item.grams || 100) + delta) } : item
+    ));
+  };
+
   const removeFromCart = (id) => setCart(cart.filter((item) => item.id !== id));
 
-  const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const getItemPrice = (item) => {
+    if (item.pricing_type === 'weight') return (item.unit_price || item.price) * (item.grams || 100) / 100;
+    return item.price * item.quantity;
+  };
+
+  const totalPrice = cart.reduce((sum, item) => sum + getItemPrice(item), 0);
 
   const discountAmount = appliedCoupon
     ? appliedCoupon.type === 'percent'
@@ -197,16 +208,32 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: '11px', color: '#00c471', margin: '0 0 3px', fontWeight: '700' }}>{item.large}</p>
-                  <p style={{ fontSize: '14px', fontWeight: '700', color: textColor, margin: '0 0 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</p>
-                  <p style={{ fontSize: '15px', fontWeight: '800', color: '#00c471', margin: 0 }}>₩{(item.price * item.quantity).toLocaleString()}</p>
+                  <p style={{ fontSize: '14px', fontWeight: '700', color: textColor, margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</p>
+                  {item.purchase_type === 'box' && (
+                    <p style={{ fontSize: '10px', color: '#e17055', margin: '0 0 2px', fontWeight: '700' }}>박스 구매</p>
+                  )}
+                  {item.pricing_type === 'weight' && (
+                    <p style={{ fontSize: '10px', color: subTextColor, margin: '0 0 2px' }}>{item.grams || 100}g</p>
+                  )}
+                  <p style={{ fontSize: '15px', fontWeight: '800', color: '#00c471', margin: 0 }}>₩{getItemPrice(item).toLocaleString()}</p>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                   <button onClick={() => removeFromCart(item.id)} style={{ background: '#fff0f1', border: 'none', cursor: 'pointer', color: '#ff4757', fontSize: '12px', padding: '4px 8px', borderRadius: '8px', fontWeight: '700' }}>삭제</button>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: darkMode ? '#1a1a1a' : '#f8fffe', border: `1px solid ${inputBorder}`, borderRadius: '20px', padding: '4px 8px' }}>
-                    <button onClick={() => updateQuantity(item.id, -1)} style={{ width: '24px', height: '24px', background: darkMode ? '#2e2e2e' : 'white', border: `1.5px solid ${inputBorder}`, borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: textColor, fontWeight: 'bold' }}>-</button>
-                    <span style={{ fontSize: '14px', fontWeight: '700', minWidth: '20px', textAlign: 'center', color: textColor }}>{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.id, 1)} style={{ width: '24px', height: '24px', background: 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
-                  </div>
+                  {item.pricing_type === 'weight' ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: darkMode ? '#1a1a1a' : '#f8fffe', border: `1px solid ${inputBorder}`, borderRadius: '20px', padding: '4px 8px' }}>
+                      <button onClick={() => updateGrams(item.id, -100)} style={{ width: '24px', height: '24px', background: darkMode ? '#2e2e2e' : 'white', border: `1.5px solid ${inputBorder}`, borderRadius: '50%', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: textColor, fontWeight: 'bold' }}>-</button>
+                      <span style={{ fontSize: '12px', fontWeight: '700', minWidth: '36px', textAlign: 'center', color: textColor }}>{item.grams || 100}g</span>
+                      <button onClick={() => updateGrams(item.id, 100)} style={{ width: '24px', height: '24px', background: 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: darkMode ? '#1a1a1a' : '#f8fffe', border: `1px solid ${inputBorder}`, borderRadius: '20px', padding: '4px 8px' }}>
+                      <button onClick={() => updateQuantity(item.id, -1)} style={{ width: '24px', height: '24px', background: darkMode ? '#2e2e2e' : 'white', border: `1.5px solid ${inputBorder}`, borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: textColor, fontWeight: 'bold' }}>-</button>
+                      <span style={{ fontSize: '14px', fontWeight: '700', minWidth: '20px', textAlign: 'center', color: textColor }}>
+                        {item.purchase_type === 'box' ? `${item.quantity}박스` : item.quantity}
+                      </span>
+                      <button onClick={() => updateQuantity(item.id, 1)} style={{ width: '24px', height: '24px', background: 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

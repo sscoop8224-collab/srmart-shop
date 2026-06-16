@@ -14,6 +14,8 @@ const getCategoryImage = (large) => {
 function ProductDetail({ product, onBack, onAddToCart, darkMode }) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [grams, setGrams] = useState(100);
+  const [purchaseType, setPurchaseType] = useState('single');
 
   const bg          = darkMode ? '#1a1a1a' : '#ffffff';
   const cardBg      = darkMode ? '#2a2a2a' : '#ffffff';
@@ -33,7 +35,13 @@ function ProductDetail({ product, onBack, onAddToCart, darkMode }) {
     : product.image ? [product.image] : [];
 
   const handleAddToCart = () => {
-    for (let i = 0; i < quantity; i++) onAddToCart(product);
+    if (product.pricing_type === 'weight') {
+      onAddToCart({ ...product, grams, quantity: 1 });
+    } else if (product.box_price_override && purchaseType === 'box') {
+      onAddToCart({ ...product, purchase_type: 'box', price: product.box_price_override, quantity: 1 });
+    } else {
+      for (let i = 0; i < quantity; i++) onAddToCart(product);
+    }
   };
 
   return (
@@ -121,29 +129,81 @@ function ProductDetail({ product, onBack, onAddToCart, darkMode }) {
 
         {/* 바코드 */}
         {product.barcode && (
-          <p style={{ fontSize: '12px', color: sub, margin: '0 0 12px', fontFamily: 'monospace' }}>
+          <p style={{ fontSize: '12px', color: sub, margin: '0 0 8px', fontFamily: 'monospace' }}>
             바코드: {product.barcode}
           </p>
         )}
 
+        {/* 원산지 */}
+        {product.origin_country && (
+          <p style={{ fontSize: '13px', color: '#00a85e', margin: '0 0 12px', fontWeight: '700' }}>
+            📍 원산지: {product.origin_country}
+          </p>
+        )}
+
         {/* 가격 */}
-        <p style={{ fontSize: '30px', fontWeight: '900', color: text, margin: '0 0 20px', letterSpacing: '-1px' }}>
-          ₩{product.price.toLocaleString()}
-        </p>
+        {product.pricing_type === 'weight' ? (
+          <div style={{ marginBottom: '20px' }}>
+            <p style={{ fontSize: '13px', color: sub, margin: '0 0 2px' }}>
+              100g당 ₩{(product.unit_price || product.price).toLocaleString()}
+            </p>
+            <p style={{ fontSize: '30px', fontWeight: '900', color: text, margin: 0, letterSpacing: '-1px' }}>
+              ₩{((product.unit_price || product.price) * grams / 100).toLocaleString()}
+            </p>
+          </div>
+        ) : (
+          <p style={{ fontSize: '30px', fontWeight: '900', color: text, margin: '0 0 20px', letterSpacing: '-1px' }}>
+            ₩{product.price.toLocaleString()}
+          </p>
+        )}
 
         <div style={{ height: '1px', background: border, margin: '0 0 20px' }} />
 
-        {/* 수량 선택 */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <span style={{ fontSize: '15px', fontWeight: '700', color: text }}>수량</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: inputBg, border: `1.5px solid ${inputBorder}`, borderRadius: '16px', padding: '8px 16px' }}>
-            <button onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              style={{ width: '32px', height: '32px', background: cardBg, border: `1.5px solid ${border}`, borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: text, fontWeight: 'bold' }}>-</button>
-            <span style={{ fontSize: '16px', fontWeight: '800', minWidth: '32px', textAlign: 'center', color: text }}>{quantity}</span>
-            <button onClick={() => setQuantity(quantity + 1)}
-              style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
+        {/* 박스 구매 옵션 */}
+        {product.box_price_override && product.box_quantity && (
+          <div style={{ marginBottom: '16px' }}>
+            <span style={{ fontSize: '15px', fontWeight: '700', color: text, display: 'block', marginBottom: '10px' }}>구매 단위</span>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              {[
+                { value: 'single', label: '낱개', price: `₩${product.price.toLocaleString()}` },
+                { value: 'box', label: `박스 (${product.box_quantity}개)`, price: `₩${product.box_price_override.toLocaleString()}` },
+              ].map(opt => (
+                <label key={opt.value} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px', background: purchaseType === opt.value ? '#e8faf3' : inputBg, border: `1.5px solid ${purchaseType === opt.value ? '#00c471' : inputBorder}`, borderRadius: '14px', padding: '12px 14px', cursor: 'pointer' }}>
+                  <input type="radio" name="purchaseType" value={opt.value} checked={purchaseType === opt.value} onChange={() => setPurchaseType(opt.value)} style={{ accentColor: '#00c471' }} />
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: text }}>{opt.label}</div>
+                    <div style={{ fontSize: '12px', color: '#00a85e', fontWeight: '600' }}>{opt.price}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* 수량/무게 선택 */}
+        {product.pricing_type === 'weight' ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <span style={{ fontSize: '15px', fontWeight: '700', color: text }}>무게</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: inputBg, border: `1.5px solid ${inputBorder}`, borderRadius: '16px', padding: '8px 16px' }}>
+              <button onClick={() => setGrams(Math.max(100, grams - 100))}
+                style={{ width: '32px', height: '32px', background: cardBg, border: `1.5px solid ${border}`, borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: text, fontWeight: 'bold' }}>-</button>
+              <span style={{ fontSize: '15px', fontWeight: '800', minWidth: '48px', textAlign: 'center', color: text }}>{grams}g</span>
+              <button onClick={() => setGrams(grams + 100)}
+                style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <span style={{ fontSize: '15px', fontWeight: '700', color: text }}>수량</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: inputBg, border: `1.5px solid ${inputBorder}`, borderRadius: '16px', padding: '8px 16px' }}>
+              <button onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                style={{ width: '32px', height: '32px', background: cardBg, border: `1.5px solid ${border}`, borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: text, fontWeight: 'bold' }}>-</button>
+              <span style={{ fontSize: '16px', fontWeight: '800', minWidth: '32px', textAlign: 'center', color: text }}>{quantity}</span>
+              <button onClick={() => setQuantity(quantity + 1)}
+                style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
+            </div>
+          </div>
+        )}
 
         {/* 총 금액 */}
         <div style={{
@@ -151,9 +211,16 @@ function ProductDetail({ product, onBack, onAddToCart, darkMode }) {
           background: totalBg, borderRadius: '16px', padding: '16px 20px', marginBottom: '20px',
           border: `1px solid ${totalBorder}`
         }}>
-          <span style={{ fontSize: '14px', color: '#00a85e', fontWeight: '600' }}>총 금액</span>
+          <span style={{ fontSize: '14px', color: '#00a85e', fontWeight: '600' }}>
+            {product.pricing_type === 'weight' ? `${grams}g 합계` : '총 금액'}
+          </span>
           <span style={{ fontSize: '24px', fontWeight: '900', color: '#00a85e' }}>
-            ₩{(product.price * quantity).toLocaleString()}
+            {product.pricing_type === 'weight'
+              ? `₩${((product.unit_price || product.price) * grams / 100).toLocaleString()}`
+              : product.box_price_override && purchaseType === 'box'
+                ? `₩${(product.box_price_override * quantity).toLocaleString()}`
+                : `₩${(product.price * quantity).toLocaleString()}`
+            }
           </span>
         </div>
       </div>
