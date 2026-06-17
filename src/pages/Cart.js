@@ -405,6 +405,14 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
                   addressDetail: currentAddress.detail,
                   receiverName: currentAddress.name,
                   receiverPhone: currentAddress.phone,
+                  items: cart.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    quantity: item.pricing_type === 'weight' ? 1 : item.quantity,
+                    grams: item.pricing_type === 'weight' ? (item.grams || 100) : undefined,
+                    quantity_type: item.purchase_type === 'box' ? 'box' : 'unit',
+                    price: getItemPrice(item),
+                  })),
                 });
               }}
               style={{ width: '100%', padding: '16px', background: (!isAddressComplete || !zipcode || !deliveryInfo?.zoneName || matchingZipcode) ? '#dee2e6' : 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '16px', fontSize: '16px', cursor: (!isAddressComplete || !zipcode || !deliveryInfo?.zoneName || matchingZipcode) ? 'not-allowed' : 'pointer', fontWeight: '800', boxShadow: (!isAddressComplete || !zipcode || !deliveryInfo?.zoneName || matchingZipcode) ? 'none' : '0 4px 20px rgba(0,196,113,0.35)', letterSpacing: '-0.3px' }}>

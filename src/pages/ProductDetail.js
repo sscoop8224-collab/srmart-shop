@@ -136,8 +136,20 @@ function ProductDetail({ product, onBack, onAddToCart, darkMode }) {
 
         {/* 원산지 */}
         {product.origin_country && (
-          <p style={{ fontSize: '13px', color: '#00a85e', margin: '0 0 12px', fontWeight: '700' }}>
+          <p style={{ fontSize: '13px', color: '#00a85e', margin: '0 0 8px', fontWeight: '700' }}>
             📍 원산지: {product.origin_country}
+          </p>
+        )}
+
+        {/* 재고 */}
+        {product.stock !== undefined && (
+          <p style={{ fontSize: '12px', color: product.stock === 0 ? '#ff4757' : sub, margin: '0 0 12px' }}>
+            {product.stock === 0
+              ? '품절'
+              : product.box_quantity
+                ? `재고 ${product.stock}개 · 박스 ${Math.floor(product.stock / product.box_quantity)}개 가능`
+                : `재고 ${product.stock}개`
+            }
           </p>
         )}
 
