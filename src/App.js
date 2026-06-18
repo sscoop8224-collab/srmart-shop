@@ -2,6 +2,7 @@ import { login as apiLogin, getActiveProducts, getMyOrders, createOrder, getCoup
 import API from './api';
 import Chatbot from './components/Chatbot';
 import StoreSelectionModal from './components/StoreSelectionModal';
+import InstallPrompt from './components/InstallPrompt';
 import { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import srmLogo from './srm_logo.png';
@@ -18,6 +19,7 @@ import Wishlist from './pages/Wishlist';
 import Notice from './pages/Notice';
 import Receipt from './pages/Receipt';
 import MyPage from './pages/MyPage';
+import Offline from './pages/Offline';
 import { useAuth } from './AuthContext';
 import { useStore } from './StoreContext';
 
@@ -88,6 +90,18 @@ function AppContent() {
   const [wishlist, setWishlist] = useState([]);
   const [notices, setNotices] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const goOffline = () => setIsOffline(true);
+    const goOnline  = () => setIsOffline(false);
+    window.addEventListener('offline', goOffline);
+    window.addEventListener('online',  goOnline);
+    return () => {
+      window.removeEventListener('offline', goOffline);
+      window.removeEventListener('online',  goOnline);
+    };
+  }, []);
 
   const { login: authLogin, logout: authLogout } = useAuth();
 
@@ -398,8 +412,13 @@ function AppContent() {
     );
   }
 
+  if (isOffline) {
+    return <Offline onRetry={() => setIsOffline(false)} />;
+  }
+
   return (
     <div className="App">
+      <InstallPrompt />
       {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
       {/* 헤더 */}
       <header className="header">

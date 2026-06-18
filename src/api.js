@@ -49,5 +49,3 @@ export const getFrequentlyBought = (id) => API.get(`/products/${id}/frequently-b
 export const getRecommendations = () => API.get('/recommendations');
 
 export default API;
-
-export default API;
