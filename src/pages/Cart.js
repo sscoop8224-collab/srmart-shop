@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { matchZipcode } from '../api';
+import { matchZipcode, getMyPoints } from '../api';
 import { useStore } from '../StoreContext';
 
 const getCategoryImage = (large) => {
@@ -22,6 +22,8 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
   const [zipcode, setZipcode] = useState('');
   const [deliveryInfo, setDeliveryInfo] = useState(null);
   const [matchingZipcode, setMatchingZipcode] = useState(false);
+  const [myPoints, setMyPoints] = useState(0);
+  const [usePoints, setUsePoints] = useState(0);
 
   const bg = darkMode ? '#1a1a1a' : '#f8fffe';
   const cardBg = darkMode ? '#242424' : 'white';
@@ -73,6 +75,10 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
     return item.price * item.quantity;
   };
 
+  useEffect(() => {
+    if (user) getMyPoints().then(r => setMyPoints(r.data?.points || 0)).catch(() => {});
+  }, [user]);
+
   const totalPrice = cart.reduce((sum, item) => sum + getItemPrice(item), 0);
 
   const discountAmount = appliedCoupon
@@ -87,7 +93,8 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
   const baseFee = (freeDeliveryMin > 0 && totalPrice >= freeDeliveryMin) ? 0 : baseDeliveryFeeRule;
   const totalDeliveryFee = baseFee + extraDeliveryFee;
 
-  const finalPrice = Math.max(0, totalPrice - discountAmount + totalDeliveryFee);
+  const clampedUsePoints = Math.min(usePoints, myPoints, totalPrice - discountAmount + totalDeliveryFee);
+  const finalPrice = Math.max(0, totalPrice - discountAmount + totalDeliveryFee - clampedUsePoints);
 
   const checkZipcodeValue = async (zip) => {
     if (!zip || zip.length < 3) return;
@@ -389,6 +396,27 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
                 <span style={{ fontSize: '13px', color: textColor, fontWeight: '600' }}>+₩{extraDeliveryFee.toLocaleString()}</span>
               </div>
             )}
+            {/* 포인트 사용 */}
+            {myPoints > 0 && (
+              <div style={{ marginBottom: '12px', padding: '12px 14px', background: darkMode ? '#1a2030' : '#f0f6ff', borderRadius: 12, border: `1px solid ${darkMode ? '#2a3040' : '#d0e4ff'}` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <span style={{ fontSize: '13px', fontWeight: '700', color: '#1a73e8' }}>포인트 사용</span>
+                  <span style={{ fontSize: '12px', color: darkMode ? '#8ab4f8' : '#1a73e8' }}>보유 {myPoints.toLocaleString()}P</span>
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <input type="number" value={usePoints || ''}
+                    onChange={e => setUsePoints(Math.min(Number(e.target.value) || 0, myPoints))}
+                    placeholder="사용할 포인트 입력"
+                    min="0" max={myPoints}
+                    style={{ flex: 1, padding: '8px 10px', borderRadius: 8, border: `1.5px solid ${inputBorder}`, fontSize: '13px', outline: 'none', background: inputBg, color: textColor, fontFamily: 'inherit' }} />
+                  <button onClick={() => setUsePoints(Math.min(myPoints, totalPrice - discountAmount + totalDeliveryFee))}
+                    style={{ padding: '8px 12px', background: '#1a73e8', color: 'white', border: 'none', borderRadius: 8, fontSize: '12px', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' }}>전액</button>
+                  <button onClick={() => setUsePoints(0)}
+                    style={{ padding: '8px 10px', background: darkMode ? '#2e2e2e' : '#e8e8e8', color: textColor, border: 'none', borderRadius: 8, fontSize: '12px', cursor: 'pointer' }}>취소</button>
+                </div>
+                {clampedUsePoints > 0 && <div style={{ fontSize: '12px', color: '#1a73e8', marginTop: 6, fontWeight: 600 }}>−{clampedUsePoints.toLocaleString()}P 적용</div>}
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', paddingTop: '10px', borderTop: `1px solid ${borderColor}` }}>
               <span style={{ fontSize: '15px', fontWeight: '700', color: textColor }}>총 결제금액</span>
               <span style={{ fontSize: '22px', fontWeight: '900', color: '#00c471' }}>₩{finalPrice.toLocaleString()}</span>
@@ -399,6 +427,7 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
                 const currentAddress = useDefaultAddress ? defaultAddress : address;
                 onPayment(finalPrice, {
                   zipcode,
+                  use_points: clampedUsePoints,
                   baseDeliveryFee: baseFee,
                   extraDeliveryFee,
                   address: currentAddress.address,

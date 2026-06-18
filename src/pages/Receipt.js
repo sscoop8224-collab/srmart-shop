@@ -9,7 +9,7 @@ const getCategoryImage = (large) => {
   }
 };
 
-function Receipt({ order, onClose, onGoHome }) {
+function Receipt({ order, onClose, onGoHome, earnPoints }) {
   if (!order) return null;
 
   const status = order.status || '결제완료';
@@ -42,7 +42,12 @@ function Receipt({ order, onClose, onGoHome }) {
           </svg>
         </div>
         <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1a1a1a', margin: '0 0 8px' }}>주문이 완료됐어요! 🎉</h2>
-        <p style={{ fontSize: '14px', color: '#adb5bd', margin: 0 }}>주문해 주셔서 감사해요!</p>
+        <p style={{ fontSize: '14px', color: '#adb5bd', margin: '0 0 8px' }}>주문해 주셔서 감사해요!</p>
+        {earnPoints > 0 && (
+          <div style={{ display: 'inline-block', background: '#e8f0fe', color: '#1a73e8', borderRadius: 20, padding: '5px 14px', fontSize: '13px', fontWeight: 700 }}>
+            배송 완료 시 {earnPoints.toLocaleString()}P 적립 예정
+          </div>
+        )}
       </div>
 
       {/* 주문 정보 */}

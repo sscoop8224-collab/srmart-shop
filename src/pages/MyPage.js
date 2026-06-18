@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from '../ThemeContext';
+import { getMyPoints } from '../api';
 
 function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, isAdmin }) {
   const { darkMode, setDarkMode, resetToSystem } = useTheme();
+  const [myPoints, setMyPoints] = useState(null); // { points, expiring_soon }
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPwModal, setShowPwModal] = useState(false);
   const [form, setForm] = useState({
@@ -29,6 +31,10 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
   const inputBorder = darkMode ? '#3a3a3a' : '#e8faf3';
   const modalBg = darkMode ? '#242424' : 'white';
   const modalTextColor = darkMode ? '#f0f0f0' : '#1a1a1a';
+
+  useEffect(() => {
+    if (user) getMyPoints().then(r => setMyPoints(r.data)).catch(() => {});
+  }, [user]);
 
   const currentUser = users?.find(u => u.email === user?.email) || user;
 
@@ -145,6 +151,30 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
           </svg>
           비밀번호 변경
         </button>
+      </div>
+
+      {/* 등급 + 포인트 카드 */}
+      <div style={{ margin: '0 16px 14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        {/* 등급 카드 */}
+        <div style={{ background: cardBg, borderRadius: 16, padding: '14px 16px', border: `1px solid ${borderColor}` }}>
+          <div style={{ fontSize: 11, color: subTextColor, marginBottom: 6, fontWeight: 600 }}>내 등급</div>
+          {currentUser?.membership_tier ? (
+            <div style={{ fontSize: 17, fontWeight: 800, color: '#00a85e' }}>{currentUser.membership_tier}</div>
+          ) : (
+            <div style={{ fontSize: 14, color: subTextColor }}>등급 없음</div>
+          )}
+          <div style={{ fontSize: 11, color: subTextColor, marginTop: 4 }}>누적 구매 기반 등급</div>
+        </div>
+        {/* 포인트 카드 */}
+        <div style={{ background: cardBg, borderRadius: 16, padding: '14px 16px', border: `1px solid ${borderColor}` }}>
+          <div style={{ fontSize: 11, color: subTextColor, marginBottom: 6, fontWeight: 600 }}>내 포인트</div>
+          <div style={{ fontSize: 17, fontWeight: 800, color: '#1a73e8' }}>
+            {myPoints != null ? Number(myPoints.points).toLocaleString() : '-'}<span style={{ fontSize: 12, marginLeft: 2 }}>P</span>
+          </div>
+          {myPoints?.expiring_soon > 0 && (
+            <div style={{ fontSize: 10, color: '#e65100', marginTop: 4 }}>30일 내 {Number(myPoints.expiring_soon).toLocaleString()}P 만료</div>
+          )}
+        </div>
       </div>
 
       {/* 메뉴 */}
