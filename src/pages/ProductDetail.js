@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getProductReviews, createReview, toggleWishlist, getRelatedProducts, recordRecentView } from '../api';
 
 const getCategoryImage = (large) => {
   switch(large) {
@@ -11,11 +12,45 @@ const getCategoryImage = (large) => {
   }
 };
 
-function ProductDetail({ product, onBack, onAddToCart, darkMode }) {
+function ProductDetail({ product, onBack, onAddToCart, darkMode, user }) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [grams, setGrams] = useState(100);
   const [purchaseType, setPurchaseType] = useState('single');
+  const [wishlisted, setWishlisted] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [reviewStats, setReviewStats] = useState(null);
+  const [related, setRelated] = useState([]);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewForm, setReviewForm] = useState({ rating: 5, content: '' });
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  useEffect(() => {
+    if (!product) return;
+    if (user) recordRecentView(product.id).catch(() => {});
+    getProductReviews(product.id).then(r => { setReviews(r.data.reviews || []); setReviewStats(r.data.stats); }).catch(() => {});
+    getRelatedProducts(product.id).then(r => setRelated(r.data || [])).catch(() => {});
+  }, [product?.id]); // eslint-disable-line
+
+  const handleWishlist = async () => {
+    if (!user) { alert('로그인이 필요해요!'); return; }
+    try { const r = await toggleWishlist(product.id); setWishlisted(r.data.wishlisted); alert(r.data.message); }
+    catch { alert('오류가 발생했어요.'); }
+  };
+
+  const handleSubmitReview = async () => {
+    if (!reviewForm.content.trim()) { alert('리뷰 내용을 입력해주세요!'); return; }
+    setSubmittingReview(true);
+    try {
+      await createReview({ product_id: product.id, rating: reviewForm.rating, content: reviewForm.content });
+      alert('리뷰가 등록됐어요! 😊');
+      setShowReviewForm(false);
+      setReviewForm({ rating: 5, content: '' });
+      const r = await getProductReviews(product.id);
+      setReviews(r.data.reviews || []); setReviewStats(r.data.stats);
+    } catch (err) { alert(err.response?.data?.error || '오류가 발생했어요.'); }
+    finally { setSubmittingReview(false); }
+  };
 
   const bg          = darkMode ? '#1a1a1a' : '#ffffff';
   const cardBg      = darkMode ? '#2a2a2a' : '#ffffff';
@@ -68,7 +103,9 @@ function ProductDetail({ product, onBack, onAddToCart, darkMode }) {
           </svg>
         </button>
         <h2 style={{ margin: 0, fontSize: '17px', fontWeight: '700', color: 'white' }}>상품 상세</h2>
-        <div style={{ width: 40 }} />
+        <button onClick={handleWishlist} style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill={wishlisted ? '#ff4757' : 'none'} stroke={wishlisted ? '#ff4757' : 'white'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </button>
       </div>
 
       {/* 이미지 영역 */}
@@ -276,6 +313,73 @@ function ProductDetail({ product, onBack, onAddToCart, darkMode }) {
           🛒 장바구니 담기
         </button>
       </div>
+
+      {/* 리뷰 섹션 */}
+      <div style={{ margin: '12px 0', background: cardBg, borderTop: `8px solid ${darkMode ? '#111' : '#f8f9fa'}`, padding: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div>
+            <span style={{ fontSize: '17px', fontWeight: '800', color: text }}>리뷰</span>
+            {reviewStats && <span style={{ fontSize: '14px', color: sub, marginLeft: 8 }}>{reviewStats.total}개</span>}
+          </div>
+          {user && (
+            <button onClick={() => setShowReviewForm(!showReviewForm)} style={{ padding: '6px 14px', background: '#f0faf5', color: '#00a85e', border: 'none', borderRadius: 20, fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+              {showReviewForm ? '취소' : '리뷰 쓰기'}
+            </button>
+          )}
+        </div>
+        {reviewStats && reviewStats.total > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, padding: '12px 14px', background: darkMode ? '#1a1a1a' : '#f8f9fa', borderRadius: 12 }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 32, fontWeight: 800, color: text }}>{reviewStats.avg_rating}</div>
+              <div style={{ color: '#ffd700', fontSize: 14 }}>{'★'.repeat(Math.round(reviewStats.avg_rating))}{'☆'.repeat(5 - Math.round(reviewStats.avg_rating))}</div>
+            </div>
+          </div>
+        )}
+        {showReviewForm && (
+          <div style={{ background: darkMode ? '#1a1a1a' : '#f8f9fa', borderRadius: 12, padding: 14, marginBottom: 14 }}>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+              {[1,2,3,4,5].map(r => (
+                <button key={r} onClick={() => setReviewForm(f => ({ ...f, rating: r }))} style={{ fontSize: 22, background: 'none', border: 'none', cursor: 'pointer', color: r <= reviewForm.rating ? '#ffd700' : '#ddd' }}>★</button>
+              ))}
+            </div>
+            <textarea value={reviewForm.content} onChange={e => setReviewForm(f => ({ ...f, content: e.target.value }))} placeholder="리뷰를 작성해주세요 (구매 후 작성 가능)" rows={3}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: `1px solid ${darkMode ? '#3a3a3a' : '#ddd'}`, fontSize: 14, outline: 'none', background: darkMode ? '#2a2a2a' : 'white', color: text, boxSizing: 'border-box', resize: 'none', fontFamily: 'inherit' }} />
+            <button onClick={handleSubmitReview} disabled={submittingReview} style={{ marginTop: 8, width: '100%', padding: '10px', background: '#00c471', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+              {submittingReview ? '등록 중...' : '리뷰 등록'}
+            </button>
+          </div>
+        )}
+        {reviews.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '24px 0', color: sub, fontSize: 14 }}>첫 리뷰를 작성해주세요!</div>
+        ) : reviews.map(r => (
+          <div key={r.id} style={{ padding: '14px 0', borderBottom: `1px solid ${darkMode ? '#2a2a2a' : '#f0f0f0'}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: text }}>{r.user_name || '익명'}</span>
+                <span style={{ color: '#ffd700', fontSize: 13 }}>{'★'.repeat(r.rating)}</span>
+              </div>
+              <span style={{ fontSize: 11, color: sub }}>{new Date(r.created_at).toLocaleDateString('ko-KR')}</span>
+            </div>
+            <p style={{ margin: 0, fontSize: 13, color: text, lineHeight: 1.6 }}>{r.content}</p>
+            {r.reply && <div style={{ marginTop: 8, padding: '8px 12px', background: darkMode ? '#1a4a2a' : '#f0faf5', borderRadius: 8, fontSize: 12, color: '#009a58' }}>💬 판매자: {r.reply}</div>}
+          </div>
+        ))}
+      </div>
+
+      {/* 관련 상품 */}
+      {related.length > 0 && (
+        <div style={{ margin: '0', background: cardBg, borderTop: `8px solid ${darkMode ? '#111' : '#f8f9fa'}`, padding: '20px' }}>
+          <div style={{ fontSize: '17px', fontWeight: '800', color: text, marginBottom: 14 }}>관련 상품</div>
+          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
+            {related.map(p => (
+              <div key={p.id} style={{ flexShrink: 0, width: 120, background: darkMode ? '#1a1a1a' : '#f8fffe', borderRadius: 12, overflow: 'hidden', border: `1px solid ${border}` }}>
+                <img src={getCategoryImage(p.large)} alt={p.name} style={{ width: '100%', height: 80, objectFit: 'cover' }} />
+                <div style={{ padding: '8px 10px', fontSize: 12, fontWeight: 600, color: text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
