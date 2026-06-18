@@ -1,6 +1,40 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '../ThemeContext';
 import { getMyPoints, getMyActiveCoupons } from '../api';
+import API from '../api';
+
+function PwStrengthBar({ password, subTextColor }) {
+  if (!password) return null;
+  const checks = [
+    { ok: password.length >= 8 },
+    { ok: /[A-Z]/.test(password) },
+    { ok: /[a-z]/.test(password) },
+    { ok: /[0-9]/.test(password) },
+    { ok: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) },
+  ];
+  const labels = ['8자+', '대문자', '소문자', '숫자', '특수문자'];
+  const passed = checks.filter(c => c.ok).length;
+  const color = passed <= 2 ? '#ff4757' : passed <= 3 ? '#ffa502' : '#00c471';
+  const strength = passed <= 2 ? '약함' : passed <= 3 ? '보통' : passed <= 4 ? '강함' : '매우 강함';
+  return (
+    <div style={{ marginTop: 6 }}>
+      <div style={{ display: 'flex', gap: 3, marginBottom: 4 }}>
+        {[1,2,3,4,5].map(i => (
+          <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= passed ? color : '#ddd', transition: 'background 0.2s' }} />
+        ))}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 10, color, fontWeight: 600 }}>{strength}</span>
+        <span style={{ fontSize: 10, color: subTextColor }}>{checks.filter(c=>c.ok).length}/5</span>
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 8px', marginTop: 4 }}>
+        {checks.map((ch, i) => (
+          <span key={i} style={{ fontSize: 10, color: ch.ok ? '#00c471' : subTextColor }}>{ch.ok ? '✓' : '○'} {labels[i]}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, isAdmin }) {
   const { darkMode, setDarkMode, resetToSystem } = useTheme();
@@ -19,10 +53,14 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
   });
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
   const [pwError, setPwError] = useState('');
+  const [pwLoading, setPwLoading] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
   const [myCoupons, setMyCoupons] = useState([]);
   const [showCoupons, setShowCoupons] = useState(false);
   const [couponsLoading, setCouponsLoading] = useState(false);
+  const [loginHistory, setLoginHistory] = useState([]);
+  const [showLoginHistory, setShowLoginHistory] = useState(false);
+  const [loginHistoryLoading, setLoginHistoryLoading] = useState(false);
 
   const bg = darkMode ? '#1a1a1a' : '#f8fffe';
   const cardBg = darkMode ? '#242424' : 'white';
@@ -56,6 +94,8 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
       icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> },
     { label: '공지사항', sub: '', page: 'notice',
       icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> },
+    { label: '로그인 이력', sub: '', page: '__login_history__',
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> },
   ];
 
   const inputStyle = {
@@ -92,19 +132,36 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
     setTimeout(() => { setSaveMsg(''); setShowEditModal(false); }, 1200);
   };
 
-  const savePassword = () => {
+  const savePassword = async () => {
     setPwError('');
-    const cu = users?.find(u => u.email === user.email);
-    if (!cu) return;
-    if (cu.password !== pwForm.current) { setPwError('현재 비밀번호가 틀렸어요'); return; }
-    if (pwForm.next.length < 4) { setPwError('새 비밀번호는 4자 이상이어야 해요'); return; }
+    if (!pwForm.current) { setPwError('현재 비밀번호를 입력해주세요'); return; }
+    if (pwForm.next.length < 8) { setPwError('새 비밀번호는 8자 이상이어야 해요'); return; }
     if (pwForm.next !== pwForm.confirm) { setPwError('새 비밀번호가 일치하지 않아요'); return; }
-    if (setUsers) {
-      setUsers(prev => prev.map(u => u.email === user.email ? { ...u, password: pwForm.next } : u));
+    setPwLoading(true);
+    try {
+      await API.put('/users/me/password', { currentPassword: pwForm.current, newPassword: pwForm.next });
+      alert('비밀번호가 변경됐어요! 다시 로그인해주세요 😊');
+      setPwForm({ current: '', next: '', confirm: '' });
+      setShowPwModal(false);
+      if (onLogout) onLogout();
+    } catch (err) {
+      setPwError(err.response?.data?.error || '비밀번호 변경에 실패했어요');
+    } finally {
+      setPwLoading(false);
     }
-    alert('비밀번호가 변경됐어요! 😊');
-    setPwForm({ current: '', next: '', confirm: '' });
-    setShowPwModal(false);
+  };
+
+  const loadLoginHistory = async () => {
+    setLoginHistoryLoading(true);
+    try {
+      const res = await API.get('/users/me/login-history');
+      setLoginHistory(res.data || []);
+      setShowLoginHistory(true);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoginHistoryLoading(false);
+    }
   };
 
   return (
@@ -233,7 +290,7 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
       {/* 메뉴 */}
       <div style={{ margin: '0 16px 12px', background: cardBg, borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: `1px solid ${borderColor}` }}>
         {menuItems.map((menu, index) => (
-          <div key={menu.label} onClick={() => goToPage(menu.page)}
+          <div key={menu.label} onClick={() => menu.page === '__login_history__' ? loadLoginHistory() : goToPage(menu.page)}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: index < menuItems.length - 1 ? `1px solid ${borderColor}` : 'none', cursor: 'pointer' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
               <div style={{ width: '40px', height: '40px', background: darkMode ? '#2e2e2e' : '#f0faf5', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -439,20 +496,56 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
               <span style={{ fontSize: '17px', fontWeight: '700', color: modalTextColor }}>비밀번호 변경</span>
               <button style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: subTextColor }} onClick={() => setShowPwModal(false)}>✕</button>
             </div>
-            {[{ key: 'current', label: '현재 비밀번호', placeholder: '현재 비밀번호' }, { key: 'next', label: '새 비밀번호', placeholder: '새 비밀번호 (4자 이상)' }, { key: 'confirm', label: '새 비밀번호 확인', placeholder: '새 비밀번호 다시 입력' }].map(f => (
-              <div key={f.key} style={{ marginBottom: '14px' }}>
-                <div style={{ fontSize: '12px', color: '#00a85e', marginBottom: '6px', fontWeight: '700' }}>{f.label}</div>
-                <input type="password" style={inputStyle} placeholder={f.placeholder} value={pwForm[f.key]} onChange={e => setPwForm(p => ({ ...p, [f.key]: e.target.value }))} />
-              </div>
-            ))}
+            <div style={{ marginBottom: '14px' }}>
+              <div style={{ fontSize: '12px', color: '#00a85e', marginBottom: '6px', fontWeight: '700' }}>현재 비밀번호</div>
+              <input type="password" style={inputStyle} placeholder="현재 비밀번호" value={pwForm.current} onChange={e => setPwForm(p => ({ ...p, current: e.target.value }))} />
+            </div>
+            <div style={{ marginBottom: '14px' }}>
+              <div style={{ fontSize: '12px', color: '#00a85e', marginBottom: '6px', fontWeight: '700' }}>새 비밀번호</div>
+              <input type="password" style={inputStyle} placeholder="8자 이상, 대/소/숫자/특수문자 3종 이상" value={pwForm.next} onChange={e => setPwForm(p => ({ ...p, next: e.target.value }))} />
+              <PwStrengthBar password={pwForm.next} subTextColor={subTextColor} />
+            </div>
+            <div style={{ marginBottom: '14px' }}>
+              <div style={{ fontSize: '12px', color: '#00a85e', marginBottom: '6px', fontWeight: '700' }}>새 비밀번호 확인</div>
+              <input type="password" style={inputStyle} placeholder="새 비밀번호 다시 입력" value={pwForm.confirm} onChange={e => setPwForm(p => ({ ...p, confirm: e.target.value }))} />
+            </div>
             {pwError && (
               <div style={{ background: '#fff0f1', border: '1px solid #ff4757', borderRadius: '12px', padding: '10px 14px', fontSize: '13px', color: '#ff4757', marginBottom: '14px' }}>
                 ⚠️ {pwError}
               </div>
             )}
-            <button onClick={savePassword} style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: '700', color: 'white', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
-              비밀번호 변경
+            <button onClick={savePassword} disabled={pwLoading} style={{ width: '100%', padding: '14px', background: pwLoading ? '#ccc' : 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: '700', color: 'white', cursor: pwLoading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
+              {pwLoading ? '변경 중...' : '비밀번호 변경'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 로그인 이력 모달 */}
+      {showLoginHistory && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setShowLoginHistory(false)}>
+          <div style={{ background: modalBg, borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: '480px', maxHeight: '70vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <span style={{ fontSize: '17px', fontWeight: '700', color: modalTextColor }}>로그인 이력</span>
+              <button style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: subTextColor }} onClick={() => setShowLoginHistory(false)}>✕</button>
+            </div>
+            {loginHistoryLoading ? (
+              <div style={{ textAlign: 'center', padding: 40, color: subTextColor }}>로딩 중...</div>
+            ) : loginHistory.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 40, color: subTextColor }}>로그인 이력이 없어요</div>
+            ) : loginHistory.map((r, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: `1px solid ${borderColor}` }}>
+                <div>
+                  <div style={{ fontSize: 13, color: modalTextColor, fontWeight: 600 }}>
+                    {new Date(r.created_at).toLocaleString('ko-KR')}
+                  </div>
+                  <div style={{ fontSize: 11, color: subTextColor, marginTop: 2, fontFamily: 'monospace' }}>{r.ip || '-'}</div>
+                </div>
+                <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, fontWeight: 700, background: r.success ? '#e6f9f1' : '#fff0f1', color: r.success ? '#009a58' : '#ff4757' }}>
+                  {r.success ? '성공' : '실패'}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       )}
