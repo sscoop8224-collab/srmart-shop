@@ -23,5 +23,8 @@ export const matchZipcode = (zipcode) => API.post('/store/match-zipcode', { zipc
 export const getMyPoints = () => API.get('/me/points');
 export const getMyPointHistory = () => API.get('/me/point-history');
 export const requestReturn = (orderId, data) => API.post(`/orders/${orderId}/returns`, data);
+export const getActiveEvents = () => API.get('/events/active');
+export const getMyActiveCoupons = () => API.get('/users/me/coupons');
+export const applyCoupon = (data) => API.post('/coupons/apply', data);
 
 export default API;

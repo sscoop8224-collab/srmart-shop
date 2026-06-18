@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '../ThemeContext';
-import { getMyPoints } from '../api';
+import { getMyPoints, getMyActiveCoupons } from '../api';
 
 function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, isAdmin }) {
   const { darkMode, setDarkMode, resetToSystem } = useTheme();
   const [myPoints, setMyPoints] = useState(null); // { points, expiring_soon }
+  const [myUserCoupons, setMyUserCoupons] = useState([]);
+  const [showCouponList, setShowCouponList] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPwModal, setShowPwModal] = useState(false);
   const [form, setForm] = useState({
@@ -33,7 +35,10 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
   const modalTextColor = darkMode ? '#f0f0f0' : '#1a1a1a';
 
   useEffect(() => {
-    if (user) getMyPoints().then(r => setMyPoints(r.data)).catch(() => {});
+    if (user) {
+      getMyPoints().then(r => setMyPoints(r.data)).catch(() => {});
+      getMyActiveCoupons().then(r => setMyUserCoupons(r.data || [])).catch(() => {});
+    }
   }, [user]);
 
   const currentUser = users?.find(u => u.email === user?.email) || user;
@@ -153,8 +158,8 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
         </button>
       </div>
 
-      {/* 등급 + 포인트 카드 */}
-      <div style={{ margin: '0 16px 14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      {/* 등급 + 포인트 + 쿠폰 카드 */}
+      <div style={{ margin: '0 16px 14px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
         {/* 등급 카드 */}
         <div style={{ background: cardBg, borderRadius: 16, padding: '14px 16px', border: `1px solid ${borderColor}` }}>
           <div style={{ fontSize: 11, color: subTextColor, marginBottom: 6, fontWeight: 600 }}>내 등급</div>
@@ -175,7 +180,49 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
             <div style={{ fontSize: 10, color: '#e65100', marginTop: 4 }}>30일 내 {Number(myPoints.expiring_soon).toLocaleString()}P 만료</div>
           )}
         </div>
+        {/* 쿠폰 카드 */}
+        <div onClick={() => setShowCouponList(true)} style={{ background: cardBg, borderRadius: 16, padding: '14px 16px', border: `1px solid ${borderColor}`, cursor: 'pointer' }}>
+          <div style={{ fontSize: 11, color: subTextColor, marginBottom: 6, fontWeight: 600 }}>내 쿠폰</div>
+          <div style={{ fontSize: 17, fontWeight: 800, color: '#e65100' }}>
+            {myUserCoupons.filter(c => !c.used_at).length}<span style={{ fontSize: 12, marginLeft: 2 }}>장</span>
+          </div>
+          <div style={{ fontSize: 10, color: subTextColor, marginTop: 4 }}>미사용 쿠폰</div>
+        </div>
       </div>
+
+      {/* 내 쿠폰 목록 */}
+      {showCouponList && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }}
+          onClick={e => { if (e.target === e.currentTarget) setShowCouponList(false); }}>
+          <div style={{ background: cardBg, borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: 480, maxHeight: '70vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div style={{ fontSize: 17, fontWeight: 800, color: textColor }}>내 쿠폰</div>
+              <button onClick={() => setShowCouponList(false)} style={{ background: 'none', border: 'none', fontSize: 20, color: subTextColor, cursor: 'pointer' }}>✕</button>
+            </div>
+            {myUserCoupons.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 40, color: subTextColor }}>보유 쿠폰이 없어요</div>
+            ) : myUserCoupons.map(uc => (
+              <div key={uc.id} style={{ background: uc.used_at ? (darkMode ? '#2a2a2a' : '#f5f5f5') : (darkMode ? '#1e2a2e' : '#f0faf5'), borderRadius: 12, padding: '14px 16px', marginBottom: 10, opacity: uc.used_at ? 0.6 : 1, border: `1px solid ${borderColor}` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: textColor }}>{uc.coupon_name}</div>
+                    <div style={{ fontSize: 12, color: '#00a85e', fontWeight: 700, marginTop: 3 }}>
+                      {uc.discount_type === 'percent' ? `${uc.discount}% 할인` : `₩${Number(uc.discount).toLocaleString()} 할인`}
+                      {uc.min_purchase_amount > 0 && <span style={{ color: subTextColor, fontWeight: 400 }}> | ₩{Number(uc.min_purchase_amount).toLocaleString()} 이상</span>}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, fontWeight: 600, background: uc.used_at ? '#eee' : '#e6f9f1', color: uc.used_at ? '#aaa' : '#009a58' }}>
+                    {uc.used_at ? '사용완료' : '사용가능'}
+                  </div>
+                </div>
+                <div style={{ fontSize: 10, color: subTextColor, marginTop: 6 }}>
+                  {uc.valid_until ? `~${uc.valid_until.split('T')[0]}` : '기간 없음'} · 코드: {uc.code}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 메뉴 */}
       <div style={{ margin: '0 16px 12px', background: cardBg, borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: `1px solid ${borderColor}` }}>

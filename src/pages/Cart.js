@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { matchZipcode, getMyPoints } from '../api';
+import { matchZipcode, getMyPoints, getMyActiveCoupons, applyCoupon } from '../api';
 import { useStore } from '../StoreContext';
 
 const getCategoryImage = (large) => {
@@ -24,6 +24,9 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
   const [matchingZipcode, setMatchingZipcode] = useState(false);
   const [myPoints, setMyPoints] = useState(0);
   const [usePoints, setUsePoints] = useState(0);
+  const [myCoupons, setMyCoupons] = useState([]);
+  const [selectedCouponId, setSelectedCouponId] = useState('');
+  const [couponDiscount, setCouponDiscount] = useState(0);
 
   const bg = darkMode ? '#1a1a1a' : '#f8fffe';
   const cardBg = darkMode ? '#242424' : 'white';
@@ -76,8 +79,25 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
   };
 
   useEffect(() => {
-    if (user) getMyPoints().then(r => setMyPoints(r.data?.points || 0)).catch(() => {});
+    if (user) {
+      getMyPoints().then(r => setMyPoints(r.data?.points || 0)).catch(() => {});
+      getMyActiveCoupons().then(r => setMyCoupons((r.data || []).filter(c => !c.used_at))).catch(() => {});
+    }
   }, [user]);
+
+  const handleCouponSelect = async (couponId) => {
+    setSelectedCouponId(couponId);
+    if (!couponId) { setCouponDiscount(0); return; }
+    const cp = myCoupons.find(c => String(c.coupon_id) === String(couponId) || String(c.id) === String(couponId));
+    if (!cp) { setCouponDiscount(0); return; }
+    try {
+      const r = await applyCoupon({ code: cp.code, total_amount: totalPrice - discountAmount + totalDeliveryFee });
+      setCouponDiscount(r.data.discount_amount || 0);
+    } catch (err) {
+      alert(err.response?.data?.message || '쿠폰 적용 실패');
+      setSelectedCouponId(''); setCouponDiscount(0);
+    }
+  };
 
   const totalPrice = cart.reduce((sum, item) => sum + getItemPrice(item), 0);
 
@@ -93,8 +113,9 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
   const baseFee = (freeDeliveryMin > 0 && totalPrice >= freeDeliveryMin) ? 0 : baseDeliveryFeeRule;
   const totalDeliveryFee = baseFee + extraDeliveryFee;
 
-  const clampedUsePoints = Math.min(usePoints, myPoints, totalPrice - discountAmount + totalDeliveryFee);
-  const finalPrice = Math.max(0, totalPrice - discountAmount + totalDeliveryFee - clampedUsePoints);
+  const baseAfterCoupon = Math.max(0, totalPrice - discountAmount + totalDeliveryFee - couponDiscount);
+  const clampedUsePoints = Math.min(usePoints, myPoints, baseAfterCoupon);
+  const finalPrice = Math.max(0, baseAfterCoupon - clampedUsePoints);
 
   const checkZipcodeValue = async (zip) => {
     if (!zip || zip.length < 3) return;
@@ -396,6 +417,22 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
                 <span style={{ fontSize: '13px', color: textColor, fontWeight: '600' }}>+₩{extraDeliveryFee.toLocaleString()}</span>
               </div>
             )}
+            {/* 보유 쿠폰 선택 */}
+            {myCoupons.length > 0 && (
+              <div style={{ marginBottom: '12px', padding: '12px 14px', background: darkMode ? '#2a1a10' : '#fff8f0', borderRadius: 12, border: `1px solid ${darkMode ? '#3a2a20' : '#ffe0b2'}` }}>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: '#e65100', marginBottom: 8 }}>보유 쿠폰 ({myCoupons.length}장)</div>
+                <select value={selectedCouponId} onChange={e => handleCouponSelect(e.target.value)}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1.5px solid #ffb74d', fontSize: '13px', outline: 'none', background: darkMode ? '#2e2e2e' : 'white', color: darkMode ? '#f0f0f0' : '#1a1a1a', fontFamily: 'inherit' }}>
+                  <option value="">쿠폰 선택 안함</option>
+                  {myCoupons.map(c => (
+                    <option key={c.id} value={c.coupon_id || c.id}>
+                      {c.coupon_name} — {c.discount_type === 'percent' ? `${c.discount}%` : `₩${Number(c.discount).toLocaleString()}`} 할인
+                    </option>
+                  ))}
+                </select>
+                {couponDiscount > 0 && <div style={{ fontSize: '12px', color: '#e65100', marginTop: 6, fontWeight: 600 }}>−₩{couponDiscount.toLocaleString()} 쿠폰 할인 적용</div>}
+              </div>
+            )}
             {/* 포인트 사용 */}
             {myPoints > 0 && (
               <div style={{ marginBottom: '12px', padding: '12px 14px', background: darkMode ? '#1a2030' : '#f0f6ff', borderRadius: 12, border: `1px solid ${darkMode ? '#2a3040' : '#d0e4ff'}` }}>
@@ -428,6 +465,8 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
                 onPayment(finalPrice, {
                   zipcode,
                   use_points: clampedUsePoints,
+                  coupon_id: selectedCouponId || null,
+                  coupon_discount: couponDiscount,
                   baseDeliveryFee: baseFee,
                   extraDeliveryFee,
                   address: currentAddress.address,
