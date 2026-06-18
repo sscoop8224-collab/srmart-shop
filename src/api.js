@@ -22,5 +22,6 @@ export const getCoupons = () => API.get('/coupons');
 export const matchZipcode = (zipcode) => API.post('/store/match-zipcode', { zipcode });
 export const getMyPoints = () => API.get('/me/points');
 export const getMyPointHistory = () => API.get('/me/point-history');
+export const requestReturn = (orderId, data) => API.post(`/orders/${orderId}/returns`, data);
 
 export default API;
