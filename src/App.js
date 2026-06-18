@@ -8,6 +8,7 @@ import './App.css';
 import srmLogo from './srm_logo.png';
 import { ThemeProvider, useTheme } from './ThemeContext';
 
+import DeliveryWidget from './components/DeliveryWidget';
 import HomePage from './pages/HomePage';
 import Login from './pages/Login';
 import Orders from './pages/Orders';
@@ -515,6 +516,8 @@ function AppContent() {
                 </div>
               </div>
             </div>
+
+            <DeliveryWidget dark={darkMode} totalAmount={totalPrice} />
 
             <div style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto' }}>
               {['행사상품', ...categories.map((c) => c.name)].map((name) => {
