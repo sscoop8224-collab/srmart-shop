@@ -171,11 +171,19 @@ function ProductDetail({ product, onBack, onAddToCart, darkMode, user }) {
           </p>
         )}
 
-        {/* 원산지 */}
-        {product.origin_country && (
-          <p style={{ fontSize: '13px', color: '#00a85e', margin: '0 0 8px', fontWeight: '700' }}>
-            📍 원산지: {product.origin_country}
-          </p>
+        {/* 원산지 / 제조사 */}
+        {['농산물', '축산물', '수산물'].includes(product.product_type) ? (
+          product.origin_country && (
+            <p style={{ fontSize: '13px', color: '#00a85e', margin: '0 0 8px', fontWeight: '700' }}>
+              📍 원산지: {product.origin_country}
+            </p>
+          )
+        ) : (
+          product.manufacturer && (
+            <p style={{ fontSize: '13px', color: '#00a85e', margin: '0 0 8px', fontWeight: '700' }}>
+              🏭 제조사: {product.manufacturer}
+            </p>
+          )
         )}
 
         {/* 재고 */}
