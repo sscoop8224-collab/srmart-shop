@@ -76,6 +76,7 @@ self.addEventListener('fetch', (event) => {
 
 // ── 전략 함수 ─────────────────────────────────────────────────
 async function networkFirstWithCache(request, cacheName) {
+  if (request.method !== 'GET') return fetch(request);
   try {
     const response = await fetch(request);
     if (response.ok) {
