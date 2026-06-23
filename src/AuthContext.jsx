@@ -12,8 +12,7 @@ export const ROLES = {
 // 기존 App.js의 grade/email 방식을 role로 변환
 export function getUserRole(user) {
   if (!user) return null;
-  if (user.role) return user.role; // 이미 role이 있으면 그대로
-  if (user.email === "admin@srmart.com") return "owner";
+  if (user.role) return user.role;
   if (user.grade === "관리자") return "manager";
   return "staff";
 }

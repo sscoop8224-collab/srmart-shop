@@ -489,7 +489,7 @@ const ROLE_STYLE = {
 
 function AdminAccountTab({ c, s, dark, users = [], setUsers }) {
   const INIT_ADMINS = [
-    { id: 1, name: '이민우', email: 'admin@srmart.com', role: '슈퍼어드민', joined: '2024.01.01', lastLogin: '2026.05.09', perms: { ...DEFAULT_PERMS['슈퍼어드민'] } },
+    { id: 1, name: '이민우', email: 'sscoop@naver.com', role: '슈퍼어드민', joined: '2024.01.01', lastLogin: '2026.05.09', perms: { ...DEFAULT_PERMS['슈퍼어드민'] } },
   ];
   const [admins, setAdmins] = useState(INIT_ADMINS);
   const [showAddModal, setShowAddModal] = useState(false);

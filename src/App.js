@@ -1,4 +1,8 @@
-import { login as apiLogin, getActiveProducts, getMyOrders, createOrder, getCoupons } from './api';
+import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
+import { SplashScreen } from '@capacitor/splash-screen';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { login as apiLogin, getActiveProducts, getMyOrders, createOrder, getCoupons, getWishlist, toggleWishlist as toggleWishlistApi } from './api';
 import API from './api';
 import Chatbot from './components/Chatbot';
 import StoreSelectionModal from './components/StoreSelectionModal';
@@ -94,6 +98,18 @@ function AppContent() {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    (async () => {
+      try {
+        await StatusBar.setOverlaysWebView({ overlay: false });
+        await StatusBar.setBackgroundColor({ color: '#00a85e' });
+        await StatusBar.setStyle({ style: Style.Dark });
+      } catch (e) {}
+      try { await SplashScreen.hide(); } catch (e) {}
+    })();
+  }, []);
+
+  useEffect(() => {
     const goOffline = () => setIsOffline(true);
     const goOnline  = () => setIsOffline(false);
     window.addEventListener('offline', goOffline);
@@ -106,10 +122,10 @@ function AppContent() {
 
   const { login: authLogin, logout: authLogout } = useAuth();
 
-  // ✅ 관리자 판별 - role, grade 모두 체크
+  // ✅ 관리자 판별 - DB role 기반
   const isAdmin = user && (
-    user.email === 'admin@srmart.com' ||
     user.role === 'owner' ||
+    user.role === 'store_manager' ||
     user.role === 'admin' ||
     user.role === 'manager' ||
     user.grade === '관리자'
@@ -117,10 +133,7 @@ function AppContent() {
 
   const [users, setUsers] = useState(() => {
     const saved = localStorage.getItem('srmart_users');
-    return saved ? JSON.parse(saved) : [
-      { name: '관리자', email: 'admin@srmart.com', password: '1234', grade: '관리자' },
-      { name: '이민우', email: 'sscoop@naver.com', password: '1234', grade: '일반' },
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
   const [messages] = useState({
     welcome: '환영해요! SR Mart 가족이 되셨어요! 🎉',
@@ -129,7 +142,7 @@ function AppContent() {
     banner: 'SR Mart에 오신 것을 환영해요!',
     bannerSub: '신선하고 다양한 상품을 만나보세요',
   });
-  const [filterLarge, setFilterLarge] = useState('행사중');
+  const [filterLarge, setFilterLarge] = useState('전체');
   const [eventProducts, setEventProducts] = useState([]);
   const [filterMedium, setFilterMedium] = useState('전체');
   const [filterSmall, setFilterSmall] = useState('전체');
@@ -171,10 +184,27 @@ function AppContent() {
     setTimeout(() => setToast(''), 1500);
   }, []);
 
-  const toggleWishlist = (product) => {
+  const loadWishlist = async () => {
+    try {
+      const res = await getWishlist();
+      setWishlist(res.data || []);
+    } catch (e) {
+      // 찜 목록 로드 실패 시 빈 상태 유지 (비로그인·네트워크 오류 등)
+    }
+  };
+
+  const toggleWishlist = async (product) => {
     const exists = wishlist.find((item) => item.id === product.id);
-    if (exists) setWishlist(wishlist.filter((item) => item.id !== product.id));
-    else setWishlist([...wishlist, product]);
+    // optimistic update
+    if (exists) setWishlist((prev) => prev.filter((item) => item.id !== product.id));
+    else setWishlist((prev) => [...prev, product]);
+    try {
+      await toggleWishlistApi(product.id);
+    } catch (e) {
+      // 실패 시 롤백
+      if (exists) setWishlist((prev) => [...prev, product]);
+      else setWishlist((prev) => prev.filter((item) => item.id !== product.id));
+    }
   };
 
   const goToPage = (newPage) => {
@@ -189,6 +219,19 @@ function AppContent() {
     setPageHistory((prev) => prev.slice(0, -1));
     setPage(prevPage);
   };
+
+  // 안드로이드 하드웨어 뒤로가기
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    const listenerPromise = CapacitorApp.addListener('backButton', () => {
+      if (pageHistory.length > 0) {
+        goBack();
+      } else {
+        CapacitorApp.exitApp();
+      }
+    });
+    return () => { listenerPromise.then(h => h.remove()); };
+  }, [pageHistory]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadProducts = async (storeId) => {
     try {
@@ -250,7 +293,7 @@ function AppContent() {
     localStorage.setItem('srmart_token', token);
     setUser(dbUser);
     authLogin(dbUser);
-    await Promise.all([loadProducts(dbUser.store_id), loadMyOrders(), loadCoupons()]);
+    await Promise.all([loadProducts(dbUser.store_id), loadMyOrders(), loadCoupons(), loadWishlist()]);
     goToPage('home');
   };
 
@@ -520,8 +563,10 @@ function AppContent() {
             <DeliveryWidget dark={darkMode} totalAmount={totalPrice} />
 
             <div style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto' }}>
-              {['행사상품', ...categories.map((c) => c.name)].map((name) => {
-                const isActive = name === '행사상품' ? filterLarge === '행사중' : filterLarge === name;
+              {['전체', '행사상품', ...categories.map((c) => c.name)].map((name) => {
+                const isActive = name === '행사상품' ? filterLarge === '행사중'
+                               : name === '전체' ? filterLarge === '전체'
+                               : filterLarge === name;
                 return (
                   <button key={name} onClick={() => {
                     setFilterLarge(name === '행사상품' ? '행사중' : name);
@@ -558,7 +603,7 @@ function AppContent() {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px 8px' }}>
               <p style={{ fontSize: '16px', fontWeight: '700', color: darkMode ? '#f0f0f0' : '#212529', margin: 0 }}>
-                {filterLarge === '행사중' ? '🎉 행사 상품' : filterLarge} ({(filterLarge === '행사중' ? eventProducts : filteredProducts).length}개)
+                {filterLarge === '행사중' ? '🎉 행사 상품' : (filterLarge === '전체' ? '전체 상품' : filterLarge)} ({(filterLarge === '행사중' ? eventProducts : filteredProducts).length}개)
               </p>
               <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}
                 style={{ padding: '6px 12px', borderRadius: '8px', border: `1.5px solid ${darkMode ? '#3a3a3a' : '#dee2e6'}`, fontSize: '13px', outline: 'none', background: darkMode ? '#2a2a2a' : 'white', color: darkMode ? '#f0f0f0' : '#212529', cursor: 'pointer' }}>

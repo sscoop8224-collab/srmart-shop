@@ -33,7 +33,7 @@ function Members({ users, setUsers, goBack, darkMode }) {
   };
 
   const handleDelete = (index) => {
-    if (users[index].email === 'admin@srmart.com') { alert('관리자 계정은 삭제할 수 없어요!'); return; }
+    if (users[index].grade === '관리자' || ['owner', 'store_manager'].includes(users[index].role)) { alert('관리자 계정은 삭제할 수 없어요!'); return; }
     if (window.confirm(users[index].name + '님을 삭제할까요?')) {
       setUsers(users.filter((_, i) => i !== index));
     }
@@ -155,7 +155,7 @@ function Members({ users, setUsers, goBack, darkMode }) {
                 ) : (
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button onClick={() => handleGradeEdit(index)} style={{ padding: '7px 14px', background: darkMode ? '#1a2030' : '#e8f0fe', color: '#1a73e8', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>등급 변경</button>
-                    {user.email !== 'admin@srmart.com' && (
+                    {user.grade !== '관리자' && !['owner', 'store_manager'].includes(user.role) && (
                       <button onClick={() => handleDelete(index)} style={{ padding: '7px 14px', background: '#fff0f1', color: '#ff4757', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>삭제</button>
                     )}
                   </div>

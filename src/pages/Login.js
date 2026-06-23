@@ -206,17 +206,11 @@ function Login({ onLogin, onGuest }) {
     const saved = localStorage.getItem('srmart_auto_login');
     if (saved) {
       try {
-        const { username, password } = JSON.parse(saved);
-        doLogin(username, password);
+        const { username } = JSON.parse(saved);
+        if (username) setLoginForm(prev => ({ ...prev, username }));
       } catch (e) {}
     }
   }, []);
-
-  const doLogin = async (username, password) => {
-    try {
-      await onLogin({ username, password });
-    } catch (err) {}
-  };
 
   const handleLogin = async () => {
     const e = {};
@@ -228,7 +222,7 @@ function Login({ onLogin, onGuest }) {
     try {
       setLoginLoading(true);
       if (remember) {
-        localStorage.setItem('srmart_auto_login', JSON.stringify({ username: loginForm.username, password: loginForm.password }));
+        localStorage.setItem('srmart_auto_login', JSON.stringify({ username: loginForm.username }));
       } else {
         localStorage.removeItem('srmart_auto_login');
       }

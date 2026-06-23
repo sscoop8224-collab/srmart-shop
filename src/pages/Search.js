@@ -80,7 +80,7 @@ function Search({ products, categories, goBack, onProductClick, onAddToCart, dar
           <button onClick={goBack} style={{ width: 38, height: 38, background: darkMode ? '#2e2e2e' : '#f0faf5', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={text} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
-          <div style={{ flex: 1, position: 'relative' }}>
+          <div style={{ flex: 1, position: 'relative', minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: inputBg, borderRadius: 14, padding: '10px 14px', border: `1.5px solid ${darkMode ? '#3a3a3a' : '#e8faf3'}` }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input ref={inputRef} type="text" value={query} onChange={e => handleQueryChange(e.target.value)}
@@ -114,7 +114,7 @@ function Search({ products, categories, goBack, onProductClick, onAddToCart, dar
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
           {largeCategories.slice(0, 8).map(cat => (
             <button key={cat} onClick={() => { setFilterCat(cat); if (hasSearched) handleSearch(); }}
-              style={{ padding: '5px 12px', borderRadius: 20, border: `1.5px solid ${filterCat === cat ? '#00c471' : border}`, background: filterCat === cat ? '#e6f9f1' : 'transparent', color: filterCat === cat ? '#009a58' : sub, fontSize: 12, fontWeight: filterCat === cat ? 700 : 400, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              style={{ padding: '5px 12px', borderRadius: 20, border: `1.5px solid ${filterCat === cat ? '#00c471' : border}`, background: filterCat === cat ? '#e6f9f1' : 'transparent', color: filterCat === cat ? '#009a58' : sub, fontSize: 12, fontWeight: filterCat === cat ? 700 : 400, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
               {cat}
             </button>
           ))}
@@ -122,18 +122,18 @@ function Search({ products, categories, goBack, onProductClick, onAddToCart, dar
       </div>
 
       {/* 정렬 + 필터 바 */}
-      <div style={{ padding: '10px 20px', display: 'flex', gap: 8, alignItems: 'center', background: darkMode ? '#1a1a1a' : 'white', borderBottom: `1px solid ${border}` }}>
+      <div style={{ padding: '10px 20px', display: 'flex', gap: 8, alignItems: 'center', overflowX: 'auto', WebkitOverflowScrolling: 'touch', background: darkMode ? '#1a1a1a' : 'white', borderBottom: `1px solid ${border}` }}>
         {SORT_OPTIONS.map(s => (
           <button key={s.value} onClick={() => { setSort(s.value); if (hasSearched) handleSearch(); }}
-            style={{ padding: '4px 10px', borderRadius: 12, border: `1px solid ${sort === s.value ? '#1a73e8' : border}`, background: sort === s.value ? '#e8f0fe' : 'transparent', color: sort === s.value ? '#1a73e8' : sub, fontSize: 11, fontWeight: sort === s.value ? 700 : 400, cursor: 'pointer' }}>
+            style={{ padding: '4px 10px', borderRadius: 12, border: `1px solid ${sort === s.value ? '#1a73e8' : border}`, background: sort === s.value ? '#e8f0fe' : 'transparent', color: sort === s.value ? '#1a73e8' : sub, fontSize: 11, fontWeight: sort === s.value ? 700 : 400, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}>
             {s.label}
           </button>
         ))}
-        <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: sub, cursor: 'pointer', marginLeft: 'auto' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: sub, cursor: 'pointer', flexShrink: 0 }}>
           <input type="checkbox" checked={inStockOnly} onChange={e => { setInStockOnly(e.target.checked); if (hasSearched) handleSearch(); }} style={{ accentColor: '#00c471' }} />
           재고있음
         </label>
-        <span style={{ fontSize: 11, color: sub }}>{filtered.length}개</span>
+        <span style={{ fontSize: 11, color: sub, flexShrink: 0 }}>{filtered.length}개</span>
       </div>
 
       {/* 인기 검색어 (검색 전) */}

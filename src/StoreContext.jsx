@@ -16,7 +16,10 @@ export function StoreProvider({ children }) {
   useEffect(() => {
     setStoresLoading(true);
     getStores()
-      .then(res => setStores(res.data || []))
+      .then(res => {
+        const d = res.data;
+        setStores(Array.isArray(d) ? d : Array.isArray(d?.stores) ? d.stores : Array.isArray(d?.data) ? d.data : []);
+      })
       .catch(err => console.error('점포 목록 로드 실패:', err))
       .finally(() => setStoresLoading(false));
   }, []);
@@ -32,7 +35,7 @@ export function StoreProvider({ children }) {
   };
 
   const currentStoreId = user?.store_id || guestStoreId;
-  const currentStore = stores.find(s => s.id === currentStoreId) || null;
+  const currentStore = Array.isArray(stores) ? (stores.find(s => s.id === currentStoreId) || null) : null;
   const isGuest = !user;
 
   return (

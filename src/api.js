@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { Capacitor } from '@capacitor/core';
 
 const API = axios.create({
-  baseURL: '/api',
+  baseURL: Capacitor.isNativePlatform() ? 'http://100.73.58.124/api' : '/api',
 });
 
 API.interceptors.request.use((config) => {
@@ -21,6 +22,7 @@ export const createOrder = (data) => API.post('/orders', data);
 export const getCoupons = () => API.get('/coupons');
 export const matchZipcode = (zipcode) => API.post('/store/match-zipcode', { zipcode });
 export const getMyPoints = () => API.get('/me/points');
+export const deleteAccount = (password) => API.delete('/users/me', { data: { password } });
 export const getMyPointHistory = () => API.get('/me/point-history');
 export const requestReturn = (orderId, data) => API.post(`/orders/${orderId}/returns`, data);
 export const getActiveEvents = () => API.get('/events/active');

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { useTheme } from '../ThemeContext';
-import { getMyPoints, getMyActiveCoupons } from '../api';
+import { getMyPoints, getMyActiveCoupons, deleteAccount } from '../api';
 import API from '../api';
 
 function PwStrengthBar({ password, subTextColor }) {
@@ -61,6 +62,10 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
   const [loginHistory, setLoginHistory] = useState([]);
   const [showLoginHistory, setShowLoginHistory] = useState(false);
   const [loginHistoryLoading, setLoginHistoryLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const bg = darkMode ? '#1a1a1a' : '#f8fffe';
   const cardBg = darkMode ? '#242424' : 'white';
@@ -130,6 +135,23 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
     }
     setSaveMsg('저장됐어요! ✅');
     setTimeout(() => { setSaveMsg(''); setShowEditModal(false); }, 1200);
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteError('');
+    if (!deletePassword) { setDeleteError('비밀번호를 입력해주세요'); return; }
+    setDeleteLoading(true);
+    try {
+      await deleteAccount(deletePassword);
+      localStorage.removeItem('srmart_token');
+      localStorage.removeItem('srmart_auto_login');
+      alert('회원탈퇴가 완료되었어요. 그동안 이용해주셔서 감사합니다.');
+      window.location.href = '/';
+    } catch (err) {
+      setDeleteError(err.response?.data?.error || '탈퇴에 실패했어요');
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const savePassword = async () => {
@@ -311,7 +333,15 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
       {/* 관리자 링크 */}
       {isAdmin && (
         <div style={{ margin: '0 16px 12px' }}>
-          <a href="/admin" target="_blank" rel="noopener noreferrer"
+          <div role="button" tabIndex={0}
+            onClick={() => {
+              if (Capacitor.isNativePlatform()) {
+                window.open('http://100.73.58.124/admin', '_system');
+              } else {
+                window.open('/admin', '_blank', 'noopener,noreferrer');
+              }
+            }}
+            onKeyDown={e => e.key === 'Enter' && e.currentTarget.click()}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: darkMode ? '#1a2e1a' : '#e6f9f1', borderRadius: '20px', border: '1.5px solid #00c471', textDecoration: 'none', cursor: 'pointer' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
               <div style={{ width: '40px', height: '40px', background: darkMode ? '#1e3a2a' : '#c8f5e0', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>
@@ -322,7 +352,7 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
             </svg>
-          </a>
+          </div>
         </div>
       )}
 
@@ -385,6 +415,14 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
           </div>
           <span style={{ fontSize: '15px', fontWeight: '600', color: '#ff4757' }}>로그아웃</span>
         </div>
+      </div>
+
+      {/* 회원탈퇴 */}
+      <div style={{ textAlign: 'center', marginTop: 18 }}>
+        <button onClick={() => { setDeletePassword(''); setDeleteError(''); setShowDeleteModal(true); }}
+          style={{ background: 'none', border: 'none', color: subTextColor, fontSize: 12, textDecoration: 'underline', cursor: 'pointer', fontFamily: 'inherit' }}>
+          회원탈퇴
+        </button>
       </div>
 
       <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '11px', color: subTextColor }}>© 2026 Dongsin Market. All rights reserved.</p>
@@ -546,6 +584,33 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
                 </span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* 회원탈퇴 모달 */}
+      {showDeleteModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setShowDeleteModal(false)}>
+          <div style={{ background: modalBg, borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: '480px' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <span style={{ fontSize: '17px', fontWeight: '700', color: '#ff4757' }}>회원탈퇴</span>
+              <button style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: subTextColor }} onClick={() => setShowDeleteModal(false)}>×</button>
+            </div>
+            <div style={{ background: darkMode ? '#2a1a1a' : '#fff5f5', border: '1px solid #ffd5d5', borderRadius: '12px', padding: '14px', fontSize: '13px', color: darkMode ? '#ffb4b4' : '#c0392b', lineHeight: 1.6, marginBottom: '16px' }}>
+              탈퇴하면 이름·연락처·주소 등 개인정보가 삭제되고 <b>되돌릴 수 없어요.</b><br/>
+              주문·거래 내역은 전자상거래법에 따라 보관 기간 동안 <b>익명 처리되어</b> 남습니다.
+            </div>
+            <div style={{ marginBottom: '14px' }}>
+              <div style={{ fontSize: '12px', color: '#00a85e', marginBottom: '6px', fontWeight: '700' }}>비밀번호 확인</div>
+              <input type="password" style={inputStyle} placeholder="현재 비밀번호" value={deletePassword} onChange={e => setDeletePassword(e.target.value)} />
+            </div>
+            {deleteError && (
+              <div style={{ background: '#fff0f1', border: '1px solid #ff4757', borderRadius: '12px', padding: '10px 14px', fontSize: '13px', color: '#ff4757', marginBottom: '14px' }}>⚠️ {deleteError}</div>
+            )}
+            <button onClick={handleDeleteAccount} disabled={deleteLoading}
+              style={{ width: '100%', padding: '14px', background: deleteLoading ? '#ccc' : '#ff4757', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: '700', color: 'white', cursor: deleteLoading ? 'not-allowed' : 'pointer' }}>
+              {deleteLoading ? '처리 중...' : '탈퇴하기'}
+            </button>
           </div>
         </div>
       )}
