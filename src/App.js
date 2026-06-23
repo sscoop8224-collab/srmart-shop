@@ -7,7 +7,7 @@ import API from './api';
 import Chatbot from './components/Chatbot';
 import StoreSelectionModal from './components/StoreSelectionModal';
 import InstallPrompt from './components/InstallPrompt';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 import srmLogo from './srm_logo.png';
 import { ThemeProvider, useTheme } from './ThemeContext';
@@ -102,12 +102,40 @@ function AppContent() {
     (async () => {
       try {
         await StatusBar.setOverlaysWebView({ overlay: false });
-        await StatusBar.setBackgroundColor({ color: '#00a85e' });
         await StatusBar.setStyle({ style: Style.Dark });
       } catch (e) {}
-      try { await SplashScreen.hide(); } catch (e) {}
     })();
   }, []);
+
+  // 스플래시 제어 — 중복 호출 방지
+  const splashHiddenRef = useRef(false);
+  const hideSplash = useCallback(async () => {
+    if (splashHiddenRef.current || !Capacitor.isNativePlatform()) return;
+    splashHiddenRef.current = true;
+    try { await SplashScreen.hide(); } catch (e) {}
+  }, []);
+
+  // 안전 타임아웃: 어떤 경우에도 3000ms 뒤엔 반드시 hide
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    const t = setTimeout(hideSplash, 3000);
+    return () => clearTimeout(t);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // homepage / login 화면: mount 후 paint 완료 버퍼(300ms) 뒤 hide
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    if (page === 'homepage' || page === 'login') {
+      const t = setTimeout(hideSplash, 300);
+      return () => clearTimeout(t);
+    }
+  }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // home 화면: 상품 로드 완료 시점에 hide (로그인 후 데이터 준비된 뒤)
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || page !== 'home' || productsLoading) return;
+    hideSplash();
+  }, [page, productsLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const goOffline = () => setIsOffline(true);
@@ -463,23 +491,16 @@ function AppContent() {
   return (
     <div className="App">
       <InstallPrompt />
-      {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
       {/* 헤더 */}
       <header className="header">
         <div className="header-logo" onClick={() => goToPage('home')}>
           <img src={srmLogo} alt="SR Mart" style={{ height: '34px', objectFit: 'contain' }} />
           <span style={{ fontFamily: "'Nanum Pen Script', cursive", fontSize: 'clamp(16px, 5vw, 26px)', color: '#1b5e20', fontWeight: '700', lineHeight: '1', marginTop: '2px', whiteSpace: 'nowrap' }}>에스알마트</span>
         </div>
-        {currentStore && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: '#e8f8ee', borderRadius: 16, fontSize: 12, color: '#178a2d', fontWeight: 600, flexShrink: 0 }}>
-            🏪 <span style={{ maxWidth: 72, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentStore.name}</span>
-            {isGuest && (
-              <button onClick={() => { setGuestStoreId(null); setShowStoreModal(true); }}
-                style={{ background: 'transparent', border: 'none', color: '#178a2d', cursor: 'pointer', padding: '0 0 0 2px', textDecoration: 'underline', fontSize: 11, fontWeight: 600 }}>
-                변경
-              </button>
-            )}
-          </div>
+        {user && currentStore && (
+          <span style={{ fontSize: 12, color: '#178a2d', fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 100 }}>
+            🏪 {currentStore.name}
+          </span>
         )}
         <div className="header-actions">
           {user && (
@@ -490,25 +511,25 @@ function AppContent() {
               <span title={currentUser?.username ? `@${currentUser.username}` : undefined} style={{ fontSize: '10px', fontWeight: '600', color: '#adb5bd', maxWidth: '44px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.name}</span>
             </div>
           )}
-          <button className="header-icon-btn" onClick={() => user ? goToPage('notice') : requireLogin()} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', padding: '4px 8px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#adb5bd' }}>
+          <button className="header-icon-btn" onClick={() => user ? goToPage('notice') : requireLogin()} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', padding: '4px 8px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#adb5bd', flexShrink: 0 }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
             </svg>
-            <span style={{ fontSize: '10px', fontWeight: '600' }}>공지</span>
+            <span style={{ fontSize: '10px', fontWeight: '600', whiteSpace: 'nowrap' }}>공지</span>
           </button>
           {user ? (
-            <button onClick={handleLogout} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
+            <button onClick={handleLogout} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px', flexShrink: 0 }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e53935" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>
               </svg>
-              <span style={{ fontSize: '10px', fontWeight: '600', color: '#adb5bd' }}>로그아웃</span>
+              <span style={{ fontSize: '10px', fontWeight: '600', color: '#adb5bd', whiteSpace: 'nowrap' }}>로그아웃</span>
             </button>
           ) : (
-            <button onClick={() => setPage('login')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
+            <button onClick={() => setPage('login')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px', flexShrink: 0 }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
               </svg>
-              <span style={{ fontSize: '10px', fontWeight: '600', color: '#00c471' }}>로그인</span>
+              <span style={{ fontSize: '10px', fontWeight: '600', color: '#00c471', whiteSpace: 'nowrap' }}>로그인</span>
             </button>
           )}
         </div>

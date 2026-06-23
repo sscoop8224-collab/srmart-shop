@@ -24,18 +24,15 @@ const config: CapacitorConfig = {
       resizeOnFullScreen: true,
     },
     SplashScreen: {
-      launchShowDuration: 3000,
-      launchAutoHide: true,
-      backgroundColor: '#00c471',
-      androidScaleType: 'CENTER_CROP',
+      launchShowDuration: 0,
+      launchAutoHide: false,
+      backgroundColor: '#077D3C',
+      androidScaleType: 'FIT_CENTER',
       showSpinner: false,
-      splashFullScreen: true,
-      splashImmersive: true,
     },
     StatusBar: {
       overlaysWebView: false,
       style: 'DARK',
-      backgroundColor: '#00a85e',
     },
   },
 };

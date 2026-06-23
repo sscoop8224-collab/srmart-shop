@@ -44,5 +44,4 @@
 
     <!-- ✅ 진동 권한 (바코드 스캔 피드백용) -->
     <uses-permission android:name="android.permission.VIBRATE" />
-
 </manifest>
