@@ -468,10 +468,11 @@ function AppContent() {
     return (
       <div style={{ width: '100%', minHeight: '100vh' }}>
         <HomePage
-          onShop={() => setPage('login')}
+          onShop={handleGuest}
           onLogin={() => setPage('login')}
           darkMode={darkMode}
         />
+        {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
       </div>
     );
   }
