@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import FindAccount from './FindAccount';
 import srmLogo from '../srm-logo-transparent.png';
-import { getStores } from '../api';
+import { getStores, register } from '../api';
 
 // ── 나이 계산 함수 ──────────────────────────────────────────
 function calcAgeFromId(frontId, genderDigit) {
@@ -272,27 +272,21 @@ function Login({ onLogin, onGuest }) {
 
     try {
       setSignupLoading(true);
-      const res = await fetch('http://localhost:5000/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: form.name,
-          username: form.username,
-          email: form.email,
-          password: form.password,
-          phone: form.phone,
-          address: form.address,
-          addressDetail: form.addressDetail,
-          idFront: form.idFront,
-          idGender: form.idGender,
-          isAdult,
-          age,
-          store_id: Number(selectedStoreId),
-          zipcode: signupZipcode || null,
-        }),
+      await register({
+        name: form.name,
+        username: form.username,
+        email: form.email,
+        password: form.password,
+        phone: form.phone,
+        address: form.address,
+        addressDetail: form.addressDetail,
+        idFront: form.idFront,
+        idGender: form.idGender,
+        isAdult,
+        age,
+        store_id: Number(selectedStoreId),
+        zipcode: signupZipcode || null,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || '회원가입 실패');
       alert(form.name + '님 가입을 환영해요! 🎉' + (isAdult ? '' : '\n미성년자로 확인됐어요. 성인 상품 구매가 제한됩니다.'));
       setMode('login');
       setForm({ ...emptyForm });
@@ -302,7 +296,7 @@ function Login({ onLogin, onGuest }) {
       setInputCode('');
       setCodeMsg('');
     } catch (err) {
-      alert(err.message || '회원가입 중 오류가 발생했어요.');
+      alert(err.response?.data?.error || err.message || '회원가입 중 오류가 발생했어요.');
     } finally {
       setSignupLoading(false);
     }

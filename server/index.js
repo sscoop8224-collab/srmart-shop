@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
@@ -6,7 +7,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const SECRET_KEY = 'DEVF082D077F4CCF585BBE19D3A8EF7685DC5370';
+const SECRET_KEY = process.env.KAKAOPAY_SECRET_KEY;
+if (!SECRET_KEY) {
+  console.error('❌ KAKAOPAY_SECRET_KEY가 .env에 설정되지 않았어요! 서버를 시작할 수 없어요.');
+  process.exit(1);
+}
 
 app.post('/api/kakaopay/ready', async (req, res) => {
   try {
@@ -41,6 +46,7 @@ app.post('/api/kakaopay/ready', async (req, res) => {
   }
 });
 
-app.listen(5000, () => {
-  console.log('서버 실행 중: http://localhost:5000');
+const PORT = process.env.PORT || 5001;
+app.listen(PORT, () => {
+  console.log(`카카오페이 서버 실행 중: http://localhost:${PORT}`);
 });

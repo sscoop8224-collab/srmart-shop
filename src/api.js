@@ -11,6 +11,21 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
+// ── 카카오페이 결제 서버 (메인 백엔드와 별개, 포트 5001) ──────────
+// 웹: 같은 호스트의 5001 포트, 네이티브 앱: 서버 호스트의 5001 포트
+const PAY_API = axios.create({
+  baseURL: Capacitor.isNativePlatform() ? 'http://100.73.58.124:5001/api' : 'http://localhost:5001/api',
+});
+
+export const kakaoPayReady = (orderInfo) =>
+  PAY_API.post('/kakaopay/ready', {
+    orderId: orderInfo.orderId,
+    userId: orderInfo.userId,
+    itemName: orderInfo.itemName,
+    quantity: orderInfo.quantity,
+    totalAmount: orderInfo.totalAmount,
+  }).then((res) => res.data);
+
 export const register = (data) => API.post('/register', data);
 export const login = (username, password) => API.post('/login', { username, password });
 export const getStores = () => API.get('/stores');
