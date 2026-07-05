@@ -83,7 +83,8 @@ function AppContent() {
   const handleSetDark = (val) => setDarkMode(val);
   const { guestStoreId, currentStoreId, currentStore, isGuest, setGuestStoreId } = useStore();
 
-  const [page, setPage] = useState('homepage');
+  // 웹은 홈 우선, 네이티브 앱은 로그인 우선
+  const [page, setPage] = useState(Capacitor.isNativePlatform() ? 'login' : 'homepage');
   const [pageHistory, setPageHistory] = useState([]);
   const [showStoreModal, setShowStoreModal] = useState(false);
   const [products, setProducts] = useState([]);
