@@ -83,8 +83,9 @@ function AppContent() {
   const handleSetDark = (val) => setDarkMode(val);
   const { guestStoreId, currentStoreId, currentStore, isGuest, setGuestStoreId } = useStore();
 
-  // 웹은 홈 우선, 네이티브 앱은 로그인 우선
-  const [page, setPage] = useState(Capacitor.isNativePlatform() ? 'login' : 'homepage');
+  // 웹은 내장 랜딩(homepage)을 건너뛰고 게스트로 바로 쇼핑앱 진입, 네이티브 앱은 로그인 우선
+  // (회사 정적 홈페이지가 이미 랜딩 역할을 하므로 웹에서 HomePage.jsx는 표시하지 않음)
+  const [page, setPage] = useState(Capacitor.isNativePlatform() ? 'login' : 'home');
   const [pageHistory, setPageHistory] = useState([]);
   const [showStoreModal, setShowStoreModal] = useState(false);
   const [products, setProducts] = useState([]);
@@ -336,6 +337,15 @@ function AppContent() {
     setPage('home');
   };
 
+  // 웹 최초 진입: 내장 랜딩을 건너뛰고 게스트로 쇼핑앱 진입.
+  // 매장 미선택(첫 방문)이면 handleGuest가 점포 선택 모달을 띄우고, 선택돼 있으면 바로 home 로드.
+  const webGuestInitRef = useRef(false);
+  useEffect(() => {
+    if (Capacitor.isNativePlatform() || webGuestInitRef.current) return;
+    webGuestInitRef.current = true;
+    handleGuest();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleStoreSelected = async (storeId) => {
     setShowStoreModal(false);
     await loadProducts(storeId);
@@ -493,6 +503,7 @@ function AppContent() {
   return (
     <div className="App">
       <InstallPrompt />
+      {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
       {/* 헤더 */}
       <header className="header">
         <div className="header-logo" onClick={() => goToPage('home')}>
