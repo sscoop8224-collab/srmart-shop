@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
-import { login as apiLogin, getActiveProducts, getMyOrders, createOrder, getCoupons, getWishlist, toggleWishlist as toggleWishlistApi } from './api';
+import { login as apiLogin, getActiveProducts, getCategories, getMyOrders, createOrder, getCoupons, getWishlist, toggleWishlist as toggleWishlistApi } from './api';
 import API from './api';
 import Chatbot from './components/Chatbot';
 import StoreSelectionModal from './components/StoreSelectionModal';
@@ -39,44 +39,24 @@ const getCategoryImage = (large) => {
   }
 };
 
-const initialProducts = [
-  { id: 1, name: '신선 사과', price: 5000, large: '식품', medium: '신선식품', small: '과일', image: null, stock: 50, barcode: '', images: [], status: '판매중' },
-  { id: 2, name: '제주 감귤', price: 8000, large: '식품', medium: '신선식품', small: '과일', image: null, stock: 30, barcode: '', images: [], status: '판매중' },
-  { id: 3, name: '세탁 세제', price: 12000, large: '생활용품', medium: '세탁/청소', small: '세제', image: null, stock: 20, barcode: '', images: [], status: '판매중' },
-  { id: 4, name: '콜라 1.5L', price: 3000, large: '음료', medium: '탄산음료', small: '', image: null, stock: 100, barcode: '', images: [], status: '판매중' },
-  { id: 5, name: '냉동 만두', price: 7000, large: '식품', medium: '가공식품', small: '냉동식품', image: null, stock: 15, barcode: '', images: [], status: '판매중' },
-  { id: 6, name: '포카칩', price: 2500, large: '간식/과자', medium: '과자/스낵', small: '', image: null, stock: 0, barcode: '', images: [], status: '판매중지' },
-  { id: 7, name: '소주 360ml', price: 1800, large: '주류', medium: '소주/막걸리', small: '소주', image: null, stock: 100, barcode: '', images: [], status: '판매중', isAdult: true, spec: '360', unit: 'ml' },
-  { id: 8, name: '맥주 500ml', price: 2500, large: '주류', medium: '맥주', small: '국산맥주', image: null, stock: 80, barcode: '', images: [], status: '판매중', isAdult: true, spec: '500', unit: 'ml' },
-];
-
-const initialCategories = [
-  { name: '식품', children: [
-    { name: '신선식품', children: ['채소', '과일', '육류', '수산물'] },
-    { name: '가공식품', children: ['통조림', '냉동식품', '즉석식품'] },
-    { name: '유제품', children: ['우유', '치즈', '요거트'] },
-  ]},
-  { name: '음료', children: [
-    { name: '탄산음료', children: ['콜라', '사이다', '탄산수'] },
-    { name: '주스/과채음료', children: ['오렌지주스', '포도주스'] },
-    { name: '생수/차', children: ['생수', '녹차', '홍차'] },
-  ]},
-  { name: '생활용품', children: [
-    { name: '세탁/청소', children: ['세제', '섬유유연제', '청소도구'] },
-    { name: '욕실용품', children: ['샴푸', '치약', '비누'] },
-    { name: '주방용품', children: ['랩', '지퍼백', '일회용품'] },
-  ]},
-  { name: '간식/과자', children: [
-    { name: '과자/스낵', children: ['감자칩', '팝콘', '쿠키'] },
-    { name: '사탕/초콜릿', children: ['사탕', '초콜릿', '젤리'] },
-    { name: '빵/케이크', children: ['식빵', '케이크', '머핀'] },
-  ]},
-  { name: '주류', children: [
-    { name: '맥주', children: ['국산맥주', '수입맥주'] },
-    { name: '소주/막걸리', children: ['소주', '막걸리'] },
-    { name: '와인', children: ['레드와인', '화이트와인'] },
-  ]},
-];
+// 백엔드 categories(평면 행 {code,large,medium,small})를 shop UI가 쓰는 중첩 트리
+// [{name:대분류, children:[{name:중분류, children:[소분류...]}]}] 로 변환. code 순 정렬로 순서 유지.
+function buildCategoryTree(rows) {
+  const larges = [];
+  const byLarge = {};
+  const byMedium = {};
+  [...(rows || [])]
+    .sort((a, b) => String(a.code || '').localeCompare(String(b.code || '')))
+    .forEach((r) => {
+      if (!r.large) return;
+      if (!byLarge[r.large]) { byLarge[r.large] = { name: r.large, children: [] }; larges.push(byLarge[r.large]); }
+      if (!r.medium) return;
+      const mkey = r.large + '>' + r.medium;
+      if (!byMedium[mkey]) { byMedium[mkey] = { name: r.medium, children: [] }; byLarge[r.large].children.push(byMedium[mkey]); }
+      if (r.small && !byMedium[mkey].children.includes(r.small)) byMedium[mkey].children.push(r.small);
+    });
+  return larges;
+}
 
 function AppContent() {
   const { darkMode, setDarkMode } = useTheme();
@@ -90,7 +70,8 @@ function AppContent() {
   const [showStoreModal, setShowStoreModal] = useState(false);
   const [products, setProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(false);
-  const [categories, setCategories] = useState(initialCategories);
+  const [productsError, setProductsError] = useState(false);
+  const [categories, setCategories] = useState([]);
   const [cart, setCart] = useState([]);
   const [user, setUser] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -266,6 +247,7 @@ function AppContent() {
   const loadProducts = async (storeId) => {
     try {
       setProductsLoading(true);
+      setProductsError(false);
       const res = await getActiveProducts(storeId);
       setProducts(res.data.map(p => ({
         ...p,
@@ -275,9 +257,21 @@ function AppContent() {
       })));
     } catch (err) {
       console.error('상품 로드 실패:', err);
-      setProducts(initialProducts);
+      setProducts([]);        // 가짜 fallback 제거 — 빈 목록 + 에러 안내
+      setProductsError(true);
     } finally {
       setProductsLoading(false);
+    }
+  };
+
+  // 카테고리(전역 분류체계) 로드 — 백엔드 평면 행 → 중첩 트리로 변환. 실패 시 빈 트리.
+  const loadCategories = async () => {
+    try {
+      const res = await getCategories();
+      setCategories(buildCategoryTree(res.data));
+    } catch (err) {
+      console.error('카테고리 로드 실패:', err);
+      setCategories([]);
     }
   };
 
@@ -306,6 +300,9 @@ function AppContent() {
       console.error('쿠폰 로드 실패:', err);
     }
   };
+
+  // 카테고리(전역)는 최초 1회 로드 — 매장과 무관.
+  useEffect(() => { loadCategories(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 점포 변경 시 상품 자동 갱신
   useEffect(() => {
@@ -652,6 +649,15 @@ function AppContent() {
               <div className="empty-state">
                 <span className="empty-state-icon">⏳</span>
                 <span className="empty-state-text">상품을 불러오는 중이에요...</span>
+              </div>
+            ) : productsError ? (
+              <div className="empty-state">
+                <span className="empty-state-icon">⚠️</span>
+                <span className="empty-state-text">상품을 불러오지 못했어요.</span>
+                <button onClick={() => loadProducts(currentStoreId)}
+                  style={{ marginTop: 14, padding: '10px 22px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                  다시 시도
+                </button>
               </div>
             ) : (filterLarge === '행사중' ? eventProducts : filteredProducts).length === 0 ? (
               <div className="empty-state">

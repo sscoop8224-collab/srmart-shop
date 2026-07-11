@@ -29,6 +29,7 @@ export const kakaoPayReady = (orderInfo) =>
 export const register = (data) => API.post('/register', data);
 export const login = (username, password) => API.post('/login', { username, password });
 export const getStores = () => API.get('/stores');
+export const getCategories = () => API.get('/categories');
 export const getProducts = (storeId) => API.get('/products', storeId ? { params: { store_id: storeId } } : {});
 export const getActiveProducts = (storeId) => API.get('/products/active', storeId ? { params: { store_id: storeId } } : {});
 export const getOrders = () => API.get('/orders');
