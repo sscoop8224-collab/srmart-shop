@@ -173,11 +173,8 @@ function Login({ onLogin, onGuest }) {
     name: '', username: '', email: '', password: '', phone: '',
     address: '', addressDetail: '', idFront: '', idGender: '',
   });
-  const [phoneVerified, setPhoneVerified] = useState(false);
-  const [verifyCode, setVerifyCode] = useState('');
-  const [inputCode, setInputCode] = useState('');
-  const [codeStep, setCodeStep] = useState(false);
-  const [codeMsg, setCodeMsg] = useState('');
+  // 전화 인증은 SMS/알림톡 연동(Part 2) 전까지 비활성 — 인증 없이 가입 허용.
+  // (가짜 클라이언트 인증 목업 제거됨. 서버 인증 설계: srmart-backend/SMS_AUTH_DESIGN.md)
   const [signupLoading, setSignupLoading] = useState(false);
   const [stores, setStores] = useState([]);
   const [selectedStoreId, setSelectedStoreId] = useState('');
@@ -234,33 +231,11 @@ function Login({ onLogin, onGuest }) {
     }
   };
 
-  const sendVerifyCode = () => {
-    if (!form.phone || form.phone.replace(/-/g, '').length < 10) {
-      alert('전화번호를 올바르게 입력해주세요'); return;
-    }
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    setVerifyCode(code);
-    setCodeStep(true);
-    setInputCode('');
-    setCodeMsg('');
-    alert(`[테스트] 인증코드: ${code}\n실제 서비스에서는 SMS로 발송됩니다.`);
-  };
-
-  const checkVerifyCode = () => {
-    if (inputCode === verifyCode) {
-      setPhoneVerified(true);
-      setCodeMsg('✅ 인증 완료됐어요!');
-    } else {
-      setCodeMsg('❌ 인증코드가 틀려요. 다시 확인해주세요.');
-    }
-  };
-
   const handleSignup = async () => {
     if (!form.name || !form.username || !form.email || !form.password || !form.phone) {
       alert('이름, 아이디, 이메일, 비밀번호, 전화번호는 필수예요!'); return;
     }
     if (!selectedStoreId) { alert('가입점포를 선택해주세요!'); return; }
-    if (!phoneVerified) { alert('전화번호 인증을 완료해주세요!'); return; }
     if (!form.idFront || form.idFront.length !== 6 || !form.idGender) {
       alert('주민번호를 올바르게 입력해주세요!'); return;
     }
@@ -290,11 +265,6 @@ function Login({ onLogin, onGuest }) {
       alert(form.name + '님 가입을 환영해요! 🎉' + (isAdult ? '' : '\n미성년자로 확인됐어요. 성인 상품 구매가 제한됩니다.'));
       setMode('login');
       setForm({ ...emptyForm });
-      setPhoneVerified(false);
-      setCodeStep(false);
-      setVerifyCode('');
-      setInputCode('');
-      setCodeMsg('');
     } catch (err) {
       alert(err.response?.data?.error || err.message || '회원가입 중 오류가 발생했어요.');
     } finally {
@@ -304,11 +274,6 @@ function Login({ onLogin, onGuest }) {
 
   const resetSignup = () => {
     setForm({ ...emptyForm });
-    setPhoneVerified(false);
-    setCodeStep(false);
-    setVerifyCode('');
-    setInputCode('');
-    setCodeMsg('');
     setSelectedStoreId('');
     setSignupZipcode('');
   };
@@ -476,31 +441,9 @@ function Login({ onLogin, onGuest }) {
 
                 <div>
                   <label style={labelStyle}>전화번호 *</label>
-                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                    <input name="phone" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
-                      placeholder="010-0000-0000" type="tel" disabled={phoneVerified}
-                      style={{ ...inputStyle, flex: 1 }} onFocus={inputFocus} onBlur={inputBlur} />
-                    <button type="button" onClick={sendVerifyCode} disabled={phoneVerified}
-                      style={{ padding: '0 14px', height: 52, background: phoneVerified ? '#dee2e6' : `linear-gradient(135deg, ${COLORS.green}, ${COLORS.greenDark})`, color: 'white', border: 'none', borderRadius: 14, fontSize: 12, fontWeight: 700, cursor: phoneVerified ? 'default' : 'pointer', whiteSpace: 'nowrap' }}>
-                      {phoneVerified ? '✅ 완료' : codeStep ? '재발송' : '인증 발송'}
-                    </button>
-                  </div>
-                  {codeStep && !phoneVerified && (
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <input value={inputCode} onChange={e => setInputCode(e.target.value)}
-                        placeholder="인증코드 6자리 입력" maxLength={6}
-                        style={{ ...inputStyle, flex: 1 }} onFocus={inputFocus} onBlur={inputBlur} />
-                      <button type="button" onClick={checkVerifyCode}
-                        style={{ padding: '0 14px', height: 52, background: COLORS.ink900, color: 'white', border: 'none', borderRadius: 14, fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                        확인
-                      </button>
-                    </div>
-                  )}
-                  {codeMsg && (
-                    <div style={{ fontSize: 12, marginTop: 6, color: codeMsg.startsWith('✅') ? '#009a58' : COLORS.danger, fontWeight: 600 }}>
-                      {codeMsg}
-                    </div>
-                  )}
+                  <input name="phone" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
+                    placeholder="010-0000-0000" type="tel"
+                    style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
                 </div>
 
                 <div>
