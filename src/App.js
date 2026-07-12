@@ -39,6 +39,9 @@ const getCategoryImage = (large) => {
   }
 };
 
+// 배너 이미지 origin: 웹은 동일 출처(nginx가 /uploads 서빙), 네이티브 앱은 Tailscale 호스트.
+const BANNER_IMG_BASE = Capacitor.isNativePlatform() ? 'http://100.73.58.124' : '';
+
 // 백엔드 categories(평면 행 {code,large,medium,small})를 shop UI가 쓰는 중첩 트리
 // [{name:대분류, children:[{name:중분류, children:[소분류...]}]}] 로 변환. code 순 정렬로 순서 유지.
 function buildCategoryTree(rows) {
@@ -270,10 +273,10 @@ function AppContent() {
     }
   };
 
-  // 홈 배너 로드(admin 관리). 실패/0건이면 빈 배열 → 배너 영역 숨김.
-  const loadBanners = async () => {
+  // 홈 배너 로드(admin 관리). 고객 매장(storeId) 기준: 공용 + 그 매장 배너. 실패/0건이면 숨김.
+  const loadBanners = async (storeId) => {
     try {
-      const res = await getBanners();
+      const res = await getBanners(storeId);
       setBanners(res.data || []);
       setBannerIndex(0);
     } catch (err) {
@@ -308,11 +311,12 @@ function AppContent() {
     }
   };
 
-  // 카테고리·배너(전역)는 최초 1회 로드 — 매장과 무관.
-  useEffect(() => { loadCategories(); loadBanners(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // 카테고리(전역)는 최초 1회 로드 — 매장 무관.
+  useEffect(() => { loadCategories(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 점포 변경 시 상품 자동 갱신
+  // 점포 변경 시 상품·배너 갱신(배너는 공용 + 그 매장).
   useEffect(() => {
+    loadBanners(currentStoreId);
     if (currentStoreId && page === 'home') {
       loadProducts(currentStoreId);
     }
@@ -575,9 +579,11 @@ function AppContent() {
                   style={{ display: 'flex', transition: bannerTransition ? 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none', WebkitTransform: `translateX(-${bannerIndex * 100}%)`, transform: `translateX(-${bannerIndex * 100}%)`, willChange: 'transform' }}>
                   {[...banners, banners[0]].map((slide, index) => (
                     <div key={index} onClick={() => { if (slide.filter) { setFilterLarge(slide.filter); setFilterMedium('전체'); setFilterSmall('전체'); } }}
-                      style={{ minWidth: '100%', background: slide.bg, borderRadius: '18px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', overflow: 'hidden', position: 'relative', cursor: slide.filter ? 'pointer' : 'default', boxSizing: 'border-box' }}>
-                      <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%' }} />
-                      <div style={{ position: 'relative', zIndex: 1 }}>
+                      style={{ minWidth: '100%', ...(slide.image_url ? { backgroundImage: `url(${BANNER_IMG_BASE}${slide.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: slide.bg }), borderRadius: '18px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', overflow: 'hidden', position: 'relative', cursor: slide.filter ? 'pointer' : 'default', boxSizing: 'border-box' }}>
+                      {slide.image_url
+                        ? <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(0,0,0,0.45), rgba(0,0,0,0.05))' }} />
+                        : <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%' }} />}
+                      <div style={{ position: 'relative', zIndex: 1, textShadow: slide.image_url ? '0 1px 4px rgba(0,0,0,0.5)' : 'none' }}>
                         <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.85)', margin: '0 0 4px', fontWeight: '600' }}>{slide.label}</p>
                         <h2 style={{ fontSize: '18px', fontWeight: '800', color: 'white', margin: '0 0 6px', letterSpacing: '-0.5px' }}>{slide.title}</h2>
                         <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.85)', margin: '0 0 12px' }}>{slide.sub}</p>
@@ -586,7 +592,7 @@ function AppContent() {
                           {slide.filter ? slide.filter + ' 보러가기 →' : '쇼핑하기 →'}
                         </button>
                       </div>
-                      <span style={{ fontSize: '64px', position: 'relative', zIndex: 1 }}>{slide.emoji}</span>
+                      {!slide.image_url && <span style={{ fontSize: '64px', position: 'relative', zIndex: 1 }}>{slide.emoji}</span>}
                     </div>
                   ))}
                 </div>
