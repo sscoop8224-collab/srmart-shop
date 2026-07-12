@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
-import { login as apiLogin, getActiveProducts, getCategories, getMyOrders, createOrder, getCoupons, getWishlist, toggleWishlist as toggleWishlistApi } from './api';
+import { login as apiLogin, getActiveProducts, getCategories, getBanners, getMyOrders, createOrder, getCoupons, getWishlist, toggleWishlist as toggleWishlistApi } from './api';
 import API from './api';
 import Chatbot from './components/Chatbot';
 import StoreSelectionModal from './components/StoreSelectionModal';
@@ -165,12 +165,7 @@ function AppContent() {
   const [coupons, setCoupons] = useState([]);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [events, setEvents] = useState([]);
-  const [banners, setBanners] = useState([
-    { id: 1, label: '특별 할인', title: 'SR Mart에 오신 것을 환영해요!', sub: '신선하고 다양한 상품을 만나보세요', emoji: '🛒', bg: 'linear-gradient(135deg, #00c471, #00a85e)', filter: null },
-    { id: 2, label: '신선식품', title: '신선한 채소와 과일!', sub: '오늘의 특가 상품을 확인해보세요', emoji: '🥦', bg: 'linear-gradient(135deg, #ff6b6b, #ee5a24)', filter: '식품' },
-    { id: 3, label: '음료 코너', title: '시원한 음료 모음!', sub: '다양한 음료를 만나보세요', emoji: '🧃', bg: 'linear-gradient(135deg, #a29bfe, #6c5ce7)', filter: '음료' },
-    { id: 4, label: '간식/과자', title: '맛있는 간식 특가!', sub: '달콤한 간식을 지금 담아보세요', emoji: '🍿', bg: 'linear-gradient(135deg, #fdcb6e, #e17055)', filter: '간식/과자' },
-  ]);
+  const [banners, setBanners] = useState([]); // 백엔드에서 로드(admin 관리). 0건이면 배너 영역 숨김.
 
   useEffect(() => { localStorage.setItem('srmart_users', JSON.stringify(users)); }, [users]);
 
@@ -275,6 +270,18 @@ function AppContent() {
     }
   };
 
+  // 홈 배너 로드(admin 관리). 실패/0건이면 빈 배열 → 배너 영역 숨김.
+  const loadBanners = async () => {
+    try {
+      const res = await getBanners();
+      setBanners(res.data || []);
+      setBannerIndex(0);
+    } catch (err) {
+      console.error('배너 로드 실패:', err);
+      setBanners([]);
+    }
+  };
+
   const loadMyOrders = async () => {
     try {
       const res = await getMyOrders();
@@ -301,8 +308,8 @@ function AppContent() {
     }
   };
 
-  // 카테고리(전역)는 최초 1회 로드 — 매장과 무관.
-  useEffect(() => { loadCategories(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // 카테고리·배너(전역)는 최초 1회 로드 — 매장과 무관.
+  useEffect(() => { loadCategories(); loadBanners(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 점포 변경 시 상품 자동 갱신
   useEffect(() => {
@@ -548,6 +555,7 @@ function AppContent() {
       <div className="main-content">
         {page === 'home' && (
           <>
+            {banners.length > 0 && (
             <div style={{ padding: '16px' }}>
               <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden' }}>
                 <div
@@ -590,6 +598,7 @@ function AppContent() {
                 </div>
               </div>
             </div>
+            )}
 
             <DeliveryWidget dark={darkMode} totalAmount={totalPrice} />
 
