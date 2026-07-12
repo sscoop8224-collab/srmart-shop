@@ -617,7 +617,7 @@ function AppContent() {
 
             <DeliveryWidget dark={darkMode} totalAmount={totalPrice} />
 
-            <div style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto' }}>
+            <div className="home-chips" style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto' }}>
               {['전체', '행사상품', ...categories.map((c) => c.name)].map((name) => {
                 const isActive = name === '행사상품' ? filterLarge === '행사중'
                                : name === '전체' ? filterLarge === '전체'
@@ -635,7 +635,7 @@ function AppContent() {
             </div>
 
             {selectedLargeObj && selectedLargeObj.children.length > 0 && (
-              <div style={{ padding: '4px 16px', display: 'flex', gap: '8px', overflowX: 'auto' }}>
+              <div className="home-chips" style={{ padding: '4px 16px', display: 'flex', gap: '8px', overflowX: 'auto' }}>
                 {['전체', ...selectedLargeObj.children.map((m) => m.name)].map((name) => (
                   <button key={name} onClick={() => { setFilterMedium(name); setFilterSmall('전체'); }}
                     style={{ padding: '6px 14px', background: filterMedium === name ? (darkMode ? '#0d4d2a' : '#212529') : (darkMode ? '#2a2a2a' : 'white'), color: filterMedium === name ? 'white' : (darkMode ? '#a0a0a0' : '#868e96'), border: filterMedium === name ? 'none' : `1.5px solid ${darkMode ? '#3a3a3a' : '#e9ecef'}`, borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0 }}>
@@ -646,7 +646,7 @@ function AppContent() {
             )}
 
             {selectedMediumObj && selectedMediumObj.children.length > 0 && (
-              <div style={{ padding: '4px 16px', display: 'flex', gap: '8px', overflowX: 'auto' }}>
+              <div className="home-chips" style={{ padding: '4px 16px', display: 'flex', gap: '8px', overflowX: 'auto' }}>
                 {['전체', ...selectedMediumObj.children].map((name) => (
                   <button key={name} onClick={() => setFilterSmall(name)}
                     style={{ padding: '5px 12px', background: filterSmall === name ? (darkMode ? '#1a5c2a' : '#868e96') : (darkMode ? '#2a2a2a' : 'white'), color: filterSmall === name ? 'white' : (darkMode ? '#808080' : '#adb5bd'), border: filterSmall === name ? 'none' : `1.5px solid ${darkMode ? '#3a3a3a' : '#e9ecef'}`, borderRadius: '20px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0 }}>

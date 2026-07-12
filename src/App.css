@@ -283,7 +283,7 @@ body {
   padding: 0 16px 100px;
 }
 @media (min-width: 768px)  { .product-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
-@media (min-width: 1024px) { .product-grid { grid-template-columns: repeat(4, 1fr); padding: 0 24px 100px; } }
+@media (min-width: 1024px) { .product-grid { grid-template-columns: repeat(4, 1fr); padding: 0 16px 100px; } }
 @media (min-width: 1440px) { .product-grid { grid-template-columns: repeat(5, 1fr); } }
 
 /* 배너 */
@@ -922,4 +922,26 @@ body {
   /* 마이페이지: 넓은 화면 활용(읽기 좋은 폭 중앙정렬 + 메뉴 2열) */
   .mypage-root { max-width: 1000px; margin: 0 auto; padding-bottom: 24px !important; }
   .mypage-menu { display: grid; grid-template-columns: 1fr 1fr; }
+}
+
+/* ===========================
+   반응형 Phase 4: 마감(칩 정렬 · 카드 hover · 간격)
+=========================== */
+/* 카테고리 칩: 태블릿/PC에서는 가로 스크롤 대신 줄바꿈으로 정렬(빈 여백 정리) */
+@media (min-width: 768px) {
+  .home-chips {
+    flex-wrap: wrap !important;
+    overflow-x: visible !important;
+    row-gap: 8px;
+  }
+}
+/* 상품 카드 hover(마우스 환경에서만) */
+@media (hover: hover) and (pointer: fine) {
+  .product-grid > div {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .product-grid > div:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.13) !important;
+  }
 }
