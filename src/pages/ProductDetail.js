@@ -80,7 +80,7 @@ function ProductDetail({ product, onBack, onAddToCart, darkMode, user }) {
   };
 
   return (
-    <div style={{ background: bg, minHeight: '100vh', paddingBottom: '120px' }}>
+    <div className="pd-root" style={{ background: bg, minHeight: '100vh', paddingBottom: '120px' }}>
 
       {/* 헤더 */}
       <div style={{
@@ -108,8 +108,10 @@ function ProductDetail({ product, onBack, onAddToCart, darkMode, user }) {
         </button>
       </div>
 
+      {/* 상단 2단(데스크탑): 이미지 | 정보+담기 */}
+      <div className="pd-top">
       {/* 이미지 영역 */}
-      <div style={{ position: 'relative', background: cardBg }}>
+      <div className="pd-media" style={{ position: 'relative', background: cardBg }}>
         {images.length > 0 ? (
           <>
             <img src={images[selectedImage]} alt={product.name}
@@ -134,7 +136,7 @@ function ProductDetail({ product, onBack, onAddToCart, darkMode, user }) {
       </div>
 
       {/* 상품 정보 카드 */}
-      <div style={{
+      <div className="pd-info" style={{
         background: cardBg, borderRadius: '24px 24px 0 0',
         marginTop: '-16px', position: 'relative', zIndex: 1,
         padding: '24px 20px 20px',
@@ -280,6 +282,26 @@ function ProductDetail({ product, onBack, onAddToCart, darkMode, user }) {
             }
           </span>
         </div>
+
+        {/* 장바구니 담기 (모바일=하단 고정 / 데스크탑=정보 영역 내) */}
+        <div className="pd-cart-bar" style={{
+          position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+          width: '100%', maxWidth: '480px', padding: '16px 20px 36px',
+          background: cardBg, borderTop: `1px solid ${border}`,
+          boxShadow: '0 -4px 20px rgba(0,0,0,0.06)', boxSizing: 'border-box',
+        }}>
+          <button onClick={handleAddToCart} style={{
+            width: '100%', padding: '16px',
+            background: 'linear-gradient(135deg, #00c471, #00a85e)',
+            color: 'white', border: 'none', borderRadius: '16px',
+            fontSize: '16px', fontWeight: '800', cursor: 'pointer',
+            boxShadow: '0 4px 20px rgba(0,196,113,0.35)',
+            letterSpacing: '-0.3px'
+          }}>
+            🛒 장바구니 담기
+          </button>
+        </div>
+      </div>
       </div>
 
       {/* 상품 설명 */}
@@ -302,25 +324,6 @@ function ProductDetail({ product, onBack, onAddToCart, darkMode, user }) {
             style={{ width: '100%', borderRadius: '14px', border: `1px solid ${border}` }} />
         </div>
       )}
-
-      {/* 하단 장바구니 버튼 */}
-      <div style={{
-        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-        width: '100%', maxWidth: '480px', padding: '16px 20px 36px',
-        background: cardBg, borderTop: `1px solid ${border}`,
-        boxShadow: '0 -4px 20px rgba(0,0,0,0.06)', boxSizing: 'border-box',
-      }}>
-        <button onClick={handleAddToCart} style={{
-          width: '100%', padding: '16px',
-          background: 'linear-gradient(135deg, #00c471, #00a85e)',
-          color: 'white', border: 'none', borderRadius: '16px',
-          fontSize: '16px', fontWeight: '800', cursor: 'pointer',
-          boxShadow: '0 4px 20px rgba(0,196,113,0.35)',
-          letterSpacing: '-0.3px'
-        }}>
-          🛒 장바구니 담기
-        </button>
-      </div>
 
       {/* 리뷰 섹션 */}
       <div style={{ margin: '12px 0', background: cardBg, borderTop: `8px solid ${darkMode ? '#111' : '#f8f9fa'}`, padding: '20px' }}>

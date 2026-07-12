@@ -187,7 +187,7 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
   };
 
   return (
-    <div style={{ background: bg, minHeight: '100vh', paddingBottom: '80px' }}>
+    <div className="mypage-root" style={{ background: bg, minHeight: '100vh', paddingBottom: '80px' }}>
 
       {/* 프로필 헤더 */}
       <div style={{ background: 'linear-gradient(135deg, #00c471, #00a85e)', padding: '40px 20px 64px', position: 'relative', overflow: 'hidden' }}>
@@ -310,7 +310,7 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
       )}
 
       {/* 메뉴 */}
-      <div style={{ margin: '0 16px 12px', background: cardBg, borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: `1px solid ${borderColor}` }}>
+      <div className="mypage-menu" style={{ margin: '0 16px 12px', background: cardBg, borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: `1px solid ${borderColor}` }}>
         {menuItems.map((menu, index) => (
           <div key={menu.label} onClick={() => menu.page === '__login_history__' ? loadLoginHistory() : goToPage(menu.page)}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: index < menuItems.length - 1 ? `1px solid ${borderColor}` : 'none', cursor: 'pointer' }}>

@@ -188,7 +188,7 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
   };
 
   return (
-    <div style={{ background: bg, minHeight: '100vh', paddingBottom: '180px' }}>
+    <div className="cart-root" style={{ background: bg, minHeight: '100vh', paddingBottom: '180px' }}>
 
       {/* 헤더 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: headerBg, borderBottom: `1px solid ${borderColor}`, position: 'sticky', top: 0, zIndex: 10 }}>
@@ -227,6 +227,8 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
         </div>
       ) : (
         <>
+          <div className="cart-layout">
+          <div className="cart-main">
           {/* 상품 목록 */}
           <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {cart.map((item) => (
@@ -392,8 +394,10 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
             </div>
           </div>
 
+          </div>{/* /cart-main */}
+          <div className="cart-side">
           {/* 결제 영역 */}
-          <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: fixedBg, padding: '16px 20px 36px', borderTop: `1px solid ${borderColor}`, boxShadow: '0 -4px 20px rgba(0,0,0,0.08)' }}>
+          <div className="cart-checkout" style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: fixedBg, padding: '16px 20px 36px', borderTop: `1px solid ${borderColor}`, boxShadow: '0 -4px 20px rgba(0,0,0,0.08)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
               <span style={{ fontSize: '13px', color: subTextColor }}>상품 금액</span>
               <span style={{ fontSize: '13px', color: textColor, fontWeight: '600' }}>₩{totalPrice.toLocaleString()}</span>
@@ -487,6 +491,8 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
               {!zipcode ? '우편번호를 입력해주세요' : !deliveryInfo?.zoneName ? '배송 구역을 확인해주세요' : '카카오페이로 결제하기 💳'}
             </button>
           </div>
+          </div>{/* /cart-side */}
+          </div>{/* /cart-layout */}
         </>
       )}
     </div>
