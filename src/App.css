@@ -275,6 +275,17 @@ body {
   padding-bottom: calc(var(--bottom-nav-height) + 16px);
 }
 
+/* 상품 그리드 (반응형: 폰 2열 / 태블릿 3열 / PC 4열 / 넓은PC 5열) */
+.product-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 0 16px 100px;
+}
+@media (min-width: 768px)  { .product-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
+@media (min-width: 1024px) { .product-grid { grid-template-columns: repeat(4, 1fr); padding: 0 24px 100px; } }
+@media (min-width: 1440px) { .product-grid { grid-template-columns: repeat(5, 1fr); } }
+
 /* 배너 */
 .banner {
   width: 100%;
@@ -741,12 +752,12 @@ body {
 /* 태블릿/PC */
 @media (min-width: 768px) {
   .App {
-    max-width: 480px;
+    max-width: 1200px;          /* 반응형: 데스크탑에서 넓은 컨테이너(구 480px 폰프레임 해제) */
     margin: 0 auto;
-    box-shadow: 0 0 40px rgba(0,0,0,0.1);
+    box-shadow: 0 0 40px rgba(0,0,0,0.06);
   }
   .bottom-nav {
-    max-width: 480px;
+    max-width: 480px;           /* 내비게이션은 Phase 2에서 상단 헤더 메뉴로 이관 예정 */
   }
 }
 

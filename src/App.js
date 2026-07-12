@@ -576,7 +576,7 @@ function AppContent() {
                       }
                     }
                   }}
-                  style={{ display: 'flex', aspectRatio: '5 / 2', transition: bannerTransition ? 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none', WebkitTransform: `translateX(-${bannerIndex * 100}%)`, transform: `translateX(-${bannerIndex * 100}%)`, willChange: 'transform' }}>
+                  style={{ display: 'flex', aspectRatio: '5 / 2', maxHeight: '360px', transition: bannerTransition ? 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none', WebkitTransform: `translateX(-${bannerIndex * 100}%)`, transform: `translateX(-${bannerIndex * 100}%)`, willChange: 'transform' }}>
                   {[...banners, banners[0]].map((slide, index) => (
                     <div key={index} onClick={() => { if (slide.filter) { setFilterLarge(slide.filter); setFilterMedium('전체'); setFilterSmall('전체'); } }}
                       style={{ minWidth: '100%', ...(slide.image_url ? { backgroundImage: `url(${BANNER_IMG_BASE}${slide.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: slide.bg }), borderRadius: '18px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', overflow: 'hidden', position: 'relative', cursor: slide.filter ? 'pointer' : 'default', boxSizing: 'border-box' }}>
@@ -680,7 +680,7 @@ function AppContent() {
                 <span className="empty-state-text">{filterLarge === '행사중' ? '현재 진행중인 행사가 없어요!' : '해당 카테고리에 상품이 없어요!'}</span>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', padding: '0 16px 100px' }}>
+              <div className="product-grid">
                 {(filterLarge === '행사중' ? eventProducts : filteredProducts).map((product) => (
                   <div key={product.id}
                     onClick={() => { if (!product.isSoldOut) { setSelectedProduct(product); goToPage('productDetail'); } }}
