@@ -808,3 +808,56 @@ body {
 .App[style*="invert"] .banner > * {
   filter: invert(1) hue-rotate(180deg);
 }
+
+/* ===========================
+   반응형 Phase 2: 데스크탑 상단 헤더 메뉴 (모바일은 하단 탭바 유지)
+=========================== */
+.header-nav { display: none; }            /* 모바일: 숨김(하단 탭바 사용) */
+.header-nav-item {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: #868e96;
+  padding: 8px 16px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  position: relative;
+  transition: var(--transition);
+}
+.header-nav-item:hover,
+.header-nav-item.active {
+  color: var(--primary);
+  background: var(--gray-100);
+}
+.header-nav-count {
+  font-size: 11px;
+  font-weight: 800;
+  color: white;
+  background: var(--accent);
+  min-width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+/* 데스크탑/태블릿(≥768): 상단 메뉴 노출 + 하단 탭바 숨김 */
+@media (min-width: 768px) {
+  .header-logo { flex: 0 0 auto; }        /* 로고는 자연폭, 가운데를 메뉴에 양보 */
+  .header-nav {
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    gap: 6px;
+  }
+  .bottom-nav { display: none; }
+  .main-content { padding-bottom: 24px; } /* 하단바 자리 예약 해제(@supports 이후라 우선 적용) */
+}

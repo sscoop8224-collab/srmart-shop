@@ -523,6 +523,15 @@ function AppContent() {
             🏪 {currentStore.name}
           </span>
         )}
+        {/* 데스크탑 상단 메뉴 (모바일에서는 CSS로 숨김, 하단 탭바 사용) */}
+        <nav className="header-nav">
+          <button className={'header-nav-item' + (page === 'home' ? ' active' : '')} onClick={() => goToPage('home')}>홈</button>
+          <button className={'header-nav-item' + (page === 'cart' ? ' active' : '')} onClick={() => user ? goToPage('cart') : requireLogin()}>
+            장바구니{cart.length > 0 && <span className="header-nav-count">{cart.length}</span>}
+          </button>
+          <button className={'header-nav-item' + (page === 'wishlist' ? ' active' : '')} onClick={() => user ? goToPage('wishlist') : requireLogin()}>찜</button>
+          <button className={'header-nav-item' + (page === 'mypage' ? ' active' : '')} onClick={() => user ? goToPage('mypage') : requireLogin()}>마이</button>
+        </nav>
         <div className="header-actions">
           {user && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', padding: '4px 8px' }}>
