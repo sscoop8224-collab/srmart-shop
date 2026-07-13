@@ -12,7 +12,10 @@ const config: CapacitorConfig = {
   },
   server: {
     androidScheme: 'https',
-    cleartext: true,
+    // 웹뷰가 배포된 라이브 쇼핑몰을 로드(호스티드). Tailscale IP 제거 → 도메인 고정.
+    // 이점: 웹 배포가 앱에 바로 반영(웹 변경 시 APK 재빌드 불필요). 단, 서버 접속 필요(오프라인=빈 화면).
+    url: 'https://dongsinmarket.co.kr/shop/',
+    cleartext: false,
   },
   plugins: {
     CapacitorHttp: {

@@ -336,7 +336,7 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
           <div role="button" tabIndex={0}
             onClick={() => {
               if (Capacitor.isNativePlatform()) {
-                window.open('http://100.73.58.124/admin', '_system');
+                window.open('https://dongsinmarket.co.kr/admin', '_system');
               } else {
                 window.open('/admin', '_blank', 'noopener,noreferrer');
               }

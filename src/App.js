@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
-import { login as apiLogin, getActiveProducts, getCategories, getBanners, getMyOrders, createOrder, getCoupons, getWishlist, toggleWishlist as toggleWishlistApi } from './api';
+import { login as apiLogin, getActiveProducts, getCategories, getBanners, getMyOrders, createOrder, getCoupons, getWishlist, toggleWishlist as toggleWishlistApi, SITE } from './api';
 import API from './api';
 import Chatbot from './components/Chatbot';
 import StoreSelectionModal from './components/StoreSelectionModal';
@@ -39,8 +39,8 @@ const getCategoryImage = (large) => {
   }
 };
 
-// 배너 이미지 origin: 웹은 동일 출처(nginx가 /uploads 서빙), 네이티브 앱은 Tailscale 호스트.
-const BANNER_IMG_BASE = Capacitor.isNativePlatform() ? 'http://100.73.58.124' : '';
+// 배너 이미지 origin: 웹은 동일 출처(nginx가 /uploads 서빙), 네이티브 앱은 도메인.
+const BANNER_IMG_BASE = Capacitor.isNativePlatform() ? SITE : '';
 
 // 백엔드 categories(평면 행 {code,large,medium,small})를 shop UI가 쓰는 중첩 트리
 // [{name:대분류, children:[{name:중분류, children:[소분류...]}]}] 로 변환. code 순 정렬로 순서 유지.

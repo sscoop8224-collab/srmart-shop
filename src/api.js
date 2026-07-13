@@ -1,8 +1,12 @@
 import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 
+// 서비스 도메인. 네이티브 앱은 절대 도메인, 웹은 같은 출처(상대경로 /api → nginx 프록시).
+// Tailscale IP 하드코딩 제거 — 서버 이전으로 IP가 바뀌어도 도메인은 불변.
+export const SITE = 'https://dongsinmarket.co.kr';
+
 const API = axios.create({
-  baseURL: Capacitor.isNativePlatform() ? 'http://100.73.58.124/api' : '/api',
+  baseURL: Capacitor.isNativePlatform() ? `${SITE}/api` : '/api',
 });
 
 API.interceptors.request.use((config) => {
@@ -12,9 +16,11 @@ API.interceptors.request.use((config) => {
 });
 
 // ── 카카오페이 결제 서버 (메인 백엔드와 별개, 포트 5001) ──────────
-// 웹: 같은 호스트의 5001 포트, 네이티브 앱: 서버 호스트의 5001 포트
+// Tailscale IP 제거. 웹(개발)=로컬 :5001, 네이티브=도메인 경유.
+// TODO(PG 실연동): Nginx가 `/pay/` → `127.0.0.1:5001/api/` 로 프록시하도록 배선 필요.
+//   그 전까지 결제는 휴면(테스트 CID). 배선되면 웹도 `${SITE}/pay`로 통일.
 const PAY_API = axios.create({
-  baseURL: Capacitor.isNativePlatform() ? 'http://100.73.58.124:5001/api' : 'http://localhost:5001/api',
+  baseURL: Capacitor.isNativePlatform() ? `${SITE}/pay` : 'http://localhost:5001/api',
 });
 
 export const kakaoPayReady = (orderInfo) =>
