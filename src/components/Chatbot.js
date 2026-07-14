@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
+import API from '../api';
 
-const API_KEY = "AIzaSyAAATL1cbqm407rXp9Lm-e17XHJxFySxP4";
-
+// AI 키는 서버(연동 관리)에만 보관 — 클라이언트 하드코딩 제거. 챗봇은 백엔드 /api/chatbot 경유.
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
@@ -18,37 +18,16 @@ const Chatbot = () => {
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
 
-    const userMessage = { role: 'user', content: input };
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    const text = input.trim();
+    const priorHistory = messages.map(m => ({ role: m.role === 'user' ? 'user' : 'model', content: m.content }));
+    setMessages(prev => [...prev, { role: 'user', content: text }]);
     setInput('');
     setLoading(true);
 
     try {
-      const history = newMessages.map(m => ({
-        role: m.role,
-        parts: [{ text: m.content }]
-      }));
-
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            system_instruction: {
-              parts: [{ text: `당신은 SR Mart(동신마켓) 검암점의 친절한 쇼핑 도우미 AI입니다.
-모든 답변은 한국어로 하세요.
-고객의 상품 추천, 주문 문의, 매장 정보 등을 친절하고 간결하게 안내해주세요.
-매장 정보: 편의점/소형마트, 카카오페이 결제 가능, 온라인 주문 가능.` }]
-            },
-            contents: history
-          })
-        }
-      );
-
-      const data = await response.json();
-      const replyText = data.candidates[0].content.parts[0].text;
+      // 서버가 연동 관리에 등록된 AI로 응답(키는 서버에만). 미설정 시 안내 메시지 반환.
+      const res = await API.post('/chatbot', { message: text, history: priorHistory });
+      const replyText = res.data?.reply || '죄송해요, 다시 시도해주세요!';
       setMessages(prev => [...prev, { role: 'model', content: replyText }]);
     } catch (error) {
       setMessages(prev => [...prev, {
