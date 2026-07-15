@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { matchZipcode, getMyPoints, getMyActiveCoupons, applyCoupon } from '../api';
+import { matchZipcode, getMyPoints, getMyActiveCoupons, applyCoupon, imgUrl } from '../api';
 import { useStore } from '../StoreContext';
 
 const getCategoryImage = (large) => {
@@ -234,7 +234,7 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
             {cart.map((item) => (
               <div key={item.id} style={{ background: cardBg, borderRadius: '18px', padding: '14px', display: 'flex', gap: '12px', alignItems: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: `1px solid ${borderColor}` }}>
                 <div style={{ width: '72px', height: '72px', borderRadius: '14px', overflow: 'hidden', flexShrink: 0 }}>
-                  <img src={item.image || getCategoryImage(item.large)} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={item.image ? imgUrl(item.image) : getCategoryImage(item.large)} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: '11px', color: '#00c471', margin: '0 0 3px', fontWeight: '700' }}>{item.large}</p>

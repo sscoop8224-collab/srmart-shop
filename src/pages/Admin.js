@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { imgUrl } from '../api';
 import CategoryManager from './CategoryManager';
 import BarcodeQRScanner, { ScanButtonIcon } from '../components/common/BarcodeQRScanner';
 
@@ -266,7 +267,7 @@ function Admin({ products, setProducts, categories, setCategories, messages, set
                 <div key={product.id} style={{ background: editId === product.id ? (darkMode ? '#1e3a2a' : '#f0faf5') : cardBg, borderRadius: '16px', border: editId === product.id ? '1.5px solid #00c471' : `1px solid ${border}`, padding: '14px', display: 'flex', gap: '12px', alignItems: 'flex-start', boxShadow: darkMode ? 'none' : '0 2px 8px rgba(0,0,0,0.04)', opacity: product.isSoldOut ? 0.8 : 1 }}>
                   <div style={{ width: '70px', height: '70px', borderRadius: '12px', overflow: 'hidden', flexShrink: 0 }}>
                     {product.image ? (
-                      <img src={product.image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={imgUrl(product.image)} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
                       <div style={{ width: '100%', height: '100%', background: darkMode ? '#333' : '#f0faf5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

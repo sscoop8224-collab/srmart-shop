@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
-import { login as apiLogin, getActiveProducts, getCategories, getBanners, getMyOrders, createOrder, getCoupons, getWishlist, toggleWishlist as toggleWishlistApi, SITE } from './api';
+import { login as apiLogin, getActiveProducts, getCategories, getBanners, getMyOrders, createOrder, getCoupons, getWishlist, toggleWishlist as toggleWishlistApi, SITE, imgUrl } from './api';
 import API from './api';
 import Chatbot from './components/Chatbot';
 import StoreSelectionModal from './components/StoreSelectionModal';
@@ -695,7 +695,7 @@ function AppContent() {
                     onClick={() => { if (!product.isSoldOut) { setSelectedProduct(product); goToPage('productDetail'); } }}
                     style={{ background: darkMode ? '#2a2a2a' : 'white', borderRadius: '20px', overflow: 'hidden', boxShadow: darkMode ? '0 2px 16px rgba(0,0,0,0.4)' : '0 2px 16px rgba(0,0,0,0.07)', position: 'relative', opacity: product.isSoldOut ? 0.6 : 1, cursor: product.isSoldOut ? 'default' : 'pointer', border: product.isAdult ? '1.5px solid #ffcdd2' : `1px solid ${darkMode ? '#3a3a3a' : '#f0faf5'}` }}>
                     <div style={{ height: '130px', position: 'relative', overflow: 'hidden' }}>
-                      <img src={product.image || getCategoryImage(product.large)} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={product.image ? imgUrl(product.image) : getCategoryImage(product.large)} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       {!product.image && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,196,113,0.08)' }} />}
                       {product.isSoldOut && (
                         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

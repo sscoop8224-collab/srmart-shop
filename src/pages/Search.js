@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { searchProducts, getSearchSuggestions, getPopularSearches } from '../api';
+import { searchProducts, getSearchSuggestions, getPopularSearches, imgUrl } from '../api';
 
 const SORT_OPTIONS = [
   { value: 'popular', label: '인기순' },
@@ -168,7 +168,7 @@ function Search({ products, categories, goBack, onProductClick, onAddToCart, dar
                 return (
                   <div key={product.id} onClick={() => onProductClick?.(product)} style={{ background: cardBg, borderRadius: 16, overflow: 'hidden', cursor: 'pointer', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: `1px solid ${border}` }}>
                     <div style={{ width: '100%', aspectRatio: '1', overflow: 'hidden', background: darkMode ? '#1a1a1a' : '#f0faf5' }}>
-                      <img src={product.image || getCategoryImage(product.large)} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.src = getCategoryImage(product.large); }} />
+                      <img src={product.image ? imgUrl(product.image) : getCategoryImage(product.large)} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.src = getCategoryImage(product.large); }} />
                     </div>
                     <div style={{ padding: '10px 12px' }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: text, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</div>

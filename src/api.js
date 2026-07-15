@@ -5,6 +5,15 @@ import { Capacitor } from '@capacitor/core';
 // Tailscale IP 하드코딩 제거 — 서버 이전으로 IP가 바뀌어도 도메인은 불변.
 export const SITE = 'https://dongsinmarket.co.kr';
 
+// [imgUrl] 상품/주문 이미지 렌더 공용 헬퍼. 저장값('products/xxx.png') → 웹=상대 /uploads/... (nginx 서빙), 네이티브=도메인 절대.
+// 이미 http/data/blob URL이면 그대로 둔다.
+export const imgUrl = (p) => {
+  if (!p) return '';
+  if (/^(https?:|data:|blob:)/.test(p)) return p;
+  const rel = p.startsWith('/uploads/') ? p : `/uploads/${p.replace(/^\/+/, '')}`;
+  return `${Capacitor.isNativePlatform() ? SITE : ''}${rel}`;
+};
+
 const API = axios.create({
   baseURL: Capacitor.isNativePlatform() ? `${SITE}/api` : '/api',
 });

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { imgUrl } from '../api';
 
 const getCategoryImage = (large) => {
   switch(large) {
@@ -89,7 +90,7 @@ function AdminOrders({ orders, setOrders, goBack, onPrint, darkMode }) {
                   {order.items.map((item, index) => (
                     <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', borderBottom: index < order.items.length - 1 ? `1px solid ${borderColor}` : 'none' }}>
                       <div style={{ width: '44px', height: '44px', borderRadius: '10px', overflow: 'hidden', flexShrink: 0 }}>
-                        <img src={item.image || getCategoryImage(item.large)} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={item.image ? imgUrl(item.image) : getCategoryImage(item.large)} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       </div>
                       <div style={{ flex: 1 }}>
                         <p style={{ fontSize: '13px', fontWeight: '700', color: textColor, margin: '0 0 2px' }}>{item.name}</p>

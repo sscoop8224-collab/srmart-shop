@@ -1,3 +1,5 @@
+import { imgUrl } from '../api';
+
 const getCategoryImage = (large) => {
   switch(large) {
     case '식품': return 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200&q=80';
@@ -67,7 +69,7 @@ function Receipt({ order, onClose, onGoHome, earnPoints }) {
             <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 0', borderBottom: index < order.items.length - 1 ? '1px solid #f8fffe' : 'none' }}>
               <div style={{ width: '52px', height: '52px', borderRadius: '12px', overflow: 'hidden', flexShrink: 0 }}>
                 <img
-                  src={item.image || getCategoryImage(item.large)}
+                  src={item.image ? imgUrl(item.image) : getCategoryImage(item.large)}
                   alt={item.name}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />

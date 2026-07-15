@@ -1,3 +1,5 @@
+import { imgUrl } from '../api';
+
 const getCategoryImage = (large) => {
   switch(large) {
     case '식품': return 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300&q=80';
@@ -69,7 +71,7 @@ function Wishlist({ wishlist, onProductClick, onAddToCart, onToggleWishlist, goB
                 style={{ background: cardBg, borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', cursor: 'pointer', border: `1px solid ${borderColor}` }}
                 onClick={() => onProductClick(product)}>
                 <div style={{ height: '130px', position: 'relative', overflow: 'hidden' }}>
-                  <img src={product.image || getCategoryImage(product.large)} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={product.image ? imgUrl(product.image) : getCategoryImage(product.large)} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   {!product.image && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,196,113,0.06)' }} />}
                   <button onClick={(e) => { e.stopPropagation(); onToggleWishlist(product); }}
                     style={{ position: 'absolute', top: '8px', right: '8px', width: '30px', height: '30px', borderRadius: '50%', background: 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
