@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
-import { login as apiLogin, getActiveProducts, getCategories, getBanners, getMyOrders, createOrder, getWishlist, toggleWishlist as toggleWishlistApi, SITE, imgUrl } from './api';
+import { login as apiLogin, getActiveProducts, getCategories, getBanners, getMyOrders, createOrder, getWishlist, toggleWishlist as toggleWishlistApi, imgUrl } from './api';
 import API from './api';
 import Chatbot from './components/Chatbot';
 import StoreSelectionModal from './components/StoreSelectionModal';
@@ -39,8 +39,7 @@ const getCategoryImage = (large) => {
   }
 };
 
-// 배너 이미지 origin: 웹은 동일 출처(nginx가 /uploads 서빙), 네이티브 앱은 도메인.
-const BANNER_IMG_BASE = Capacitor.isNativePlatform() ? SITE : '';
+// 배너/상품 이미지 origin은 api.js의 imgUrl()로 통일(웹=동일출처, 네이티브=도메인).
 
 // 백엔드 categories(평면 행 {code,large,medium,small})를 shop UI가 쓰는 중첩 트리
 // [{name:대분류, children:[{name:중분류, children:[소분류...]}]}] 로 변환. code 순 정렬로 순서 유지.
@@ -573,7 +572,7 @@ function AppContent() {
                   style={{ display: 'flex', aspectRatio: '5 / 2', maxHeight: '360px', transition: bannerTransition ? 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none', WebkitTransform: `translateX(-${bannerIndex * 100}%)`, transform: `translateX(-${bannerIndex * 100}%)`, willChange: 'transform' }}>
                   {[...banners, banners[0]].map((slide, index) => (
                     <div key={index} onClick={() => { if (slide.filter) { setFilterLarge(slide.filter); setFilterMedium('전체'); setFilterSmall('전체'); } }}
-                      style={{ minWidth: '100%', ...(slide.image_url ? { backgroundImage: `url(${BANNER_IMG_BASE}${slide.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: slide.bg }), borderRadius: '18px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', overflow: 'hidden', position: 'relative', cursor: slide.filter ? 'pointer' : 'default', boxSizing: 'border-box' }}>
+                      style={{ minWidth: '100%', ...(slide.image_url ? { backgroundImage: `url(${imgUrl(slide.image_url)})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: slide.bg }), borderRadius: '18px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', overflow: 'hidden', position: 'relative', cursor: slide.filter ? 'pointer' : 'default', boxSizing: 'border-box' }}>
                       {slide.image_url
                         ? <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(0,0,0,0.45), rgba(0,0,0,0.05))' }} />
                         : <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%' }} />}

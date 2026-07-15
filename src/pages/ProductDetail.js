@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getProductReviews, createReview, toggleWishlist, getRelatedProducts, recordRecentView } from '../api';
+import { getProductReviews, createReview, toggleWishlist, getRelatedProducts, recordRecentView, imgUrl } from '../api';
 
 const getCategoryImage = (large) => {
   switch(large) {
@@ -114,12 +114,12 @@ function ProductDetail({ product, onBack, onAddToCart, darkMode, user }) {
       <div className="pd-media" style={{ position: 'relative', background: cardBg }}>
         {images.length > 0 ? (
           <>
-            <img src={images[selectedImage]} alt={product.name}
+            <img src={imgUrl(images[selectedImage])} alt={product.name}
               style={{ width: '100%', height: '300px', objectFit: 'cover' }} />
             {images.length > 1 && (
               <div style={{ display: 'flex', gap: '8px', padding: '12px 16px', overflowX: 'auto', background: cardBg }}>
                 {images.map((img, index) => (
-                  <img key={index} src={img} alt={'상품' + (index + 1)}
+                  <img key={index} src={imgUrl(img)} alt={'상품' + (index + 1)}
                     onClick={() => setSelectedImage(index)}
                     style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '10px', border: selectedImage === index ? '2px solid #00c471' : `2px solid ${border}`, cursor: 'pointer', flexShrink: 0 }} />
                 ))}
@@ -320,7 +320,7 @@ function ProductDetail({ product, onBack, onAddToCart, darkMode, user }) {
       {product.nutritionImage && (
         <div style={{ background: cardBg, margin: '8px 0', padding: '20px', borderTop: `1px solid ${border}` }}>
           <h3 style={{ fontSize: '16px', fontWeight: '800', color: text, margin: '0 0 12px' }}>🥗 영양정보</h3>
-          <img src={product.nutritionImage} alt="영양정보"
+          <img src={imgUrl(product.nutritionImage)} alt="영양정보"
             style={{ width: '100%', borderRadius: '14px', border: `1px solid ${border}` }} />
         </div>
       )}

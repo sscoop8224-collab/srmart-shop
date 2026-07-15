@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { imgUrl } from '../../api';
 import Sidebar from '../layout/Sidebar';
 
 const sg = '#00c471';
@@ -584,7 +585,7 @@ export function ProductManagement({ setPage, dark, setDark, products: rawProduct
                     <td style={s.td}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ width: 36, height: 36, borderRadius: 8, background: c.thumbBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, overflow: 'hidden', flexShrink: 0 }}>
-                          {p.images && p.images.length > 0 ? <img src={p.images[0].url} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : CAT_ICON_LARGE[p.large] || '📦'}
+                          {p.images && p.images.length > 0 ? <img src={imgUrl(p.images[0].url)} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : CAT_ICON_LARGE[p.large] || '📦'}
                         </div>
                         <div>
                           <div style={{ fontWeight: 600, fontSize: 12, color: c.textPrimary }}>
@@ -718,7 +719,7 @@ export function ProductManagement({ setPage, dark, setDark, products: rawProduct
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {form.images.map((img, idx) => (
                   <div key={idx} style={{ position: 'relative', width: 72, height: 72 }}>
-                    <img src={img.url} alt={img.name} style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8, border: `1px solid ${c.cardBorder}` }} />
+                    <img src={imgUrl(img.url)} alt={img.name} style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8, border: `1px solid ${c.cardBorder}` }} />
                     <button onClick={() => removeImage(idx)} style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, borderRadius: '50%', background: '#e24b4a', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
                   </div>
                 ))}

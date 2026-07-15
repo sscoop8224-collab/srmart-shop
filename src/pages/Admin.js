@@ -25,7 +25,7 @@ function ImageUploadMulti({ images, onImagesChange, darkMode }) {
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         {images.map((img, index) => (
           <div key={index} style={{ position: 'relative' }}>
-            <img src={img} alt={'상품' + (index + 1)} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '12px', border: '2px solid #e8faf3' }} />
+            <img src={imgUrl(img)} alt={'상품' + (index + 1)} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '12px', border: '2px solid #e8faf3' }} />
             {index === 0 && <span style={{ position: 'absolute', bottom: '4px', left: '4px', background: '#00c471', color: 'white', fontSize: '9px', padding: '2px 6px', borderRadius: '6px', fontWeight: '700' }}>대표</span>}
             <button onClick={() => handleRemove(index)} style={{ position: 'absolute', top: '3px', right: '3px', background: '#ff4757', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
           </div>
@@ -211,7 +211,7 @@ function Admin({ products, setProducts, categories, setCategories, messages, set
                   <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '8px' }}>영양정보 이미지 (선택)</label>
                   {form.nutritionImage && (
                     <div style={{ position: 'relative', marginBottom: '8px' }}>
-                      <img src={form.nutritionImage} alt="영양정보" style={{ width: '100%', borderRadius: '12px', border: '1px solid #e8faf3' }} />
+                      <img src={imgUrl(form.nutritionImage)} alt="영양정보" style={{ width: '100%', borderRadius: '12px', border: '1px solid #e8faf3' }} />
                       <button onClick={() => setForm({ ...form, nutritionImage: null })} style={{ position: 'absolute', top: '8px', right: '8px', background: '#ff4757', color: 'white', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', fontSize: '12px' }}>✕</button>
                     </div>
                   )}
