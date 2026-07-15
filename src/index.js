@@ -21,7 +21,7 @@ root.render(
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register('/service-worker.js')
+      .register(`${process.env.PUBLIC_URL}/service-worker.js`)
       .then((reg) => {
         console.log('[SW] registered, scope:', reg.scope);
         // 새 버전 감지 시 자동 업데이트

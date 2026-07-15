@@ -88,7 +88,7 @@ export default function InstallPrompt() {
       <style>{`@keyframes slideUp { from { opacity:0; transform:translateX(-50%) translateY(20px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }`}</style>
       <div style={cardStyle}>
         <div style={{ width: 44, height: 44, background: '#e8f5e9', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <img src="/icons/icon-72.png" alt="SR마트" style={{ width: 32, height: 32, borderRadius: 8 }} />
+          <img src={`${process.env.PUBLIC_URL}/icons/icon-72.png`} alt="SR마트" style={{ width: 32, height: 32, borderRadius: 8 }} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: darkMode ? '#f0f0f0' : '#1a1a1a', marginBottom: 3 }}>
