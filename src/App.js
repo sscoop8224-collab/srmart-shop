@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
-import { login as apiLogin, getActiveProducts, getCategories, getBanners, getMyOrders, createOrder, getCoupons, getWishlist, toggleWishlist as toggleWishlistApi, SITE, imgUrl } from './api';
+import { login as apiLogin, getActiveProducts, getCategories, getBanners, getMyOrders, createOrder, getWishlist, toggleWishlist as toggleWishlistApi, SITE, imgUrl } from './api';
 import API from './api';
 import Chatbot from './components/Chatbot';
 import StoreSelectionModal from './components/StoreSelectionModal';
@@ -165,7 +165,6 @@ function AppContent() {
   const [bannerIndex, setBannerIndex] = useState(0);
   const [bannerTransition, setBannerTransition] = useState(true);
   const [lastOrder, setLastOrder] = useState(null);
-  const [coupons, setCoupons] = useState([]);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [events, setEvents] = useState([]);
   const [banners, setBanners] = useState([]); // 백엔드에서 로드(admin 관리). 0건이면 배너 영역 숨김.
@@ -299,18 +298,6 @@ function AppContent() {
     }
   };
 
-  const loadCoupons = async () => {
-    try {
-      const res = await getCoupons();
-      setCoupons(res.data.map(c => ({
-        ...c,
-        isActive: !!c.is_active,
-      })));
-    } catch (err) {
-      console.error('쿠폰 로드 실패:', err);
-    }
-  };
-
   // 카테고리(전역)는 최초 1회 로드 — 매장 무관.
   useEffect(() => { loadCategories(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -331,7 +318,7 @@ function AppContent() {
     localStorage.setItem('srmart_token', token);
     setUser(dbUser);
     authLogin(dbUser);
-    await Promise.all([loadProducts(dbUser.store_id), loadMyOrders(), loadCoupons(), loadWishlist()]);
+    await Promise.all([loadProducts(dbUser.store_id), loadMyOrders(), loadWishlist()]);
     goToPage('home');
   };
 
@@ -341,7 +328,6 @@ function AppContent() {
       return;
     }
     loadProducts(guestStoreId);
-    loadCoupons();
     setPage('home');
   };
 
@@ -357,7 +343,6 @@ function AppContent() {
   const handleStoreSelected = async (storeId) => {
     setShowStoreModal(false);
     await loadProducts(storeId);
-    await loadCoupons();
     setPage('home');
   };
 
@@ -740,7 +725,7 @@ function AppContent() {
         {page === 'wishlist'        && <Wishlist wishlist={wishlist} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWishlist={toggleWishlist} goBack={goBack} goToHome={() => goToPage('home')} darkMode={darkMode} />}
         {page === 'search'          && <Search products={products} categories={categories} goBack={goBack} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} />}
         {page === 'productDetail'   && <ProductDetail product={selectedProduct} onBack={goBack} onAddToCart={addToCart} darkMode={darkMode} />}
-        {page === 'cart'            && <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} coupons={coupons} user={currentUser} appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon} darkMode={darkMode} />}
+        {page === 'cart'            && <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} user={currentUser} appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon} darkMode={darkMode} />}
         {page === 'orders'          && <Orders orders={orders} goBack={goBack} />}
         {page === 'receipt'         && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
         {page === 'mypage'          && <MyPage user={currentUser} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} users={users} setUsers={setUsers} isAdmin={isAdmin} />}
