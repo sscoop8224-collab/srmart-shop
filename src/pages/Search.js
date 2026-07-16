@@ -171,7 +171,7 @@ function Search({ products, categories, goBack, onProductClick, onAddToCart, dar
                       <img src={product.image ? imgUrl(product.image) : getCategoryImage(product.large)} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.src = getCategoryImage(product.large); }} />
                     </div>
                     <div style={{ padding: '10px 12px' }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: text, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: text, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}{product.spec ? ` ${product.spec}` : ''}</div>
                       {price && <div style={{ fontSize: 15, fontWeight: 800, color: '#00c471' }}>₩{Number(price).toLocaleString()}</div>}
                     </div>
                   </div>

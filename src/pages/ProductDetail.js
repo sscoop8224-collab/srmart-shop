@@ -161,9 +161,10 @@ function ProductDetail({ product, onBack, onAddToCart, darkMode, user }) {
           )}
         </div>
 
-        {/* 상품명 */}
+        {/* 상품명 (+ 규격 병기) */}
         <h1 style={{ fontSize: '22px', fontWeight: '800', color: text, margin: '0 0 6px', letterSpacing: '-0.5px' }}>
           {product.name}
+          {product.spec && <span style={{ fontWeight: 600, color: sub }}> {product.spec}</span>}
         </h1>
 
         {/* 바코드 */}
@@ -316,14 +317,23 @@ function ProductDetail({ product, onBack, onAddToCart, darkMode, user }) {
         </div>
       )}
 
-      {/* 영양정보 */}
-      {product.nutritionImage && (
-        <div style={{ background: cardBg, margin: '8px 0', padding: '20px', borderTop: `1px solid ${border}` }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '800', color: text, margin: '0 0 12px' }}>🥗 영양정보</h3>
-          <img src={imgUrl(product.nutritionImage)} alt="영양정보"
-            style={{ width: '100%', borderRadius: '14px', border: `1px solid ${border}` }} />
-        </div>
-      )}
+      {/* 상품 정보 — 성분표·영양정보·상세컷을 세로로 크게 (쿠팡식, 원본 비율 유지). 이미지 없으면 섹션 숨김 */}
+      {(() => {
+        const imgs = Array.isArray(product.nutrition_images) ? product.nutrition_images.filter(Boolean) : [];
+        if (product.nutritionImage && !imgs.length) imgs.push(product.nutritionImage);   // 레거시 단일 호환
+        if (!imgs.length) return null;
+        return (
+          <div style={{ background: cardBg, margin: '8px 0', padding: '20px', borderTop: `1px solid ${border}` }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '800', color: text, margin: '0 0 12px' }}>📋 상품 정보</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {imgs.map((src, i) => (
+                <img key={i} src={imgUrl(src)} alt={`상품 정보 ${i + 1}`}
+                  style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '14px', border: `1px solid ${border}` }} />
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 리뷰 섹션 */}
       <div style={{ margin: '12px 0', background: cardBg, borderTop: `8px solid ${darkMode ? '#111' : '#f8f9fa'}`, padding: '20px' }}>

@@ -697,7 +697,7 @@ function AppContent() {
                     </div>
                     <div style={{ padding: '10px 11px 12px' }}>
                       <p style={{ fontSize: '10px', color: '#00c471', margin: '0 0 3px', fontWeight: '700' }}>{product.large}</p>
-                      <p style={{ fontSize: '13px', fontWeight: '700', color: darkMode ? '#f0f0f0' : '#1a1a1a', margin: '0 0 8px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.name}</p>
+                      <p style={{ fontSize: '13px', fontWeight: '700', color: darkMode ? '#f0f0f0' : '#1a1a1a', margin: '0 0 8px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.name}{product.spec ? ` ${product.spec}` : ''}</p>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div>
                           {product.salePrice != null && product.salePrice !== product.price ? (
