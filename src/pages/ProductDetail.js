@@ -115,7 +115,7 @@ function ProductDetail({ product, onBack, onAddToCart, darkMode, user }) {
         {images.length > 0 ? (
           <>
             <img src={imgUrl(images[selectedImage])} alt={product.name}
-              style={{ width: '100%', height: '300px', objectFit: 'cover' }} />
+              style={{ width: '100%', height: '44vh', maxHeight: '420px', objectFit: 'contain', background: '#fff', display: 'block' }} />
             {images.length > 1 && (
               <div style={{ display: 'flex', gap: '8px', padding: '12px 16px', overflowX: 'auto', background: cardBg }}>
                 {images.map((img, index) => (
@@ -127,7 +127,7 @@ function ProductDetail({ product, onBack, onAddToCart, darkMode, user }) {
             )}
           </>
         ) : (
-          <div style={{ position: 'relative', height: '300px', overflow: 'hidden' }}>
+          <div style={{ position: 'relative', height: '44vh', maxHeight: '420px', overflow: 'hidden' }}>
             <img src={getCategoryImage(product.large)} alt={product.large}
               style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,196,113,0.05), rgba(0,168,94,0.15))' }} />
