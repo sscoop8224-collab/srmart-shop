@@ -58,36 +58,25 @@ const Chatbot = () => {
 
   return (
     <>
-      {/* 상담 진입 버튼 — 아이콘+라벨 알약(카카오채널 스타일). 스크롤/열림 시 축소 */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        aria-label="AI 상담"
-        style={{
-          position: 'fixed',
-          bottom: '76px',
-          right: '16px',
-          height: '52px',
-          width: (isOpen || collapsed) ? '52px' : 'auto',
-          padding: (isOpen || collapsed) ? '0' : '0 18px 0 15px',
-          borderRadius: '26px',
-          backgroundColor: '#00c471',
-          border: 'none',
-          cursor: 'pointer',
-          color: 'white',
-          fontWeight: 700,
-          fontSize: isOpen ? '22px' : '15px',
-          whiteSpace: 'nowrap',
-          boxShadow: '0 4px 14px rgba(0,196,113,0.45)',
-          zIndex: 1001,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '7px',
-          transition: 'width .2s ease, padding .2s ease',
-        }}
-      >
-        {isOpen ? '✕' : (<><span style={{ fontSize: '20px' }}>💬</span>{!collapsed && <span>AI 상담</span>}</>)}
-      </button>
+      {/* 상담 진입 — 원형 말풍선 버튼 + 아래 라벨(하단 탭 아이콘+글자 구조). 스크롤 시 라벨만 접힘 */}
+      <div style={{ position: 'fixed', bottom: '76px', right: '16px', zIndex: 1001, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          aria-label="AI 상담"
+          style={{
+            width: '52px', height: '52px', borderRadius: '50%',
+            backgroundColor: '#00c471', border: 'none', cursor: 'pointer',
+            color: 'white', fontSize: '22px',
+            boxShadow: '0 4px 14px rgba(0,196,113,0.45)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          {isOpen ? '✕' : '💬'}
+        </button>
+        {!isOpen && !collapsed && (
+          <span style={{ fontSize: '10px', fontWeight: 700, color: 'white', background: '#00c471', padding: '2px 8px', borderRadius: '8px', boxShadow: '0 2px 6px rgba(0,0,0,0.28)', whiteSpace: 'nowrap', letterSpacing: '-0.2px' }}>AI 상담</span>
+        )}
+      </div>
 
       {/* 챗봇 창 */}
       {isOpen && (
