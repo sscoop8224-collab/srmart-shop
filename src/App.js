@@ -7,6 +7,7 @@ import API from './api';
 import Chatbot from './components/Chatbot';
 import StoreSelectionModal from './components/StoreSelectionModal';
 import InstallPrompt from './components/InstallPrompt';
+import PerfOverlay from './components/PerfOverlay';   // [임시 계측]
 import { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 import srmLogo from './srm_logo.png';
@@ -96,12 +97,14 @@ function AppContent() {
   const hideSplash = useCallback(async () => {
     if (splashHiddenRef.current || !Capacitor.isNativePlatform()) return;
     splashHiddenRef.current = true;
+    window.__perf && window.__perf.mark('splashHide');   // [임시 계측]
     try { await SplashScreen.hide(); } catch (e) {}
   }, []);
 
   // 스플래시: App 마운트 + 짧은 지연(첫 페인트 버퍼)만으로 hide.
   // body/#root 배경이 다크그린(#077D3C)이라 데이터 로드를 기다리지 않아도 흰 화면 없이 스플래시→콘텐츠로 이어짐.
   useEffect(() => {
+    window.__perf && window.__perf.mark('appMount');   // [임시 계측] React 첫 마운트
     if (!Capacitor.isNativePlatform()) return;
     const t = setTimeout(hideSplash, 250);          // 마운트 후 250ms(최소 페인트 버퍼) — 배경이 다크그린이라 짧게 걷혀도 흰 화면 없음
     return () => clearTimeout(t);
@@ -230,6 +233,7 @@ function AppContent() {
       setProductsLoading(true);
       setProductsError(false);
       const res = await getActiveProducts(storeId);
+      if (window.__perf && !window.__perf.t.firstData) window.__perf.mark('firstData');   // [임시 계측] 첫 상품데이터 도착
       setProducts(res.data.map(p => ({
         ...p,
         isAdult: !!p.is_adult,
@@ -480,6 +484,7 @@ function AppContent() {
   return (
     <div className="App">
       <InstallPrompt />
+      {Capacitor.isNativePlatform() && <PerfOverlay />}{/* [임시 계측] 네이티브 앱에서만 */}
       {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
       {/* 헤더 */}
       <header className="header">
