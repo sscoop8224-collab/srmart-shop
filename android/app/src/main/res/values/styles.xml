@@ -13,10 +13,18 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- 시스템 바 초록 통일(#077D3C) + 밝은 아이콘 — 웹뷰 구간 내내 유지 -->
+        <item name="android:statusBarColor">@color/splashBackground</item>
+        <item name="android:navigationBarColor">@color/splashBackground</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
     </style>
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <!-- 스플래시 구간 하단 내비바도 초록 → 흰 띠 제거 -->
+        <item name="android:navigationBarColor">@color/splashBackground</item>
+        <item name="android:windowLightNavigationBar">false</item>
     </style>
 </resources>

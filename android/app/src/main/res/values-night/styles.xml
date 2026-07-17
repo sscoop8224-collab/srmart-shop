@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Dark mode splash — same green background + white logo -->
+    <!-- 다크모드 스플래시 — 배경/로고 모두 라이트와 동일(공식 사양: 초록 배경 + 원본 컬러 로고).
+         흰 로고 변형은 브랜드 규칙 위반이라 splash_logo_white 사용 중단, splash_icon(컬러) 통일. -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
-        <item name="windowSplashScreenBackground">@color/splashBackground</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_logo_white</item>
+        <item name="android:windowSplashScreenBackground">@color/splashBackground</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
+        <item name="android:navigationBarColor">@color/splashBackground</item>
+        <item name="android:windowLightNavigationBar">false</item>
     </style>
 
 </resources>

@@ -6,7 +6,6 @@ import reportWebVitals from './reportWebVitals';
 import { AuthProvider } from './AuthContext';
 import { StoreProvider } from './StoreContext';
 
-window.__perf && window.__perf.mark('reactStart');   // [임시 계측]
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
