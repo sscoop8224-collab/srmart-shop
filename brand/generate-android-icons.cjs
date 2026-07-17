@@ -22,8 +22,8 @@ const path = require('path');
 const MASTER = path.join(__dirname, 'srm-logo-master.png');
 const RES = path.join(__dirname, '..', 'android', 'app', 'src', 'main', 'res');
 const GREEN = { r: 0, g: 196, b: 113, alpha: 1 };            // #00c471 런처 통짜 바탕
-const LAUNCHER_LOGOP = 0.65;                                 // 런처 로고 폭 = 아이콘 65%(세이프존)
-const SPLASH_LOGOP = Number(process.argv[2]) || 0.85;       // 스플래시 로고 폭 = 캔버스 85%(인자로 조정 가능)
+const LAUNCHER_LOGOP = 0.55;                                 // 런처 로고 폭 = 아이콘 55%(여백 확보)
+const SPLASH_LOGOP = Number(process.argv[2]) || 0.75;       // 스플래시 로고 폭 = 캔버스 75%(원형 클립 방지, 인자로 조정 가능)
 
 // 밀도 배수
 const DENS = { ldpi: 0.75, mdpi: 1, hdpi: 1.5, xhdpi: 2, xxhdpi: 3, xxxhdpi: 4 };

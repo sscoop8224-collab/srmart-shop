@@ -84,14 +84,14 @@ function AppContent() {
   const [orders, setOrders] = useState([]);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
+  // 로딩 구간(스플래시~웹 로드 완료 전): 상태바 초록(#077D3C) + 밝은 아이콘 → 하단 흰 띠 없이 스플래시와 연속.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     (async () => {
       try {
         await StatusBar.setOverlaysWebView({ overlay: false });
-        // 상태바 초록 통일(#077D3C) + 밝은 아이콘(Style.Dark=어두운 배경용 밝은 콘텐츠). 하단 내비바는 theme에서 초록 고정.
         await StatusBar.setBackgroundColor({ color: '#077D3C' });
-        await StatusBar.setStyle({ style: Style.Dark });
+        await StatusBar.setStyle({ style: Style.Dark });   // Dark=밝은 콘텐츠(초록 배경용)
       } catch (e) {}
     })();
   }, []);
@@ -102,6 +102,14 @@ function AppContent() {
     if (splashHiddenRef.current || !Capacitor.isNativePlatform()) return;
     splashHiddenRef.current = true;
     try { await SplashScreen.hide(); } catch (e) {}
+    // 로드 완료 → 시스템 바를 콘텐츠(밝은 shop 화면)에 맞게 복귀: 흰 배경 + 어두운 아이콘.
+    // 상태바=StatusBar 플러그인, 하단 내비바=네이티브(MainActivity가 'srmart:loaded' 수신 후 전환).
+    try {
+      await StatusBar.setBackgroundColor({ color: '#ffffff' });
+      await StatusBar.setStyle({ style: Style.Light });    // Light=어두운 콘텐츠(흰 배경용)
+    } catch (e) {}
+    // 하단 내비바는 네이티브 브리지로 전환(플러그인 없음 — MainActivity의 SrmartNav).
+    try { window.SrmartNav && window.SrmartNav.onContentReady(); } catch (e) {}
   }, []);
 
   // 스플래시: App 마운트 + 짧은 지연(첫 페인트 버퍼)만으로 hide.
