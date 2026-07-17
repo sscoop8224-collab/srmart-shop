@@ -6,7 +6,8 @@ const config: CapacitorConfig = {
   webDir: 'build',
   android: {
     allowMixedContent: true,
-    captureInput: true,
+    // captureInput=true는 웹뷰가 raw 입력을 가로채 한글 IME(조합 입력)를 깨뜨림(숫자만 입력됨) → false.
+    captureInput: false,
     webContentsDebuggingEnabled: false,
     loggingBehavior: 'none',
     backgroundColor: '#077D3C',   // 웹뷰 기본 배경 = 다크그린(스플래시와 동일) → 로드 중 흰 화면 방지
