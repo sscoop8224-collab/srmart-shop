@@ -3,7 +3,7 @@
  * /api·/uploads 는 루트라 이 SW 스코프 밖 → 캐시 안 함(정상, 네트워크 직행).
  * 과하게 만들지 않음: 앱 셸(정적 자원) 런타임 캐시 + 오프라인 폴백만.
  */
-const CACHE = 'srmart-shop-v2';
+const CACHE = 'srmart-shop-v3';
 const OFFLINE_URL = 'offline.html'; // 스코프(/shop/) 상대
 
 self.addEventListener('install', (event) => {
@@ -26,9 +26,17 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
 
-  // 페이지 이동: 네트워크 우선, 실패 시 오프라인 폴백
+  // 페이지 이동: 캐시-우선(stale-while-revalidate) → 재실행 시 HTML 왕복 없이 즉시 셸 표시 + 백그라운드 갱신.
   if (req.mode === 'navigate') {
-    event.respondWith(fetch(req).catch(() => caches.match(OFFLINE_URL)));
+    event.respondWith(
+      caches.match(req).then((cached) => {
+        const network = fetch(req).then((res) => {
+          if (res && res.status === 200) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
+          return res;
+        }).catch(() => cached || caches.match(OFFLINE_URL));
+        return cached || network;   // 캐시 있으면 즉시, 없으면(첫 실행) 네트워크
+      })
+    );
     return;
   }
 

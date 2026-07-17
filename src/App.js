@@ -8,25 +8,28 @@ import Chatbot from './components/Chatbot';
 import StoreSelectionModal from './components/StoreSelectionModal';
 import InstallPrompt from './components/InstallPrompt';
 import PerfOverlay from './components/PerfOverlay';   // [임시 계측]
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import './App.css';
 import srmLogo from './srm_logo.png';
 import { ThemeProvider, useTheme } from './ThemeContext';
 
-import HomePage from './pages/HomePage';
-import Login from './pages/Login';
-import Orders from './pages/Orders';
-import Cart from './pages/Cart';
 import { kakaoPayReady } from './pages/KakaoPay';
-import Search from './pages/Search';
-import ProductDetail from './pages/ProductDetail';
-import Wishlist from './pages/Wishlist';
-import Notice from './pages/Notice';
-import Receipt from './pages/Receipt';
-import MyPage from './pages/MyPage';
-import Offline from './pages/Offline';
 import { useAuth } from './AuthContext';
 import { useStore } from './StoreContext';
+
+// 코드 스플리팅: 홈(App 내 inline) 외 페이지는 지연 로드 → 초기 번들 축소(파싱 단축).
+const HomePage = lazy(() => import('./pages/HomePage'));
+const Login = lazy(() => import('./pages/Login'));
+const Orders = lazy(() => import('./pages/Orders'));
+const Cart = lazy(() => import('./pages/Cart'));
+const Search = lazy(() => import('./pages/Search'));
+const ProductDetail = lazy(() => import('./pages/ProductDetail'));
+const Wishlist = lazy(() => import('./pages/Wishlist'));
+const Notice = lazy(() => import('./pages/Notice'));
+const Receipt = lazy(() => import('./pages/Receipt'));
+const MyPage = lazy(() => import('./pages/MyPage'));
+const Offline = lazy(() => import('./pages/Offline'));
+const PageFallback = () => <div style={{ minHeight: '100vh', background: '#077D3C' }} />;   // 청크 로드 중 다크그린(흰 화면 방지)
 
 const getCategoryImage = (large) => {
   switch(large) {
@@ -106,8 +109,10 @@ function AppContent() {
   useEffect(() => {
     window.__perf && window.__perf.mark('appMount');   // [임시 계측] React 첫 마운트
     if (!Capacitor.isNativePlatform()) return;
-    const t = setTimeout(hideSplash, 250);          // 마운트 후 250ms(최소 페인트 버퍼) — 배경이 다크그린이라 짧게 걷혀도 흰 화면 없음
-    return () => clearTimeout(t);
+    // 고정 지연 제거 — 첫 페인트(더블 rAF) 직후 즉시 hide. 배경 다크그린이라 흰 화면 없음.
+    const r1 = requestAnimationFrame(() => { requestAnimationFrame(hideSplash); });
+    const safety = setTimeout(hideSplash, 1500);       // 안전망
+    return () => { cancelAnimationFrame(r1); clearTimeout(safety); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -458,11 +463,9 @@ function AppContent() {
   if (page === 'homepage') {
     return (
       <div style={{ width: '100%', minHeight: '100vh' }}>
-        <HomePage
-          onShop={handleGuest}
-          onLogin={() => setPage('login')}
-          darkMode={darkMode}
-        />
+        <Suspense fallback={<PageFallback />}>
+          <HomePage onShop={handleGuest} onLogin={() => setPage('login')} darkMode={darkMode} />
+        </Suspense>
         {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
       </div>
     );
@@ -471,14 +474,16 @@ function AppContent() {
   if (page === 'login') {
     return (
       <div className="App">
-        <Login onLogin={handleLogin} onGuest={handleGuest} />
+        <Suspense fallback={<PageFallback />}>
+          <Login onLogin={handleLogin} onGuest={handleGuest} />
+        </Suspense>
         {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
       </div>
     );
   }
 
   if (isOffline) {
-    return <Offline onRetry={() => setIsOffline(false)} />;
+    return <Suspense fallback={<PageFallback />}><Offline onRetry={() => setIsOffline(false)} /></Suspense>;
   }
 
   return (
@@ -708,6 +713,7 @@ function AppContent() {
           </>
         )}
 
+        <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: '#00a85e', fontSize: 13 }}>불러오는 중…</div>}>
         {page === 'notice'          && <Notice notices={notices} setNotices={setNotices} isAdmin={isAdmin} goBack={goBack} goToHome={() => goToPage('home')} darkMode={darkMode} />}
         {page === 'wishlist'        && <Wishlist wishlist={wishlist} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWishlist={toggleWishlist} goBack={goBack} goToHome={() => goToPage('home')} darkMode={darkMode} />}
         {page === 'search'          && <Search products={products} categories={categories} goBack={goBack} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} />}
@@ -716,6 +722,7 @@ function AppContent() {
         {page === 'orders'          && <Orders orders={orders} goBack={goBack} />}
         {page === 'receipt'         && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
         {page === 'mypage'          && <MyPage user={currentUser} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} users={users} setUsers={setUsers} isAdmin={isAdmin} />}
+        </Suspense>
       </div>
 
       {/* 하단 탭 */}
