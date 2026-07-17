@@ -8,7 +8,7 @@ const Chatbot = () => {
   const currentStoreId = store?.currentStoreId || null;   // 고객이 선택한 점포 → 챗봇 컨텍스트 스코프
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: 'model', content: '안녕하세요! SR Mart 쇼핑 도우미예요 😊\n상품 추천, 주문 문의 등 무엇이든 물어보세요!' }
+    { role: 'model', content: '안녕하세요! SR마트 AI 상담사입니다 😊 (사람이 아닌 AI 도우미예요)\n상품·배송·주문 문의를 도와드려요. 무엇이든 물어보세요!' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,6 +17,14 @@ const Chatbot = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // 좁은 화면 대응: 스크롤 내리면 라벨 접고 아이콘만(위로 올리면 다시 확장)
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setCollapsed((window.scrollY || 0) > 120);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
@@ -50,28 +58,35 @@ const Chatbot = () => {
 
   return (
     <>
-      {/* 말풍선 버튼 */}
+      {/* 상담 진입 버튼 — 아이콘+라벨 알약(카카오채널 스타일). 스크롤/열림 시 축소 */}
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-label="AI 상담"
         style={{
           position: 'fixed',
           bottom: '76px',
           right: '16px',
-          width: '52px',
           height: '52px',
-          borderRadius: '50%',
+          width: (isOpen || collapsed) ? '52px' : 'auto',
+          padding: (isOpen || collapsed) ? '0' : '0 18px 0 15px',
+          borderRadius: '26px',
           backgroundColor: '#00c471',
           border: 'none',
           cursor: 'pointer',
-          fontSize: '22px',
-          boxShadow: '0 4px 12px rgba(0,196,113,0.4)',
+          color: 'white',
+          fontWeight: 700,
+          fontSize: isOpen ? '22px' : '15px',
+          whiteSpace: 'nowrap',
+          boxShadow: '0 4px 14px rgba(0,196,113,0.45)',
           zIndex: 1001,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          gap: '7px',
+          transition: 'width .2s ease, padding .2s ease',
         }}
       >
-        {isOpen ? '✕' : '💬'}
+        {isOpen ? '✕' : (<><span style={{ fontSize: '20px' }}>💬</span>{!collapsed && <span>AI 상담</span>}</>)}
       </button>
 
       {/* 챗봇 창 */}
@@ -102,7 +117,8 @@ const Chatbot = () => {
             gap: '8px',
             color: 'white',
           }}>
-            🛒 SR Mart 쇼핑 도우미
+            <span>🛒 SR Mart 쇼핑 도우미</span>
+            <span style={{ fontSize: '11px', fontWeight: 700, background: 'rgba(255,255,255,0.25)', padding: '2px 8px', borderRadius: '10px', marginLeft: 'auto' }}>AI 상담</span>
           </div>
 
           {/* 메시지 목록 */}
