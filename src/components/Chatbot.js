@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import API from '../api';
+import { useStore } from '../StoreContext';
 
 // AI 키는 서버(연동 관리)에만 보관 — 클라이언트 하드코딩 제거. 챗봇은 백엔드 /api/chatbot 경유.
 const Chatbot = () => {
+  const store = useStore();
+  const currentStoreId = store?.currentStoreId || null;   // 고객이 선택한 점포 → 챗봇 컨텍스트 스코프
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     { role: 'model', content: '안녕하세요! SR Mart 쇼핑 도우미예요 😊\n상품 추천, 주문 문의 등 무엇이든 물어보세요!' }
@@ -26,7 +29,7 @@ const Chatbot = () => {
 
     try {
       // 서버가 연동 관리에 등록된 AI로 응답(키는 서버에만). 미설정 시 안내 메시지 반환.
-      const res = await API.post('/chatbot', { message: text, history: priorHistory });
+      const res = await API.post('/chatbot', { message: text, history: priorHistory, store_id: currentStoreId });
       const replyText = res.data?.reply || '죄송해요, 다시 시도해주세요!';
       setMessages(prev => [...prev, { role: 'model', content: replyText }]);
     } catch (error) {
