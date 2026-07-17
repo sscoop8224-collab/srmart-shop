@@ -9,12 +9,13 @@ const config: CapacitorConfig = {
     captureInput: true,
     webContentsDebuggingEnabled: false,
     loggingBehavior: 'none',
+    backgroundColor: '#077D3C',   // 웹뷰 기본 배경 = 다크그린(스플래시와 동일) → 로드 중 흰 화면 방지
   },
   server: {
     androidScheme: 'https',
-    // 웹뷰가 배포된 라이브 쇼핑몰을 로드(호스티드). Tailscale IP 제거 → 도메인 고정.
+    // 웹뷰가 배포된 라이브 쇼핑몰을 로드(호스티드). 도메인 고정.
     // 이점: 웹 배포가 앱에 바로 반영(웹 변경 시 APK 재빌드 불필요). 단, 서버 접속 필요(오프라인=빈 화면).
-    url: 'https://dongsinmarket.co.kr/shop/',
+    url: 'https://www.dongsinmarket.com/shop/',
     cleartext: false,
   },
   plugins: {
