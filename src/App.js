@@ -99,27 +99,13 @@ function AppContent() {
     try { await SplashScreen.hide(); } catch (e) {}
   }, []);
 
-  // 안전 타임아웃: 어떤 경우에도 3000ms 뒤엔 반드시 hide
+  // 스플래시: App 마운트 + 짧은 지연(첫 페인트 버퍼)만으로 hide.
+  // body/#root 배경이 다크그린(#077D3C)이라 데이터 로드를 기다리지 않아도 흰 화면 없이 스플래시→콘텐츠로 이어짐.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
-    const t = setTimeout(hideSplash, 3000);
+    const t = setTimeout(hideSplash, 400);          // 마운트 후 400ms
     return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // homepage / login 화면: mount 후 paint 완료 버퍼(300ms) 뒤 hide
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
-    if (page === 'homepage' || page === 'login') {
-      const t = setTimeout(hideSplash, 300);
-      return () => clearTimeout(t);
-    }
-  }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // home 화면: 상품 로드 완료 시점에 hide (로그인 후 데이터 준비된 뒤)
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform() || page !== 'home' || productsLoading) return;
-    hideSplash();
-  }, [page, productsLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const goOffline = () => setIsOffline(true);
