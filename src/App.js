@@ -66,7 +66,7 @@ function AppContent() {
 
   // 웹은 내장 랜딩(homepage)을 건너뛰고 게스트로 바로 쇼핑앱 진입, 네이티브 앱은 로그인 우선
   // (회사 정적 홈페이지가 이미 랜딩 역할을 하므로 웹에서 HomePage.jsx는 표시하지 않음)
-  const [page, setPage] = useState(Capacitor.isNativePlatform() ? 'login' : 'home');
+  const [page, setPage] = useState('home');   // 웹·앱 공통: 홈(게스트 둘러보기)부터. 로그인은 계정 필요 시점에.
   const [pageHistory, setPageHistory] = useState([]);
   const [showStoreModal, setShowStoreModal] = useState(false);
   const [products, setProducts] = useState([]);
@@ -103,7 +103,7 @@ function AppContent() {
   // body/#root 배경이 다크그린(#077D3C)이라 데이터 로드를 기다리지 않아도 흰 화면 없이 스플래시→콘텐츠로 이어짐.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
-    const t = setTimeout(hideSplash, 400);          // 마운트 후 400ms
+    const t = setTimeout(hideSplash, 250);          // 마운트 후 250ms(최소 페인트 버퍼) — 배경이 다크그린이라 짧게 걷혀도 흰 화면 없음
     return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -315,12 +315,12 @@ function AppContent() {
     setPage('home');
   };
 
-  // 웹 최초 진입: 내장 랜딩을 건너뛰고 게스트로 쇼핑앱 진입.
+  // 웹·앱 공통 최초 진입: 홈(게스트 둘러보기)으로. 로그인 세션(AuthContext)이 복원돼 있으면 그 매장,
   // 매장 미선택(첫 방문)이면 handleGuest가 점포 선택 모달을 띄우고, 선택돼 있으면 바로 home 로드.
-  const webGuestInitRef = useRef(false);
+  const guestInitRef = useRef(false);
   useEffect(() => {
-    if (Capacitor.isNativePlatform() || webGuestInitRef.current) return;
-    webGuestInitRef.current = true;
+    if (guestInitRef.current) return;
+    guestInitRef.current = true;
     handleGuest();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -335,7 +335,7 @@ function AppContent() {
       localStorage.removeItem('srmart_auto_login');
       localStorage.removeItem('srmart_token');
       authLogout();
-      setUser(null); setCart([]); setOrders([]); setProducts([]); setPageHistory([]); setPage('login');
+      setUser(null); setCart([]); setOrders([]); setProducts([]); setPageHistory([]); handleGuest();   // 로그아웃 후 게스트 홈
       alert(messages.logout);
     }
   };
@@ -662,7 +662,7 @@ function AppContent() {
                     onClick={() => { if (!product.isSoldOut) { setSelectedProduct(product); goToPage('productDetail'); } }}
                     style={{ background: darkMode ? '#2a2a2a' : 'white', borderRadius: '20px', overflow: 'hidden', boxShadow: darkMode ? '0 2px 16px rgba(0,0,0,0.4)' : '0 2px 16px rgba(0,0,0,0.07)', position: 'relative', opacity: product.isSoldOut ? 0.6 : 1, cursor: product.isSoldOut ? 'default' : 'pointer', border: product.isAdult ? '1.5px solid #ffcdd2' : `1px solid ${darkMode ? '#3a3a3a' : '#f0faf5'}` }}>
                     <div style={{ width: '100%', aspectRatio: '1', position: 'relative', overflow: 'hidden', background: '#f6f7f8' }}>
-                      <img src={product.image ? imgUrl(product.image) : getCategoryImage(product.large)} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
+                      <img src={product.image ? imgUrl(product.image) : getCategoryImage(product.large)} alt={product.name} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
                       {!product.image && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,196,113,0.08)' }} />}
                       {product.isSoldOut && (
                         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
