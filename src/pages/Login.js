@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import FindAccount from './FindAccount';
 import srmLogo from '../srm-logo-transparent.png';
 import { getStores, register } from '../api';
@@ -68,7 +68,7 @@ const CheckBox = ({ on }) => (
 );
 
 // ── Field 컴포넌트 ──────────────────────────────────────────
-function Field({ label, placeholder, type, value, onChange, error, trailing, disabled }) {
+function Field({ label, placeholder, type, value, onChange, error, trailing, disabled, inputRef, autoComplete }) {
   const [focused, setFocused] = useState(false);
   const borderColor = error ? COLORS.danger : focused ? COLORS.green : COLORS.greenBorder;
 
@@ -90,6 +90,7 @@ function Field({ label, placeholder, type, value, onChange, error, trailing, dis
         paddingRight: trailing ? 6 : 0,
       }}>
         <input
+          ref={inputRef}
           type={type}
           value={value}
           onChange={onChange}
@@ -98,6 +99,9 @@ function Field({ label, placeholder, type, value, onChange, error, trailing, dis
           placeholder={placeholder}
           disabled={disabled}
           spellCheck={false}
+          autoComplete={autoComplete}
+          autoCapitalize="none"
+          autoCorrect="off"
           style={{
             flex: 1, height: '100%', border: 'none', outline: 'none',
             background: 'transparent', padding: '0 16px',
@@ -164,6 +168,20 @@ function Login({ onLogin, onGuest }) {
   // 로그인 상태
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [showPw, setShowPw] = useState(false);
+  const [showPw2, setShowPw2] = useState(false);   // 회원가입 비밀번호 표시
+  const pwRef = useRef(null);
+  const pw2Ref = useRef(null);
+  // 비밀번호 표시/숨김 토글 — 포커스 유실(키보드 내려감) 방지 + 커서 끝 보존.
+  const pwToggle = (setShow, ref) => ({
+    onMouseDown: (e) => e.preventDefault(),        // 버튼 탭 시 입력란 포커스 유지 → 키보드 안 내려감
+    onClick: () => {
+      setShow((s) => !s);
+      requestAnimationFrame(() => {
+        const el = ref.current;
+        if (el) { el.focus(); const n = el.value.length; try { el.setSelectionRange(n, n); } catch {} }
+      });
+    },
+  });
   const [remember, setRemember] = useState(false);
   const [loginErrors, setLoginErrors] = useState({});
   const [loginLoading, setLoginLoading] = useState(false);
@@ -327,10 +345,12 @@ function Login({ onLogin, onGuest }) {
                   placeholder="비밀번호를 입력해주세요"
                   type={showPw ? 'text' : 'password'}
                   value={loginForm.password}
+                  inputRef={pwRef}
+                  autoComplete="current-password"
                   onChange={(e) => { setLoginForm({ ...loginForm, password: e.target.value }); if (loginErrors.password) setLoginErrors({ ...loginErrors, password: null }); }}
                   error={loginErrors.password}
                   trailing={
-                    <button type="button" onClick={() => setShowPw(s => !s)}
+                    <button type="button" {...pwToggle(setShowPw, pwRef)}
                       style={{ width: 40, height: 40, borderRadius: 10, border: 'none', background: 'transparent', cursor: 'pointer', color: showPw ? COLORS.greenDark : COLORS.ink300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <EyeIcon open={showPw} />
                     </button>
@@ -435,8 +455,15 @@ function Login({ onLogin, onGuest }) {
 
                 <div>
                   <label style={labelStyle}>비밀번호</label>
-                  <input name="password" type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })}
-                    placeholder="비밀번호를 입력해주세요" style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
+                  <div style={{ position: 'relative' }}>
+                    <input ref={pw2Ref} name="password" type={showPw2 ? 'text' : 'password'} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })}
+                      placeholder="비밀번호를 입력해주세요" autoComplete="new-password" autoCapitalize="none" autoCorrect="off"
+                      style={{ ...inputStyle, paddingRight: 44 }} onFocus={inputFocus} onBlur={inputBlur} />
+                    <button type="button" {...pwToggle(setShowPw2, pw2Ref)}
+                      style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', width: 36, height: 36, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', color: showPw2 ? COLORS.greenDark : COLORS.ink300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <EyeIcon open={showPw2} />
+                    </button>
+                  </div>
                 </div>
 
                 <div>
