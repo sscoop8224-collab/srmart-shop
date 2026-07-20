@@ -49,6 +49,8 @@ export const login = (username, password) => API.post('/login', { username, pass
 export const getStores = () => API.get('/stores');
 export const getCategories = () => API.get('/categories');
 export const getBanners = (storeId) => API.get('/banners', storeId ? { params: { store_id: storeId } } : {});
+// 스플래시 광고(콜드스타트 2번째 화면). 활성 광고 목록(공용+매장), 노출순서.
+export const getSplashAds = (storeId) => API.get('/splash-ads', storeId ? { params: { store_id: storeId } } : {});
 export const getProducts = (storeId) => API.get('/products', storeId ? { params: { store_id: storeId } } : {});
 export const getActiveProducts = (storeId) => API.get('/products/active', storeId ? { params: { store_id: storeId } } : {});
 export const getOrders = () => API.get('/orders');

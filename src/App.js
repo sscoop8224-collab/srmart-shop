@@ -7,6 +7,8 @@ import API from './api';
 import Chatbot from './components/Chatbot';
 import StoreSelectionModal from './components/StoreSelectionModal';
 import InstallPrompt from './components/InstallPrompt';
+import SplashAd from './components/SplashAd';
+import { refreshSplashAd } from './utils/splashAdCache';
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import './App.css';
 import srmLogo from './srm_logo.png';
@@ -83,6 +85,14 @@ function AppContent() {
   const [notices, setNotices] = useState([]);
   const [orders, setOrders] = useState([]);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  // 스플래시 2번째(대기) 화면 광고 오버레이 — 네이티브 콜드스타트에서만. 콘텐츠 준비 시 dismiss(로딩 지연 0).
+  const [splashAdVisible, setSplashAdVisible] = useState(() => Capacitor.isNativePlatform());
+  const splashAdDismissRef = useRef(false);
+  const dismissSplashAd = useCallback(() => {
+    if (splashAdDismissRef.current) return;
+    splashAdDismissRef.current = true;
+    setSplashAdVisible(false);
+  }, []);
 
   // 로딩 구간(스플래시~웹 로드 완료 전): 상태바 초록(#077D3C) + 밝은 아이콘 → 하단 흰 띠 없이 스플래시와 연속.
   useEffect(() => {
@@ -120,6 +130,13 @@ function AppContent() {
     const r1 = requestAnimationFrame(() => { requestAnimationFrame(hideSplash); });
     const safety = setTimeout(hideSplash, 1500);       // 안전망
     return () => { cancelAnimationFrame(r1); clearTimeout(safety); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 스플래시 광고 대기화면 안전망 — 콘텐츠 준비가 지연/실패해도 3초 뒤엔 반드시 걷음(광고가 화면을 가두지 않게).
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    const t = setTimeout(dismissSplashAd, 3000);
+    return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -257,6 +274,7 @@ function AppContent() {
       setProductsError(true);
     } finally {
       setProductsLoading(false);
+      dismissSplashAd();      // 콘텐츠(상품) 준비 완료 → 스플래시 광고 대기화면 걷기
     }
   };
 
@@ -306,6 +324,8 @@ function AppContent() {
     if (currentStoreId && page === 'home') {
       loadProducts(currentStoreId);
     }
+    // 스플래시 광고 백그라운드 갱신 — '다음' 콜드스타트용 포인터/캐시 최신화(이번 표시엔 영향 없음).
+    if (Capacitor.isNativePlatform()) refreshSplashAd(currentStoreId);
   }, [currentStoreId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ✅ 로그인 - username 또는 email로 백엔드 연동
@@ -494,6 +514,7 @@ function AppContent() {
 
   return (
     <div className="App">
+      {Capacitor.isNativePlatform() && <SplashAd visible={splashAdVisible} />}
       <InstallPrompt />
       {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
       {/* 헤더 */}
