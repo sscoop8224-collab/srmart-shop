@@ -23,7 +23,11 @@ const MASTER = path.join(__dirname, 'srm-logo-master.png');
 const RES = path.join(__dirname, '..', 'android', 'app', 'src', 'main', 'res');
 const GREEN = { r: 0, g: 196, b: 113, alpha: 1 };            // #00c471 런처 통짜 바탕
 const LAUNCHER_LOGOP = 0.55;                                 // 런처 로고 폭 = 아이콘 55%(여백 확보)
-const SPLASH_LOGOP = Number(process.argv[2]) || 0.75;       // 스플래시 로고 폭 = 캔버스 75%(원형 클립 방지, 인자로 조정 가능)
+// 스플래시 로고 폭배율 — Android12 원형 세이프존(캔버스의 2/3 지름) 안에 잎 끝까지 들어가도록 실측 계산.
+// 새 로고(1.863:1 와이드, 잎이 우상단 코너까지 뻗음): 최원점 maxR_norm=0.566 → 한계 f=(1/3)/0.566=0.589(58.9%).
+// 안전마진 ~8%(기기 마스크 편차·AA) → 0.54. (구 0.75는 한계 초과로 잎 잘림 → 재사용 금지.)
+// 로고 형태가 바뀌면 이 값을 다시 계산할 것(코너R 기준 f_max=cw/(3·Dmax)).
+const SPLASH_LOGOP = Number(process.argv[2]) || 0.54;       // 스플래시 로고 폭 = 캔버스 54%(인자로 조정 가능)
 
 // 밀도 배수
 const DENS = { ldpi: 0.75, mdpi: 1, hdpi: 1.5, xhdpi: 2, xxhdpi: 3, xxxhdpi: 4 };
