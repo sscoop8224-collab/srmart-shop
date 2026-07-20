@@ -3,7 +3,10 @@ import { Capacitor } from '@capacitor/core';
 
 // 서비스 도메인. 네이티브 앱은 절대 도메인, 웹은 같은 출처(상대경로 /api → nginx 프록시).
 // Tailscale IP 하드코딩 제거 — 서버 이전으로 IP가 바뀌어도 도메인은 불변.
-export const SITE = 'https://dongsinmarket.co.kr';
+// 도메인 .co.kr → .com 통일(2026-07). capacitor.config.ts가 로드하는 origin(www.dongsinmarket.com)과 일치시킴.
+// 재발 방지: 값은 REACT_APP_SITE로 오버라이드 가능(빌드타임). .env 계열은 gitignore이므로,
+// 추적되는 기본값(아래 .com)이 배포의 단일 진실이다 — 도메인이 또 바뀌면 이 상수만 고치면 됨.
+export const SITE = process.env.REACT_APP_SITE || 'https://www.dongsinmarket.com';
 
 // [imgUrl] 상품/주문 이미지 렌더 공용 헬퍼. 저장값('products/xxx.png') → 웹=상대 /uploads/... (nginx 서빙), 네이티브=도메인 절대.
 // 이미 http/data/blob URL이면 그대로 둔다.

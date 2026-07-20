@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { useTheme } from '../ThemeContext';
-import { getMyPoints, getMyActiveCoupons, deleteAccount } from '../api';
+import { getMyPoints, getMyActiveCoupons, deleteAccount, SITE } from '../api';
 import API from '../api';
 
 function PwStrengthBar({ password, subTextColor }) {
@@ -336,7 +336,7 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
           <div role="button" tabIndex={0}
             onClick={() => {
               if (Capacitor.isNativePlatform()) {
-                window.open('https://dongsinmarket.co.kr/admin', '_system');
+                window.open(`${SITE}/admin`, '_system');
               } else {
                 window.open('/admin', '_blank', 'noopener,noreferrer');
               }
