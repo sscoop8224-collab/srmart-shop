@@ -8,7 +8,6 @@ import Chatbot from './components/Chatbot';
 import StoreSelectionModal from './components/StoreSelectionModal';
 import InstallPrompt from './components/InstallPrompt';
 import SplashAd from './components/SplashAd';
-import { refreshSplashAd } from './utils/splashAdCache';
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import './App.css';
 import srmLogo from './srm_logo.png';
@@ -324,8 +323,7 @@ function AppContent() {
     if (currentStoreId && page === 'home') {
       loadProducts(currentStoreId);
     }
-    // 스플래시 광고 백그라운드 갱신 — '다음' 콜드스타트용 포인터/캐시 최신화(이번 표시엔 영향 없음).
-    if (Capacitor.isNativePlatform()) refreshSplashAd(currentStoreId);
+    // 스플래시 광고 조회/캐싱은 SplashAd 컴포넌트가 마운트 시 직접 수행(loadActiveSplashAd) → 첫 콜드스타트도 표시.
   }, [currentStoreId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ✅ 로그인 - username 또는 email로 백엔드 연동
@@ -514,7 +512,7 @@ function AppContent() {
 
   return (
     <div className="App">
-      {Capacitor.isNativePlatform() && <SplashAd visible={splashAdVisible} />}
+      {Capacitor.isNativePlatform() && <SplashAd visible={splashAdVisible} storeId={currentStoreId} />}
       <InstallPrompt />
       {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
       {/* 헤더 */}

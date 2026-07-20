@@ -27,19 +27,24 @@ export async function resolveSplashImage(absUrl) {
   return absUrl;
 }
 
-// 백그라운드 갱신 — 다음 콜드스타트를 위해 활성 광고 포인터/캐시 최신화. 현재 표시엔 관여하지 않음.
-export async function refreshSplashAd(storeId) {
+// 활성 광고를 서버에서 조회 → 포인터/캐시 갱신 후 이미지 절대 URL 반환(없으면 null).
+// SplashAd가 마운트 때 호출: 캐시가 없는 첫 콜드스타트에도 이 라이브 조회로 광고를 띄운다(다음번엔 캐시로 즉시).
+// dismiss(콘텐츠 준비)와 무관하게 동작하므로 로딩 지연 0.
+export async function loadActiveSplashAd(storeId) {
   try {
     const res = await getSplashAds(storeId);
     const ad = (res.data || [])[0]; // 노출순서 첫 활성 광고
-    if (!ad || !ad.image_url) { writePointer(null); return; }
+    if (!ad || !ad.image_url) { writePointer(null); return null; }
     const absUrl = imgUrl(ad.image_url);
     writePointer({ id: ad.id, url: absUrl });
     if ('caches' in window) {
-      const c = await caches.open(CACHE);
-      const keys = await c.keys();
-      await Promise.all(keys.filter(k => k.url !== absUrl).map(k => c.delete(k))); // 이전 광고 캐시 정리
-      if (!(await c.match(absUrl))) await c.add(absUrl);
+      try {
+        const c = await caches.open(CACHE);
+        const keys = await c.keys();
+        await Promise.all(keys.filter(k => k.url !== absUrl).map(k => c.delete(k))); // 이전 광고 캐시 정리
+        if (!(await c.match(absUrl))) await c.add(absUrl);
+      } catch (e) { /* 캐시 실패해도 URL은 반환(HTTP 캐시로 표시) */ }
     }
-  } catch (e) { /* best-effort */ }
+    return absUrl;
+  } catch (e) { return null; }
 }

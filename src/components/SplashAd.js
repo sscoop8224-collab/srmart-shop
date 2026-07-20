@@ -1,25 +1,32 @@
 import { useState, useEffect } from 'react';
-import { readSplashPointer, resolveSplashImage } from '../utils/splashAdCache';
+import { readSplashPointer, resolveSplashImage, loadActiveSplashAd } from '../utils/splashAdCache';
 
-// 콜드스타트 2번째(대기) 화면 — 캐시된 활성 광고를 즉시 표시.
-// visible=false가 되면(콘텐츠 준비 완료) 페이드아웃 후 제거. 이미지 로드 여부와 dismiss는 무관 → 로딩 지연 0.
-// 캐시된 광고가 없으면(최초 1회) 초록 배경만 표시하고, 백그라운드 갱신이 다음 콜드스타트용으로 캐싱.
-export default function SplashAd({ visible }) {
+// 콜드스타트 2번째(대기) 화면 — 활성 광고를 표시.
+// 표시 경로 2가지(먼저 준비되는 것으로 표시):
+//  1) 캐시된 포인터 → Cache API에서 즉시(blob) — 2회차부터 즉시 표시
+//  2) 라이브 fetch(loadActiveSplashAd) → 캐시 없는 첫 콜드스타트에도 표시(+다음번 캐시 갱신)
+// visible=false(콘텐츠 준비)면 페이드아웃 후 제거. 이미지 로드와 dismiss는 무관 → 로딩 지연 0.
+export default function SplashAd({ visible, storeId }) {
   const [img, setImg] = useState(null);
   const [gone, setGone] = useState(false);
 
   useEffect(() => {
-    let objUrl = null, alive = true;
+    let alive = true;
+    const objUrls = [];
+    const apply = (u) => {
+      if (!alive || !u) { if (u && u.startsWith('blob:')) URL.revokeObjectURL(u); return; }
+      if (u.startsWith('blob:')) objUrls.push(u);
+      setImg((prev) => prev || u); // 먼저 준비된 이미지로 표시(중복 교체 방지 → 깜빡임 없음)
+    };
+    // 1) 캐시된 포인터 즉시 시도
     const p = readSplashPointer();
-    if (p && p.url) {
-      resolveSplashImage(p.url).then((u) => {
-        if (!alive) { if (u && u.startsWith('blob:')) URL.revokeObjectURL(u); return; }
-        if (u && u.startsWith('blob:')) objUrl = u;
-        setImg(u);
-      });
-    }
-    return () => { alive = false; if (objUrl) URL.revokeObjectURL(objUrl); };
-  }, []);
+    if (p && p.url) resolveSplashImage(p.url).then(apply);
+    // 2) 라이브 조회 — 첫 콜드스타트(캐시 없음)에도 표시 + 다음번 캐시 갱신
+    loadActiveSplashAd(storeId).then((absUrl) => {
+      if (absUrl) resolveSplashImage(absUrl).then(apply);
+    });
+    return () => { alive = false; objUrls.forEach((u) => URL.revokeObjectURL(u)); };
+  }, [storeId]);
 
   useEffect(() => {
     if (!visible) { const t = setTimeout(() => setGone(true), 320); return () => clearTimeout(t); }

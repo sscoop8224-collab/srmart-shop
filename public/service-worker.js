@@ -3,7 +3,7 @@
  * /api·/uploads 는 루트라 이 SW 스코프 밖 → 캐시 안 함(정상, 네트워크 직행).
  * 과하게 만들지 않음: 앱 셸(정적 자원) 런타임 캐시 + 오프라인 폴백만.
  */
-const CACHE = 'srmart-shop-v3';
+const CACHE = 'srmart-shop-v4';
 const OFFLINE_URL = 'offline.html'; // 스코프(/shop/) 상대
 
 self.addEventListener('install', (event) => {
