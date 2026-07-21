@@ -23,8 +23,8 @@ export async function resolveSplashImage(absUrl) {
       if (!res) { await c.add(absUrl); res = await c.match(absUrl); }
       if (res) { const blob = await res.blob(); return URL.createObjectURL(blob); }
     }
-  } catch (e) { /* 캐시 실패 시 폴백 */ }
-  return absUrl;
+  } catch (e) { /* 네이티브에선 CapacitorHttp가 가로채 caches.add가 실패할 수 있음 → 원본 URL 폴백 */ }
+  return absUrl; // 폴백: 원본 URL 직접(HTTP 캐시 경유, 부팅시점 프리페치로 워밍됨)
 }
 
 // 활성 광고를 서버에서 조회 → 포인터/캐시 갱신 후 이미지 절대 URL 반환(없으면 null).

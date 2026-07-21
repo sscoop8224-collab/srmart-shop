@@ -3,7 +3,7 @@
  * /api·/uploads 는 루트라 이 SW 스코프 밖 → 캐시 안 함(정상, 네트워크 직행).
  * 과하게 만들지 않음: 앱 셸(정적 자원) 런타임 캐시 + 오프라인 폴백만.
  */
-const CACHE = 'srmart-shop-v4';
+const CACHE = 'srmart-shop-v5';
 const OFFLINE_URL = 'offline.html'; // 스코프(/shop/) 상대
 
 self.addEventListener('install', (event) => {
@@ -26,16 +26,15 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
 
-  // 페이지 이동: 캐시-우선(stale-while-revalidate) → 재실행 시 HTML 왕복 없이 즉시 셸 표시 + 백그라운드 갱신.
+  // 페이지 이동(HTML): 네트워크-우선 → 배포가 즉시 반영됨(옛 번들 stale 문제 해소).
+  // HTML은 작아서 네트워크 왕복 비용이 작고, 큰 비용인 정적 JS는 아래에서 캐시-우선 유지 → 로딩 속도 영향 최소.
+  // 네트워크 실패(오프라인)에만 캐시/오프라인 폴백.
   if (req.mode === 'navigate') {
     event.respondWith(
-      caches.match(req).then((cached) => {
-        const network = fetch(req).then((res) => {
-          if (res && res.status === 200) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
-          return res;
-        }).catch(() => cached || caches.match(OFFLINE_URL));
-        return cached || network;   // 캐시 있으면 즉시, 없으면(첫 실행) 네트워크
-      })
+      fetch(req).then((res) => {
+        if (res && res.status === 200) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
+        return res;
+      }).catch(() => caches.match(req).then((c) => c || caches.match(OFFLINE_URL)))
     );
     return;
   }

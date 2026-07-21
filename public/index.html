@@ -27,6 +27,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
     <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
     <title>에스알마트</title>
+    <!-- 스플래시 광고 부팅시점 프리페치: 로고 스플래시가 뜨는 동안(JS/웹뷰 부팅 수 초)에 광고 이미지를 미리 받아둔다.
+         저사양 기기에서 마운트 시점 다운로드 레이스 방지. 총 로딩 시간은 안 늘림(이미 걸리는 부팅 시간 활용). -->
+    <script>
+    (function () {
+      try {
+        var warm = function (u) { if (u) { var i = new Image(); i.decoding = 'async'; i.src = u; } };
+        var p = localStorage.getItem('srmart_splash_ad');           // 1) 직전 회차 캐시 포인터 즉시 프리페치
+        if (p) { try { var o = JSON.parse(p); if (o && o.url) warm(o.url); } catch (e) {} }
+        fetch('/api/splash-ads', { headers: { Accept: 'application/json' } })  // 2) 현재 활성 광고 조기 조회 → 이미지 프리페치(첫 회차/교체 대비)
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (a) {
+            if (a && a[0] && a[0].image_url) {
+              var u = a[0].image_url;
+              warm(/^https?:/.test(u) ? u : (location.origin + (u.charAt(0) === '/' ? u : '/' + u)));
+            }
+          }).catch(function () {});
+      } catch (e) {}
+    })();
+    </script>
     <!-- 스플래시→React 마운트 사이 흰 화면 방지: 초기 배경을 앱 다크그린으로 고정 -->
     <style>html,body,#root{background-color:#077D3C;margin:0;}</style>
   </head>
