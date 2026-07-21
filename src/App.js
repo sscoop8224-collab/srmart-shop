@@ -121,14 +121,13 @@ function AppContent() {
     try { window.SrmartNav && window.SrmartNav.onContentReady(); } catch (e) {}
   }, []);
 
-  // 스플래시: App 마운트 + 짧은 지연(첫 페인트 버퍼)만으로 hide.
-  // body/#root 배경이 다크그린(#077D3C)이라 데이터 로드를 기다리지 않아도 흰 화면 없이 스플래시→콘텐츠로 이어짐.
+  // 스플래시: 네이티브 로고 스플래시를 '광고 이미지가 준비되면'(SplashAd onReady=hideSplash) 내린다.
+  // → 로고에서 광고로 바로 전환(중간에 녹색 대기화면이 오래 보이던 문제 제거).
+  // 안전망: 광고가 끝내 안 뜨면 최대 2.5초 후 강제로 내림.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
-    // 고정 지연 제거 — 첫 페인트(더블 rAF) 직후 즉시 hide. 배경 다크그린이라 흰 화면 없음.
-    const r1 = requestAnimationFrame(() => { requestAnimationFrame(hideSplash); });
-    const safety = setTimeout(hideSplash, 1500);       // 안전망
-    return () => { cancelAnimationFrame(r1); clearTimeout(safety); };
+    const safety = setTimeout(hideSplash, 2500);
+    return () => clearTimeout(safety);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 스플래시 광고 대기화면 안전망 — 콘텐츠 준비가 지연/실패해도 3초 뒤엔 반드시 걷음(광고가 화면을 가두지 않게).
@@ -512,7 +511,7 @@ function AppContent() {
 
   return (
     <div className="App">
-      {Capacitor.isNativePlatform() && <SplashAd visible={splashAdVisible} storeId={currentStoreId} />}
+      {Capacitor.isNativePlatform() && <SplashAd visible={splashAdVisible} storeId={currentStoreId} onReady={hideSplash} />}
       <InstallPrompt />
       {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
       {/* 헤더 */}
