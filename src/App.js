@@ -117,7 +117,8 @@ function AppContent() {
       await StatusBar.setBackgroundColor({ color: '#ffffff' });
       await StatusBar.setStyle({ style: Style.Light });    // Light=어두운 콘텐츠(흰 배경용)
     } catch (e) {}
-    // 하단 내비바는 네이티브 브리지로 전환(플러그인 없음 — MainActivity의 SrmartNav).
+    // 네이티브 로고 스플래시 즉시 종료(초록 종료애니 없이 광고로 바로) + 하단 내비바 콘텐츠용 전환.
+    try { window.SrmartNav && window.SrmartNav.releaseSplash(); } catch (e) {}
     try { window.SrmartNav && window.SrmartNav.onContentReady(); } catch (e) {}
   }, []);
 

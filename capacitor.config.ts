@@ -34,8 +34,7 @@ const config: CapacitorConfig = {
       backgroundColor: '#077D3C',
       androidScaleType: 'FIT_CENTER',
       showSpinner: false,
-      // launchFadeOutDuration>0이면 플러그인이 종료를 직접 처리(즉시 제거) → Android12 기본 종료 애니(초록 노출) 회피.
-      launchFadeOutDuration: 1,
+      // 런치 스플래시 종료는 MainActivity에서 직접(즉시 제거) 처리 → 플러그인 런치 제어 미사용(launchShowDuration:0 유지).
     },
     StatusBar: {
       overlaysWebView: false,

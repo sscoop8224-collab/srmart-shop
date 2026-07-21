@@ -21,10 +21,19 @@ public class MainActivity extends BridgeActivity {
 
     private static final int CAMERA_PERMISSION_REQUEST = 1001;
     private PermissionRequest pendingPermissionRequest;
+    // Android 12 로고 스플래시 유지 플래그. 광고가 준비되면(JS SrmartNav.releaseSplash) false → 즉시 종료.
+    private static volatile boolean sSplashHold = true;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        // 로고 스플래시를 광고 준비 시점까지 유지하고, 종료는 '애니메이션 없이 즉시 제거'해 초록 종료애니 노출을 막는다.
+        // (capacitor SplashScreen 플러그인은 launchShowDuration:0이라 런치 스플래시를 제어하지 않음 → 여기서 직접 제어.)
+        androidx.core.splashscreen.SplashScreen splash = androidx.core.splashscreen.SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
+        splash.setKeepOnScreenCondition(() -> sSplashHold);
+        splash.setOnExitAnimationListener(provider -> provider.remove()); // 즉시 제거(종료 애니 없음)
+        // 안전망: release 신호가 안 와도 3.5초 뒤 강제 해제(로고에 갇히지 않게).
+        new android.os.Handler(getMainLooper()).postDelayed(() -> sSplashHold = false, 3500);
 
         WebView webView = getBridge().getWebView();
 
@@ -76,6 +85,10 @@ public class MainActivity extends BridgeActivity {
 
     // 웹 로드 완료 시 JS(window.SrmartNav.onContentReady())가 호출 → 하단 내비바를 콘텐츠용으로 전환.
     private class NavBarBridge {
+        // 광고 준비 완료 → 로고 스플래시 즉시 종료(초록 종료애니 없이 광고로 바로).
+        @JavascriptInterface
+        public void releaseSplash() { sSplashHold = false; }
+
         @JavascriptInterface
         public void onContentReady() {
             runOnUiThread(() -> {
