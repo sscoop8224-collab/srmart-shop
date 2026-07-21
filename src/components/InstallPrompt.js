@@ -22,27 +22,34 @@ export default function InstallPrompt() {
   useEffect(() => {
     if (isInStandaloneMode()) return;
 
-    const dismissed = localStorage.getItem(DISMISSED_KEY);
-    if (dismissed) {
-      const days = (Date.now() - Number(dismissed)) / (1000 * 60 * 60 * 24);
-      if (days < DISMISS_DAYS) return;
+    // 홈페이지 '앱 다운로드'에서 넘어온 경우(/shop/?install=1) — 설치 UI를 즉시 띄우고 7일 숨김도 무시.
+    const forceInstall = new URLSearchParams(window.location.search).get('install') === '1';
+
+    if (!forceInstall) {
+      const dismissed = localStorage.getItem(DISMISSED_KEY);
+      if (dismissed) {
+        const days = (Date.now() - Number(dismissed)) / (1000 * 60 * 60 * 24);
+        if (days < DISMISS_DAYS) return;
+      }
     }
 
+    const delay = forceInstall ? 0 : 3000;
+
     if (isIOS()) {
-      // iOS: Safari 공유 메뉴 안내 (3초 딜레이)
-      const t = setTimeout(() => setShowIOS(true), 3000);
+      // iOS: Safari 공유 메뉴 안내 (기본 3초 딜레이, 설치 유도 진입 시 즉시)
+      const t = setTimeout(() => setShowIOS(true), delay);
       return () => clearTimeout(t);
     }
 
+    // Android 등: beforeinstallprompt 캡처 후 설치 배너(설치 버튼=사용자 제스처로 네이티브 프롬프트).
+    let timer;
     const handler = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      const t = setTimeout(() => setShow(true), 3000);
-      return () => clearTimeout(t);
+      timer = setTimeout(() => setShow(true), delay);
     };
-
     window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    return () => { window.removeEventListener('beforeinstallprompt', handler); if (timer) clearTimeout(timer); };
   }, []);
 
   const dismiss = () => {
