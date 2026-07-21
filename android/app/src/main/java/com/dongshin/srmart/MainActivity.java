@@ -31,7 +31,13 @@ public class MainActivity extends BridgeActivity {
         androidx.core.splashscreen.SplashScreen splash = androidx.core.splashscreen.SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
         splash.setKeepOnScreenCondition(() -> sSplashHold);
-        splash.setOnExitAnimationListener(provider -> provider.remove()); // 즉시 제거(종료 애니 없음)
+        // 종료: 시스템 기본 애니(초록 노출) 대신, 이미 그려진 광고 '위로' 스플래시를 빠르게 페이드아웃.
+        // → 초록 갭 없이 부드럽게 광고로 전환(하드컷 느낌·웹뷰 첫프레임 스케일 노이즈 완화).
+        splash.setOnExitAnimationListener(provider -> {
+            final View v = provider.getView();
+            v.animate().alpha(0f).setDuration(220)
+                .withEndAction(provider::remove).start();
+        });
         // 안전망: release 신호가 안 와도 3.5초 뒤 강제 해제(로고에 갇히지 않게).
         new android.os.Handler(getMainLooper()).postDelayed(() -> sSplashHold = false, 3500);
 
