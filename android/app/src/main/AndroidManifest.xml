@@ -44,4 +44,7 @@
 
     <!-- ✅ 진동 권한 (바코드 스캔 피드백용) -->
     <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- ✅ 푸시 알림 권한 (Android 13+ 런타임 권한 — 이거 없으면 알림 프롬프트·발송 안 됨) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>

@@ -16,6 +16,7 @@ import { ThemeProvider, useTheme } from './ThemeContext';
 import { kakaoPayReady } from './pages/KakaoPay';
 import { useAuth } from './AuthContext';
 import { useStore } from './StoreContext';
+import { initPush } from './pushSetup';
 
 // 코드 스플리팅: 홈(App 내 inline) 외 페이지는 지연 로드 → 초기 번들 축소(파싱 단축).
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -104,6 +105,9 @@ function AppContent() {
       } catch (e) {}
     })();
   }, []);
+
+  // 앱 최초 실행 시 푸시 알림 권한 요청 + FCM 토큰 등록 (네이티브만, 웹은 무시)
+  useEffect(() => { initPush(); }, []);
 
   // 스플래시 제어 — 중복 호출 방지
   const splashHiddenRef = useRef(false);

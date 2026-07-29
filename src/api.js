@@ -58,6 +58,8 @@ export const getMyOrders = () => API.get('/orders/my');
 export const createOrder = (data) => API.post('/orders', data);
 export const getCoupons = () => API.get('/coupons');
 export const matchZipcode = (zipcode) => API.post('/store/match-zipcode', { zipcode });
+// FCM 기기 토큰 등록(푸시) — 앱 실행 시. 로그인 상태면 서버가 user·store 연결, 게스트는 store_id 전달.
+export const registerPushToken = (token, platform, store_id) => API.post('/push/register', { token, platform, store_id });
 export const getMyPoints = () => API.get('/me/points');
 export const deleteAccount = (password) => API.delete('/users/me', { data: { password } });
 export const getMyPointHistory = () => API.get('/me/point-history');

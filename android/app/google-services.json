@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "743682754272",
+    "project_id": "dongsin-67bb2",
+    "storage_bucket": "dongsin-67bb2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:743682754272:android:6cc2ed8ed5e5f0a66cf285",
+        "android_client_info": {
+          "package_name": "com.dongshin.srmart"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCqr1j-ik9JshxKYu2DU-NWHztKoLzx2Jk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
