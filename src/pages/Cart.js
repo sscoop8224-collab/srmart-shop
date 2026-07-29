@@ -52,7 +52,7 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
       setUseDefaultAddress(true);
       if (user?.zipcode) {
         setZipcode(user.zipcode);
-        checkZipcodeValue(user.zipcode);
+        checkZipcodeValue(user.zipcode, user?.dong_name);
       }
     } else {
       setUseDefaultAddress(false);
@@ -117,11 +117,11 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
   const clampedUsePoints = Math.min(usePoints, myPoints, baseAfterCoupon);
   const finalPrice = Math.max(0, baseAfterCoupon - clampedUsePoints);
 
-  const checkZipcodeValue = async (zip) => {
+  const checkZipcodeValue = async (zip, dong) => {
     if (!zip || zip.length < 3) return;
     setMatchingZipcode(true);
     try {
-      const res = await matchZipcode(zip);
+      const res = await matchZipcode(zip, dong);
       if (res.data.matched) {
         setDeliveryInfo({ zoneName: res.data.zone.zone_name, deliveryFee: res.data.delivery_fee });
       } else {
@@ -140,7 +140,8 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
     }
   };
 
-  const handleZipcodeCheck = () => checkZipcodeValue(zipcode);
+  // 수동 입력 zip엔 저장된 동 이름을 붙이지 않음(저장 주소=우편번호 일치일 때만 동 매칭)
+  const handleZipcodeCheck = () => checkZipcodeValue(zipcode, zipcode === user?.zipcode ? user?.dong_name : null);
 
   const handleApplyCoupon = async () => {
     if (!couponInput) { alert('쿠폰 코드를 입력해주세요!'); return; }
@@ -170,7 +171,7 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
       setAddress(defaultAddress);
       if (user?.zipcode) {
         setZipcode(user.zipcode);
-        checkZipcodeValue(user.zipcode);
+        checkZipcodeValue(user.zipcode, user?.dong_name);
       }
     } else {
       setAddress({ name: '', phone: '', address: '', detail: '' });

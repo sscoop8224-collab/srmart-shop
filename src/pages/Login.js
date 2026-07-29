@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import FindAccount from './FindAccount';
 import srmLogo from '../srm-logo-transparent.png';
-import { getStores, register } from '../api';
+import { getStores, register, getCoverage } from '../api';
 
 // ── 나이 계산 함수 ──────────────────────────────────────────
 function calcAgeFromId(frontId, genderDigit) {
@@ -197,6 +197,9 @@ function Login({ onLogin, onGuest }) {
   const [stores, setStores] = useState([]);
   const [selectedStoreId, setSelectedStoreId] = useState('');
   const [storesLoading, setStoresLoading] = useState(false);
+  const [coverage, setCoverage] = useState(null);           // 배송권역 커버리지 결과 {stores, recommended}
+  const [coverageLoading, setCoverageLoading] = useState(false);
+  const [signupDong, setSignupDong] = useState('');         // Daum에서 받은 동 이름(bname) — 커버리지 주 기준
   const [signupZipcode, setSignupZipcode] = useState('');
 
   const emptyForm = {
@@ -216,6 +219,22 @@ function Login({ onLogin, onGuest }) {
         .finally(() => setStoresLoading(false));
     }
   }, [mode]);
+
+  // 배송지 주소(동 이름 우선) → 커버리지(배송 가능 매장) 조회. 매장선택 단계 안내용.
+  useEffect(() => {
+    if (mode !== 'signup') return;
+    const zip = (signupZipcode || '').replace(/\D/g, '');
+    const dong = (signupDong || '').trim();
+    if (!dong && zip.length < 3) { setCoverage(null); return; }
+    let cancelled = false;
+    setCoverageLoading(true);
+    getCoverage(zip, dong)
+      .then(res => { if (!cancelled) setCoverage(res.data); })
+      .catch(() => { if (!cancelled) setCoverage(null); })
+      .finally(() => { if (!cancelled) setCoverageLoading(false); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signupZipcode, signupDong, mode]);
 
   useEffect(() => {
     const saved = localStorage.getItem('srmart_auto_login');
@@ -279,6 +298,7 @@ function Login({ onLogin, onGuest }) {
         age,
         store_id: Number(selectedStoreId),
         zipcode: signupZipcode || null,
+        dong_name: signupDong || null,   // Daum 동 이름 → 체크아웃 배송권역 매칭용 저장
       });
       alert(form.name + '님 가입을 환영해요! 🎉' + (isAdult ? '' : '\n미성년자로 확인됐어요. 성인 상품 구매가 제한됩니다.'));
       setMode('login');
@@ -441,6 +461,51 @@ function Login({ onLogin, onGuest }) {
                   )}
                 </div>
 
+                {/* 배송지 주소 + 배송권역 커버리지 안내 (매장선택 단계) */}
+                <div>
+                  <label style={labelStyle}>배송지 주소</label>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                    <input name="address" value={form.address} readOnly
+                      placeholder="주소 찾기 버튼을 눌러주세요"
+                      style={{ ...inputStyle, flex: 1 }} />
+                    <button type="button" onClick={() => {
+                      new window.daum.Postcode({
+                        oncomplete: (data) => { setForm(p => ({ ...p, address: data.roadAddress || data.jibunAddress, addressDetail: '' })); setSignupZipcode(data.zonecode || ''); setSignupDong(data.bname || ''); }
+                      }).open();
+                    }} style={{ padding: '0 14px', height: 52, background: `linear-gradient(135deg, ${COLORS.green}, ${COLORS.greenDark})`, color: 'white', border: 'none', borderRadius: 14, fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      주소 찾기
+                    </button>
+                  </div>
+                  <input name="addressDetail" value={form.addressDetail} onChange={e => setForm({ ...form, addressDetail: e.target.value })}
+                    placeholder="상세 주소 (동/호수 등)" style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
+                  {signupZipcode && (
+                    <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <input value={signupZipcode} readOnly
+                        placeholder="우편번호"
+                        style={{ ...inputStyle, width: 120, flexShrink: 0, background: '#f1f3f5', color: COLORS.ink500, cursor: 'default' }} />
+                      <span style={{ fontSize: 12, color: COLORS.ink500 }}>우편번호 (자동 입력)</span>
+                    </div>
+                  )}
+                  {/* 배송권역 커버리지 안내: 선택 매장 커버 ✓ / 추천 매장 안내+변경 / 불가 안내 */}
+                  {(signupDong || (signupZipcode && signupZipcode.replace(/\D/g, '').length >= 3)) && (() => {
+                    let bg = '#f1f3f5', fg = COLORS.ink500, bd = COLORS.greenBorder, content = null;
+                    if (coverageLoading) content = '배송 가능 매장 확인 중…';
+                    else if (coverage) {
+                      const sel = coverage.stores.find(s => String(s.store_id) === String(selectedStoreId));
+                      if (sel) { bg = '#eafaf1'; fg = '#009a58'; bd = '#a3e4c6'; content = <span>✓ 이 주소는 <b>{sel.store_name}</b>에서 배송 가능해요</span>; }
+                      else if (coverage.recommended) {
+                        bg = '#fff7e6'; fg = '#9a6a00'; bd = '#ffe08a';
+                        content = <span>이 주소는 <b>{coverage.recommended.store_name}</b>이(가) 배송 가능해요.
+                          <button type="button" onClick={() => setSelectedStoreId(String(coverage.recommended.store_id))}
+                            style={{ marginLeft: 6, padding: '3px 10px', background: '#9a6a00', color: '#fff', border: 'none', borderRadius: 8, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>이 매장으로 변경</button>
+                        </span>;
+                      } else { bg = '#fff0f1'; fg = COLORS.danger; bd = '#ffc9cf'; content = <span>이 주소는 배송 가능한 매장이 없어요. 방문 또는 고객센터로 문의해주세요.</span>; }
+                    }
+                    if (content == null) return null;
+                    return <div style={{ marginTop: 8, padding: '10px 12px', borderRadius: 12, fontSize: 12.5, lineHeight: 1.5, background: bg, color: fg, border: `1px solid ${bd}` }}>{content}</div>;
+                  })()}
+                </div>
+
                 <div>
                   <label style={labelStyle}>아이디</label>
                   <input name="username" value={form.username} onChange={e => setForm({ ...form, username: e.target.value })}
@@ -499,32 +564,6 @@ function Login({ onLogin, onGuest }) {
                       </div>
                     );
                   })()}
-                </div>
-
-                <div>
-                  <label style={labelStyle}>주소</label>
-                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                    <input name="address" value={form.address} readOnly
-                      placeholder="주소 찾기 버튼을 눌러주세요"
-                      style={{ ...inputStyle, flex: 1 }} />
-                    <button type="button" onClick={() => {
-                      new window.daum.Postcode({
-                        oncomplete: (data) => { setForm(p => ({ ...p, address: data.roadAddress || data.jibunAddress, addressDetail: '' })); setSignupZipcode(data.zonecode || ''); }
-                      }).open();
-                    }} style={{ padding: '0 14px', height: 52, background: `linear-gradient(135deg, ${COLORS.green}, ${COLORS.greenDark})`, color: 'white', border: 'none', borderRadius: 14, fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                      주소 찾기
-                    </button>
-                  </div>
-                  <input name="addressDetail" value={form.addressDetail} onChange={e => setForm({ ...form, addressDetail: e.target.value })}
-                    placeholder="상세 주소 (동/호수 등)" style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
-                  {signupZipcode && (
-                    <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <input value={signupZipcode} readOnly
-                        placeholder="우편번호"
-                        style={{ ...inputStyle, width: 120, flexShrink: 0, background: '#f1f3f5', color: COLORS.ink500, cursor: 'default' }} />
-                      <span style={{ fontSize: 12, color: COLORS.ink500 }}>우편번호 (자동 입력)</span>
-                    </div>
-                  )}
                 </div>
 
               </div>

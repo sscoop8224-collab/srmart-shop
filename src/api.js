@@ -57,7 +57,9 @@ export const getOrders = () => API.get('/orders');
 export const getMyOrders = () => API.get('/orders/my');
 export const createOrder = (data) => API.post('/orders', data);
 export const getCoupons = () => API.get('/coupons');
-export const matchZipcode = (zipcode) => API.post('/store/match-zipcode', { zipcode });
+export const matchZipcode = (zipcode, dong) => API.post('/store/match-zipcode', { zipcode, dong });
+// 주소 커버리지(공개) — 동 이름 우선 + 우편번호. 이 주소를 배송하는 매장 전체 + 추천 1곳 (회원가입 안내용)
+export const getCoverage = (zipcode, dong) => API.post('/store/coverage', { zipcode, dong });
 // FCM 기기 토큰 등록(푸시) — 앱 실행 시. 로그인 상태면 서버가 user·store 연결, 게스트는 store_id 전달.
 export const registerPushToken = (token, platform, store_id) => API.post('/push/register', { token, platform, store_id });
 export const getMyPoints = () => API.get('/me/points');
