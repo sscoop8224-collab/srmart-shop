@@ -340,14 +340,14 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, coupons, appliedCoupon
                     onClick={() => {
                       if (window.daum) {
                         new window.daum.Postcode({
-                          oncomplete: (data) => { setAddress((prev) => ({ ...prev, address: data.roadAddress || data.jibunAddress, detail: '' })); if (data.zonecode) { setZipcode(data.zonecode); setDeliveryInfo(null); } }
+                          oncomplete: (data) => { setAddress((prev) => ({ ...prev, address: data.roadAddress || data.jibunAddress, detail: '' })); if (data.zonecode) { setZipcode(data.zonecode); checkZipcodeValue(data.zonecode, data.bname); } }
                         }).open();
                       } else {
                         alert('주소 검색 서비스를 불러오는 중이에요. 직접 입력해주세요.');
                       }
                     }}
                   />
-                  <button onClick={() => { if (window.daum) { new window.daum.Postcode({ oncomplete: (data) => { setAddress((prev) => ({ ...prev, address: data.roadAddress || data.jibunAddress, detail: '' })); if (data.zonecode) { setZipcode(data.zonecode); setDeliveryInfo(null); } } }).open(); } }}
+                  <button onClick={() => { if (window.daum) { new window.daum.Postcode({ oncomplete: (data) => { setAddress((prev) => ({ ...prev, address: data.roadAddress || data.jibunAddress, detail: '' })); if (data.zonecode) { setZipcode(data.zonecode); checkZipcodeValue(data.zonecode, data.bname); } } }).open(); } }}
                     style={{ padding: '11px 14px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', whiteSpace: 'nowrap' }}>
                     주소 찾기
                   </button>

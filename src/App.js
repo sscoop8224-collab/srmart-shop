@@ -468,16 +468,18 @@ function AppContent() {
         const newOrder = { id: orderId, date: new Date().toLocaleString('ko-KR'), items: [...cart], totalPrice: finalPrice || totalPrice, userId: user.email, status: '결제완료' };
         createOrder({
           id: orderId,
-          totalPrice: finalPrice || totalPrice,
+          final_amount: finalPrice,                 // 서버 검증용 실결제(서버가 재계산 후 대조)
           status: '결제완료',
           address: orderExtras.address || user.address || '',
           addressDetail: orderExtras.addressDetail || user.address_detail || '',
           zipcode: orderExtras.zipcode || '',
-          baseDeliveryFee: orderExtras.baseDeliveryFee || 0,
-          extraDeliveryFee: orderExtras.extraDeliveryFee || 0,
+          extraDeliveryFee: orderExtras.extraDeliveryFee || 0,   // base 배송료는 서버가 재계산
+          use_points: orderExtras.use_points || 0,
+          coupon_id: orderExtras.coupon_id || null,
           receiverName: orderExtras.receiverName || user.name,
           receiverPhone: orderExtras.receiverPhone || user.phone || '',
-          items: cart.map(item => ({ id: item.id, name: item.name, price: item.price, quantity: item.quantity })),
+          // orderExtras.items 에는 quantity_type/grams 가 담겨 서버 소계 재계산에 필요
+          items: orderExtras.items || cart.map(item => ({ id: item.id, name: item.name, quantity: item.quantity })),
         }).catch(err => console.error('주문 저장 실패:', err));
         setOrders([newOrder, ...orders]); setLastOrder(newOrder); setCart([]);
         window.open(result.next_redirect_pc_url, '_blank');

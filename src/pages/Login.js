@@ -279,6 +279,11 @@ function Login({ onLogin, onGuest }) {
     if (!/^\d{6}$/.test(form.idFront)) { alert('주민번호 앞자리는 숫자 6자리예요!'); return; }
     if (!['1', '2', '3', '4'].includes(form.idGender)) { alert('주민번호 뒷자리 첫번째가 올바르지 않아요 (1~4)'); return; }
 
+    // (B1) 우편번호 필수 — 주소 찾기로 입력해야 저장·배송권역 매칭 가능. (서버도 400으로 이중 검증)
+    if (!signupZipcode || !signupZipcode.trim()) {
+      alert('우편번호가 필요해요. 주소 찾기로 주소를 입력해주세요.'); return;
+    }
+
     const age = calcAgeFromId(form.idFront, form.idGender);
     const isAdult = age !== null && age >= 19;
 
