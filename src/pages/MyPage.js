@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { useTheme } from '../ThemeContext';
+import { useAuth } from '../AuthContext';
 import { getMyPoints, getMyActiveCoupons, deleteAccount, SITE } from '../api';
 import API from '../api';
 
@@ -39,6 +40,7 @@ function PwStrengthBar({ password, subTextColor }) {
 
 function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, isAdmin }) {
   const { darkMode, setDarkMode, resetToSystem } = useTheme();
+  const { login: setAuthUser } = useAuth();   // 저장 성공 후 로그인 사용자 정보 갱신(재로그인 없이 반영)
   const [myPoints, setMyPoints] = useState(null); // { points, expiring_soon }
   const [myUserCoupons, setMyUserCoupons] = useState([]);
   const [showCouponList, setShowCouponList] = useState(false);
@@ -50,12 +52,14 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
     phone: user?.phone || '',
     address: user?.address || '',
     addressDetail: user?.addressDetail || '',
-    zipCode: user?.zipCode || '',
+    zipcode: user?.zipcode || '',
   });
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
   const [pwError, setPwError] = useState('');
   const [pwLoading, setPwLoading] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
+  const [saveErr, setSaveErr] = useState(false);      // 저장 실패 여부(성공/실패 색 구분)
+  const [saveLoading, setSaveLoading] = useState(false);
   const [myCoupons, setMyCoupons] = useState([]);
   const [showCoupons, setShowCoupons] = useState(false);
   const [couponsLoading, setCouponsLoading] = useState(false);
@@ -128,13 +132,43 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
     fetchMyCoupons();
   };
 
-  const saveProfile = () => {
+  // 서버(PUT /api/users/:id)에 실제로 저장한 뒤에만 성공 표시한다.
+  // ※ 이 엔드포인트는 부분 수정이 아니라 전체 UPDATE 라, 화면에서 안 고치는 username·is_adult 도
+  //   현재 값 그대로 함께 보내야 한다(안 보내면 해당 컬럼이 비워진다).
+  const saveProfile = async () => {
     if (!form.name.trim()) return alert('이름을 입력해주세요');
-    if (setUsers) {
-      setUsers(prev => prev.map(u => u.email === user.email ? { ...u, ...form } : u));
+    const uid = currentUser?.id || user?.id;
+    if (!uid) return alert('로그인 정보를 확인할 수 없어요. 다시 로그인해주세요.');
+    setSaveLoading(true); setSaveErr(false); setSaveMsg('');
+    try {
+      await API.put(`/users/${uid}`, {
+        username: currentUser?.username ?? user?.username,
+        name: form.name,
+        email: form.email || null,
+        phone: form.phone || null,
+        address: form.address || null,
+        addressDetail: form.addressDetail || null,
+        zipcode: form.zipcode || null,
+        is_adult: (currentUser?.isAdult ?? currentUser?.is_adult ?? user?.isAdult ?? false) ? 1 : 0,
+      });
+      // 로그인 사용자 정보 갱신 — 장바구니 기본배송지 자동채움이 이 값을 읽으므로 재로그인 없이 반영된다.
+      const updated = {
+        ...user,
+        name: form.name, email: form.email, phone: form.phone,
+        address: form.address, addressDetail: form.addressDetail, zipcode: form.zipcode,
+      };
+      setAuthUser(updated);
+      if (setUsers) {
+        setUsers(prev => prev.map(u => (u.id ? u.id === uid : u.email === user?.email) ? { ...u, ...updated } : u));
+      }
+      setSaveMsg('저장됐어요! ✅');
+      setTimeout(() => { setSaveMsg(''); setShowEditModal(false); }, 1200);
+    } catch (e) {
+      setSaveErr(true);
+      setSaveMsg(e.response?.data?.error || '저장에 실패했어요. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setSaveLoading(false);
     }
-    setSaveMsg('저장됐어요! ✅');
-    setTimeout(() => { setSaveMsg(''); setShowEditModal(false); }, 1200);
   };
 
   const handleDeleteAccount = async () => {
@@ -226,7 +260,7 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
       {/* 회원정보 수정 버튼 */}
       <div style={{ margin: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
         <button onClick={() => {
-          setForm({ name: currentUser?.name || '', email: currentUser?.email || '', phone: currentUser?.phone || '', address: currentUser?.address || '', addressDetail: currentUser?.addressDetail || '', zipCode: currentUser?.zipCode || '' });
+          setForm({ name: currentUser?.name || '', email: currentUser?.email || '', phone: currentUser?.phone || '', address: currentUser?.address || '', addressDetail: currentUser?.addressDetail || '', zipcode: currentUser?.zipcode || '' });
           setShowEditModal(true);
         }} style={{ background: cardBg, border: '1.5px solid #00c471', borderRadius: '14px', padding: '14px 0', fontSize: '14px', fontWeight: '600', color: '#00c471', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 2px 8px rgba(0,196,113,0.1)' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -489,25 +523,25 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
                 {currentUser?.username ? `@${currentUser.username}` : '(미설정)'}
               </div>
             </div>
-            {[{ key: 'name', label: '이름 *', placeholder: '이름 입력' }, { key: 'email', label: '이메일 (선택사항)', placeholder: 'example@email.com' }, { key: 'phone', label: '연락처', placeholder: '010-0000-0000' }, { key: 'zipCode', label: '우편번호', placeholder: '주소 검색 시 자동 입력' }, { key: 'address', label: '주소', placeholder: '주소 찾기 버튼을 눌러주세요' }, { key: 'addressDetail', label: '상세주소', placeholder: '예: 101동 1001호' }].map(f => (
+            {[{ key: 'name', label: '이름 *', placeholder: '이름 입력' }, { key: 'email', label: '이메일 (선택사항)', placeholder: 'example@email.com' }, { key: 'phone', label: '연락처', placeholder: '010-0000-0000' }, { key: 'zipcode', label: '우편번호', placeholder: '주소 검색 시 자동 입력' }, { key: 'address', label: '주소', placeholder: '주소 찾기 버튼을 눌러주세요' }, { key: 'addressDetail', label: '상세주소', placeholder: '예: 101동 1001호' }].map(f => (
               <div key={f.key} style={{ marginBottom: '14px' }}>
                 <div style={{ fontSize: '12px', color: '#00a85e', marginBottom: '6px', fontWeight: '700' }}>{f.label}</div>
                 {f.key === 'address' ? (
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <input style={{ ...inputStyle, flex: 1 }} placeholder={f.placeholder} value={form[f.key]} readOnly onClick={() => {
                       if (window.daum) {
-                        new window.daum.Postcode({ oncomplete: (data) => setForm(p => ({ ...p, address: data.roadAddress || data.jibunAddress, zipCode: data.zonecode || '' })) }).open();
+                        new window.daum.Postcode({ oncomplete: (data) => setForm(p => ({ ...p, address: data.roadAddress || data.jibunAddress, zipcode: data.zonecode || '' })) }).open();
                       } else { alert('주소 검색 서비스를 불러오는 중이에요!'); }
                     }} />
                     <button type="button" onClick={() => {
                       if (window.daum) {
-                        new window.daum.Postcode({ oncomplete: (data) => setForm(p => ({ ...p, address: data.roadAddress || data.jibunAddress, zipCode: data.zonecode || '' })) }).open();
+                        new window.daum.Postcode({ oncomplete: (data) => setForm(p => ({ ...p, address: data.roadAddress || data.jibunAddress, zipcode: data.zonecode || '' })) }).open();
                       } else { alert('주소 검색 서비스를 불러오는 중이에요!'); }
                     }} style={{ padding: '12px 14px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '12px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                       주소 찾기
                     </button>
                   </div>
-                ) : f.key === 'zipCode' ? (
+                ) : f.key === 'zipcode' ? (
                   <input style={{ ...inputStyle, background: inputBg, color: subTextColor }} placeholder={f.placeholder} value={form[f.key] || ''} readOnly />
                 ) : (
                   <input style={inputStyle} placeholder={f.placeholder} value={form[f.key] || ''} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
@@ -515,12 +549,12 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
               </div>
             ))}
             {saveMsg && (
-              <div style={{ background: darkMode ? '#2e2e2e' : '#f0faf5', border: '1px solid #00c471', borderRadius: '12px', padding: '10px 14px', fontSize: '13px', color: '#00a85e', fontWeight: '600', marginBottom: '14px', textAlign: 'center' }}>
+              <div style={{ background: saveErr ? (darkMode ? '#3a1f22' : '#fff0f1') : (darkMode ? '#2e2e2e' : '#f0faf5'), border: `1px solid ${saveErr ? '#ff4757' : '#00c471'}`, borderRadius: '12px', padding: '10px 14px', fontSize: '13px', color: saveErr ? '#ff4757' : '#00a85e', fontWeight: '600', marginBottom: '14px', textAlign: 'center' }}>
                 {saveMsg}
               </div>
             )}
-            <button onClick={saveProfile} style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: '700', color: 'white', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
-              저장하기
+            <button onClick={saveProfile} disabled={saveLoading} style={{ width: '100%', padding: '14px', background: saveLoading ? '#adb5bd' : 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: '700', color: 'white', cursor: saveLoading ? 'default' : 'pointer', boxShadow: saveLoading ? 'none' : '0 4px 16px rgba(0,196,113,0.3)' }}>
+              {saveLoading ? '저장 중…' : '저장하기'}
             </button>
           </div>
         </div>
