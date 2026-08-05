@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getProductReviews, createReview, toggleWishlist, getRelatedProducts, recordRecentView, imgUrl } from '../api';
+import { buildCartItem } from '../utils/cartItem';
 
 const getCategoryImage = (large) => {
   switch(large) {
@@ -69,14 +70,11 @@ function ProductDetail({ product, onBack, onAddToCart, darkMode, user }) {
     ? product.images
     : product.image ? [product.image] : [];
 
+  // 박스 구매도 단품처럼 count 만큼 반복 담기 — 화면에 보이는 '박스가 × 수량' 합계와
+  // 실제 장바구니에 담기는 수량이 이제 일치한다(예전엔 박스가 항상 1개만 담겼음).
   const handleAddToCart = () => {
-    if (product.pricing_type === 'weight') {
-      onAddToCart({ ...product, grams, quantity: 1 });
-    } else if (product.box_price_override && purchaseType === 'box') {
-      onAddToCart({ ...product, purchase_type: 'box', price: product.box_price_override, quantity: 1 });
-    } else {
-      for (let i = 0; i < quantity; i++) onAddToCart(product);
-    }
+    const { item, count } = buildCartItem(product, { quantity, purchaseType, grams });
+    for (let i = 0; i < count; i++) onAddToCart(item);
   };
 
   return (

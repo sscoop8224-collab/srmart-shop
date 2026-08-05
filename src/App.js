@@ -387,13 +387,21 @@ function AppContent() {
       const latestUser = users.find(u => u.email === user.email) || user;
       if (!latestUser.isAdult) { showToast('🔞 성인 상품은 19세 이상만 구매할 수 있어요!'); return; }
     }
-    const existing = cart.find((item) => item.id === product.id);
-    if (existing) {
-      if (product.stock !== '' && existing.quantity >= Number(product.stock)) { showToast('재고 수량을 초과했어요! 😢'); return; }
-      setCart(cart.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item));
-    } else {
-      setCart([...cart, { ...product, quantity: 1 }]);
-    }
+    // 함수형 업데이터 필수: ProductDetail 이 수량>1 을 같은 클릭 핸들러 안에서 addToCart 를
+    // 여러 번 반복 호출한다(단품 수량 루프·박스 수량 루프). setCart(cart...) 처럼 클로저의
+    // cart 를 직접 읽으면 루프 내 모든 호출이 같은 stale 값을 기준으로 계산해 마지막
+    // 호출만 반영되고 나머지는 덮어써진다 — "수량 3개 담기"가 실제로는 1개만 담기던 버그.
+    // prev 를 쓰면 React 가 매 호출마다 그 시점의 최신 값을 보장해 정확히 누적된다.
+    let stockExceeded = false;
+    setCart(prev => {
+      const existing = prev.find((item) => item.id === product.id);
+      if (existing) {
+        if (product.stock !== '' && existing.quantity >= Number(product.stock)) { stockExceeded = true; return prev; }
+        return prev.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+      }
+      return [...prev, { ...product, quantity: 1 }];
+    });
+    if (stockExceeded) { showToast('재고 수량을 초과했어요! 😢'); return; }
     showToast(product.name + '이(가) 장바구니에 담겼어요! 🛒');
   };
 
