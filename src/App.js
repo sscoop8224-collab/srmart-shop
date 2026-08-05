@@ -25,6 +25,7 @@ const Orders = lazy(() => import('./pages/Orders'));
 const Cart = lazy(() => import('./pages/Cart'));
 const Search = lazy(() => import('./pages/Search'));
 const ProductDetail = lazy(() => import('./pages/ProductDetail'));
+const QuickOrder = lazy(() => import('./pages/QuickOrder'));
 const Wishlist = lazy(() => import('./pages/Wishlist'));
 const Notice = lazy(() => import('./pages/Notice'));
 const Receipt = lazy(() => import('./pages/Receipt'));
@@ -81,6 +82,7 @@ function AppContent() {
   const [cart, setCart] = useState([]);
   const [user, setUser] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [quickOrderItem, setQuickOrderItem] = useState(null);   // '바로 주문' 대상 아이템(카트형, 1개)
   const [wishlist, setWishlist] = useState([]);
   const [notices, setNotices] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -497,6 +499,50 @@ function AppContent() {
     }
   };
 
+  // '바로 주문' 전용 결제 — handlePayment 와 로직은 동일하되 전역 cart 를 전혀 건드리지 않는다
+  // (장바구니를 거치지 않은 주문이므로 읽지도 비우지도 않음). 두 결제 흐름이 갈리지 않도록
+  // orderInfo/createOrder 페이로드 구성 방식은 handlePayment 와 1:1로 맞춰뒀다.
+  const handleQuickPayment = async (item, finalPrice, orderExtras = {}) => {
+    if (!item) { alert('주문할 상품이 없어요!'); return; }
+    const latestUser = users.find(u => u.email === user.email) || user;
+    if (item.isAdult && !latestUser.isAdult) {
+      alert('🔞 성인 상품은 19세 이상만 구매할 수 있어요!'); return;
+    }
+    try {
+      const orderId = 'order_' + Date.now();
+      const orderInfo = {
+        orderId, userId: user.email,
+        itemName: item.name,
+        quantity: item.quantity,
+        totalAmount: finalPrice,
+      };
+      const result = await kakaoPayReady(orderInfo);
+      if (result.next_redirect_pc_url) {
+        const newOrder = { id: orderId, date: new Date().toLocaleString('ko-KR'), items: [item], totalPrice: finalPrice, userId: user.email, status: '결제완료' };
+        createOrder({
+          id: orderId,
+          final_amount: finalPrice,
+          status: '결제완료',
+          address: orderExtras.address || user.address || '',
+          addressDetail: orderExtras.addressDetail || user.address_detail || '',
+          zipcode: orderExtras.zipcode || '',
+          extraDeliveryFee: orderExtras.extraDeliveryFee || 0,
+          use_points: orderExtras.use_points || 0,
+          coupon_id: orderExtras.coupon_id || null,
+          receiverName: orderExtras.receiverName || user.name,
+          receiverPhone: orderExtras.receiverPhone || user.phone || '',
+          items: orderExtras.items || [{ id: item.id, name: item.name, quantity: item.quantity }],
+        }).catch(err => console.error('주문 저장 실패:', err));
+        setOrders([newOrder, ...orders]); setLastOrder(newOrder);
+        setQuickOrderItem(null);
+        window.open(result.next_redirect_pc_url, '_blank');
+        goToPage('receipt');
+      }
+    } catch (error) {
+      alert('결제 준비 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.');
+    }
+  };
+
   if (page === 'homepage') {
     return (
       <div style={{ width: '100%', minHeight: '100vh' }}>
@@ -754,7 +800,8 @@ function AppContent() {
         {page === 'notice'          && <Notice notices={notices} setNotices={setNotices} isAdmin={isAdmin} goBack={goBack} goToHome={() => goToPage('home')} darkMode={darkMode} />}
         {page === 'wishlist'        && <Wishlist wishlist={wishlist} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWishlist={toggleWishlist} goBack={goBack} goToHome={() => goToPage('home')} darkMode={darkMode} />}
         {page === 'search'          && <Search products={products} categories={categories} goBack={goBack} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} />}
-        {page === 'productDetail'   && <ProductDetail product={selectedProduct} onBack={goBack} onAddToCart={addToCart} darkMode={darkMode} />}
+        {page === 'productDetail'   && <ProductDetail product={selectedProduct} onBack={goBack} onAddToCart={addToCart} onBuyNow={(item) => { if (!user) { requireLogin(); return; } setQuickOrderItem(item); goToPage('quickOrder'); }} darkMode={darkMode} />}
+        {page === 'quickOrder'      && <QuickOrder item={quickOrderItem} onBack={goBack} onPayment={handleQuickPayment} user={currentUser} darkMode={darkMode} />}
         {page === 'cart'            && <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} user={currentUser} darkMode={darkMode} />}
         {page === 'orders'          && <Orders orders={orders} goBack={goBack} />}
         {page === 'receipt'         && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}

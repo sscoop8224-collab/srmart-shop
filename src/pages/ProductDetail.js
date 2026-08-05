@@ -13,7 +13,7 @@ const getCategoryImage = (large) => {
   }
 };
 
-function ProductDetail({ product, onBack, onAddToCart, darkMode, user }) {
+function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user }) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [grams, setGrams] = useState(100);
@@ -75,6 +75,14 @@ function ProductDetail({ product, onBack, onAddToCart, darkMode, user }) {
   const handleAddToCart = () => {
     const { item, count } = buildCartItem(product, { quantity, purchaseType, grams });
     for (let i = 0; i < count; i++) onAddToCart(item);
+  };
+
+  // 장바구니를 거치지 않고 바로 결제로 진입. buildCartItem 을 handleAddToCart 와 공유하므로
+  // 계량/박스/단품 가격·수량 계산이 두 버튼에서 갈리지 않는다. count 는 단일 아이템의
+  // quantity 필드로 직접 들어간다(담기처럼 반복 호출하지 않음 — 여긴 카트가 아니라 1건뿐).
+  const handleBuyNow = () => {
+    const { item, count } = buildCartItem(product, { quantity, purchaseType, grams });
+    onBuyNow({ ...item, quantity: count });
   };
 
   return (
@@ -282,22 +290,32 @@ function ProductDetail({ product, onBack, onAddToCart, darkMode, user }) {
           </span>
         </div>
 
-        {/* 장바구니 담기 (모바일=하단 고정 / 데스크탑=정보 영역 내) */}
+        {/* 장바구니 담기 + 바로 주문 (모바일=하단 고정 / 데스크탑=정보 영역 내) */}
         <div className="pd-cart-bar" style={{
           position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
           width: '100%', maxWidth: '480px', padding: '16px 20px 36px',
           background: cardBg, borderTop: `1px solid ${border}`,
           boxShadow: '0 -4px 20px rgba(0,0,0,0.06)', boxSizing: 'border-box',
+          display: 'flex', gap: '10px',
         }}>
           <button onClick={handleAddToCart} style={{
-            width: '100%', padding: '16px',
-            background: 'linear-gradient(135deg, #00c471, #00a85e)',
-            color: 'white', border: 'none', borderRadius: '16px',
-            fontSize: '16px', fontWeight: '800', cursor: 'pointer',
-            boxShadow: '0 4px 20px rgba(0,196,113,0.35)',
+            flex: 1, padding: '16px',
+            background: 'transparent',
+            color: '#00a85e', border: '2px solid #00c471', borderRadius: '16px',
+            fontSize: '15px', fontWeight: '800', cursor: 'pointer',
             letterSpacing: '-0.3px'
           }}>
             🛒 장바구니 담기
+          </button>
+          <button onClick={handleBuyNow} style={{
+            flex: 1, padding: '16px',
+            background: 'linear-gradient(135deg, #00c471, #00a85e)',
+            color: 'white', border: 'none', borderRadius: '16px',
+            fontSize: '15px', fontWeight: '800', cursor: 'pointer',
+            boxShadow: '0 4px 20px rgba(0,196,113,0.35)',
+            letterSpacing: '-0.3px'
+          }}>
+            바로 주문
           </button>
         </div>
       </div>
