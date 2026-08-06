@@ -42,6 +42,14 @@ export function useCheckoutFlow(items, { user } = {}) {
 
   const checkZipcodeValue = async (zip, dong) => {
     if (!zip || zip.length < 3) return;
+    // 배송권역 매칭은 동(dong) 이름이 주 기준이고, 지금 등록된 권역들은 우편번호 범위가
+    // 비어 있어 동 없이는 서버가 무조건 '매칭 안됨'을 반환한다. 이 상태에서 서버 응답을
+    // 그대로 보여주면 "이 지역은 배송 안 함"처럼 오해를 준다 — 실제로는 "동을 몰라서
+    // 확인을 못 한 것"이므로, 서버를 부르기 전에 원인이 다른 안내를 명확히 보여준다.
+    if (!dong) {
+      setDeliveryInfo({ error: '동(주소) 정보를 확인할 수 없어요. 주소 찾기로 다시 검색해주세요.', noDong: true });
+      return;
+    }
     setMatchingZipcode(true);
     try {
       const res = await matchZipcode(zip, dong);

@@ -24,6 +24,21 @@ function AddressBox({
     color: textColor,
   };
 
+  // 주소 검색(Daum) 공통 오픈 — 배송지 입력란의 '주소 찾기' 버튼과, 아래 '동 확인 불가' 경고의
+  // 바로가기 버튼이 이 함수 하나를 공유한다(둘이 따로 놀면 한쪽만 고치고 잊어버리기 쉬움).
+  // 경고 쪽에서 부르면(기본주소 모드여도) '다른 주소'로 전환해 방금 검색한 주소가 화면에 그대로
+  // 반영되게 한다 — 검색 결과와 화면에 보이는 배송지가 따로 노는 걸 막기 위해.
+  const openAddressSearch = (fromWarning) => {
+    if (!window.daum) { alert('주소 검색 서비스를 불러오는 중이에요. 직접 입력해주세요.'); return; }
+    new window.daum.Postcode({
+      oncomplete: (data) => {
+        if (fromWarning && useDefaultAddress) handleSwitchAddress(false);
+        setAddress((prev) => ({ ...prev, address: data.roadAddress || data.jibunAddress, detail: '' }));
+        if (data.zonecode) { setZipcode(data.zonecode); checkZipcodeValue(data.zonecode, data.bname); }
+      },
+    }).open();
+  };
+
   return (
     <div style={{ margin: '0 16px 10px', background: cardBg, borderRadius: '18px', padding: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: `1px solid ${borderColor}` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
@@ -65,17 +80,9 @@ function AddressBox({
           <input value={address.phone} onChange={(e) => setAddress({ ...address, phone: e.target.value })} placeholder="연락처 (010-0000-0000)" type="tel" style={inputStyle} />
           <div style={{ display: 'flex', gap: '8px' }}>
             <input value={address.address} readOnly placeholder="주소 검색" style={{ ...inputStyle, flex: 1, cursor: 'pointer' }}
-              onClick={() => {
-                if (window.daum) {
-                  new window.daum.Postcode({
-                    oncomplete: (data) => { setAddress((prev) => ({ ...prev, address: data.roadAddress || data.jibunAddress, detail: '' })); if (data.zonecode) { setZipcode(data.zonecode); checkZipcodeValue(data.zonecode, data.bname); } }
-                  }).open();
-                } else {
-                  alert('주소 검색 서비스를 불러오는 중이에요. 직접 입력해주세요.');
-                }
-              }}
+              onClick={() => openAddressSearch(false)}
             />
-            <button onClick={() => { if (window.daum) { new window.daum.Postcode({ oncomplete: (data) => { setAddress((prev) => ({ ...prev, address: data.roadAddress || data.jibunAddress, detail: '' })); if (data.zonecode) { setZipcode(data.zonecode); checkZipcodeValue(data.zonecode, data.bname); } } }).open(); } }}
+            <button onClick={() => openAddressSearch(false)}
               style={{ padding: '11px 14px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', whiteSpace: 'nowrap' }}>
               주소 찾기
             </button>
@@ -91,20 +98,25 @@ function AddressBox({
         </div>
       )}
 
-      {/* 우편번호 + 배송 구역 확인 */}
+      {/* 우편번호 + 배송 구역 확인 — 매칭은 실제로 동(주소) 기준이라, 직접 입력보다 위의
+          '주소 찾기'를 쓰는 쪽이 훨씬 잘 된다. 입력칸은 살려두되(추후 우편번호 매칭 도입 대비)
+          힌트로 주소 찾기를 은근히 유도한다(A안 — B안처럼 아예 없애지는 않음). */}
       <div style={{ marginTop: 12 }}>
-        <p style={{ fontSize: '13px', fontWeight: '700', color: textColor, margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <p style={{ fontSize: '13px', fontWeight: '700', color: textColor, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
           </svg>
           우편번호 (배송지역 확인)
+        </p>
+        <p style={{ fontSize: '11px', color: subTextColor, margin: '0 0 8px' }}>
+          💡 위 '주소 찾기'로 검색하면 자동으로 입력되고 바로 확인돼요
         </p>
         <input
           type="text"
           value={zipcode}
           onChange={(e) => { setZipcode(e.target.value.replace(/[^0-9]/g, '').slice(0, 5)); setDeliveryInfo(null); }}
           onBlur={handleZipcodeCheck}
-          placeholder="우편번호 5자리"
+          placeholder="직접 입력도 가능해요 (5자리)"
           maxLength={5}
           style={inputStyle}
         />
@@ -116,8 +128,26 @@ function AddressBox({
           </div>
         )}
         {deliveryInfo?.error && (
-          <div style={{ fontSize: 13, marginTop: 6, color: '#d32f2f', fontWeight: 600 }}>
-            ✗ {deliveryInfo.error}
+          // noDong(동 정보 없음·확인 불가)은 '배송 불가'와 다른 원인이라 색·아이콘을 구분하고,
+          // 바로 옆에 '주소 찾기' 바로가기를 둬서 해결 동선을 눈앞에 보여준다(빨강=진짜 배송 불가,
+          // 주황=조치하면 풀릴 수 있음).
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+            marginTop: 6, padding: deliveryInfo.noDong ? '8px 10px' : 0,
+            background: deliveryInfo.noDong ? (darkMode ? '#3a2a10' : '#fff4e6') : 'transparent',
+            borderRadius: deliveryInfo.noDong ? 10 : 0,
+          }}>
+            <span style={{ fontSize: 13, color: deliveryInfo.noDong ? '#e8590c' : '#d32f2f', fontWeight: 600 }}>
+              {deliveryInfo.noDong ? '⚠' : '✗'} {deliveryInfo.error}
+            </span>
+            {deliveryInfo.noDong && (
+              <button onClick={() => openAddressSearch(true)} style={{
+                flexShrink: 0, padding: '6px 12px', background: '#00c471', color: 'white',
+                border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+              }}>
+                주소 찾기
+              </button>
+            )}
           </div>
         )}
       </div>

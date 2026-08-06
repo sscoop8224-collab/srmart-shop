@@ -53,6 +53,7 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
     address: user?.address || '',
     addressDetail: user?.addressDetail || '',
     zipcode: user?.zipcode || '',
+    dong_name: user?.dong_name || '',   // Daum bname(법정동) — 배송권역 매칭의 주 기준. 빈 값일 수 있음(아래 참고)
   });
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
   const [pwError, setPwError] = useState('');
@@ -149,6 +150,7 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
         address: form.address || null,
         addressDetail: form.addressDetail || null,
         zipcode: form.zipcode || null,
+        dong_name: form.dong_name || null,   // 배송권역 매칭 주 기준 — 없으면 null(예전 값 유지 안 함)
         is_adult: (currentUser?.isAdult ?? currentUser?.is_adult ?? user?.isAdult ?? false) ? 1 : 0,
       });
       // 로그인 사용자 정보 갱신 — 장바구니 기본배송지 자동채움이 이 값을 읽으므로 재로그인 없이 반영된다.
@@ -156,6 +158,7 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
         ...user,
         name: form.name, email: form.email, phone: form.phone,
         address: form.address, addressDetail: form.addressDetail, zipcode: form.zipcode,
+        dong_name: form.dong_name || null,
       };
       setAuthUser(updated);
       if (setUsers) {
@@ -169,6 +172,22 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
     } finally {
       setSaveLoading(false);
     }
+  };
+
+  // 주소 검색(Daum) 공통 핸들러 — bname(법정동)이 배송권역 매칭의 주 기준이라 함께 캡처한다.
+  // bname 이 비어 올 수 있음(도로명 주소만 있고 법정동 정보가 명시적으로 없는 경우 등, Kakao Postcode
+  // 가이드에 명시된 동작) — 그 경우 이전 동을 유지하지 않고 '확인 안 됨'으로 비워서 저장한다
+  // (다른 주소인데 예전 동이 남아있으면 잘못된 매칭보다 더 나쁨).
+  const openAddressSearch = () => {
+    if (!window.daum) { alert('주소 검색 서비스를 불러오는 중이에요!'); return; }
+    new window.daum.Postcode({
+      oncomplete: (data) => setForm(p => ({
+        ...p,
+        address: data.roadAddress || data.jibunAddress,
+        zipcode: data.zonecode || '',
+        dong_name: data.bname || '',
+      })),
+    }).open();
   };
 
   const handleDeleteAccount = async () => {
@@ -260,7 +279,7 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
       {/* 회원정보 수정 버튼 */}
       <div style={{ margin: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
         <button onClick={() => {
-          setForm({ name: currentUser?.name || '', email: currentUser?.email || '', phone: currentUser?.phone || '', address: currentUser?.address || '', addressDetail: currentUser?.addressDetail || '', zipcode: currentUser?.zipcode || '' });
+          setForm({ name: currentUser?.name || '', email: currentUser?.email || '', phone: currentUser?.phone || '', address: currentUser?.address || '', addressDetail: currentUser?.addressDetail || '', zipcode: currentUser?.zipcode || '', dong_name: currentUser?.dong_name || '' });
           setShowEditModal(true);
         }} style={{ background: cardBg, border: '1.5px solid #00c471', borderRadius: '14px', padding: '14px 0', fontSize: '14px', fontWeight: '600', color: '#00c471', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 2px 8px rgba(0,196,113,0.1)' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -528,16 +547,8 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
                 <div style={{ fontSize: '12px', color: '#00a85e', marginBottom: '6px', fontWeight: '700' }}>{f.label}</div>
                 {f.key === 'address' ? (
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <input style={{ ...inputStyle, flex: 1 }} placeholder={f.placeholder} value={form[f.key]} readOnly onClick={() => {
-                      if (window.daum) {
-                        new window.daum.Postcode({ oncomplete: (data) => setForm(p => ({ ...p, address: data.roadAddress || data.jibunAddress, zipcode: data.zonecode || '' })) }).open();
-                      } else { alert('주소 검색 서비스를 불러오는 중이에요!'); }
-                    }} />
-                    <button type="button" onClick={() => {
-                      if (window.daum) {
-                        new window.daum.Postcode({ oncomplete: (data) => setForm(p => ({ ...p, address: data.roadAddress || data.jibunAddress, zipcode: data.zonecode || '' })) }).open();
-                      } else { alert('주소 검색 서비스를 불러오는 중이에요!'); }
-                    }} style={{ padding: '12px 14px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '12px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                    <input style={{ ...inputStyle, flex: 1 }} placeholder={f.placeholder} value={form[f.key]} readOnly onClick={openAddressSearch} />
+                    <button type="button" onClick={openAddressSearch} style={{ padding: '12px 14px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '12px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                       주소 찾기
                     </button>
                   </div>
