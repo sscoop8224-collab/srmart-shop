@@ -4,7 +4,7 @@
 function SummaryBar({
   darkMode,
   totalPrice, appliedCoupon, discountAmount,
-  baseFee, freeDeliveryMin, extraDeliveryFee,
+  deliveryFee, freeDeliveryMin,
   myCoupons, selectedCouponId, handleCouponSelect, couponDiscount,
   myPoints, usePoints, setUsePoints, clampedUsePoints,
   finalPrice, canPay, zipcode, deliveryInfo,
@@ -32,17 +32,11 @@ function SummaryBar({
       )}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
         <span style={{ fontSize: '13px', color: subTextColor }}>
-          기본 배송료
-          {freeDeliveryMin > 0 && baseFee === 0 && <span style={{ color: '#00a85e', marginLeft: 6, fontWeight: 700 }}>무료배송 적용</span>}
+          배송비
+          {freeDeliveryMin > 0 && deliveryFee === 0 && <span style={{ color: '#00a85e', marginLeft: 6, fontWeight: 700 }}>무료배송 적용</span>}
         </span>
-        <span style={{ fontSize: '13px', color: textColor, fontWeight: '600' }}>₩{baseFee.toLocaleString()}</span>
+        <span style={{ fontSize: '13px', color: textColor, fontWeight: '600' }}>₩{deliveryFee.toLocaleString()}</span>
       </div>
-      {extraDeliveryFee > 0 && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-          <span style={{ fontSize: '13px', color: subTextColor }}>지역 추가 배송료</span>
-          <span style={{ fontSize: '13px', color: textColor, fontWeight: '600' }}>+₩{extraDeliveryFee.toLocaleString()}</span>
-        </div>
-      )}
       {/* 보유 쿠폰 선택 */}
       {myCoupons.length > 0 && (
         <div style={{ marginBottom: '12px', padding: '12px 14px', background: darkMode ? '#2a1a10' : '#fff8f0', borderRadius: 12, border: `1px solid ${darkMode ? '#3a2a20' : '#ffe0b2'}` }}>
@@ -72,7 +66,7 @@ function SummaryBar({
               placeholder="사용할 포인트 입력"
               min="0" max={myPoints}
               style={{ flex: 1, padding: '8px 10px', borderRadius: 8, border: `1.5px solid ${inputBorder}`, fontSize: '13px', outline: 'none', background: inputBg, color: textColor, fontFamily: 'inherit' }} />
-            <button onClick={() => setUsePoints(Math.min(myPoints, totalPrice - discountAmount + baseFee + extraDeliveryFee))}
+            <button onClick={() => setUsePoints(Math.min(myPoints, totalPrice - discountAmount + deliveryFee))}
               style={{ padding: '8px 12px', background: '#1a73e8', color: 'white', border: 'none', borderRadius: 8, fontSize: '12px', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' }}>전액</button>
             <button onClick={() => setUsePoints(0)}
               style={{ padding: '8px 10px', background: darkMode ? '#2e2e2e' : '#e8e8e8', color: textColor, border: 'none', borderRadius: 8, fontSize: '12px', cursor: 'pointer' }}>취소</button>

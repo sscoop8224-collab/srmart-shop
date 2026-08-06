@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { matchZipcode, getMyPoints, getMyActiveCoupons, applyCoupon } from '../api';
 import API from '../api';
-import { useStore } from '../StoreContext';
 import { getItemPrice } from '../utils/pricing';
 
 // 장바구니(Cart.js)와 바로주문(QuickOrder.js)이 공유하는 결제 준비 로직.
@@ -16,8 +15,6 @@ import { getItemPrice } from '../utils/pricing';
 // appliedCoupon(코드쿠폰)은 이 훅 안에서 독립적으로 관리 — Cart/QuickOrder 가 서로 다른
 // 체크아웃 세션이므로 App 레벨에 둘 이유가 없다(기존엔 App.js 가 들고 Cart 에만 내려줬음).
 export function useCheckoutFlow(items, { user } = {}) {
-  const { currentStore } = useStore();
-
   const [couponInput, setCouponInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [showAddress, setShowAddress] = useState(false);
@@ -26,6 +23,9 @@ export function useCheckoutFlow(items, { user } = {}) {
   const [zipcode, setZipcode] = useState('');
   const [deliveryInfo, setDeliveryInfo] = useState(null);
   const [matchingZipcode, setMatchingZipcode] = useState(false);
+  // 마지막으로 매칭을 시도한 동 이름 — 서버가 주문 생성 시 zone 을 직접 재조회하려면
+  // 화면이 실제로 확인에 쓴 dong 값을 그대로 넘겨야 한다(클라 배송비 숫자는 더 이상 안 믿음).
+  const [matchedDong, setMatchedDong] = useState('');
   const [myPoints, setMyPoints] = useState(0);
   const [usePoints, setUsePoints] = useState(0);
   const [myCoupons, setMyCoupons] = useState([]);
@@ -47,6 +47,7 @@ export function useCheckoutFlow(items, { user } = {}) {
     // 그대로 보여주면 "이 지역은 배송 안 함"처럼 오해를 준다 — 실제로는 "동을 몰라서
     // 확인을 못 한 것"이므로, 서버를 부르기 전에 원인이 다른 안내를 명확히 보여준다.
     if (!dong) {
+      setMatchedDong('');
       setDeliveryInfo({ error: '동(주소) 정보를 확인할 수 없어요. 주소 찾기로 다시 검색해주세요.', noDong: true });
       return;
     }
@@ -54,11 +55,18 @@ export function useCheckoutFlow(items, { user } = {}) {
     try {
       const res = await matchZipcode(zip, dong);
       if (res.data.matched) {
-        setDeliveryInfo({ zoneName: res.data.zone.zone_name, deliveryFee: res.data.delivery_fee });
+        setMatchedDong(dong);
+        setDeliveryInfo({
+          zoneName: res.data.zone.zone_name,
+          deliveryFee: res.data.delivery_fee,
+          freeDeliveryMin: res.data.zone.free_delivery_min ?? 0,
+        });
       } else {
+        setMatchedDong('');
         setDeliveryInfo({ error: res.data.message || '배송 불가 지역이에요' });
       }
     } catch (err) {
+      setMatchedDong('');
       if (err.response?.status === 401) {
         setDeliveryInfo({ error: '로그인이 필요해요' });
       } else if (err.response?.status === 400) {
@@ -118,11 +126,11 @@ export function useCheckoutFlow(items, { user } = {}) {
       : appliedCoupon.discount
     : 0;
 
-  const baseDeliveryFeeRule = currentStore?.base_delivery_fee ?? 0;
-  const freeDeliveryMin = currentStore?.free_delivery_min ?? 0;
-  const extraDeliveryFee = deliveryInfo?.deliveryFee ?? 0;
-  const baseFee = (freeDeliveryMin > 0 && totalPrice >= freeDeliveryMin) ? 0 : baseDeliveryFeeRule;
-  const totalDeliveryFee = baseFee + extraDeliveryFee;
+  // 배송비 = '동별 배송비 = 최종값' — /api/store/match-zipcode 가 이미 우선순위(권역 매칭 시
+  // 그 권역값, 권역이 하나도 없는 지점만 점포 기본값 폴백)를 판단해 내려주므로 프론트는
+  // deliveryInfo 값을 그대로 최종 배송비로 쓴다(점포 기본을 여기서 다시 더하지 않음).
+  const freeDeliveryMin = deliveryInfo?.freeDeliveryMin ?? 0;
+  const totalDeliveryFee = (freeDeliveryMin > 0 && totalPrice >= freeDeliveryMin) ? 0 : (deliveryInfo?.deliveryFee ?? 0);
 
   const baseAfterCoupon = Math.max(0, totalPrice - discountAmount + totalDeliveryFee - couponDiscount);
   const clampedUsePoints = Math.min(usePoints, myPoints, baseAfterCoupon);
@@ -169,11 +177,10 @@ export function useCheckoutFlow(items, { user } = {}) {
   // Cart/QuickOrder 양쪽이 이 함수 하나로 구성해 필드 누락·불일치를 막는다.
   const buildOrderExtras = () => ({
     zipcode,
+    dong: matchedDong,   // 서버가 zone 을 직접 재조회할 때 씀(배송비 숫자는 이제 안 보냄 — 서버가 재계산)
     use_points: clampedUsePoints,
     coupon_id: selectedCouponId || null,
     coupon_discount: couponDiscount,
-    baseDeliveryFee: baseFee,
-    extraDeliveryFee,
     address: currentAddress.address,
     addressDetail: currentAddress.detail,
     receiverName: currentAddress.name,
@@ -200,8 +207,8 @@ export function useCheckoutFlow(items, { user } = {}) {
     myCoupons, selectedCouponId, couponDiscount, handleCouponSelect,
     // 포인트
     myPoints, usePoints, setUsePoints, clampedUsePoints,
-    // 금액
-    totalPrice, discountAmount, baseFee, freeDeliveryMin, extraDeliveryFee, totalDeliveryFee, finalPrice,
+    // 금액 — deliveryFee 는 단일 최종 배송비(권역 매칭 시 권역값, 아니면 점포 기본 폴백)
+    totalPrice, discountAmount, deliveryFee: totalDeliveryFee, freeDeliveryMin, totalDeliveryFee, finalPrice,
     // 결제
     canPay, buildOrderExtras,
   };

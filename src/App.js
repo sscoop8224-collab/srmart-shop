@@ -499,7 +499,7 @@ function AppContent() {
           address: orderExtras.address || user.address || '',
           addressDetail: orderExtras.addressDetail || user.address_detail || '',
           zipcode: orderExtras.zipcode || '',
-          extraDeliveryFee: orderExtras.extraDeliveryFee || 0,   // base 배송료는 서버가 재계산
+          dong: orderExtras.dong || '',   // 배송비는 서버가 이 dong으로 zone 직접 재조회해 계산(클라값 미신뢰)
           use_points: orderExtras.use_points || 0,
           coupon_id: orderExtras.coupon_id || null,
           receiverName: orderExtras.receiverName || user.name,
@@ -543,7 +543,7 @@ function AppContent() {
           address: orderExtras.address || user.address || '',
           addressDetail: orderExtras.addressDetail || user.address_detail || '',
           zipcode: orderExtras.zipcode || '',
-          extraDeliveryFee: orderExtras.extraDeliveryFee || 0,
+          dong: orderExtras.dong || '',
           use_points: orderExtras.use_points || 0,
           coupon_id: orderExtras.coupon_id || null,
           receiverName: orderExtras.receiverName || user.name,

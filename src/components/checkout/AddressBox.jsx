@@ -124,7 +124,6 @@ function AddressBox({
         {deliveryInfo?.zoneName && (
           <div style={{ fontSize: 13, marginTop: 6, color: '#00a85e', fontWeight: 600 }}>
             ✓ {deliveryInfo.zoneName} 배송 가능
-            {deliveryInfo.deliveryFee > 0 && <span style={{ color: '#178a2d' }}> (지역 추가 +{deliveryInfo.deliveryFee.toLocaleString()}원)</span>}
           </div>
         )}
         {deliveryInfo?.error && (
