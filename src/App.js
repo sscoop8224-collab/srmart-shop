@@ -6,6 +6,7 @@ import { login as apiLogin, getActiveProducts, getCategories, getBanners, getMyO
 import API from './api';
 import Chatbot from './components/Chatbot';
 import StoreSelectionModal from './components/StoreSelectionModal';
+import ForcePasswordChangeModal from './components/ForcePasswordChangeModal';
 import InstallPrompt from './components/InstallPrompt';
 import SplashAd from './components/SplashAd';
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
@@ -75,6 +76,7 @@ function AppContent() {
   const [page, setPage] = useState('home');   // 웹·앱 공통: 홈(게스트 둘러보기)부터. 로그인은 계정 필요 시점에.
   const [pageHistory, setPageHistory] = useState([]);
   const [showStoreModal, setShowStoreModal] = useState(false);
+  const [mcpUser, setMcpUser] = useState(null);   // Y5 강제비번변경 대상(must_change_password=1) — 로그인 응답의 dbUser
   const [products, setProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [productsError, setProductsError] = useState(false);
@@ -337,11 +339,26 @@ function AppContent() {
     const res = await apiLogin(identifier, loggedInUser.password);
     const { token, user: dbUser } = res.data;
     console.log('[handleLogin] 백엔드 user:', dbUser);
+    // Y5: 임시비번(must_change_password) 상태 — admin 과 동일하게 토큰만 저장하고 정식
+    // 로그인(setUser/authLogin)은 보류. authMiddleware 가 이 토큰으로는 강제변경 API 외
+    // 모든 보호 라우트를 막으므로, 강제변경 모달을 띄워 새 비번부터 받는다.
+    if (dbUser.must_change_password === 1) {
+      localStorage.setItem('srmart_token', token);
+      setMcpUser(dbUser);
+      return;
+    }
     localStorage.setItem('srmart_token', token);
     setUser(dbUser);
     authLogin(dbUser);
     await Promise.all([loadProducts(dbUser.store_id), loadMyOrders(), loadWishlist()]);
     goToPage('home');
+  };
+
+  // 강제 비밀번호 변경 완료 — admin 과 동일하게 재로그인을 유도한다(서버가 주는 새 정식
+  // 토큰을 바로 쓰지 않고 토큰을 비움 — 로그인 상태 관리가 두 갈래로 갈리지 않게).
+  const handleForcePasswordChangeDone = () => {
+    localStorage.removeItem('srmart_token');
+    setMcpUser(null);
   };
 
   const handleGuest = () => {
@@ -550,6 +567,7 @@ function AppContent() {
           <HomePage onShop={handleGuest} onLogin={() => setPage('login')} darkMode={darkMode} />
         </Suspense>
         {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
+        {mcpUser && <ForcePasswordChangeModal onDone={handleForcePasswordChangeDone} />}
       </div>
     );
   }
@@ -561,6 +579,7 @@ function AppContent() {
           <Login onLogin={handleLogin} onGuest={handleGuest} />
         </Suspense>
         {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
+        {mcpUser && <ForcePasswordChangeModal onDone={handleForcePasswordChangeDone} />}
       </div>
     );
   }
@@ -574,6 +593,7 @@ function AppContent() {
       {Capacitor.isNativePlatform() && <SplashAd visible={splashAdVisible} storeId={currentStoreId} onReady={hideSplash} />}
       <InstallPrompt />
       {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
+      {mcpUser && <ForcePasswordChangeModal onDone={handleForcePasswordChangeDone} />}
       {/* 헤더 */}
       <header className="header">
         <div className="header-logo" onClick={() => goToPage('home')}>
