@@ -7,6 +7,7 @@ import API from './api';
 import Chatbot from './components/Chatbot';
 import StoreSelectionModal from './components/StoreSelectionModal';
 import ForcePasswordChangeModal from './components/ForcePasswordChangeModal';
+import ConfirmModal from './components/ConfirmModal';
 import InstallPrompt from './components/InstallPrompt';
 import SplashAd from './components/SplashAd';
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
@@ -76,6 +77,7 @@ function AppContent() {
   const [page, setPage] = useState('home');   // 웹·앱 공통: 홈(게스트 둘러보기)부터. 로그인은 계정 필요 시점에.
   const [pageHistory, setPageHistory] = useState([]);
   const [showStoreModal, setShowStoreModal] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [mcpUser, setMcpUser] = useState(null);   // Y5 강제비번변경 대상(must_change_password=1) — 로그인 응답의 dbUser
   const [products, setProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(false);
@@ -385,14 +387,15 @@ function AppContent() {
     setPage('home');
   };
 
-  const handleLogout = () => {
-    if (window.confirm('정말 로그아웃 하시겠어요?')) {
-      localStorage.removeItem('srmart_auto_login');
-      localStorage.removeItem('srmart_token');
-      authLogout();
-      setUser(null); setCart([]); setOrders([]); setProducts([]); setPageHistory([]); handleGuest();   // 로그아웃 후 게스트 홈
-      alert(messages.logout);
-    }
+  const handleLogout = () => setShowLogoutConfirm(true);
+
+  const confirmLogout = () => {
+    setShowLogoutConfirm(false);
+    localStorage.removeItem('srmart_auto_login');
+    localStorage.removeItem('srmart_token');
+    authLogout();
+    setUser(null); setCart([]); setOrders([]); setProducts([]); setPageHistory([]); handleGuest();   // 로그아웃 후 게스트 홈
+    alert(messages.logout);
   };
 
   const requireLogin = () => { alert('로그인이 필요해요! 😊'); setPage('login'); };
@@ -594,6 +597,13 @@ function AppContent() {
       <InstallPrompt />
       {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
       {mcpUser && <ForcePasswordChangeModal onDone={handleForcePasswordChangeDone} />}
+      {showLogoutConfirm && (
+        <ConfirmModal
+          message="정말 로그아웃 하시겠어요?"
+          onConfirm={confirmLogout}
+          onCancel={() => setShowLogoutConfirm(false)}
+        />
+      )}
       {/* 헤더 */}
       <header className="header">
         <div className="header-logo" onClick={() => goToPage('home')}>
