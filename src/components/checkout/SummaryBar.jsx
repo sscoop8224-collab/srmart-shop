@@ -9,7 +9,7 @@ function SummaryBar({
   myPoints, usePoints, setUsePoints, clampedUsePoints,
   finalPrice, canPay, zipcode, deliveryInfo,
   onPay,
-  payLabel = '카카오페이로 결제하기 💳',
+  payLabel = '결제하기',
 }) {
   const borderColor = darkMode ? '#2e2e2e' : '#f0faf5';
   const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
