@@ -7,8 +7,8 @@ function AddressBox({
   useDefaultAddress, handleSwitchAddress,
   hasDefaultAddress, defaultAddress,
   address, setAddress,
-  zipcode, setZipcode, setDeliveryInfo,
-  handleZipcodeCheck, checkZipcodeValue,
+  zipcode, setZipcode,
+  checkZipcodeValue,
   matchingZipcode, deliveryInfo,
 }) {
   const cardBg = darkMode ? '#242424' : 'white';
@@ -98,28 +98,20 @@ function AddressBox({
         </div>
       )}
 
-      {/* 우편번호 + 배송 구역 확인 — 매칭은 실제로 동(주소) 기준이라, 직접 입력보다 위의
-          '주소 찾기'를 쓰는 쪽이 훨씬 잘 된다. 입력칸은 살려두되(추후 우편번호 매칭 도입 대비)
-          힌트로 주소 찾기를 은근히 유도한다(A안 — B안처럼 아예 없애지는 않음). */}
+      {/* 배송 구역 확인 — B안: 우편번호 수동입력 제거. 배송권역 매칭이 동(dong) 기준으로
+          안정화된 뒤로는 '주소 찾기'(Daum) 결과로만 동+우편번호가 들어오고, 그 값으로만
+          확인한다. 우편번호는 검색 결과를 보여주는 읽기전용 정보일 뿐, 직접 타이핑해서
+          매칭을 시도하는 경로 자체가 없다(과거엔 있었으나 dong 없이는 항상 매칭 실패였음). */}
       <div style={{ marginTop: 12 }}>
         <p style={{ fontSize: '13px', fontWeight: '700', color: textColor, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
           </svg>
-          우편번호 (배송지역 확인)
+          배송지역 확인
         </p>
-        <p style={{ fontSize: '11px', color: subTextColor, margin: '0 0 8px' }}>
-          💡 위 '주소 찾기'로 검색하면 자동으로 입력되고 바로 확인돼요
-        </p>
-        <input
-          type="text"
-          value={zipcode}
-          onChange={(e) => { setZipcode(e.target.value.replace(/[^0-9]/g, '').slice(0, 5)); setDeliveryInfo(null); }}
-          onBlur={handleZipcodeCheck}
-          placeholder="직접 입력도 가능해요 (5자리)"
-          maxLength={5}
-          style={inputStyle}
-        />
+        {zipcode && (
+          <p style={{ fontSize: '12px', color: subTextColor, margin: '0 0 4px' }}>우편번호 {zipcode}</p>
+        )}
         {matchingZipcode && <p style={{ fontSize: 12, color: subTextColor, margin: '4px 0 0' }}>배송 구역 확인 중...</p>}
         {deliveryInfo?.zoneName && (
           <div style={{ fontSize: 13, marginTop: 6, color: '#00a85e', fontWeight: 600 }}>

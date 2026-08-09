@@ -82,7 +82,7 @@ function SummaryBar({
         disabled={!canPay}
         onClick={onPay}
         style={{ width: '100%', padding: '16px', background: !canPay ? '#dee2e6' : 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '16px', fontSize: '16px', cursor: !canPay ? 'not-allowed' : 'pointer', fontWeight: '800', boxShadow: !canPay ? 'none' : '0 4px 20px rgba(0,196,113,0.35)', letterSpacing: '-0.3px' }}>
-        {!zipcode ? '우편번호를 입력해주세요' : !deliveryInfo?.zoneName ? '배송 구역을 확인해주세요' : payLabel}
+        {!zipcode ? '주소를 검색해주세요' : !deliveryInfo?.zoneName ? '배송 구역을 확인해주세요' : payLabel}
       </button>
     </div>
   );

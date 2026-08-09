@@ -100,9 +100,6 @@ export function useCheckoutFlow(items, { user } = {}) {
     }
   }, [user]);
 
-  // 수동 입력 zip엔 저장된 동 이름을 붙이지 않음(저장 주소=우편번호 일치일 때만 동 매칭)
-  const handleZipcodeCheck = () => checkZipcodeValue(zipcode, zipcode === user?.zipcode ? user?.dong_name : null);
-
   const handleSwitchAddress = (useDefault) => {
     setUseDefaultAddress(useDefault);
     setZipcode('');
@@ -198,10 +195,10 @@ export function useCheckoutFlow(items, { user } = {}) {
   return {
     // 배송지
     showAddress, setShowAddress,
-    useDefaultAddress, address, setAddress, zipcode, setZipcode, setDeliveryInfo,
+    useDefaultAddress, address, setAddress, zipcode, setZipcode,
     deliveryInfo, matchingZipcode,
     defaultAddress, hasDefaultAddress, currentAddress, isAddressComplete,
-    handleSwitchAddress, handleZipcodeCheck, checkZipcodeValue,
+    handleSwitchAddress, checkZipcodeValue,
     // 쿠폰
     couponInput, setCouponInput, appliedCoupon, handleApplyCoupon, handleRemoveCoupon,
     myCoupons, selectedCouponId, couponDiscount, handleCouponSelect,

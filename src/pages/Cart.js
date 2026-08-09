@@ -139,8 +139,8 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, user, darkMode }) {
             useDefaultAddress={checkout.useDefaultAddress} handleSwitchAddress={checkout.handleSwitchAddress}
             hasDefaultAddress={checkout.hasDefaultAddress} defaultAddress={checkout.defaultAddress}
             address={checkout.address} setAddress={checkout.setAddress}
-            zipcode={checkout.zipcode} setZipcode={checkout.setZipcode} setDeliveryInfo={checkout.setDeliveryInfo}
-            handleZipcodeCheck={checkout.handleZipcodeCheck} checkZipcodeValue={checkout.checkZipcodeValue}
+            zipcode={checkout.zipcode} setZipcode={checkout.setZipcode}
+            checkZipcodeValue={checkout.checkZipcodeValue}
             matchingZipcode={checkout.matchingZipcode} deliveryInfo={checkout.deliveryInfo}
           />
 
