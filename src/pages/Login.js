@@ -129,28 +129,34 @@ function Field({ label, placeholder, type, value, onChange, error, trailing, dis
 }
 
 // ── Green Hero 헤더 ─────────────────────────────────────────
-function GreenHero() {
+// compact=true(회원가입) — 폼이 길어 히어로가 화면을 너무 많이 차지하면 아래로 밀려나므로
+// 로고/문구/여백을 줄인 축소판. 그린 히어로+흰 카드(웨이브 전환) 시그니처는 그대로 유지.
+function GreenHero({ compact = false }) {
+  const logoWidth = compact ? 150 : 240;
   return (
     <div style={{
       position: 'relative',
       background: `linear-gradient(165deg, ${COLORS.greenLite} 0%, ${COLORS.green} 55%, ${COLORS.greenDark} 100%)`,
-      padding: '60px 28px 80px',
+      padding: compact ? '28px 28px 48px' : '60px 28px 80px',
       color: '#fff', textAlign: 'center', overflow: 'hidden',
+      transition: 'padding 0.2s',
     }}>
       <div style={{ position: 'absolute', top: -40, left: -60, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.10)' }} />
       <div style={{ position: 'absolute', top: 30, right: -50, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-      <div style={{ position: 'absolute', top: 140, left: 30, width: 90, height: 90, borderRadius: '50%', background: 'rgba(245,197,24,0.16)' }} />
-      <div style={{ position: 'absolute', bottom: 90, right: 40, width: 50, height: 50, borderRadius: '50%', background: 'rgba(255,255,255,0.12)' }} />
+      {!compact && <div style={{ position: 'absolute', top: 140, left: 30, width: 90, height: 90, borderRadius: '50%', background: 'rgba(245,197,24,0.16)' }} />}
+      <div style={{ position: 'absolute', bottom: compact ? 60 : 90, right: 40, width: 50, height: 50, borderRadius: '50%', background: 'rgba(255,255,255,0.12)' }} />
 
       <div style={{ position: 'relative', zIndex: 1 }}>
         <div style={{
-          width: 280, margin: '0 auto',
+          width: logoWidth + 40, margin: '0 auto',
         }}>
-          <img src={srmLogo} alt="SR Mart" style={{ width: '240px', display: 'block', transform: 'translateX(30px)', marginLeft: '-5px' }} />
+          <img src={srmLogo} alt="SR Mart" style={{ width: `${logoWidth}px`, display: 'block', transform: 'translateX(30px)', marginLeft: '-5px' }} />
         </div>
-        <div style={{ marginTop: 2, fontSize: 24, fontWeight: 600, color: 'rgba(255,255,255,0.92)', letterSpacing: '-0.01em' }}>
-          신선하고 다양한 상품을 만나보세요
-        </div>
+        {!compact && (
+          <div style={{ marginTop: 2, fontSize: 24, fontWeight: 600, color: 'rgba(255,255,255,0.92)', letterSpacing: '-0.01em' }}>
+            신선하고 다양한 상품을 만나보세요
+          </div>
+        )}
       </div>
 
       <svg viewBox="0 0 440 60" preserveAspectRatio="none"
@@ -342,7 +348,7 @@ function Login({ onLogin, onGuest }) {
       <link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap" rel="stylesheet" />
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', color: COLORS.ink900 }}>
 
-        <GreenHero />
+        <GreenHero compact={mode === 'signup'} />
 
         <div style={{ flex: 1, padding: '12px 26px 0', marginTop: -8, position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', background: '#fff' }}>
 
