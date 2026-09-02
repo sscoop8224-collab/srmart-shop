@@ -63,7 +63,7 @@ export default function HomePage({ onShop, onLogin, darkMode }) {
             </button>
           ))}
           <button onClick={onLogin} style={{
-            background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white',
+            background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white',
             border: 'none', borderRadius: 9, padding: '8px 20px',
             fontSize: 14, fontWeight: 700, cursor: 'pointer', marginLeft: isMobile ? 0 : 10,
             fontFamily: 'inherit',
@@ -92,8 +92,8 @@ export default function HomePage({ onShop, onLogin, darkMode }) {
             border: '1px solid rgba(0,196,113,0.3)', borderRadius: 20,
             padding: '5px 15px', marginBottom: 28,
           }}>
-            <div style={{ width: 7, height: 7, background: '#00c471', borderRadius: '50%' }} />
-            <span style={{ fontSize: 13, color: '#00a85e', fontWeight: 600 }}>동신마켓이 운영하는 온라인 마트</span>
+            <div style={{ width: 7, height: 7, background: 'var(--primary)', borderRadius: '50%' }} />
+            <span style={{ fontSize: 13, color: 'var(--primary-dark)', fontWeight: 600 }}>동신마켓이 운영하는 온라인 마트</span>
           </div>
 
           {/* 제목 */}
@@ -103,7 +103,7 @@ export default function HomePage({ onShop, onLogin, darkMode }) {
             letterSpacing: '-1.5px', wordBreak: 'keep-all',
           }}>
             오늘의 신선함을{' '}
-            <span style={{ color: '#00c471' }}>집 앞까지</span>
+            <span style={{ color: 'var(--primary)' }}>집 앞까지</span>
           </h1>
 
           {/* 부제 */}
@@ -118,7 +118,7 @@ export default function HomePage({ onShop, onLogin, darkMode }) {
           {/* 버튼 */}
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <button onClick={onShop} style={{
-              background: 'linear-gradient(135deg, #00c471, #00a85e)',
+              background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
               color: 'white', border: 'none', borderRadius: 14,
               padding: '14px 30px', fontSize: 16, fontWeight: 700,
               cursor: 'pointer', fontFamily: 'inherit',
@@ -172,7 +172,7 @@ export default function HomePage({ onShop, onLogin, darkMode }) {
 
       {/* ── CTA ── */}
       <section style={{
-        background: 'linear-gradient(135deg, #00c471 0%, #00a85e 100%)',
+        background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
         padding: 'clamp(48px, 8vw, 80px) clamp(20px, 5vw, 80px)',
         textAlign: 'center',
       }}>
@@ -196,7 +196,7 @@ export default function HomePage({ onShop, onLogin, darkMode }) {
         </p>
 
         <button onClick={onShop} style={{
-          background: 'white', color: '#00a85e', border: 'none',
+          background: 'white', color: 'var(--primary-dark)', border: 'none',
           borderRadius: 14, padding: '15px 40px', fontSize: 17, fontWeight: 800,
           cursor: 'pointer', fontFamily: 'inherit',
           boxShadow: '0 6px 24px rgba(0,0,0,0.15)',
@@ -226,7 +226,7 @@ export default function HomePage({ onShop, onLogin, darkMode }) {
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: '#ffffff', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 12 }}>고객센터</div>
             <div style={{ fontSize: 13, lineHeight: 2 }}>
-              <div><span style={{ color: '#e0e0e0' }}>전화:</span> <span style={{ color: '#00c471', fontWeight: 700 }}>032-328-2850</span></div>
+              <div><span style={{ color: '#e0e0e0' }}>전화:</span> <span style={{ color: 'var(--primary)', fontWeight: 700 }}>032-328-2850</span></div>
               <div><span style={{ color: '#e0e0e0' }}>팩스:</span> <span style={{ color: '#cccccc' }}>032-562-2858</span></div>
             </div>
           </div>

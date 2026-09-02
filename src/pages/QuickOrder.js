@@ -22,10 +22,10 @@ const getCategoryImage = (large) => {
 function QuickOrder({ item, onBack, onPayment, user, darkMode }) {
   const checkout = useCheckoutFlow(item ? [item] : [], { user });
 
-  const bg = darkMode ? '#1a1a1a' : '#f8fffe';
+  const bg = darkMode ? '#1a1a1a' : 'var(--primary-light)';
   const cardBg = darkMode ? '#242424' : 'white';
   const headerBg = darkMode ? '#1a1a1a' : 'white';
-  const borderColor = darkMode ? '#2e2e2e' : '#f0faf5';
+  const borderColor = darkMode ? '#2e2e2e' : 'var(--primary-light)';
   const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
   const subTextColor = darkMode ? '#9e9e9e' : '#adb5bd';
 
@@ -33,7 +33,7 @@ function QuickOrder({ item, onBack, onPayment, user, darkMode }) {
     return (
       <div style={{ background: bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px' }}>
         <p style={{ fontSize: '15px', color: subTextColor, margin: '0 0 20px' }}>주문할 상품 정보를 찾을 수 없어요.</p>
-        <button onClick={onBack} style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '14px', cursor: 'pointer', fontSize: '15px', fontWeight: '700' }}>
+        <button onClick={onBack} style={{ padding: '12px 28px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '14px', cursor: 'pointer', fontSize: '15px', fontWeight: '700' }}>
           돌아가기
         </button>
       </div>
@@ -45,7 +45,7 @@ function QuickOrder({ item, onBack, onPayment, user, darkMode }) {
       {/* 헤더 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: headerBg, borderBottom: `1px solid ${borderColor}`, position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={onBack} style={{ width: '38px', height: '38px', background: darkMode ? '#2e2e2e' : '#f0faf5', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button onClick={onBack} style={{ width: '38px', height: '38px', background: darkMode ? '#2e2e2e' : 'var(--primary-light)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#f0f0f0' : '#1a1a1a'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
@@ -63,7 +63,7 @@ function QuickOrder({ item, onBack, onPayment, user, darkMode }) {
                 <img src={item.image ? imgUrl(item.image) : getCategoryImage(item.large)} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: '11px', color: '#00c471', margin: '0 0 3px', fontWeight: '700' }}>{item.large}</p>
+                <p style={{ fontSize: '11px', color: 'var(--primary)', margin: '0 0 3px', fontWeight: '700' }}>{item.large}</p>
                 <p style={{ fontSize: '14px', fontWeight: '700', color: textColor, margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</p>
                 {item.purchase_type === 'box' && (
                   <p style={{ fontSize: '10px', color: '#e17055', margin: '0 0 2px', fontWeight: '700' }}>박스 구매 · {item.quantity}박스</p>
@@ -74,7 +74,7 @@ function QuickOrder({ item, onBack, onPayment, user, darkMode }) {
                 {item.purchase_type !== 'box' && item.pricing_type !== 'weight' && (
                   <p style={{ fontSize: '10px', color: subTextColor, margin: '0 0 2px' }}>수량 {item.quantity}개</p>
                 )}
-                <p style={{ fontSize: '15px', fontWeight: '800', color: '#00c471', margin: 0 }}>₩{getItemPrice(item).toLocaleString()}</p>
+                <p style={{ fontSize: '15px', fontWeight: '800', color: 'var(--primary)', margin: 0 }}>₩{getItemPrice(item).toLocaleString()}</p>
               </div>
             </div>
           </div>

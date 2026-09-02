@@ -197,7 +197,7 @@ function PrintReceipt({ order, onClose, darkMode }) {
                 <span>결제수단</span>
                 <span>{paymentMethod}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#00a85e', marginTop: '2px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--primary-dark)', marginTop: '2px' }}>
                 <span>배송비</span>
                 <span>무료</span>
               </div>
@@ -215,7 +215,7 @@ function PrintReceipt({ order, onClose, darkMode }) {
           <button onClick={handleBluetoothPrint} style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #1a73e8, #0d47a1)', color: 'white', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>
             📡 POS 영수증 출력
           </button>
-          <button onClick={handlePrint} style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>
+          <button onClick={handlePrint} style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>
             🖨️ A4 출력
           </button>
           <button onClick={onClose} style={{ width: '100%', padding: '14px', background: darkMode ? '#2a2a2a' : '#f1f3f5', color: darkMode ? '#ccc' : '#495057', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>

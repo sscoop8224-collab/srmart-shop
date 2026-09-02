@@ -651,7 +651,7 @@ function AppContent() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
               </svg>
-              <span style={{ fontSize: '10px', fontWeight: '600', color: '#00c471', whiteSpace: 'nowrap' }}>로그인</span>
+              <span style={{ fontSize: '10px', fontWeight: '600', color: 'var(--primary)', whiteSpace: 'nowrap' }}>로그인</span>
             </button>
           )}
         </div>
@@ -700,7 +700,7 @@ function AppContent() {
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
                   {banners.map((_, i) => (
                     <button key={i} onClick={() => { setBannerTransition(true); setBannerIndex(i); }}
-                      style={{ width: (bannerIndex % banners.length) === i ? '20px' : '8px', height: '8px', background: bannerIndex === i ? '#00c471' : '#dee2e6', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: 0, transition: 'all 0.3s' }} />
+                      style={{ width: (bannerIndex % banners.length) === i ? '20px' : '8px', height: '8px', background: bannerIndex === i ? 'var(--primary)' : '#dee2e6', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: 0, transition: 'all 0.3s' }} />
                   ))}
                 </div>
               </div>
@@ -717,7 +717,7 @@ function AppContent() {
                     setFilterLarge(name === '행사상품' ? '행사중' : name);
                     setFilterMedium('전체'); setFilterSmall('전체');
                   }}
-                    style={{ padding: '8px 18px', background: isActive ? '#00c471' : (darkMode ? '#2a2a2a' : 'white'), color: isActive ? 'white' : (darkMode ? '#a0a0a0' : '#495057'), border: isActive ? 'none' : `1.5px solid ${darkMode ? '#3a3a3a' : '#e9ecef'}`, borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0, boxShadow: isActive ? '0 2px 8px rgba(0,196,113,0.3)' : 'none' }}>
+                    style={{ padding: '8px 18px', background: isActive ? 'var(--primary)' : (darkMode ? '#2a2a2a' : 'white'), color: isActive ? 'white' : (darkMode ? '#a0a0a0' : '#495057'), border: isActive ? 'none' : `1.5px solid ${darkMode ? '#3a3a3a' : '#e9ecef'}`, borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', flexShrink: 0, boxShadow: isActive ? '0 2px 8px rgba(0,196,113,0.3)' : 'none' }}>
                     {name}
                   </button>
                 );
@@ -769,7 +769,7 @@ function AppContent() {
                 <span className="empty-state-icon">⚠️</span>
                 <span className="empty-state-text">상품을 불러오지 못했어요.</span>
                 <button onClick={() => loadProducts(currentStoreId)}
-                  style={{ marginTop: 14, padding: '10px 22px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                  style={{ marginTop: 14, padding: '10px 22px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
                   다시 시도
                 </button>
               </div>
@@ -783,7 +783,7 @@ function AppContent() {
                 {(filterLarge === '행사중' ? eventProducts : filteredProducts).map((product) => (
                   <div key={product.id}
                     onClick={() => { if (!product.isSoldOut) { setSelectedProduct(product); goToPage('productDetail'); } }}
-                    style={{ background: darkMode ? '#2a2a2a' : 'white', borderRadius: '20px', overflow: 'hidden', boxShadow: darkMode ? '0 2px 16px rgba(0,0,0,0.4)' : '0 2px 16px rgba(0,0,0,0.07)', position: 'relative', opacity: product.isSoldOut ? 0.6 : 1, cursor: product.isSoldOut ? 'default' : 'pointer', border: product.isAdult ? '1.5px solid #ffcdd2' : `1px solid ${darkMode ? '#3a3a3a' : '#f0faf5'}` }}>
+                    style={{ background: darkMode ? '#2a2a2a' : 'white', borderRadius: '20px', overflow: 'hidden', boxShadow: darkMode ? '0 2px 16px rgba(0,0,0,0.4)' : '0 2px 16px rgba(0,0,0,0.07)', position: 'relative', opacity: product.isSoldOut ? 0.6 : 1, cursor: product.isSoldOut ? 'default' : 'pointer', border: product.isAdult ? '1.5px solid #ffcdd2' : `1px solid ${darkMode ? '#3a3a3a' : 'var(--primary-light)'}` }}>
                     <div style={{ width: '100%', aspectRatio: '1', position: 'relative', overflow: 'hidden', background: '#f6f7f8' }}>
                       <img src={product.image ? imgUrl(product.image) : getCategoryImage(product.large)} alt={product.name} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
                       {!product.image && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,196,113,0.08)' }} />}
@@ -802,7 +802,7 @@ function AppContent() {
                       </button>
                     </div>
                     <div style={{ padding: '10px 11px 12px' }}>
-                      <p style={{ fontSize: '10px', color: '#00c471', margin: '0 0 3px', fontWeight: '700' }}>{product.large}</p>
+                      <p style={{ fontSize: '10px', color: 'var(--primary)', margin: '0 0 3px', fontWeight: '700' }}>{product.large}</p>
                       <p style={{ fontSize: '13px', fontWeight: '700', color: darkMode ? '#f0f0f0' : '#1a1a1a', margin: '0 0 8px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.name}{product.spec ? ` ${product.spec}` : ''}</p>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div>
@@ -816,7 +816,7 @@ function AppContent() {
                           )}
                         </div>
                         <button onClick={(e) => { e.stopPropagation(); addToCart(product); }} disabled={product.isSoldOut}
-                          style={{ width: '30px', height: '30px', borderRadius: '50%', background: product.isSoldOut ? '#dee2e6' : 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', cursor: product.isSoldOut ? 'not-allowed' : 'pointer', fontSize: '20px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: product.isSoldOut ? 'none' : '0 2px 8px rgba(0,196,113,0.4)', lineHeight: 1, fontWeight: '300' }}>+</button>
+                          style={{ width: '30px', height: '30px', borderRadius: '50%', background: product.isSoldOut ? '#dee2e6' : 'linear-gradient(135deg, var(--primary), var(--primary-dark))', border: 'none', cursor: product.isSoldOut ? 'not-allowed' : 'pointer', fontSize: '20px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: product.isSoldOut ? 'none' : '0 2px 8px rgba(0,196,113,0.4)', lineHeight: 1, fontWeight: '300' }}>+</button>
                       </div>
                     </div>
                   </div>
@@ -826,7 +826,7 @@ function AppContent() {
           </>
         )}
 
-        <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: '#00a85e', fontSize: 13 }}>불러오는 중…</div>}>
+        <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: 'var(--primary-dark)', fontSize: 13 }}>불러오는 중…</div>}>
         {page === 'notice'          && <Notice notices={notices} setNotices={setNotices} isAdmin={isAdmin} goBack={goBack} goToHome={() => goToPage('home')} darkMode={darkMode} />}
         {page === 'wishlist'        && <Wishlist wishlist={wishlist} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWishlist={toggleWishlist} goBack={goBack} goToHome={() => goToPage('home')} darkMode={darkMode} />}
         {page === 'search'          && <Search products={products} categories={categories} goBack={goBack} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} />}
@@ -855,12 +855,12 @@ function AppContent() {
           </button>
           <button onClick={() => goToPage('search')}
             style={{ flex: 1, height: '100%', border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px', position: 'relative' }}>
-            <div style={{ width: '48px', height: '48px', background: 'linear-gradient(135deg, #00c471, #00a85e)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,196,113,0.4)', marginTop: '-20px' }}>
+            <div style={{ width: '48px', height: '48px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,196,113,0.4)', marginTop: '-20px' }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
             </div>
-            <span style={{ fontSize: '10px', fontWeight: '600', color: '#00c471' }}>검색</span>
+            <span style={{ fontSize: '10px', fontWeight: '600', color: 'var(--primary)' }}>검색</span>
           </button>
           <button className={'bottom-nav-item' + (page === 'wishlist' ? ' active' : '')} onClick={() => user ? goToPage('wishlist') : requireLogin()}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill={page === 'wishlist' ? '#00c471' : 'none'} stroke={page === 'wishlist' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>

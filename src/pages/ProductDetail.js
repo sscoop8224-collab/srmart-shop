@@ -63,8 +63,8 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
   const sub         = darkMode ? '#a0a0a0' : '#6c757d';
   const inputBg     = darkMode ? '#2a2a2a' : '#ffffff';
   const inputBorder = darkMode ? '#3a3a3a' : '#dee2e6';
-  const badgeBg     = darkMode ? '#1a4a2a' : '#e8faf3';
-  const totalBg     = darkMode ? '#1a4a2a' : '#e8faf3';
+  const badgeBg     = darkMode ? '#1a4a2a' : 'var(--primary-light)';
+  const totalBg     = darkMode ? '#1a4a2a' : 'var(--primary-light)';
   const totalBorder = darkMode ? '#2a5c3a' : '#c8f0df';
 
   if (!product) return null;
@@ -97,7 +97,7 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
         padding: '16px 20px', position: 'sticky', top: 0,
         background: darkMode
           ? 'linear-gradient(135deg, #0d4d2a 0%, #1a5c2a 100%)'
-          : 'linear-gradient(135deg, #00c471 0%, #00a85e 100%)',
+          : 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
         zIndex: 10,
       }}>
         <button onClick={onBack} style={{
@@ -130,7 +130,7 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
                 {images.map((img, index) => (
                   <img key={index} src={imgUrl(img)} alt={'상품' + (index + 1)}
                     onClick={() => setSelectedImage(index)}
-                    style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '10px', border: selectedImage === index ? '2px solid #00c471' : `2px solid ${border}`, cursor: 'pointer', flexShrink: 0 }} />
+                    style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '10px', border: selectedImage === index ? '2px solid var(--primary)' : `2px solid ${border}`, cursor: 'pointer', flexShrink: 0 }} />
                 ))}
               </div>
             )}
@@ -154,7 +154,7 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
         {/* 카테고리 태그 */}
         <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
           {product.large && (
-            <span style={{ background: badgeBg, color: '#00a85e', padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>
+            <span style={{ background: badgeBg, color: 'var(--primary-dark)', padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>
               {product.large}
             </span>
           )}
@@ -186,13 +186,13 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
         {/* 원산지 / 제조사 */}
         {['농산물', '축산물', '수산물'].includes(product.product_type) ? (
           product.origin_country && (
-            <p style={{ fontSize: '13px', color: '#00a85e', margin: '0 0 8px', fontWeight: '700' }}>
+            <p style={{ fontSize: '13px', color: 'var(--primary-dark)', margin: '0 0 8px', fontWeight: '700' }}>
               📍 원산지: {product.origin_country}
             </p>
           )
         ) : (
           product.manufacturer && (
-            <p style={{ fontSize: '13px', color: '#00a85e', margin: '0 0 8px', fontWeight: '700' }}>
+            <p style={{ fontSize: '13px', color: 'var(--primary-dark)', margin: '0 0 8px', fontWeight: '700' }}>
               🏭 제조사: {product.manufacturer}
             </p>
           )
@@ -237,11 +237,11 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
                 { value: 'single', label: '낱개', price: `₩${product.price.toLocaleString()}` },
                 { value: 'box', label: `박스 (${product.box_quantity}개)`, price: `₩${product.box_price_override.toLocaleString()}` },
               ].map(opt => (
-                <label key={opt.value} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px', background: purchaseType === opt.value ? '#e8faf3' : inputBg, border: `1.5px solid ${purchaseType === opt.value ? '#00c471' : inputBorder}`, borderRadius: '14px', padding: '12px 14px', cursor: 'pointer' }}>
-                  <input type="radio" name="purchaseType" value={opt.value} checked={purchaseType === opt.value} onChange={() => setPurchaseType(opt.value)} style={{ accentColor: '#00c471' }} />
+                <label key={opt.value} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px', background: purchaseType === opt.value ? 'var(--primary-light)' : inputBg, border: `1.5px solid ${purchaseType === opt.value ? 'var(--primary)' : inputBorder}`, borderRadius: '14px', padding: '12px 14px', cursor: 'pointer' }}>
+                  <input type="radio" name="purchaseType" value={opt.value} checked={purchaseType === opt.value} onChange={() => setPurchaseType(opt.value)} style={{ accentColor: 'var(--primary)' }} />
                   <div>
                     <div style={{ fontSize: '13px', fontWeight: '700', color: text }}>{opt.label}</div>
-                    <div style={{ fontSize: '12px', color: '#00a85e', fontWeight: '600' }}>{opt.price}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--primary-dark)', fontWeight: '600' }}>{opt.price}</div>
                   </div>
                 </label>
               ))}
@@ -258,7 +258,7 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
                 style={{ width: '32px', height: '32px', background: cardBg, border: `1.5px solid ${border}`, borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: text, fontWeight: 'bold' }}>-</button>
               <span style={{ fontSize: '15px', fontWeight: '800', minWidth: '48px', textAlign: 'center', color: text }}>{grams}g</span>
               <button onClick={() => setGrams(grams + 100)}
-                style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
+                style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
             </div>
           </div>
         ) : (
@@ -269,7 +269,7 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
                 style={{ width: '32px', height: '32px', background: cardBg, border: `1.5px solid ${border}`, borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: text, fontWeight: 'bold' }}>-</button>
               <span style={{ fontSize: '16px', fontWeight: '800', minWidth: '32px', textAlign: 'center', color: text }}>{quantity}</span>
               <button onClick={() => setQuantity(quantity + 1)}
-                style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
+                style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
             </div>
           </div>
         )}
@@ -280,10 +280,10 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
           background: totalBg, borderRadius: '16px', padding: '16px 20px', marginBottom: '20px',
           border: `1px solid ${totalBorder}`
         }}>
-          <span style={{ fontSize: '14px', color: '#00a85e', fontWeight: '600' }}>
+          <span style={{ fontSize: '14px', color: 'var(--primary-dark)', fontWeight: '600' }}>
             {product.pricing_type === 'weight' ? `${grams}g 합계` : '총 금액'}
           </span>
-          <span style={{ fontSize: '24px', fontWeight: '900', color: '#00a85e' }}>
+          <span style={{ fontSize: '24px', fontWeight: '900', color: 'var(--primary-dark)' }}>
             {product.pricing_type === 'weight'
               ? `₩${((product.unit_price || product.price) * grams / 100).toLocaleString()}`
               : product.box_price_override && purchaseType === 'box'
@@ -304,7 +304,7 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
           <button onClick={handleAddToCart} style={{
             flex: 1, padding: '16px',
             background: 'transparent',
-            color: '#00a85e', border: '2px solid #00c471', borderRadius: '16px',
+            color: 'var(--primary-dark)', border: '2px solid var(--primary)', borderRadius: '16px',
             fontSize: '15px', fontWeight: '800', cursor: 'pointer',
             letterSpacing: '-0.3px'
           }}>
@@ -312,7 +312,7 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
           </button>
           <button onClick={handleBuyNow} style={{
             flex: 1, padding: '16px',
-            background: 'linear-gradient(135deg, #00c471, #00a85e)',
+            background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
             color: 'white', border: 'none', borderRadius: '16px',
             fontSize: '15px', fontWeight: '800', cursor: 'pointer',
             boxShadow: '0 4px 20px rgba(0,196,113,0.35)',
@@ -362,7 +362,7 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
             {reviewStats && <span style={{ fontSize: '14px', color: sub, marginLeft: 8 }}>{reviewStats.total}개</span>}
           </div>
           {user && (
-            <button onClick={() => setShowReviewForm(!showReviewForm)} style={{ padding: '6px 14px', background: '#f0faf5', color: '#00a85e', border: 'none', borderRadius: 20, fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+            <button onClick={() => setShowReviewForm(!showReviewForm)} style={{ padding: '6px 14px', background: 'var(--primary-light)', color: 'var(--primary-dark)', border: 'none', borderRadius: 20, fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
               {showReviewForm ? '취소' : '리뷰 쓰기'}
             </button>
           )}
@@ -384,7 +384,7 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
             </div>
             <textarea value={reviewForm.content} onChange={e => setReviewForm(f => ({ ...f, content: e.target.value }))} placeholder="리뷰를 작성해주세요 (구매 후 작성 가능)" rows={3}
               style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: `1px solid ${darkMode ? '#3a3a3a' : '#ddd'}`, fontSize: 14, outline: 'none', background: darkMode ? '#2a2a2a' : 'white', color: text, boxSizing: 'border-box', resize: 'none', fontFamily: 'inherit' }} />
-            <button onClick={handleSubmitReview} disabled={submittingReview} style={{ marginTop: 8, width: '100%', padding: '10px', background: '#00c471', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+            <button onClick={handleSubmitReview} disabled={submittingReview} style={{ marginTop: 8, width: '100%', padding: '10px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
               {submittingReview ? '등록 중...' : '리뷰 등록'}
             </button>
           </div>
@@ -401,7 +401,7 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
               <span style={{ fontSize: 11, color: sub }}>{new Date(r.created_at).toLocaleDateString('ko-KR')}</span>
             </div>
             <p style={{ margin: 0, fontSize: 13, color: text, lineHeight: 1.6 }}>{r.content}</p>
-            {r.reply && <div style={{ marginTop: 8, padding: '8px 12px', background: darkMode ? '#1a4a2a' : '#f0faf5', borderRadius: 8, fontSize: 12, color: '#009a58' }}>💬 판매자: {r.reply}</div>}
+            {r.reply && <div style={{ marginTop: 8, padding: '8px 12px', background: darkMode ? '#1a4a2a' : 'var(--primary-light)', borderRadius: 8, fontSize: 12, color: '#009a58' }}>💬 판매자: {r.reply}</div>}
           </div>
         ))}
       </div>
@@ -412,7 +412,7 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
           <div style={{ fontSize: '17px', fontWeight: '800', color: text, marginBottom: 14 }}>관련 상품</div>
           <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
             {related.map(p => (
-              <div key={p.id} style={{ flexShrink: 0, width: 120, background: darkMode ? '#1a1a1a' : '#f8fffe', borderRadius: 12, overflow: 'hidden', border: `1px solid ${border}` }}>
+              <div key={p.id} style={{ flexShrink: 0, width: 120, background: darkMode ? '#1a1a1a' : 'var(--primary-light)', borderRadius: 12, overflow: 'hidden', border: `1px solid ${border}` }}>
                 <img src={getCategoryImage(p.large)} alt={p.name} style={{ width: '100%', height: 80, objectFit: 'cover' }} />
                 <div style={{ padding: '8px 10px', fontSize: 12, fontWeight: 600, color: text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
               </div>

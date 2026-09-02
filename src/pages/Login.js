@@ -504,7 +504,7 @@ function Login({ onLogin, onGuest }) {
                           <button type="button" onClick={() => setSelectedStoreId(String(coverage.recommended.store_id))}
                             style={{ marginLeft: 6, padding: '3px 10px', background: '#9a6a00', color: '#fff', border: 'none', borderRadius: 8, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>이 매장으로 변경</button>
                         </span>;
-                      } else { bg = '#fff0f1'; fg = COLORS.danger; bd = '#ffc9cf'; content = <span>이 주소는 배송 가능한 매장이 없어요. 방문 또는 고객센터로 문의해주세요.</span>; }
+                      } else { bg = 'var(--accent-light)'; fg = COLORS.danger; bd = '#ffc9cf'; content = <span>이 주소는 배송 가능한 매장이 없어요. 방문 또는 고객센터로 문의해주세요.</span>; }
                     }
                     if (content == null) return null;
                     return <div style={{ marginTop: 8, padding: '10px 12px', borderRadius: 12, fontSize: 12.5, lineHeight: 1.5, background: bg, color: fg, border: `1px solid ${bd}` }}>{content}</div>;

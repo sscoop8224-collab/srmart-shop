@@ -16,7 +16,7 @@ export default function Offline({ onRetry }) {
     }
   };
 
-  const bg   = darkMode ? '#111' : '#f8fffe';
+  const bg   = darkMode ? '#111' : 'var(--primary-light)';
   const text = darkMode ? '#f0f0f0' : '#1a1a1a';
   const sub  = darkMode ? '#888' : '#666';
   const card = darkMode ? '#1e1e1e' : '#ffffff';
@@ -41,7 +41,7 @@ export default function Offline({ onRetry }) {
         </div>
         <button onClick={handleRetry} disabled={checking} style={{
           width: '100%', padding: 14,
-          background: checking ? '#ccc' : 'linear-gradient(135deg, #00c471, #00a85e)',
+          background: checking ? '#ccc' : 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
           color: 'white', border: 'none', borderRadius: 14,
           fontSize: 15, fontWeight: 700, cursor: checking ? 'not-allowed' : 'pointer',
           boxShadow: checking ? 'none' : '0 4px 16px rgba(0,196,113,0.3)',

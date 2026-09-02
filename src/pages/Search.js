@@ -27,12 +27,12 @@ function Search({ products, categories, goBack, onProductClick, onAddToCart, dar
   const inputRef = useRef(null);
   const suggestTimer = useRef(null);
 
-  const bg = darkMode ? '#1a1a1a' : '#f8fffe';
+  const bg = darkMode ? '#1a1a1a' : 'var(--primary-light)';
   const cardBg = darkMode ? '#2a2a2a' : 'white';
   const text = darkMode ? '#f0f0f0' : '#1a1a1a';
   const sub = darkMode ? '#9e9e9e' : '#adb5bd';
-  const border = darkMode ? '#3a3a3a' : '#f0faf5';
-  const inputBg = darkMode ? '#2e2e2e' : '#f8fffe';
+  const border = darkMode ? '#3a3a3a' : 'var(--primary-light)';
+  const inputBg = darkMode ? '#2e2e2e' : 'var(--primary-light)';
 
   useEffect(() => {
     getPopularSearches().then(r => setPopular(r.data || [])).catch(() => {});
@@ -77,11 +77,11 @@ function Search({ products, categories, goBack, onProductClick, onAddToCart, dar
       {/* 헤더 */}
       <div style={{ background: darkMode ? '#1a1a1a' : 'white', padding: '16px 20px 12px', borderBottom: `1px solid ${border}`, position: 'sticky', top: 0, zIndex: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-          <button onClick={goBack} style={{ width: 38, height: 38, background: darkMode ? '#2e2e2e' : '#f0faf5', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <button onClick={goBack} style={{ width: 38, height: 38, background: darkMode ? '#2e2e2e' : 'var(--primary-light)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={text} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <div style={{ flex: 1, position: 'relative', minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: inputBg, borderRadius: 14, padding: '10px 14px', border: `1.5px solid ${darkMode ? '#3a3a3a' : '#e8faf3'}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: inputBg, borderRadius: 14, padding: '10px 14px', border: `1.5px solid ${darkMode ? '#3a3a3a' : 'var(--primary-light)'}` }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input ref={inputRef} type="text" value={query} onChange={e => handleQueryChange(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
@@ -105,7 +105,7 @@ function Search({ products, categories, goBack, onProductClick, onAddToCart, dar
             )}
           </div>
           <button onClick={() => handleSearch()} disabled={searching}
-            style={{ padding: '10px 16px', background: '#00c471', color: 'white', border: 'none', borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            style={{ padding: '10px 16px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
             {searching ? '...' : '검색'}
           </button>
         </div>
@@ -114,7 +114,7 @@ function Search({ products, categories, goBack, onProductClick, onAddToCart, dar
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
           {largeCategories.slice(0, 8).map(cat => (
             <button key={cat} onClick={() => { setFilterCat(cat); if (hasSearched) handleSearch(); }}
-              style={{ padding: '5px 12px', borderRadius: 20, border: `1.5px solid ${filterCat === cat ? '#00c471' : border}`, background: filterCat === cat ? '#e6f9f1' : 'transparent', color: filterCat === cat ? '#009a58' : sub, fontSize: 12, fontWeight: filterCat === cat ? 700 : 400, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+              style={{ padding: '5px 12px', borderRadius: 20, border: `1.5px solid ${filterCat === cat ? 'var(--primary)' : border}`, background: filterCat === cat ? '#e6f9f1' : 'transparent', color: filterCat === cat ? '#009a58' : sub, fontSize: 12, fontWeight: filterCat === cat ? 700 : 400, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
               {cat}
             </button>
           ))}
@@ -130,7 +130,7 @@ function Search({ products, categories, goBack, onProductClick, onAddToCart, dar
           </button>
         ))}
         <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: sub, cursor: 'pointer', flexShrink: 0 }}>
-          <input type="checkbox" checked={inStockOnly} onChange={e => { setInStockOnly(e.target.checked); if (hasSearched) handleSearch(); }} style={{ accentColor: '#00c471' }} />
+          <input type="checkbox" checked={inStockOnly} onChange={e => { setInStockOnly(e.target.checked); if (hasSearched) handleSearch(); }} style={{ accentColor: 'var(--primary)' }} />
           재고있음
         </label>
         <span style={{ fontSize: 11, color: sub, flexShrink: 0 }}>{filtered.length}개</span>
@@ -143,8 +143,8 @@ function Search({ products, categories, goBack, onProductClick, onAddToCart, dar
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {popular.map((p, i) => (
               <button key={i} onClick={() => { setQuery(p.keyword); handleSearch(p.keyword); }}
-                style={{ padding: '6px 14px', borderRadius: 20, background: darkMode ? '#2e2e2e' : '#f0faf5', border: `1px solid ${border}`, color: text, fontSize: 13, cursor: 'pointer' }}>
-                <span style={{ color: '#00c471', fontWeight: 700, marginRight: 4 }}>{i + 1}</span>{p.keyword}
+                style={{ padding: '6px 14px', borderRadius: 20, background: darkMode ? '#2e2e2e' : 'var(--primary-light)', border: `1px solid ${border}`, color: text, fontSize: 13, cursor: 'pointer' }}>
+                <span style={{ color: 'var(--primary)', fontWeight: 700, marginRight: 4 }}>{i + 1}</span>{p.keyword}
               </button>
             ))}
           </div>
@@ -172,7 +172,7 @@ function Search({ products, categories, goBack, onProductClick, onAddToCart, dar
                     </div>
                     <div style={{ padding: '10px 12px' }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: text, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}{product.spec ? ` ${product.spec}` : ''}</div>
-                      {price && <div style={{ fontSize: 15, fontWeight: 800, color: '#00c471' }}>₩{Number(price).toLocaleString()}</div>}
+                      {price && <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--primary)' }}>₩{Number(price).toLocaleString()}</div>}
                     </div>
                   </div>
                 );

@@ -20,13 +20,13 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, user, darkMode }) {
   // 배송지/쿠폰/포인트/배송권역/합계 계산은 QuickOrder.js 와 공유하는 훅으로 이전됨(useCheckoutFlow).
   const checkout = useCheckoutFlow(cart, { user });
 
-  const bg = darkMode ? '#1a1a1a' : '#f8fffe';
+  const bg = darkMode ? '#1a1a1a' : 'var(--primary-light)';
   const cardBg = darkMode ? '#242424' : 'white';
   const headerBg = darkMode ? '#1a1a1a' : 'white';
-  const borderColor = darkMode ? '#2e2e2e' : '#f0faf5';
+  const borderColor = darkMode ? '#2e2e2e' : 'var(--primary-light)';
   const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
   const subTextColor = darkMode ? '#9e9e9e' : '#adb5bd';
-  const inputBorder = darkMode ? '#3a3a3a' : '#e8faf3';
+  const inputBorder = darkMode ? '#3a3a3a' : 'var(--primary-light)';
 
   const updateQuantity = (id, delta) => {
     setCart(cart.map((item) =>
@@ -48,7 +48,7 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, user, darkMode }) {
       {/* 헤더 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: headerBg, borderBottom: `1px solid ${borderColor}`, position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={goBack} style={{ width: '38px', height: '38px', background: darkMode ? '#2e2e2e' : '#f0faf5', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button onClick={goBack} style={{ width: '38px', height: '38px', background: darkMode ? '#2e2e2e' : 'var(--primary-light)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#f0f0f0' : '#1a1a1a'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6"/>
             </svg>
@@ -59,7 +59,7 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, user, darkMode }) {
           <span style={{ fontSize: '13px', color: subTextColor, fontWeight: '600' }}>{cart.length}개 상품</span>
           {cart.length > 0 && (
             <button onClick={() => { if (window.confirm('장바구니를 비울까요?')) setCart([]); }}
-              style={{ fontSize: '12px', color: '#ff4757', background: '#fff0f1', border: 'none', borderRadius: '20px', padding: '5px 12px', cursor: 'pointer', fontWeight: '700' }}>
+              style={{ fontSize: '12px', color: '#ff4757', background: 'var(--accent-light)', border: 'none', borderRadius: '20px', padding: '5px 12px', cursor: 'pointer', fontWeight: '700' }}>
               전체 삭제
             </button>
           )}
@@ -68,7 +68,7 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, user, darkMode }) {
 
       {cart.length === 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px' }}>
-          <div style={{ width: '80px', height: '80px', background: darkMode ? '#2e2e2e' : '#f0faf5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+          <div style={{ width: '80px', height: '80px', background: darkMode ? '#2e2e2e' : 'var(--primary-light)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
               <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
@@ -76,7 +76,7 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, user, darkMode }) {
           </div>
           <p style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 8px', color: textColor }}>장바구니가 비어있어요!</p>
           <p style={{ fontSize: '13px', color: subTextColor, margin: '0 0 24px' }}>상품을 담아보세요</p>
-          <button onClick={onHome} style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '14px', cursor: 'pointer', fontSize: '15px', fontWeight: '700', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
+          <button onClick={onHome} style={{ padding: '12px 28px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '14px', cursor: 'pointer', fontSize: '15px', fontWeight: '700', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
             쇼핑 계속하기
           </button>
         </div>
@@ -92,7 +92,7 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, user, darkMode }) {
                   <img src={item.image ? imgUrl(item.image) : getCategoryImage(item.large)} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: '11px', color: '#00c471', margin: '0 0 3px', fontWeight: '700' }}>{item.large}</p>
+                  <p style={{ fontSize: '11px', color: 'var(--primary)', margin: '0 0 3px', fontWeight: '700' }}>{item.large}</p>
                   <p style={{ fontSize: '14px', fontWeight: '700', color: textColor, margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</p>
                   {item.purchase_type === 'box' && (
                     <p style={{ fontSize: '10px', color: '#e17055', margin: '0 0 2px', fontWeight: '700' }}>박스 구매</p>
@@ -100,23 +100,23 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, user, darkMode }) {
                   {item.pricing_type === 'weight' && (
                     <p style={{ fontSize: '10px', color: subTextColor, margin: '0 0 2px' }}>{item.grams || 100}g</p>
                   )}
-                  <p style={{ fontSize: '15px', fontWeight: '800', color: '#00c471', margin: 0 }}>₩{getItemPrice(item).toLocaleString()}</p>
+                  <p style={{ fontSize: '15px', fontWeight: '800', color: 'var(--primary)', margin: 0 }}>₩{getItemPrice(item).toLocaleString()}</p>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                  <button onClick={() => removeFromCart(item.id)} style={{ background: '#fff0f1', border: 'none', cursor: 'pointer', color: '#ff4757', fontSize: '12px', padding: '4px 8px', borderRadius: '8px', fontWeight: '700' }}>삭제</button>
+                  <button onClick={() => removeFromCart(item.id)} style={{ background: 'var(--accent-light)', border: 'none', cursor: 'pointer', color: '#ff4757', fontSize: '12px', padding: '4px 8px', borderRadius: '8px', fontWeight: '700' }}>삭제</button>
                   {item.pricing_type === 'weight' ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: darkMode ? '#1a1a1a' : '#f8fffe', border: `1px solid ${inputBorder}`, borderRadius: '20px', padding: '4px 8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: darkMode ? '#1a1a1a' : 'var(--primary-light)', border: `1px solid ${inputBorder}`, borderRadius: '20px', padding: '4px 8px' }}>
                       <button onClick={() => updateGrams(item.id, -100)} style={{ width: '24px', height: '24px', background: darkMode ? '#2e2e2e' : 'white', border: `1.5px solid ${inputBorder}`, borderRadius: '50%', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: textColor, fontWeight: 'bold' }}>-</button>
                       <span style={{ fontSize: '12px', fontWeight: '700', minWidth: '36px', textAlign: 'center', color: textColor }}>{item.grams || 100}g</span>
-                      <button onClick={() => updateGrams(item.id, 100)} style={{ width: '24px', height: '24px', background: 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
+                      <button onClick={() => updateGrams(item.id, 100)} style={{ width: '24px', height: '24px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: darkMode ? '#1a1a1a' : '#f8fffe', border: `1px solid ${inputBorder}`, borderRadius: '20px', padding: '4px 8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: darkMode ? '#1a1a1a' : 'var(--primary-light)', border: `1px solid ${inputBorder}`, borderRadius: '20px', padding: '4px 8px' }}>
                       <button onClick={() => updateQuantity(item.id, -1)} style={{ width: '24px', height: '24px', background: darkMode ? '#2e2e2e' : 'white', border: `1.5px solid ${inputBorder}`, borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: textColor, fontWeight: 'bold' }}>-</button>
                       <span style={{ fontSize: '14px', fontWeight: '700', minWidth: '20px', textAlign: 'center', color: textColor }}>
                         {item.purchase_type === 'box' ? `${item.quantity}박스` : item.quantity}
                       </span>
-                      <button onClick={() => updateQuantity(item.id, 1)} style={{ width: '24px', height: '24px', background: 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
+                      <button onClick={() => updateQuantity(item.id, 1)} style={{ width: '24px', height: '24px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
                     </div>
                   )}
                 </div>

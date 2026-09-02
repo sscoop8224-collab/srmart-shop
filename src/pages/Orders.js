@@ -19,10 +19,10 @@ const statusStyle = (status) => {
     '상품준비': { bg: '#fff3e0', color: '#e65100' },
     '배송중':   { bg: '#ede7f6', color: '#7c4dff' },
     '배송완료': { bg: '#e6f9f1', color: '#009a58' },
-    '취소':     { bg: '#fff0f1', color: '#ff4757' },
+    '취소':     { bg: 'var(--accent-light)', color: '#ff4757' },
     '환불완료': { bg: '#fde8e8', color: '#c62828' },
   };
-  return map[status] || { bg: '#f0faf5', color: '#00a85e' };
+  return map[status] || { bg: 'var(--primary-light)', color: 'var(--primary-dark)' };
 };
 
 const TRACKING_URLS = {
@@ -48,15 +48,15 @@ function Orders({ orders, goBack }) {
     finally { setSubmitting(false); }
   };
   return (
-    <div style={{ background: '#f8fffe', minHeight: '100vh', paddingBottom: '80px' }}>
+    <div style={{ background: 'var(--primary-light)', minHeight: '100vh', paddingBottom: '80px' }}>
 
       {/* 헤더 */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: '12px',
         padding: '16px 20px', background: 'white',
-        borderBottom: '1px solid #f0faf5', position: 'sticky', top: 0, zIndex: 10
+        borderBottom: '1px solid var(--primary-light)', position: 'sticky', top: 0, zIndex: 10
       }}>
-        <button onClick={goBack} style={{ width: '38px', height: '38px', background: '#f0faf5', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <button onClick={goBack} style={{ width: '38px', height: '38px', background: 'var(--primary-light)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#1a1a1a' }}>주문내역</h2>
@@ -64,7 +64,7 @@ function Orders({ orders, goBack }) {
 
       {orders.length === 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px' }}>
-          <div style={{ width: '80px', height: '80px', background: '#f0faf5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+          <div style={{ width: '80px', height: '80px', background: 'var(--primary-light)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
               <polyline points="14 2 14 8 20 8"/>
@@ -80,10 +80,10 @@ function Orders({ orders, goBack }) {
           {orders.map((order) => {
             const sc = statusStyle(order.status);
             return (
-              <div key={order.id} style={{ background: 'white', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', border: '1px solid #f0faf5' }}>
+              <div key={order.id} style={{ background: 'white', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', border: '1px solid var(--primary-light)' }}>
 
                 {/* 주문 헤더 */}
-                <div style={{ padding: '14px 18px', borderBottom: '1px solid #f8fffe', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--primary-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <p style={{ fontSize: '11px', color: '#adb5bd', margin: '0 0 3px', fontFamily: 'monospace' }}>{order.id}</p>
                     <p style={{ fontSize: '12px', color: '#adb5bd', margin: 0 }}>{order.date}</p>
@@ -96,7 +96,7 @@ function Orders({ orders, goBack }) {
                 {/* 상품 목록 */}
                 <div style={{ padding: '12px 18px' }}>
                   {order.items.map((item, index) => (
-                    <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 0', borderBottom: index < order.items.length - 1 ? '1px solid #f8fffe' : 'none' }}>
+                    <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 0', borderBottom: index < order.items.length - 1 ? '1px solid var(--primary-light)' : 'none' }}>
                       <div style={{ width: '52px', height: '52px', borderRadius: '12px', overflow: 'hidden', flexShrink: 0 }}>
                         <img
                           src={item.image ? imgUrl(item.image) : getCategoryImage(item.large)}
@@ -114,14 +114,14 @@ function Orders({ orders, goBack }) {
                 </div>
 
                 {/* 합계 */}
-                <div style={{ padding: '14px 18px', background: '#f8fffe', borderTop: '1px solid #f0faf5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ padding: '14px 18px', background: 'var(--primary-light)', borderTop: '1px solid var(--primary-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '14px', color: '#adb5bd', fontWeight: '600' }}>총 결제금액</span>
-                  <span style={{ fontSize: '18px', fontWeight: '900', color: '#00c471' }}>₩{order.totalPrice.toLocaleString()}</span>
+                  <span style={{ fontSize: '18px', fontWeight: '900', color: 'var(--primary)' }}>₩{order.totalPrice.toLocaleString()}</span>
                 </div>
 
                 {/* 송장 + 환불/교환 버튼 */}
                 {(order.status === '배송중' || order.status === '배송완료') && (
-                  <div style={{ padding: '10px 18px', background: '#f8fffe', borderTop: '1px solid #f0faf5', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ padding: '10px 18px', background: 'var(--primary-light)', borderTop: '1px solid var(--primary-light)', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                     {order.courier && order.tracking_number && (
                       <div style={{ fontSize: '12px', color: '#666', flex: 1 }}>
                         {order.courier} · {order.tracking_number}
@@ -160,16 +160,16 @@ function Orders({ orders, goBack }) {
             <div style={{ fontSize: '13px', color: '#666', marginBottom: 12 }}>사유를 선택하거나 직접 입력해주세요</div>
             {['단순 변심', '상품 하자/파손', '오배송', '기타'].map(r => (
               <button key={r} onClick={() => setReturnReason(r)}
-                style={{ margin: '0 6px 6px 0', padding: '6px 14px', background: returnReason === r ? '#00c471' : '#f0faf5', color: returnReason === r ? 'white' : '#333', border: 'none', borderRadius: 20, fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+                style={{ margin: '0 6px 6px 0', padding: '6px 14px', background: returnReason === r ? 'var(--primary)' : 'var(--primary-light)', color: returnReason === r ? 'white' : '#333', border: 'none', borderRadius: 20, fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
                 {r}
               </button>
             ))}
             <textarea value={returnReason} onChange={e => setReturnReason(e.target.value)} placeholder="상세 사유를 입력해주세요"
-              style={{ width: '100%', marginTop: 10, padding: '10px 14px', borderRadius: 12, border: '1.5px solid #e8faf3', fontSize: 13, outline: 'none', resize: 'none', boxSizing: 'border-box', fontFamily: 'inherit', minHeight: 72 }} />
+              style={{ width: '100%', marginTop: 10, padding: '10px 14px', borderRadius: 12, border: '1.5px solid var(--primary-light)', fontSize: 13, outline: 'none', resize: 'none', boxSizing: 'border-box', fontFamily: 'inherit', minHeight: 72 }} />
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
               <button onClick={() => setReturnModal(null)} style={{ flex: 1, padding: '12px', borderRadius: 12, border: '1.5px solid #eee', background: 'transparent', color: '#666', fontSize: 14, cursor: 'pointer' }}>취소</button>
               <button onClick={handleReturnSubmit} disabled={submitting}
-                style={{ flex: 2, padding: '12px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#00c471,#00a85e)', color: 'white', fontSize: 14, fontWeight: 800, cursor: submitting ? 'default' : 'pointer' }}>
+                style={{ flex: 2, padding: '12px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,var(--primary),var(--primary-dark))', color: 'white', fontSize: 14, fontWeight: 800, cursor: submitting ? 'default' : 'pointer' }}>
                 {submitting ? '제출 중...' : '요청 제출'}
               </button>
             </div>

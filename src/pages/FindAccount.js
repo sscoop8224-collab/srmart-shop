@@ -9,7 +9,7 @@ function FindAccount({ onBack }) {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'white' }}>
 
       {/* 상단 그린 영역 */}
-      <div style={{ background: 'linear-gradient(160deg, #00c471 0%, #00a85e 100%)', padding: '40px 32px 60px', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ background: 'linear-gradient(160deg, var(--primary) 0%, var(--primary-dark) 100%)', padding: '40px 32px 60px', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '180px', height: '180px', background: 'rgba(255,255,255,0.08)', borderRadius: '50%' }} />
         <span style={{ fontSize: '48px', marginBottom: '8px', position: 'relative', zIndex: 1 }}>🔍</span>
         <span style={{ fontFamily: "'Nanum Pen Script', cursive", fontSize: '28px', color: 'white', fontWeight: '700', position: 'relative', zIndex: 1 }}>아이디/비밀번호 찾기</span>
@@ -25,7 +25,7 @@ function FindAccount({ onBack }) {
             <span style={{ fontWeight: '700', color: '#495057' }}>그 전까지는 가까운 매장으로 문의해주세요.</span>
           </p>
         </div>
-        <button onClick={onBack} style={{ padding: '16px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '14px', fontSize: '16px', cursor: 'pointer', fontWeight: '800', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
+        <button onClick={onBack} style={{ padding: '16px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '14px', fontSize: '16px', cursor: 'pointer', fontWeight: '800', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
           로그인으로 돌아가기
         </button>
       </div>
