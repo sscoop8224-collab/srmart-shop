@@ -3,6 +3,7 @@ import { matchZipcode, getMyPoints, getMyActiveCoupons, applyCoupon } from '../a
 import API from '../api';
 import { getItemPrice } from '../utils/pricing';
 import { useDialog } from '../DialogContext';
+import { useStore } from '../StoreContext';
 
 // 장바구니(Cart.js)와 바로주문(QuickOrder.js)이 공유하는 결제 준비 로직.
 //   - 배송지 자동채움(회원 기본주소) + 우편번호 → 배송권역 확인
@@ -17,6 +18,7 @@ import { useDialog } from '../DialogContext';
 // 체크아웃 세션이므로 App 레벨에 둘 이유가 없다(기존엔 App.js 가 들고 Cart 에만 내려줬음).
 export function useCheckoutFlow(items, { user } = {}) {
   const { notify } = useDialog();
+  const { currentStoreId, isOwner } = useStore();
   const [couponInput, setCouponInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [showAddress, setShowAddress] = useState(false);
@@ -55,7 +57,7 @@ export function useCheckoutFlow(items, { user } = {}) {
     }
     setMatchingZipcode(true);
     try {
-      const res = await matchZipcode(zip, dong);
+      const res = await matchZipcode(zip, dong, isOwner ? currentStoreId : undefined);
       if (res.data.matched) {
         setMatchedDong(dong);
         setDeliveryInfo({
@@ -177,6 +179,9 @@ export function useCheckoutFlow(items, { user } = {}) {
   const buildOrderExtras = () => ({
     zipcode,
     dong: matchedDong,   // 서버가 zone 을 직접 재조회할 때 씀(배송비 숫자는 이제 안 보냄 — 서버가 재계산)
+    // owner 매장 미리보기 전용 — 서버가 role===owner일 때만 이 값을 실제로 반영하고
+    // is_test_order=1을 자동으로 붙인다(POST /api/orders). 일반 회원은 서버가 무시.
+    store_id: isOwner ? currentStoreId : undefined,
     use_points: clampedUsePoints,
     coupon_id: selectedCouponId || null,
     coupon_discount: couponDiscount,

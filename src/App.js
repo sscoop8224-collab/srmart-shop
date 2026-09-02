@@ -71,7 +71,7 @@ function buildCategoryTree(rows) {
 function AppContent() {
   const { darkMode, setDarkMode } = useTheme();
   const handleSetDark = (val) => setDarkMode(val);
-  const { guestStoreId, currentStoreId, currentStore, isGuest, setGuestStoreId } = useStore();
+  const { guestStoreId, currentStoreId, currentStore, isGuest, setGuestStoreId, stores, isOwner, ownerViewStoreId, setOwnerViewStoreId } = useStore();
   const { notify } = useDialog();
 
   // 웹은 내장 랜딩(homepage)을 건너뛰고 게스트로 바로 쇼핑앱 진입, 네이티브 앱은 로그인 우선
@@ -535,6 +535,7 @@ function AppContent() {
           receiverPhone: orderExtras.receiverPhone || user.phone || '',
           // orderExtras.items 에는 quantity_type/grams 가 담겨 서버 소계 재계산에 필요
           items: orderExtras.items || cart.map(item => ({ id: item.id, name: item.name, quantity: item.quantity })),
+          store_id: orderExtras.store_id,   // owner 매장 미리보기 전용 — 서버가 role 확인 후에만 반영
         }).catch(err => console.error('주문 저장 실패:', err));
         setOrders([newOrder, ...orders]); setLastOrder(newOrder); setCart([]);
         window.open(result.next_redirect_pc_url, '_blank');
@@ -578,6 +579,7 @@ function AppContent() {
           receiverName: orderExtras.receiverName || user.name,
           receiverPhone: orderExtras.receiverPhone || user.phone || '',
           items: orderExtras.items || [{ id: item.id, name: item.name, quantity: item.quantity }],
+          store_id: orderExtras.store_id,   // owner 매장 미리보기 전용 — 서버가 role 확인 후에만 반영
         }).catch(err => console.error('주문 저장 실패:', err));
         setOrders([newOrder, ...orders]); setLastOrder(newOrder);
         setQuickOrderItem(null);
@@ -636,10 +638,27 @@ function AppContent() {
           <img src={srmLogo} alt="SR Mart" style={{ height: '34px', objectFit: 'contain' }} />
           <span style={{ fontFamily: "'Nanum Pen Script', cursive", fontSize: 'clamp(16px, 5vw, 26px)', color: '#1b5e20', fontWeight: '700', lineHeight: '1', marginTop: '2px', whiteSpace: 'nowrap' }}>에스알마트</span>
         </div>
-        {user && currentStore && (
+        {user && currentStore && !isOwner && (
           <span style={{ fontSize: 12, color: '#178a2d', fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 100 }}>
             🏪 {currentStore.name}
           </span>
+        )}
+        {/* 오너 전용 — 오너는 가입점포가 없어(전 매장 관리자) 손님 화면을 검증하려면 매장을
+            직접 골라야 한다. "미리보기" 배지를 항상 같이 붙여 실제 손님 계정으로 착각하지
+            않게 한다 — 세션 동안 선택 유지(StoreContext, sessionStorage). */}
+        {isOwner && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+            <span style={{ fontSize: 10, fontWeight: 800, color: '#e65100', background: '#fff3e0', padding: '2px 6px', borderRadius: 6, whiteSpace: 'nowrap' }}>미리보기</span>
+            <select
+              value={ownerViewStoreId || 1}
+              onChange={(e) => setOwnerViewStoreId(Number(e.target.value))}
+              style={{ fontSize: 12, fontWeight: 700, color: '#178a2d', background: 'var(--primary-light)', border: '1.5px solid var(--primary)', borderRadius: 8, padding: '3px 6px', maxWidth: 110, fontFamily: 'inherit' }}
+            >
+              {stores.map(s => (
+                <option key={s.id} value={s.id}>🏪 {s.name}</option>
+              ))}
+            </select>
+          </div>
         )}
         {/* 데스크탑 상단 메뉴 (모바일에서는 CSS로 숨김, 하단 탭바 사용) */}
         <nav className="header-nav">

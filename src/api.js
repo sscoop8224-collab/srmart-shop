@@ -57,7 +57,9 @@ export const getOrders = () => API.get('/orders');
 export const getMyOrders = () => API.get('/orders/my');
 export const createOrder = (data) => API.post('/orders', data);
 export const getCoupons = () => API.get('/coupons');
-export const matchZipcode = (zipcode, dong) => API.post('/store/match-zipcode', { zipcode, dong });
+// store_id는 owner 매장 미리보기 전용(useCheckoutFlow가 currentStoreId를 넘김) — 일반 회원은
+// 백엔드가 body.store_id를 무시하고 항상 본인 가입점포로 처리하므로 그냥 같이 보내도 무해하다.
+export const matchZipcode = (zipcode, dong, storeId) => API.post('/store/match-zipcode', { zipcode, dong, store_id: storeId });
 // 주소 커버리지(공개) — 동 이름 우선 + 우편번호. 이 주소를 배송하는 매장 전체 + 추천 1곳 (회원가입 안내용)
 export const getCoverage = (zipcode, dong) => API.post('/store/coverage', { zipcode, dong });
 // FCM 기기 토큰 등록(푸시) — 앱 실행 시. 로그인 상태면 서버가 user·store 연결, 게스트는 store_id 전달.
