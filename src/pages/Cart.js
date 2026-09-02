@@ -43,7 +43,7 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, user, darkMode }) {
   const removeFromCart = (id) => setCart(cart.filter((item) => item.id !== id));
 
   return (
-    <div className="cart-root" style={{ background: bg, minHeight: '100vh', paddingBottom: '180px' }}>
+    <div className="cart-root" style={{ background: bg, minHeight: '100vh', paddingBottom: 'calc(180px + env(safe-area-inset-bottom))' }}>
 
       {/* 헤더 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: headerBg, borderBottom: `1px solid ${borderColor}`, position: 'sticky', top: 0, zIndex: 10 }}>

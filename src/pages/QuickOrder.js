@@ -41,7 +41,7 @@ function QuickOrder({ item, onBack, onPayment, user, darkMode }) {
   }
 
   return (
-    <div className="cart-root" style={{ background: bg, minHeight: '100vh', paddingBottom: '180px' }}>
+    <div className="cart-root" style={{ background: bg, minHeight: '100vh', paddingBottom: 'calc(180px + env(safe-area-inset-bottom))' }}>
       {/* 헤더 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: headerBg, borderBottom: `1px solid ${borderColor}`, position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

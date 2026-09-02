@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getProductReviews, createReview, toggleWishlist, getRelatedProducts, recordRecentView, imgUrl } from '../api';
 import { buildCartItem } from '../utils/cartItem';
+import usePublishBottomBarHeight from '../hooks/usePublishBottomBarHeight';
 
 const getCategoryImage = (large) => {
   switch(large) {
@@ -23,6 +24,8 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
   const [reviewStats, setReviewStats] = useState(null);
   const [related, setRelated] = useState([]);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const cartBarRef = useRef(null);
+  usePublishBottomBarHeight(cartBarRef);
   const [reviewForm, setReviewForm] = useState({ rating: 5, content: '' });
   const [submittingReview, setSubmittingReview] = useState(false);
 
@@ -86,7 +89,7 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
   };
 
   return (
-    <div className="pd-root" style={{ background: bg, minHeight: '100vh', paddingBottom: '120px' }}>
+    <div className="pd-root" style={{ background: bg, minHeight: '100vh', paddingBottom: 'calc(120px + env(safe-area-inset-bottom))' }}>
 
       {/* 헤더 */}
       <div style={{
@@ -291,12 +294,12 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
         </div>
 
         {/* 장바구니 담기 + 바로 주문 (모바일=하단 고정 / 데스크탑=정보 영역 내) */}
-        <div className="pd-cart-bar" style={{
+        <div ref={cartBarRef} className="pd-cart-bar" style={{
           position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-          width: '100%', maxWidth: '480px', padding: '16px 20px 36px',
+          width: '100%', maxWidth: '480px', padding: '16px 20px calc(36px + env(safe-area-inset-bottom))',
           background: cardBg, borderTop: `1px solid ${border}`,
           boxShadow: '0 -4px 20px rgba(0,0,0,0.06)', boxSizing: 'border-box',
-          display: 'flex', gap: '10px',
+          display: 'flex', gap: '10px', zIndex: 'var(--z-fixed-actionbar)',
         }}>
           <button onClick={handleAddToCart} style={{
             flex: 1, padding: '16px',

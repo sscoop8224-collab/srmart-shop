@@ -58,8 +58,10 @@ const Chatbot = () => {
 
   return (
     <>
-      {/* 상담 진입 — 원형 말풍선 버튼 + 아래 라벨(하단 탭 아이콘+글자 구조). 스크롤 시 라벨만 접힘 */}
-      <div style={{ position: 'fixed', bottom: '76px', right: '16px', zIndex: 1001, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+      {/* 상담 진입 — 원형 말풍선 버튼 + 아래 라벨(하단 탭 아이콘+글자 구조). 스크롤 시 라벨만 접힘.
+          bottom은 탭바 높이(68px)+safe-area 기본 여백에, 화면별 하단 액션바가 떠 있으면
+          usePublishBottomBarHeight가 갱신하는 --bottom-bar-extra만큼 추가로 끌어올려 겹치지 않게 한다. */}
+      <div style={{ position: 'fixed', bottom: 'calc(76px + env(safe-area-inset-bottom) + var(--bottom-bar-extra, 0px))', right: '16px', zIndex: 1001, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
         <button
           onClick={() => setIsOpen(!isOpen)}
           aria-label="AI 상담"
@@ -82,7 +84,7 @@ const Chatbot = () => {
       {isOpen && (
         <div style={{
           position: 'fixed',
-          bottom: '136px',
+          bottom: 'calc(136px + env(safe-area-inset-bottom) + var(--bottom-bar-extra, 0px))',
           right: '16px',
           width: 'min(320px, calc(100vw - 32px))',
           height: 'min(460px, calc(100vh - 180px))',

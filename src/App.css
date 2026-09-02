@@ -57,6 +57,13 @@
   --max-width: 100%;
 
   --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* 고정 요소 쌓임 순서: 탭바(100) < 화면별 하단 액션바(150) < 모달류(1000+) */
+  --z-bottom-nav: 100;
+  --z-fixed-actionbar: 150;
+
+  /* 화면별 하단 고정 액션바 실측 높이(usePublishBottomBarHeight가 갱신) — AI 상담 버튼이 구독 */
+  --bottom-bar-extra: 0px;
 }
 
 body {
@@ -212,7 +219,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-around;
-  z-index: 100;
+  z-index: var(--z-bottom-nav);
   box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
   padding-bottom: env(safe-area-inset-bottom);
 }

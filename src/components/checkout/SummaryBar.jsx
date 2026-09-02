@@ -1,6 +1,9 @@
 // 하단 고정 결제 요약(상품금액/할인/배송비/보유쿠폰/포인트/총결제금액/결제버튼).
 // Cart.js 원본(400~493행)에서 그대로 옮김 — 마크업/스타일/문구/버튼 활성화조건 동일.
 // props 는 useCheckoutFlow() 의 반환값을 그대로 펼쳐서 넘기면 된다. onPay 만 호출부(Cart/QuickOrder)가 넘긴다.
+import { useRef } from 'react';
+import usePublishBottomBarHeight from '../../hooks/usePublishBottomBarHeight';
+
 function SummaryBar({
   darkMode,
   totalPrice, appliedCoupon, discountAmount,
@@ -17,9 +20,11 @@ function SummaryBar({
   const inputBg = darkMode ? '#2e2e2e' : '#f8fffe';
   const inputBorder = darkMode ? '#3a3a3a' : '#e8faf3';
   const fixedBg = darkMode ? '#1a1a1a' : 'white';
+  const barRef = useRef(null);
+  usePublishBottomBarHeight(barRef);
 
   return (
-    <div className="cart-checkout" style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: fixedBg, padding: '16px 20px 36px', borderTop: `1px solid ${borderColor}`, boxShadow: '0 -4px 20px rgba(0,0,0,0.08)' }}>
+    <div ref={barRef} className="cart-checkout" style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: fixedBg, padding: '16px 20px calc(36px + env(safe-area-inset-bottom))', borderTop: `1px solid ${borderColor}`, boxShadow: '0 -4px 20px rgba(0,0,0,0.08)', zIndex: 'var(--z-fixed-actionbar)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
         <span style={{ fontSize: '13px', color: subTextColor }}>상품 금액</span>
         <span style={{ fontSize: '13px', color: textColor, fontWeight: '600' }}>₩{totalPrice.toLocaleString()}</span>
