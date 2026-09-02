@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useDialog } from '../DialogContext';
 
 function Members({ users, setUsers, goBack, darkMode }) {
+  const { notify, confirm } = useDialog();
   const [search, setSearch] = useState('');
   const [editId, setEditId] = useState(null);
   const [editGrade, setEditGrade] = useState('');
@@ -32,9 +34,9 @@ function Members({ users, setUsers, goBack, darkMode }) {
     setEditId(null);
   };
 
-  const handleDelete = (index) => {
-    if (users[index].grade === '관리자' || ['owner', 'store_manager'].includes(users[index].role)) { alert('관리자 계정은 삭제할 수 없어요!'); return; }
-    if (window.confirm(users[index].name + '님을 삭제할까요?')) {
+  const handleDelete = async (index) => {
+    if (users[index].grade === '관리자' || ['owner', 'store_manager'].includes(users[index].role)) { notify('관리자 계정은 삭제할 수 없어요!'); return; }
+    if (await confirm(users[index].name + '님을 삭제할까요?')) {
       setUsers(users.filter((_, i) => i !== index));
     }
   };

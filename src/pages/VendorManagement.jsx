@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import API from '../api';
+import { useDialog } from '../DialogContext';
 
 const G = 'var(--primary)';
 const GD = 'var(--primary-dark)';
@@ -15,6 +16,7 @@ const PAYMENT_METHODS = ['현금', '카드', '계좌이체', '외상', '어음']
 const FILTERS = ['전체', '거래중', '거래중지'];
 
 export default function VendorManagement({ goBack, darkMode }) {
+  const { notify, confirm } = useDialog();
   const dark        = darkMode;
   const bg          = dark ? '#1a1a1a' : '#f8f9fa';
   const cardBg      = dark ? '#2a2a2a' : '#ffffff';
@@ -65,21 +67,21 @@ export default function VendorManagement({ goBack, darkMode }) {
   };
 
   const handleSave = async () => {
-    if (!form.name.trim()) { alert('거래처명을 입력해주세요!'); return; }
+    if (!form.name.trim()) { notify('거래처명을 입력해주세요!'); return; }
     setSaving(true);
     try {
       if (editTarget) await API.put(`/vendors/${editTarget.id}`, form);
       else await API.post('/vendors', form);
       setShowModal(false);
       fetchVendors();
-    } catch { alert('저장 중 오류가 발생했어요.'); }
+    } catch { notify('저장 중 오류가 발생했어요.'); }
     finally { setSaving(false); }
   };
 
   const handleDelete = async (v) => {
-    if (!window.confirm(`"${v.name}" 거래처를 삭제할까요?`)) return;
+    if (!(await confirm(`"${v.name}" 거래처를 삭제할까요?`))) return;
     try { await API.delete(`/vendors/${v.id}`); fetchVendors(); }
-    catch { alert('삭제 중 오류가 발생했어요.'); }
+    catch { notify('삭제 중 오류가 발생했어요.'); }
   };
 
   const filtered = vendors

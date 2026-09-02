@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useDialog } from '../DialogContext';
 
 function Notice({ notices, setNotices, isAdmin, goBack, goToHome, darkMode }) {
+  const { notify, confirm } = useDialog();
   const [form, setForm] = useState({ title: '', content: '' });
   const [expanded, setExpanded] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -15,15 +17,15 @@ function Notice({ notices, setNotices, isAdmin, goBack, goToHome, darkMode }) {
   const inputBorder = darkMode ? '#3a3a3a' : 'var(--primary-light)';
 
   const handleAdd = () => {
-    if (!form.title || !form.content) { alert('제목과 내용을 입력해주세요!'); return; }
+    if (!form.title || !form.content) { notify('제목과 내용을 입력해주세요!'); return; }
     setNotices([{ id: Date.now(), title: form.title, content: form.content, date: new Date().toLocaleDateString('ko-KR') }, ...notices]);
     setForm({ title: '', content: '' });
     setShowForm(false);
-    alert('공지사항이 등록됐어요! 😊');
+    notify('공지사항이 등록됐어요! 😊');
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('정말 삭제할까요?')) setNotices(notices.filter((n) => n.id !== id));
+  const handleDelete = async (id) => {
+    if (await confirm('정말 삭제할까요?')) setNotices(notices.filter((n) => n.id !== id));
   };
 
   const inputStyle = {

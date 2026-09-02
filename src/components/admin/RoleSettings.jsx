@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Sidebar from '../layout/Sidebar';
+import { useDialog } from '../../DialogContext';
 
 // 기본 권한 설정 (처음 실행 시 적용)
 const DEFAULT_PERMISSIONS = {
@@ -42,6 +43,7 @@ const DARK = {
 };
 
 export default function RoleSettings({ setPage, dark, setDark, user }) {
+  const { confirm } = useDialog();
   const c = dark ? DARK : LIGHT;
 
   const [perms, setPerms] = useState(() => {
@@ -67,8 +69,8 @@ export default function RoleSettings({ setPage, dark, setDark, user }) {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const handleReset = () => {
-    if (window.confirm('기본값으로 초기화할까요?')) {
+  const handleReset = async () => {
+    if (await confirm('기본값으로 초기화할까요?')) {
       setPerms(DEFAULT_PERMISSIONS);
       localStorage.setItem('srmart_role_perms', JSON.stringify(DEFAULT_PERMISSIONS));
       setSaved(true);

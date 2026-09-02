@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { imgUrl } from '../../api';
 import Sidebar from '../layout/Sidebar';
+import { useDialog } from '../../DialogContext';
 
 const sg = 'var(--primary)';
 const sgd = '#009a58';
@@ -152,6 +153,7 @@ function CameraScanner({ onDetected, c, s }) {
 // 재고 실사 모드
 // =============================================
 function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose }) {
+  const { notify, confirm } = useDialog();
   const [scanMode, setScanMode] = useState('barcode');
   const [barcodeInput, setBarcodeInput] = useState('');
   const [manualSearch, setManualSearch] = useState('');
@@ -198,9 +200,9 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
   const updateQty = (id, val) => { const n = parseInt(val); if (isNaN(n) || n < 0) return; setScanList(prev => prev.map(i => i.id === id ? { ...i, newStock: n } : i)); };
   const removeFromList = (id) => setScanList(prev => prev.filter(i => i.id !== id));
 
-  const saveAll = () => {
-    if (scanList.length === 0) return alert('실사된 상품이 없어요');
-    if (!window.confirm(`총 ${scanList.length}개 상품의 재고를 업데이트하시겠어요?`)) return;
+  const saveAll = async () => {
+    if (scanList.length === 0) return notify('실사된 상품이 없어요');
+    if (!(await confirm(`총 ${scanList.length}개 상품의 재고를 업데이트하시겠어요?`))) return;
     if (setRawProducts) {
       setRawProducts(prev => prev.map(p => {
         const scanned = scanList.find(i => i.id === p.id);
@@ -208,7 +210,7 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
         return p;
       }));
     }
-    alert(`✅ 실사 완료! ${scanList.length}개 상품 재고가 업데이트됐어요.`);
+    notify(`✅ 실사 완료! ${scanList.length}개 상품 재고가 업데이트됐어요.`);
     onClose();
   };
 
@@ -279,7 +281,7 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ padding: '12px 20px', borderBottom: `1px solid ${c.cardBorder}`, background: c.cardBg, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: c.textPrimary }}>실사 목록 <span style={{ color: c.textTertiary, fontWeight: 400, fontSize: 12 }}>({scanList.length}개)</span></div>
-            {scanList.length > 0 && <button style={{ ...s.actionBtn, color: '#a32d2d', borderColor: '#f09595', fontSize: 11 }} onClick={() => { if (window.confirm('실사 목록을 초기화하시겠어요?')) setScanList([]); }}>목록 초기화</button>}
+            {scanList.length > 0 && <button style={{ ...s.actionBtn, color: '#a32d2d', borderColor: '#f09595', fontSize: 11 }} onClick={async () => { if (await confirm('실사 목록을 초기화하시겠어요?')) setScanList([]); }}>목록 초기화</button>}
           </div>
           <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
             {scanList.length === 0 ? (
@@ -315,7 +317,7 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
           {scanList.length > 0 && (
             <div style={{ padding: '12px 16px', borderTop: `1px solid ${c.cardBorder}`, background: c.cardBg, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <div style={{ flex: 1, fontSize: 12, color: c.textSecondary, display: 'flex', alignItems: 'center' }}>총 {scanList.length}개 상품 · 재고 변경 예정</div>
-              <button style={s.btn} onClick={() => { if (window.confirm('실사 목록을 초기화하시겠어요?')) setScanList([]); }}>초기화</button>
+              <button style={s.btn} onClick={async () => { if (await confirm('실사 목록을 초기화하시겠어요?')) setScanList([]); }}>초기화</button>
               <button style={s.btnPrimary} onClick={saveAll}>💾 실사 결과 저장</button>
             </div>
           )}
@@ -329,6 +331,7 @@ function StockTakingMode({ c, s, dark, inv, rawProducts, setRawProducts, onClose
 // 엑셀 업로드 모달
 // =============================================
 function ExcelUploadModal({ c, s, largeCategories, setRawProducts, onClose }) {
+  const { notify, confirm } = useDialog();
   const [preview, setPreview] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -378,17 +381,17 @@ function ExcelUploadModal({ c, s, largeCategories, setRawProducts, onClose }) {
     } finally { setLoading(false); e.target.value = ''; }
   };
 
-  const registerAll = () => {
+  const registerAll = async () => {
     const valid = preview.filter(p => p.valid);
-    if (valid.length === 0) return alert('등록 가능한 상품이 없어요');
-    if (!window.confirm(`총 ${valid.length}개 상품을 등록하시겠어요?`)) return;
+    if (valid.length === 0) return notify('등록 가능한 상품이 없어요');
+    if (!(await confirm(`총 ${valid.length}개 상품을 등록하시겠어요?`))) return;
     setRawProducts(prev => [...prev, ...valid.map(p => ({
       id: Date.now() + Math.random(), name: p.name, price: p.price, large: p.large,
       medium: '', small: '', stock: p.stock, status: p.status === '판매중지' ? '판매중지' : '판매중',
       isSoldOut: p.status === '판매중지', barcode: p.barcode, images: [], image: null,
       sold: 0, rating: 0, spec: p.spec, unit: p.unit, isAdult: p.isAdult,
     }))]);
-    alert(`✅ ${valid.length}개 상품이 등록됐어요!`);
+    notify(`✅ ${valid.length}개 상품이 등록됐어요!`);
     onClose();
   };
 
@@ -458,6 +461,7 @@ function ExcelUploadModal({ c, s, largeCategories, setRawProducts, onClose }) {
 // ProductManagement — 상품 관리
 // =============================================
 export function ProductManagement({ setPage, dark, setDark, products: rawProducts = [], setProducts: setRawProducts, categories = [], user }) {
+  const { notify, confirm } = useDialog();
   const c = dark ? DARK : LIGHT;
   const s = makeStyles(c);
   const fileInputRef = useRef(null);
@@ -499,8 +503,8 @@ export function ProductManagement({ setPage, dark, setDark, products: rawProduct
   };
 
   const save = () => {
-    if (!form.name.trim()) return alert('상품명을 입력해주세요');
-    if (!form.price) return alert('판매가를 입력해주세요');
+    if (!form.name.trim()) return notify('상품명을 입력해주세요');
+    if (!form.price) return notify('판매가를 입력해주세요');
     if (setRawProducts) {
       if (editing) {
         setRawProducts(prev => prev.map(p => p.id === editing ? {
@@ -522,12 +526,12 @@ export function ProductManagement({ setPage, dark, setDark, products: rawProduct
     setShowModal(false);
   };
 
-  const del = id => { if (window.confirm('삭제하시겠습니까?')) { if (setRawProducts) setRawProducts(prev => prev.filter(p => p.id !== id)); } };
+  const del = async id => { if (await confirm('삭제하시겠습니까?')) { if (setRawProducts) setRawProducts(prev => prev.filter(p => p.id !== id)); } };
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     const remaining = 5 - form.images.length;
-    if (remaining <= 0) return alert('이미지는 최대 5장까지 등록할 수 있어요');
+    if (remaining <= 0) return notify('이미지는 최대 5장까지 등록할 수 있어요');
     files.slice(0, remaining).forEach(file => {
       const reader = new FileReader();
       reader.onload = ev => setForm(prev => ({ ...prev, images: [...prev.images, { url: ev.target.result, name: file.name }] }));
@@ -759,6 +763,7 @@ const STOCK_STYLE = {
 };
 
 export function InventoryManagement({ setPage, dark, setDark, products: rawProducts = [], setProducts: setRawProducts, user }) {
+  const { notify, confirm } = useDialog();
   const c = dark ? DARK : LIGHT;
   const s = makeStyles(c);
 
@@ -792,26 +797,26 @@ export function InventoryManagement({ setPage, dark, setDark, products: rawProdu
 
   const processReceive = () => {
     const q = parseInt(qty);
-    if (!q || q <= 0) return alert('수량을 입력해주세요');
+    if (!q || q <= 0) return notify('수량을 입력해주세요');
     if (setRawProducts) {
       setRawProducts(prev => prev.map(p => p.id === selected.id ? { ...p, stock: (p.stock ?? 0) + q, lastIn: new Date().toLocaleDateString('ko-KR'), status: '판매중', isSoldOut: false } : p));
     }
     setSelected(null); setQty('');
-    alert(`✅ 입고 처리 완료! (+${q}개)`);
+    notify(`✅ 입고 처리 완료! (+${q}개)`);
   };
 
-  const processSoldout = () => {
-    if (window.confirm(`'${selected.name}'을(를) 강제 품절 처리하시겠어요?`)) {
+  const processSoldout = async () => {
+    if (await confirm(`'${selected.name}'을(를) 강제 품절 처리하시겠어요?`)) {
       if (setRawProducts) {
         setRawProducts(prev => prev.map(p => p.id === selected.id ? { ...p, stock: 0, isSoldOut: true, status: '판매중지', soldoutReason: soldoutReason || '재고 소진' } : p));
       }
       setSelected(null); setSoldoutReason('');
-      alert(`⛔ 품절 처리 완료!`);
+      notify(`⛔ 품절 처리 완료!`);
     }
   };
 
-  const cancelSoldout = (item) => {
-    if (window.confirm(`'${item.name}' 품절을 해제하시겠어요?`)) {
+  const cancelSoldout = async (item) => {
+    if (await confirm(`'${item.name}' 품절을 해제하시겠어요?`)) {
       if (setRawProducts) setRawProducts(prev => prev.map(p => p.id === item.id ? { ...p, isSoldOut: false, status: '판매중' } : p));
     }
   };

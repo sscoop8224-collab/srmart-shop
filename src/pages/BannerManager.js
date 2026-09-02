@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useDialog } from '../DialogContext';
 
 const BG_OPTIONS = [
   { label: '그린', value: 'linear-gradient(135deg, var(--primary), var(--primary-dark))' },
@@ -10,6 +11,7 @@ const BG_OPTIONS = [
 ];
 
 function BannerManager({ banners, setBanners, categories, goBack, darkMode }) {
+  const { notify, confirm } = useDialog();
   const [form, setForm] = useState({ label: '', title: '', sub: '', emoji: '🛒', bg: BG_OPTIONS[0].value, filter: '' });
   const [showForm, setShowForm] = useState(false);
 
@@ -28,16 +30,16 @@ function BannerManager({ banners, setBanners, categories, goBack, darkMode }) {
   };
 
   const handleAdd = () => {
-    if (!form.label || !form.title) { alert('라벨과 제목을 입력해주세요!'); return; }
+    if (!form.label || !form.title) { notify('라벨과 제목을 입력해주세요!'); return; }
     setBanners([...banners, { id: Date.now(), label: form.label, title: form.title, sub: form.sub, emoji: form.emoji, bg: form.bg, filter: form.filter || null }]);
     setForm({ label: '', title: '', sub: '', emoji: '🛒', bg: BG_OPTIONS[0].value, filter: '' });
     setShowForm(false);
-    alert('배너가 등록됐어요! 😊');
+    notify('배너가 등록됐어요! 😊');
   };
 
-  const handleDelete = (id) => {
-    if (banners.length <= 1) { alert('배너는 최소 1개 이상 있어야 해요!'); return; }
-    if (window.confirm('정말 삭제할까요?')) setBanners(banners.filter((b) => b.id !== id));
+  const handleDelete = async (id) => {
+    if (banners.length <= 1) { notify('배너는 최소 1개 이상 있어야 해요!'); return; }
+    if (await confirm('정말 삭제할까요?')) setBanners(banners.filter((b) => b.id !== id));
   };
 
   const moveUp = (index) => {

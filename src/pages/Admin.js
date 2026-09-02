@@ -2,14 +2,16 @@ import { useState } from 'react';
 import { imgUrl } from '../api';
 import CategoryManager from './CategoryManager';
 import BarcodeQRScanner, { ScanButtonIcon } from '../components/common/BarcodeQRScanner';
+import { useDialog } from '../DialogContext';
 
 function ImageUploadMulti({ images, onImagesChange, darkMode }) {
+  const { notify } = useDialog();
   const handleAdd = (e) => {
     const files = Array.from(e.target.files);
     const remaining = 5 - images.length;
     const toAdd = files.slice(0, remaining);
     toAdd.forEach((file) => {
-      if (file.size > 5 * 1024 * 1024) { alert('이미지 크기는 5MB 이하만 가능해요!'); return; }
+      if (file.size > 5 * 1024 * 1024) { notify('이미지 크기는 5MB 이하만 가능해요!'); return; }
       const reader = new FileReader();
       reader.onloadend = () => { onImagesChange((prev) => [...prev, reader.result]); };
       reader.readAsDataURL(file);
@@ -62,6 +64,7 @@ const selectStyle = {
 };
 
 function Admin({ products, setProducts, categories, setCategories, messages, setMessages, goBack, darkMode }) {
+  const { notify, confirm } = useDialog();
   const bg        = darkMode ? '#1a1a1a' : 'var(--primary-light)';
   const cardBg    = darkMode ? '#2a2a2a' : '#ffffff';
   const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
@@ -107,7 +110,7 @@ function Admin({ products, setProducts, categories, setCategories, messages, set
   const handleCancelEdit = () => { setEditId(null); setForm({ ...emptyForm }); };
 
   const handleSubmit = () => {
-    if (!form.name || !form.price || !form.large) { alert('상품명, 가격, 대분류는 필수예요!'); return; }
+    if (!form.name || !form.price || !form.large) { notify('상품명, 가격, 대분류는 필수예요!'); return; }
     const productData = {
       name: form.name, price: Number(form.price), barcode: form.barcode,
       large: form.large, medium: form.medium, small: form.small,
@@ -117,24 +120,24 @@ function Admin({ products, setProducts, categories, setCategories, messages, set
     };
     if (editId !== null) {
       setProducts(products.map((p) => p.id === editId ? { ...p, ...productData } : p));
-      alert('상품이 수정됐어요! 😊');
+      notify('상품이 수정됐어요! 😊');
       setEditId(null);
     } else {
       setProducts([...products, { id: Date.now(), ...productData }]);
-      alert('상품이 등록됐어요! 😊');
+      notify('상품이 등록됐어요! 😊');
     }
     setForm({ ...emptyForm });
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('정말 삭제할까요?')) setProducts(products.filter((p) => p.id !== id));
+  const handleDelete = async (id) => {
+    if (await confirm('정말 삭제할까요?')) setProducts(products.filter((p) => p.id !== id));
   };
 
   const handleToggleSoldOut = (id) => {
     setProducts(products.map((p) => p.id === id ? { ...p, isSoldOut: !p.isSoldOut } : p));
   };
 
-  const handleMsgSave = () => { setMessages(msgForm); alert('문구가 저장됐어요! 😊'); };
+  const handleMsgSave = () => { setMessages(msgForm); notify('문구가 저장됐어요! 😊'); };
 
   const selectedLarge = categories.find((c) => c.name === form.large);
   const selectedMedium = selectedLarge && selectedLarge.children.find((m) => m.name === form.medium);

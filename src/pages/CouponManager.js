@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useDialog } from '../DialogContext';
 
 const COUPON_TARGETS = [
   { value: 'all', label: '전체 회원' },
@@ -14,6 +15,7 @@ const emptyForm = {
 };
 
 function CouponManager({ coupons, setCoupons, goBack, darkMode }) {
+  const { notify, confirm } = useDialog();
   const [form, setForm] = useState({ ...emptyForm });
   const [showForm, setShowForm] = useState(false);
   const [editCode, setEditCode] = useState(null);
@@ -33,8 +35,8 @@ function CouponManager({ coupons, setCoupons, goBack, darkMode }) {
   };
 
   const handleAdd = () => {
-    if (!form.code || !form.discount || !form.description) { alert('코드, 할인값, 설명은 필수예요!'); return; }
-    if (!editCode && coupons.find((c) => c.code === form.code.toUpperCase())) { alert('이미 존재하는 쿠폰 코드예요!'); return; }
+    if (!form.code || !form.discount || !form.description) { notify('코드, 할인값, 설명은 필수예요!'); return; }
+    if (!editCode && coupons.find((c) => c.code === form.code.toUpperCase())) { notify('이미 존재하는 쿠폰 코드예요!'); return; }
     const newCoupon = {
       code: form.code.toUpperCase(), discount: Number(form.discount), type: form.type,
       description: form.description, target: form.target, startDate: form.startDate,
@@ -46,10 +48,10 @@ function CouponManager({ coupons, setCoupons, goBack, darkMode }) {
     };
     if (editCode) {
       setCoupons(coupons.map((c) => c.code === editCode ? newCoupon : c));
-      alert('쿠폰이 수정됐어요! 😊');
+      notify('쿠폰이 수정됐어요! 😊');
     } else {
       setCoupons([...coupons, newCoupon]);
-      alert('쿠폰이 등록됐어요! 😊');
+      notify('쿠폰이 등록됐어요! 😊');
     }
     setForm({ ...emptyForm }); setShowForm(false); setEditCode(null);
   };
@@ -62,7 +64,7 @@ function CouponManager({ coupons, setCoupons, goBack, darkMode }) {
   };
 
   const handleCancel = () => { setForm({ ...emptyForm }); setShowForm(false); setEditCode(null); };
-  const handleDelete = (code) => { if (window.confirm('정말 삭제할까요?')) setCoupons(coupons.filter((c) => c.code !== code)); };
+  const handleDelete = async (code) => { if (await confirm('정말 삭제할까요?')) setCoupons(coupons.filter((c) => c.code !== code)); };
   const handleToggle = (code) => { setCoupons(coupons.map((c) => c.code === code ? { ...c, isActive: !c.isActive } : c)); };
 
   const isExpired = (coupon) => coupon.endDate && new Date(coupon.endDate) < new Date();

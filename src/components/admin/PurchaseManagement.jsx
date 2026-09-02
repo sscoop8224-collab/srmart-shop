@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Sidebar from '../layout/Sidebar';
+import { useDialog } from '../../DialogContext';
 
 const sg = 'var(--primary)';
 const sgd = '#009a58';
@@ -58,6 +59,7 @@ const TABS = [
 // 검수 입고 탭
 // =============================================
 function InspectTab({ c, s, products, setProducts, suppliers, setPurchaseHistory }) {
+  const { notify, confirm } = useDialog();
   const [scanMode, setScanMode] = useState('barcode');
   const [barcodeInput, setBarcodeInput] = useState('');
   const [manualSearch, setManualSearch] = useState('');
@@ -112,10 +114,10 @@ function InspectTab({ c, s, products, setProducts, suppliers, setPurchaseHistory
   const removeFromList = (id) => setScanList(prev => prev.filter(i => i.id !== id));
   const totalAmount = scanList.reduce((sum, i) => sum + i.costPrice * i.qty, 0);
 
-  const saveInspect = () => {
-    if (scanList.length === 0) return alert('검수 상품이 없어요');
-    if (!selectedSupplier) return alert('거래처를 선택해주세요');
-    if (!window.confirm(`총 ${scanList.length}개 품목을 입고 처리하시겠어요?`)) return;
+  const saveInspect = async () => {
+    if (scanList.length === 0) return notify('검수 상품이 없어요');
+    if (!selectedSupplier) return notify('거래처를 선택해주세요');
+    if (!(await confirm(`총 ${scanList.length}개 품목을 입고 처리하시겠어요?`))) return;
     setProducts(prev => prev.map(p => {
       const item = scanList.find(i => i.id === p.id);
       if (item) return { ...p, stock: (p.stock ?? 0) + item.qty, lastIn: new Date().toLocaleDateString('ko-KR'), status: '판매중', isSoldOut: false };
@@ -128,7 +130,7 @@ function InspectTab({ c, s, products, setProducts, suppliers, setPurchaseHistory
       status: payType === '외상' ? '미수금' : '완료',
     };
     setPurchaseHistory(prev => [record, ...prev]);
-    alert(`✅ 입고 완료! ${scanList.length}개 품목, 총 ${totalAmount.toLocaleString()}원`);
+    notify(`✅ 입고 완료! ${scanList.length}개 품목, 총 ${totalAmount.toLocaleString()}원`);
     setScanList([]); setMemo(''); setBarcodeInput('');
   };
 
@@ -199,7 +201,7 @@ function InspectTab({ c, s, products, setProducts, suppliers, setPurchaseHistory
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: c.cardBg, border: `1px solid ${c.cardBorder}`, borderRadius: 12, overflow: 'hidden' }}>
         <div style={{ padding: '12px 16px', borderBottom: `1px solid ${c.cardBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: c.textPrimary }}>검수 목록 <span style={{ fontSize: 12, color: c.textTertiary, fontWeight: 400 }}>({scanList.length}개 품목)</span></div>
-          {scanList.length > 0 && <button style={{ ...s.actionBtn, color: '#a32d2d', borderColor: '#f09595', fontSize: 11 }} onClick={() => { if (window.confirm('목록을 초기화할까요?')) setScanList([]); }}>초기화</button>}
+          {scanList.length > 0 && <button style={{ ...s.actionBtn, color: '#a32d2d', borderColor: '#f09595', fontSize: 11 }} onClick={async () => { if (await confirm('목록을 초기화할까요?')) setScanList([]); }}>초기화</button>}
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
           {scanList.length === 0 ? (
@@ -251,6 +253,7 @@ function InspectTab({ c, s, products, setProducts, suppliers, setPurchaseHistory
 // 거래처 관리 탭
 // =============================================
 function SuppliersTab({ c, s, suppliers, setSuppliers }) {
+  const { notify, confirm } = useDialog();
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ name: '', contact: '', phone: '', email: '', address: '', memo: '' });
@@ -259,7 +262,7 @@ function SuppliersTab({ c, s, suppliers, setSuppliers }) {
   const openEdit = (s2) => { setEditing(s2.id); setForm({ name: s2.name, contact: s2.contact, phone: s2.phone, email: s2.email, address: s2.address, memo: s2.memo }); setShowModal(true); };
 
   const save = () => {
-    if (!form.name.trim()) return alert('거래처명을 입력해주세요');
+    if (!form.name.trim()) return notify('거래처명을 입력해주세요');
     if (editing) {
       setSuppliers(prev => prev.map(s2 => s2.id === editing ? { ...s2, ...form } : s2));
     } else {
@@ -268,7 +271,7 @@ function SuppliersTab({ c, s, suppliers, setSuppliers }) {
     setShowModal(false);
   };
 
-  const del = (id) => { if (window.confirm('삭제하시겠어요?')) setSuppliers(prev => prev.filter(s2 => s2.id !== id)); };
+  const del = async (id) => { if (await confirm('삭제하시겠어요?')) setSuppliers(prev => prev.filter(s2 => s2.id !== id)); };
 
   return (
     <div>
@@ -452,6 +455,7 @@ function HistoryTab({ c, s, purchaseHistory, suppliers }) {
 // ✅ 반품 관리 탭 — 신규
 // =============================================
 function ReturnsTab({ c, s, products, setProducts, purchaseHistory, suppliers, setReturnHistory, returnHistory }) {
+  const { notify, confirm } = useDialog();
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [returnItems, setReturnItems] = useState([]);
   const [returnReason, setReturnReason] = useState('불량품');
@@ -486,10 +490,10 @@ function ReturnsTab({ c, s, products, setProducts, purchaseHistory, suppliers, s
 
   const totalReturnAmount = returnItems.reduce((sum, i) => sum + i.costPrice * i.returnQty, 0);
 
-  const saveReturn = () => {
+  const saveReturn = async () => {
     const hasReturn = returnItems.some(i => i.returnQty > 0);
-    if (!hasReturn) return alert('반품 수량을 입력해주세요');
-    if (!window.confirm(`반품 처리하시겠어요? 총 ₩${totalReturnAmount.toLocaleString()} 반품됩니다.`)) return;
+    if (!hasReturn) return notify('반품 수량을 입력해주세요');
+    if (!(await confirm(`반품 처리하시겠어요? 총 ₩${totalReturnAmount.toLocaleString()} 반품됩니다.`))) return;
 
     // 재고 차감
     setProducts(prev => prev.map(p => {
@@ -512,7 +516,7 @@ function ReturnsTab({ c, s, products, setProducts, purchaseHistory, suppliers, s
     };
     setReturnHistory(prev => [record, ...prev]);
 
-    alert(`✅ 반품 완료! ₩${totalReturnAmount.toLocaleString()} 반품 처리됐어요.`);
+    notify(`✅ 반품 완료! ₩${totalReturnAmount.toLocaleString()} 반품 처리됐어요.`);
     setShowModal(false);
   };
 
@@ -680,13 +684,14 @@ function ReturnsTab({ c, s, products, setProducts, purchaseHistory, suppliers, s
 // 정산 관리 탭
 // =============================================
 function SettlementTab({ c, s, purchaseHistory, setPurchaseHistory, suppliers }) {
+  const { confirm } = useDialog();
   const [supplierFilter, setSupplierFilter] = useState('');
 
   const unpaid = purchaseHistory.filter(r => r.status === '미수금');
   const filtered = unpaid.filter(r => !supplierFilter || r.supplier === supplierFilter);
 
-  const markAsPaid = (id) => {
-    if (window.confirm('이 항목을 완료 처리하시겠어요?')) {
+  const markAsPaid = async (id) => {
+    if (await confirm('이 항목을 완료 처리하시겠어요?')) {
       setPurchaseHistory(prev => prev.map(r => r.id === id ? { ...r, status: '완료', paidAt: new Date().toLocaleString('ko-KR') } : r));
     }
   };

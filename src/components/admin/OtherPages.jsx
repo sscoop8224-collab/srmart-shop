@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Sidebar from '../layout/Sidebar';
+import { useDialog } from '../../DialogContext';
 
 const sg = 'var(--primary)';
 const sgd = '#009a58';
@@ -488,6 +489,7 @@ const ROLE_STYLE = {
 };
 
 function AdminAccountTab({ c, s, dark, users = [], setUsers }) {
+  const { notify, confirm } = useDialog();
   const INIT_ADMINS = [
     { id: 1, name: '이민우', email: 'sscoop@naver.com', role: '슈퍼어드민', joined: '2024.01.01', lastLogin: '2026.05.09', perms: { ...DEFAULT_PERMS['슈퍼어드민'] } },
   ];
@@ -501,9 +503,9 @@ function AdminAccountTab({ c, s, dark, users = [], setUsers }) {
   const handleRoleChange = (role) => { setNewForm(f => ({ ...f, role })); setNewPerms({ ...DEFAULT_PERMS[role] }); };
 
   const addAdmin = () => {
-    if (!newForm.name.trim()) return alert('이름을 입력해주세요');
-    if (!newForm.email.trim()) return alert('이메일을 입력해주세요');
-    if (!newForm.password.trim()) return alert('비밀번호를 입력해주세요');
+    if (!newForm.name.trim()) return notify('이름을 입력해주세요');
+    if (!newForm.email.trim()) return notify('이메일을 입력해주세요');
+    if (!newForm.password.trim()) return notify('비밀번호를 입력해주세요');
     const newAdmin = {
       id: Date.now(), name: newForm.name, email: newForm.email, role: newForm.role,
       joined: new Date().toLocaleDateString('ko-KR'), lastLogin: '-', perms: { ...newPerms },
@@ -514,15 +516,15 @@ function AdminAccountTab({ c, s, dark, users = [], setUsers }) {
     setNewForm({ name: '', email: '', password: '', role: '스태프' });
     setNewPerms({ ...DEFAULT_PERMS['스태프'] });
     setShowAddModal(false);
-    alert('관리자가 추가되었어요!');
+    notify('관리자가 추가되었어요!');
   };
 
   const savePerms = () => {
     setAdmins(prev => prev.map(a => a.id === selectedAdmin.id ? { ...a, perms: { ...selectedAdmin.perms }, role: selectedAdmin.role } : a));
     setShowPermModal(false);
-    alert('권한이 저장되었어요!');
+    notify('권한이 저장되었어요!');
   };
-  const deleteAdmin = (id) => { if (window.confirm('정말 삭제하시겠어요?')) setAdmins(prev => prev.filter(a => a.id !== id)); };
+  const deleteAdmin = async (id) => { if (await confirm('정말 삭제하시겠어요?')) setAdmins(prev => prev.filter(a => a.id !== id)); };
   const togglePerm = (key) => setSelectedAdmin(prev => ({ ...prev, perms: { ...prev.perms, [key]: !prev.perms[key] } }));
 
   const Checkbox = ({ checked, onChange }) => (
@@ -660,6 +662,7 @@ function AdminAccountTab({ c, s, dark, users = [], setUsers }) {
 }
 
 export function Settings({ setPage, dark, setDark, users = [], setUsers, user }) {
+  const { notify } = useDialog();
   const c = dark ? DARK : LIGHT;
   const s = makeStyles(c);
   const [activePage, setActivePage] = useState(0);
@@ -699,7 +702,7 @@ export function Settings({ setPage, dark, setDark, users = [], setUsers, user })
         <div style={s.topbar}>
           <div style={s.topbarTitle}>설정</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button style={s.btnPrimary} onClick={() => alert('저장되었습니다!')}>변경사항 저장</button>
+            <button style={s.btnPrimary} onClick={() => notify('저장되었습니다!')}>변경사항 저장</button>
             <DarkToggle dark={dark} setDark={setDark} />
           </div>
         </div>

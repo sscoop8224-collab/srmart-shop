@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useDialog } from '../DialogContext';
 
 const EVENT_TYPES = [
   { value: '1+1', label: '1+1', desc: '1개 구매시 1개 무료' },
@@ -22,6 +23,7 @@ const emptyForm = {
 };
 
 function EventManager({ products, goBack, darkMode, events, setEvents }) {
+  const { notify, confirm } = useDialog();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ ...emptyForm });
   const [editId, setEditId] = useState(null);
@@ -67,14 +69,14 @@ function EventManager({ products, goBack, darkMode, events, setEvents }) {
   };
 
   const handleSave = () => {
-    if (!form.name) { alert('행사명을 입력해주세요!'); return; }
-    if (form.products.length === 0) { alert('상품을 선택해주세요!'); return; }
-    if (!form.startDate || !form.endDate) { alert('행사 기간을 설정해주세요!'); return; }
+    if (!form.name) { notify('행사명을 입력해주세요!'); return; }
+    if (form.products.length === 0) { notify('상품을 선택해주세요!'); return; }
+    if (!form.startDate || !form.endDate) { notify('행사 기간을 설정해주세요!'); return; }
     if (form.eventType === '묶음가' && (!form.bundleQty || !form.bundlePrice)) {
-      alert('묶음 수량과 가격을 입력해주세요!'); return;
+      notify('묶음 수량과 가격을 입력해주세요!'); return;
     }
     if ((form.eventType === '퍼센트할인' || form.eventType === '정액할인') && !form.discountValue) {
-      alert('할인값을 입력해주세요!'); return;
+      notify('할인값을 입력해주세요!'); return;
     }
 
     const newEvent = {
@@ -85,10 +87,10 @@ function EventManager({ products, goBack, darkMode, events, setEvents }) {
 
     if (editId) {
       setEvents(events.map(e => e.id === editId ? newEvent : e));
-      alert('행사가 수정됐어요! 😊');
+      notify('행사가 수정됐어요! 😊');
     } else {
       setEvents([newEvent, ...events]);
-      alert('행사가 등록됐어요! 😊');
+      notify('행사가 등록됐어요! 😊');
     }
 
     setForm({ ...emptyForm });
@@ -113,14 +115,14 @@ function EventManager({ products, goBack, darkMode, events, setEvents }) {
     setEvents(events.map(e => e.id === id ? { ...e, isActive: !e.isActive } : e));
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('정말 삭제할까요?')) {
+  const handleDelete = async (id) => {
+    if (await confirm('정말 삭제할까요?')) {
       setEvents(events.filter(e => e.id !== id));
     }
   };
 
-  const handleEndNow = (id) => {
-    if (window.confirm('행사를 즉시 종료할까요?')) {
+  const handleEndNow = async (id) => {
+    if (await confirm('행사를 즉시 종료할까요?')) {
       setEvents(events.map(e => e.id === id ? { ...e, endDate: new Date().toISOString().split('T')[0], isActive: false } : e));
     }
   };

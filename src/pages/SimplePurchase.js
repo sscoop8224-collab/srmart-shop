@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import BarcodeQRScanner, { ScanButtonIcon } from '../components/common/BarcodeQRScanner';
+import { useDialog } from '../DialogContext';
 
 function SimplePurchase({ products, setProducts, goBack, darkMode }) {
+  const { notify, confirm } = useDialog();
   const bg          = darkMode ? '#1a1a1a' : '#f8f9fa';
   const cardBg      = darkMode ? '#2a2a2a' : '#ffffff';
   const border      = darkMode ? '#3a3a3a' : '#dee2e6';
@@ -67,8 +69,8 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
   const totalAmount = scanList.reduce((sum, i) => sum + i.costPrice * i.qty, 0);
 
   const saveInspect = () => {
-    if (scanList.length === 0) return alert('검수 상품을 추가해주세요');
-    if (!supplier) return alert('거래처를 선택해주세요');
+    if (scanList.length === 0) return notify('검수 상품을 추가해주세요');
+    if (!supplier) return notify('거래처를 선택해주세요');
 
     if (payType === '매입') {
       // 입고 처리 (재고 증가)
@@ -83,7 +85,7 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
         supplier, items: [...scanList], totalAmount, payType, memo, status: '완료',
       };
       setHistory(prev => [record, ...prev]);
-      alert(`✅ 매입 입고 완료! ${scanList.length}개 품목, ₩${totalAmount.toLocaleString()}`);
+      notify(`✅ 매입 입고 완료! ${scanList.length}개 품목, ₩${totalAmount.toLocaleString()}`);
     } else {
       // 반품 처리 (재고 차감)
       setProducts(prev => prev.map(p => {
@@ -96,7 +98,7 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
         date: new Date().toLocaleString('ko-KR'),
         supplier, items: [...scanList], totalAmount, reason: memo || '반품',
       }, ...prev]);
-      alert(`✅ 반품 출고 완료! ${scanList.length}개 품목, ₩${totalAmount.toLocaleString()}`);
+      notify(`✅ 반품 출고 완료! ${scanList.length}개 품목, ₩${totalAmount.toLocaleString()}`);
     }
 
     setScanList([]); setMemo(''); setSupplier(''); setPayType('매입');
@@ -115,11 +117,11 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
     setReturnItems(prev => prev.map(i => i.id === id ? { ...i, returnQty: Math.min(n, i.qty) } : i));
   };
 
-  const saveReturn = () => {
+  const saveReturn = async () => {
     const hasReturn = returnItems.some(i => i.returnQty > 0);
-    if (!hasReturn) return alert('반품 수량을 입력해주세요');
+    if (!hasReturn) return notify('반품 수량을 입력해주세요');
     const totalReturn = returnItems.reduce((sum, i) => sum + i.costPrice * i.returnQty, 0);
-    if (!window.confirm(`₩${totalReturn.toLocaleString()} 반품 처리할까요?`)) return;
+    if (!(await confirm(`₩${totalReturn.toLocaleString()} 반품 처리할까요?`))) return;
     setProducts(prev => prev.map(p => {
       const item = returnItems.find(i => i.id === p.id && i.returnQty > 0);
       if (item) return { ...p, stock: Math.max(0, (p.stock ?? 0) - item.returnQty) };
@@ -133,7 +135,7 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
       totalAmount: totalReturn,
       reason: returnReason,
     }, ...prev]);
-    alert(`✅ 반품 완료! ₩${totalReturn.toLocaleString()}`);
+    notify(`✅ 반품 완료! ₩${totalReturn.toLocaleString()}`);
     setShowReturnModal(false);
   };
 

@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useDialog } from '../DialogContext';
 
 function CategoryManager({ categories, setCategories, darkMode }) {
+  const { notify, confirm } = useDialog();
   const cardBg      = darkMode ? '#2a2a2a' : 'white';
   const border      = darkMode ? '#3a3a3a' : 'var(--primary-light)';
   const text        = darkMode ? '#f0f0f0' : '#212529';
@@ -33,14 +35,14 @@ function CategoryManager({ categories, setCategories, darkMode }) {
   const cancelEdit = () => { setEditTarget(null); setEditValue(''); };
 
   const saveEditLarge = (oldName) => {
-    if (!editValue.trim()) { alert('이름을 입력해주세요!'); return; }
+    if (!editValue.trim()) { notify('이름을 입력해주세요!'); return; }
     setCategories(categories.map((c) => c.name === oldName ? { ...c, name: editValue.trim() } : c));
     if (openLarge === oldName) setOpenLarge(editValue.trim());
     cancelEdit();
   };
 
   const saveEditMedium = (largeName, oldName) => {
-    if (!editValue.trim()) { alert('이름을 입력해주세요!'); return; }
+    if (!editValue.trim()) { notify('이름을 입력해주세요!'); return; }
     setCategories(categories.map((c) => c.name === largeName
       ? { ...c, children: c.children.map((m) => m.name === oldName ? { ...m, name: editValue.trim() } : m) } : c));
     const key = largeName + '-' + oldName;
@@ -49,7 +51,7 @@ function CategoryManager({ categories, setCategories, darkMode }) {
   };
 
   const saveEditSmall = (largeName, mediumName, oldName) => {
-    if (!editValue.trim()) { alert('이름을 입력해주세요!'); return; }
+    if (!editValue.trim()) { notify('이름을 입력해주세요!'); return; }
     setCategories(categories.map((c) => c.name === largeName
       ? { ...c, children: c.children.map((m) => m.name === mediumName
           ? { ...m, children: m.children.map((s) => s === oldName ? editValue.trim() : s) } : m) } : c));
@@ -57,14 +59,14 @@ function CategoryManager({ categories, setCategories, darkMode }) {
   };
 
   const handleAddLarge = () => {
-    if (!form.large.trim()) { alert('대분류를 입력해주세요!'); return; }
-    if (categories.find((c) => c.name === form.large.trim())) { alert('이미 있는 대분류예요!'); return; }
+    if (!form.large.trim()) { notify('대분류를 입력해주세요!'); return; }
+    if (categories.find((c) => c.name === form.large.trim())) { notify('이미 있는 대분류예요!'); return; }
     setCategories([...categories, { name: form.large.trim(), children: [] }]);
     setForm({ ...form, large: '' });
   };
 
-  const handleDeleteLarge = (n) => {
-    if (window.confirm(n + ' 대분류를 삭제할까요? 하위 카테고리도 모두 삭제돼요!')) {
+  const handleDeleteLarge = async (n) => {
+    if (await confirm(n + ' 대분류를 삭제할까요? 하위 카테고리도 모두 삭제돼요!')) {
       setCategories(categories.filter((c) => c.name !== n)); setOpenLarge(null);
     }
   };
@@ -72,14 +74,14 @@ function CategoryManager({ categories, setCategories, darkMode }) {
   const handleMoveLarge   = (i, d) => setCategories(moveItem(categories, i, d));
 
   const handleAddMedium = (ln) => {
-    if (!form.medium.trim()) { alert('중분류를 입력해주세요!'); return; }
+    if (!form.medium.trim()) { notify('중분류를 입력해주세요!'); return; }
     setCategories(categories.map((c) => c.name === ln
       ? { ...c, children: [...c.children, { name: form.medium.trim(), children: [] }] } : c));
     setForm({ ...form, medium: '' });
   };
 
-  const handleDeleteMedium = (ln, mn) => {
-    if (window.confirm(mn + ' 중분류를 삭제할까요?')) {
+  const handleDeleteMedium = async (ln, mn) => {
+    if (await confirm(mn + ' 중분류를 삭제할까요?')) {
       setCategories(categories.map((c) => c.name === ln
         ? { ...c, children: c.children.filter((m) => m.name !== mn) } : c));
       setOpenMedium(null);
@@ -91,15 +93,15 @@ function CategoryManager({ categories, setCategories, darkMode }) {
       ? { ...c, children: moveItem(c.children, i, d) } : c));
 
   const handleAddSmall = (ln, mn) => {
-    if (!form.small.trim()) { alert('소분류를 입력해주세요!'); return; }
+    if (!form.small.trim()) { notify('소분류를 입력해주세요!'); return; }
     setCategories(categories.map((c) => c.name === ln
       ? { ...c, children: c.children.map((m) => m.name === mn
           ? { ...m, children: [...m.children, form.small.trim()] } : m) } : c));
     setForm({ ...form, small: '' });
   };
 
-  const handleDeleteSmall = (ln, mn, sn) => {
-    if (window.confirm(sn + ' 소분류를 삭제할까요?')) {
+  const handleDeleteSmall = async (ln, mn, sn) => {
+    if (await confirm(sn + ' 소분류를 삭제할까요?')) {
       setCategories(categories.map((c) => c.name === ln
         ? { ...c, children: c.children.map((m) => m.name === mn
             ? { ...m, children: m.children.filter((s) => s !== sn) } : m) } : c));

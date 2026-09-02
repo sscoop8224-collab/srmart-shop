@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import API from '../api';
+import { useDialog } from '../DialogContext';
 
 const PAYMENT_METHODS = ['현금', '카드', '계좌이체'];
 const VIEW_OPTIONS = [
@@ -12,6 +13,7 @@ const formatDate = (date) => date.toISOString().slice(0, 10);
 const parseAmount = (value) => Number(value || 0);
 
 function SalesManagement({ goBack, darkMode }) {
+  const { notify, confirm } = useDialog();
   const bg = darkMode ? '#1a1a1a' : '#f8f9fa';
   const cardBg = darkMode ? '#2a2a2a' : '#ffffff';
   const textColor = darkMode ? '#f0f0f0' : '#212529';
@@ -104,13 +106,13 @@ function SalesManagement({ goBack, darkMode }) {
   };
 
   const handleDelete = async (saleId) => {
-    if (!window.confirm('선택한 매출 기록을 삭제하시겠어요?')) return;
+    if (!(await confirm('선택한 매출 기록을 삭제하시겠어요?'))) return;
     try {
       await API.delete(`/sales/${saleId}`);
       setSales((prev) => prev.filter((sale) => sale.id !== saleId));
     } catch (error) {
       console.error('[SalesManagement] delete failed', error);
-      alert('삭제에 실패했습니다. 다시 시도해주세요.');
+      notify('삭제에 실패했습니다. 다시 시도해주세요.');
     }
   };
 
@@ -148,14 +150,14 @@ function SalesManagement({ goBack, darkMode }) {
       loadSummary();
     } catch (error) {
       console.error('[SalesManagement] edit failed', error);
-      alert('수정에 실패했습니다. 다시 시도해주세요.');
+      notify('수정에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setSaving(false);
     }
   };
 
   const handleCreate = async () => {
-    if (!addForm.product_name.trim()) { alert('상품명을 입력해주세요.'); return; }
+    if (!addForm.product_name.trim()) { notify('상품명을 입력해주세요.'); return; }
     setAdding(true);
     try {
       await API.post('/sales', {
@@ -170,7 +172,7 @@ function SalesManagement({ goBack, darkMode }) {
       loadSummary();
     } catch (error) {
       console.error('[SalesManagement] create failed', error);
-      alert('등록에 실패했습니다. 다시 시도해주세요.');
+      notify('등록에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setAdding(false);
     }

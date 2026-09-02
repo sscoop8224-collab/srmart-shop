@@ -1,7 +1,9 @@
 import { useState, useRef } from 'react';
 import BarcodeQRScanner, { ScanButtonIcon } from '../components/common/BarcodeQRScanner';
+import { useDialog } from '../DialogContext';
 
 function SimpleInventory({ products, setProducts, goBack, darkMode }) {
+  const { notify, confirm } = useDialog();
   const bg        = darkMode ? '#1a1a1a' : 'var(--primary-light)';
   const cardBg    = darkMode ? '#2a2a2a' : 'white';
   const headerBg  = darkMode ? '#222' : 'white';
@@ -26,11 +28,11 @@ function SimpleInventory({ products, setProducts, goBack, darkMode }) {
     setSearch(e.target.value);
   };
 
-  const handleScan = (result) => {
+  const handleScan = async (result) => {
     if (result.type === 'qrcode') {
       const { value } = result;
       if (/^https?:\/\//.test(value)) {
-        if (window.confirm(`QR 링크: ${value}\n\n해당 URL로 이동할까요?`)) {
+        if (await confirm(`QR 링크: ${value}\n\n해당 URL로 이동할까요?`)) {
           window.open(value, '_blank');
         }
         return;
@@ -68,25 +70,25 @@ function SimpleInventory({ products, setProducts, goBack, darkMode }) {
 
   const handleReceive = () => {
     const q = parseInt(qty);
-    if (!q || q <= 0) return alert('수량을 입력해주세요');
+    if (!q || q <= 0) return notify('수량을 입력해주세요');
     setProducts(prev => prev.map(p =>
       p.id === selected.id ? { ...p, stock: (p.stock ?? 0) + q, isSoldOut: false, status: '판매중', lastIn: new Date().toLocaleDateString('ko-KR') } : p
     ));
-    alert(`✅ ${selected.name} +${q}개 입고 완료!`);
+    notify(`✅ ${selected.name} +${q}개 입고 완료!`);
     setSelected(null); setQty('');
   };
 
-  const handleSoldout = () => {
-    if (!window.confirm(`'${selected.name}'을 품절 처리할까요?`)) return;
+  const handleSoldout = async () => {
+    if (!(await confirm(`'${selected.name}'을 품절 처리할까요?`))) return;
     setProducts(prev => prev.map(p =>
       p.id === selected.id ? { ...p, stock: 0, isSoldOut: true, status: '판매중지' } : p
     ));
-    alert(`⛔ ${selected.name} 품절 처리됐어요!`);
+    notify(`⛔ ${selected.name} 품절 처리됐어요!`);
     setSelected(null);
   };
 
-  const handleCancelSoldout = (p) => {
-    if (!window.confirm(`'${p.name}' 품절을 해제할까요?`)) return;
+  const handleCancelSoldout = async (p) => {
+    if (!(await confirm(`'${p.name}' 품절을 해제할까요?`))) return;
     setProducts(prev => prev.map(pr =>
       pr.id === p.id ? { ...pr, isSoldOut: false, status: '판매중' } : pr
     ));
