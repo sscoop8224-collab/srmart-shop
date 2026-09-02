@@ -64,6 +64,21 @@
 
   /* 화면별 하단 고정 액션바 실측 높이(usePublishBottomBarHeight가 갱신) — AI 상담 버튼이 구독 */
   --bottom-bar-extra: 0px;
+
+  /* ===========================
+     시맨틱 토큰 (POS UI-GUIDE 네이밍: bg/card/text/text2/sep/accent)
+     — 값 자체는 위 --white/--gray-*/--primary를 그대로 가리키는 별칭이다.
+     ThemeContext.applyDarkVars()가 다크모드 전환 시 --white/--gray-*만 바꿔치기하므로,
+     이 별칭들도 자동으로 같이 바뀐다 — ThemeContext/DarkModeToggle 코드는 그대로 두고
+     화면 쪽 인라인 style만 이 토큰을 참조하도록 옮기면 된다. accent는 다크모드에서도
+     브랜드 그린 고정(요청 사항) — --primary가 애초에 다크모드에서 안 바뀌므로 자동 충족.
+  =========================== */
+  --bg: var(--gray-100);
+  --card: var(--white);
+  --text: var(--gray-900);
+  --text2: var(--gray-600);
+  --sep: var(--gray-200);
+  --accent: var(--primary);
 }
 
 body {
