@@ -103,6 +103,7 @@ function AppContent() {
   }, []);
 
   // 로딩 구간(스플래시~웹 로드 완료 전): 상태바 초록(#077D3C) + 밝은 아이콘 → 하단 흰 띠 없이 스플래시와 연속.
+  // 이 구간은 다크모드와 무관하게 항상 초록(스플래시 배경과 동일) — 콘텐츠가 아직 안 보이는 구간이라 의도적.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     (async () => {
@@ -117,22 +118,45 @@ function AppContent() {
   // 앱 최초 실행 시 푸시 알림 권한 요청 + FCM 토큰 등록 (네이티브만, 웹은 무시)
   useEffect(() => { initPush(); }, []);
 
+  // 콘텐츠 로드 후(스플래시 종료 이후) 상태바를 다크모드에 맞춤 — 라이트=흰 배경/어두운 아이콘,
+  // 다크=#1a1a1a(홈 헤더의 다크모드 배경과 동일)/밝은 아이콘. setBackgroundColor는 안드로이드 전용
+  // (iOS는 지원 안 함 — overlaysWebView:false에서는 아이콘 색만 바뀌고 배경은 OS가 그림, 배경까지
+  // 맞추려면 나중에 overlaysWebView:true 구조로 바꿔야 함). darkModeRef로 최신값을 훅 없이 참조해
+  // hideSplash(useCallback, deps:[])가 stale closure로 옛 값을 쓰지 않게 한다.
+  const darkModeRef = useRef(darkMode);
+  useEffect(() => { darkModeRef.current = darkMode; }, [darkMode]);
+
+  const applyStatusBarTheme = useCallback(async (dark) => {
+    if (!Capacitor.isNativePlatform()) return;
+    try {
+      if (Capacitor.getPlatform() === 'android') {
+        await StatusBar.setBackgroundColor({ color: dark ? '#1a1a1a' : '#ffffff' });
+      }
+      await StatusBar.setStyle({ style: dark ? Style.Dark : Style.Light });
+    } catch (e) {}
+  }, []);
+
   // 스플래시 제어 — 중복 호출 방지
   const splashHiddenRef = useRef(false);
   const hideSplash = useCallback(async () => {
     if (splashHiddenRef.current || !Capacitor.isNativePlatform()) return;
     splashHiddenRef.current = true;
     try { await SplashScreen.hide(); } catch (e) {}
-    // 로드 완료 → 시스템 바를 콘텐츠(밝은 shop 화면)에 맞게 복귀: 흰 배경 + 어두운 아이콘.
+    // 로드 완료 → 시스템 바를 콘텐츠(현재 다크모드 상태)에 맞게 복귀.
     // 상태바=StatusBar 플러그인, 하단 내비바=네이티브(MainActivity가 'srmart:loaded' 수신 후 전환).
-    try {
-      await StatusBar.setBackgroundColor({ color: '#ffffff' });
-      await StatusBar.setStyle({ style: Style.Light });    // Light=어두운 콘텐츠(흰 배경용)
-    } catch (e) {}
+    await applyStatusBarTheme(darkModeRef.current);
     // 네이티브 로고 스플래시 즉시 종료(초록 종료애니 없이 광고로 바로) + 하단 내비바 콘텐츠용 전환.
     try { window.SrmartNav && window.SrmartNav.releaseSplash(); } catch (e) {}
     try { window.SrmartNav && window.SrmartNav.onContentReady(); } catch (e) {}
-  }, []);
+  }, [applyStatusBarTheme]);
+
+  // 다크모드를 앱 실행 중(스플래시 종료 후)에 토글하면 상태바도 즉시 따라가게 — 재시작 불필요.
+  // 스플래시가 아직 안 끝난 시점의 마운트 최초 실행은 splashHiddenRef가 false라 스킵(그 경우
+  // 초기 색은 hideSplash가 처리) — 그 뒤 darkMode가 바뀔 때만 반응.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || !splashHiddenRef.current) return;
+    applyStatusBarTheme(darkMode);
+  }, [darkMode, applyStatusBarTheme]);
 
   // 스플래시: 네이티브 로고 스플래시를 '광고 이미지가 준비되면'(SplashAd onReady=hideSplash) 내린다.
   // → 로고에서 광고로 바로 전환(중간에 녹색 대기화면이 오래 보이던 문제 제거).
