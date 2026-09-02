@@ -437,7 +437,7 @@ function Login({ onLogin, onGuest }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
                 <div>
-                  <label style={labelStyle}>이름</label>
+                  <label style={labelStyle}>이름 *</label>
                   <input name="name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
                     placeholder="이름을 입력해주세요" style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
                 </div>
@@ -470,7 +470,7 @@ function Login({ onLogin, onGuest }) {
 
                 {/* 배송지 주소 + 배송권역 커버리지 안내 (매장선택 단계) */}
                 <div>
-                  <label style={labelStyle}>배송지 주소</label>
+                  <label style={labelStyle}>배송지 주소 *</label>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                     <input name="address" value={form.address} readOnly
                       placeholder="주소 찾기 버튼을 눌러주세요"
@@ -514,19 +514,19 @@ function Login({ onLogin, onGuest }) {
                 </div>
 
                 <div>
-                  <label style={labelStyle}>아이디</label>
+                  <label style={labelStyle}>아이디 *</label>
                   <input name="username" value={form.username} onChange={e => setForm({ ...form, username: e.target.value })}
                     placeholder="아이디를 입력해주세요" style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
                 </div>
 
                 <div>
-                  <label style={labelStyle}>이메일</label>
+                  <label style={labelStyle}>이메일 *</label>
                   <input name="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
                     placeholder="이메일을 입력해주세요" style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
                 </div>
 
                 <div>
-                  <label style={labelStyle}>비밀번호</label>
+                  <label style={labelStyle}>비밀번호 *</label>
                   <div style={{ position: 'relative' }}>
                     <input ref={pw2Ref} name="password" type={showPw2 ? 'text' : 'password'} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })}
                       placeholder="비밀번호를 입력해주세요" autoComplete="new-password" autoCapitalize="none" autoCorrect="off"
@@ -546,7 +546,7 @@ function Login({ onLogin, onGuest }) {
                 </div>
 
                 <div>
-                  <label style={labelStyle}>주민등록번호 (성인 확인용)</label>
+                  <label style={labelStyle}>주민등록번호 (성인 확인용) *</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <input name="idFront" value={form.idFront}
                       onChange={e => setForm(p => ({ ...p, idFront: e.target.value.replace(/\D/g, '').slice(0, 6) }))}
