@@ -1,4 +1,5 @@
 import { imgUrl } from '../api';
+import { useDialog } from '../DialogContext';
 
 const getCategoryImage = (large) => {
   switch(large) {
@@ -12,6 +13,7 @@ const getCategoryImage = (large) => {
 };
 
 function Wishlist({ wishlist, onProductClick, onAddToCart, onToggleWishlist, goBack, goToHome, darkMode }) {
+  const { notify } = useDialog();
   const bg = darkMode ? '#1a1a1a' : 'var(--primary-light)';
   const cardBg = darkMode ? '#242424' : 'white';
   const headerBg = darkMode ? '#1a1a1a' : 'white';
@@ -22,7 +24,7 @@ function Wishlist({ wishlist, onProductClick, onAddToCart, onToggleWishlist, goB
   const handleAddAll = () => {
     if (wishlist.length === 0) return;
     wishlist.forEach((product) => onAddToCart(product));
-    alert('찜 목록의 모든 상품을 장바구니에 담았어요! 🛒');
+    notify('찜 목록의 모든 상품을 장바구니에 담았어요! 🛒');
   };
 
   return (

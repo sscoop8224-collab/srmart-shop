@@ -4,6 +4,7 @@ import { getItemPrice } from '../utils/pricing';
 import CouponCodeBox from '../components/checkout/CouponCodeBox';
 import AddressBox from '../components/checkout/AddressBox';
 import SummaryBar from '../components/checkout/SummaryBar';
+import { useDialog } from '../DialogContext';
 
 const getCategoryImage = (large) => {
   switch(large) {
@@ -19,6 +20,7 @@ const getCategoryImage = (large) => {
 function Cart({ cart, setCart, onPayment, onHome, goBack, user, darkMode }) {
   // 배송지/쿠폰/포인트/배송권역/합계 계산은 QuickOrder.js 와 공유하는 훅으로 이전됨(useCheckoutFlow).
   const checkout = useCheckoutFlow(cart, { user });
+  const { confirm } = useDialog();
 
   const bg = darkMode ? '#1a1a1a' : 'var(--primary-light)';
   const cardBg = darkMode ? '#242424' : 'white';
@@ -58,7 +60,7 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, user, darkMode }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '13px', color: subTextColor, fontWeight: '600' }}>{cart.length}개 상품</span>
           {cart.length > 0 && (
-            <button onClick={() => { if (window.confirm('장바구니를 비울까요?')) setCart([]); }}
+            <button onClick={async () => { if (await confirm('장바구니를 비울까요?')) setCart([]); }}
               style={{ fontSize: '12px', color: '#ff4757', background: 'var(--accent-light)', border: 'none', borderRadius: '20px', padding: '5px 12px', cursor: 'pointer', fontWeight: '700' }}>
               전체 삭제
             </button>

@@ -1,6 +1,8 @@
 import { useRef } from 'react';
+import { useDialog } from '../DialogContext';
 
 function PrintReceipt({ order, onClose, darkMode }) {
+  const { notify } = useDialog();
   const printRef = useRef(null);
 
   if (!order) return null;
@@ -44,7 +46,7 @@ function PrintReceipt({ order, onClose, darkMode }) {
 
   const handleBluetoothPrint = async () => {
     if (!navigator.bluetooth) {
-      alert('블루투스를 지원하지 않는 기기입니다.\nA4 프린터로 출력해주세요.');
+      notify('블루투스를 지원하지 않는 기기입니다.\nA4 프린터로 출력해주세요.');
       return;
     }
     try {
@@ -112,13 +114,13 @@ function PrintReceipt({ order, onClose, darkMode }) {
       await write(txt('\n\n'));
       await write(CUT);
 
-      alert('영수증이 출력됐어요!');
+      notify('영수증이 출력됐어요!');
       server.disconnect();
     } catch (error) {
       if (error.name === 'NotFoundError') {
-        alert('프린터를 찾을 수 없어요!\n프린터가 켜져 있는지 확인해주세요.');
+        notify('프린터를 찾을 수 없어요!\n프린터가 켜져 있는지 확인해주세요.');
       } else {
-        alert('블루투스 연결에 실패했어요!\nA4 프린터로 출력해주세요.');
+        notify('블루투스 연결에 실패했어요!\nA4 프린터로 출력해주세요.');
       }
     }
   };

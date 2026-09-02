@@ -4,6 +4,7 @@ import { useTheme } from '../ThemeContext';
 import { useAuth } from '../AuthContext';
 import { getMyPoints, getMyActiveCoupons, deleteAccount, SITE } from '../api';
 import API from '../api';
+import { useDialog } from '../DialogContext';
 
 function PwStrengthBar({ password, subTextColor }) {
   if (!password) return null;
@@ -41,6 +42,7 @@ function PwStrengthBar({ password, subTextColor }) {
 function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, isAdmin }) {
   const { darkMode, setDarkMode, resetToSystem } = useTheme();
   const { login: setAuthUser } = useAuth();   // 저장 성공 후 로그인 사용자 정보 갱신(재로그인 없이 반영)
+  const { notify } = useDialog();
   const [myPoints, setMyPoints] = useState(null); // { points, expiring_soon }
   const [myUserCoupons, setMyUserCoupons] = useState([]);
   const [showCouponList, setShowCouponList] = useState(false);
@@ -137,9 +139,9 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
   // ※ 이 엔드포인트는 부분 수정이 아니라 전체 UPDATE 라, 화면에서 안 고치는 username·is_adult 도
   //   현재 값 그대로 함께 보내야 한다(안 보내면 해당 컬럼이 비워진다).
   const saveProfile = async () => {
-    if (!form.name.trim()) return alert('이름을 입력해주세요');
+    if (!form.name.trim()) return notify('이름을 입력해주세요');
     const uid = currentUser?.id || user?.id;
-    if (!uid) return alert('로그인 정보를 확인할 수 없어요. 다시 로그인해주세요.');
+    if (!uid) return notify('로그인 정보를 확인할 수 없어요. 다시 로그인해주세요.');
     setSaveLoading(true); setSaveErr(false); setSaveMsg('');
     try {
       await API.put(`/users/${uid}`, {
@@ -179,7 +181,7 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
   // 가이드에 명시된 동작) — 그 경우 이전 동을 유지하지 않고 '확인 안 됨'으로 비워서 저장한다
   // (다른 주소인데 예전 동이 남아있으면 잘못된 매칭보다 더 나쁨).
   const openAddressSearch = () => {
-    if (!window.daum) { alert('주소 검색 서비스를 불러오는 중이에요!'); return; }
+    if (!window.daum) { notify('주소 검색 서비스를 불러오는 중이에요!'); return; }
     new window.daum.Postcode({
       oncomplete: (data) => setForm(p => ({
         ...p,
@@ -198,7 +200,7 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
       await deleteAccount(deletePassword);
       localStorage.removeItem('srmart_token');
       localStorage.removeItem('srmart_auto_login');
-      alert('회원탈퇴가 완료되었어요. 그동안 이용해주셔서 감사합니다.');
+      await notify('회원탈퇴가 완료되었어요. 그동안 이용해주셔서 감사합니다.');
       window.location.href = '/';
     } catch (err) {
       setDeleteError(err.response?.data?.error || '탈퇴에 실패했어요');
@@ -215,7 +217,7 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
     setPwLoading(true);
     try {
       await API.put('/users/me/password', { currentPassword: pwForm.current, newPassword: pwForm.next });
-      alert('비밀번호가 변경됐어요! 다시 로그인해주세요 😊');
+      await notify('비밀번호가 변경됐어요! 다시 로그인해주세요 😊');
       setPwForm({ current: '', next: '', confirm: '' });
       setShowPwModal(false);
       if (onLogout) onLogout();

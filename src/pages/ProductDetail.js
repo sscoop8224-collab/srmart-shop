@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { getProductReviews, createReview, toggleWishlist, getRelatedProducts, recordRecentView, imgUrl } from '../api';
 import { buildCartItem } from '../utils/cartItem';
 import usePublishBottomBarHeight from '../hooks/usePublishBottomBarHeight';
+import { useDialog } from '../DialogContext';
 
 const getCategoryImage = (large) => {
   switch(large) {
@@ -26,6 +27,7 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
   const [showReviewForm, setShowReviewForm] = useState(false);
   const cartBarRef = useRef(null);
   usePublishBottomBarHeight(cartBarRef);
+  const { notify } = useDialog();
   const [reviewForm, setReviewForm] = useState({ rating: 5, content: '' });
   const [submittingReview, setSubmittingReview] = useState(false);
 
@@ -37,22 +39,22 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
   }, [product?.id]); // eslint-disable-line
 
   const handleWishlist = async () => {
-    if (!user) { alert('로그인이 필요해요!'); return; }
-    try { const r = await toggleWishlist(product.id); setWishlisted(r.data.wishlisted); alert(r.data.message); }
-    catch { alert('오류가 발생했어요.'); }
+    if (!user) { notify('로그인이 필요해요!'); return; }
+    try { const r = await toggleWishlist(product.id); setWishlisted(r.data.wishlisted); notify(r.data.message); }
+    catch { notify('오류가 발생했어요.'); }
   };
 
   const handleSubmitReview = async () => {
-    if (!reviewForm.content.trim()) { alert('리뷰 내용을 입력해주세요!'); return; }
+    if (!reviewForm.content.trim()) { notify('리뷰 내용을 입력해주세요!'); return; }
     setSubmittingReview(true);
     try {
       await createReview({ product_id: product.id, rating: reviewForm.rating, content: reviewForm.content });
-      alert('리뷰가 등록됐어요! 😊');
+      notify('리뷰가 등록됐어요! 😊');
       setShowReviewForm(false);
       setReviewForm({ rating: 5, content: '' });
       const r = await getProductReviews(product.id);
       setReviews(r.data.reviews || []); setReviewStats(r.data.stats);
-    } catch (err) { alert(err.response?.data?.error || '오류가 발생했어요.'); }
+    } catch (err) { notify(err.response?.data?.error || '오류가 발생했어요.'); }
     finally { setSubmittingReview(false); }
   };
 

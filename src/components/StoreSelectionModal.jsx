@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { useStore } from '../StoreContext';
+import { useDialog } from '../DialogContext';
 
 export default function StoreSelectionModal({ onSelected }) {
   const { stores, storesLoading, setGuestStoreId } = useStore();
+  const { notify } = useDialog();
   const [selected, setSelected] = useState('');
 
   const handleConfirm = () => {
     if (!selected) {
-      alert('점포를 선택해주세요!');
+      notify('점포를 선택해주세요!');
       return;
     }
     const storeId = Number(selected);

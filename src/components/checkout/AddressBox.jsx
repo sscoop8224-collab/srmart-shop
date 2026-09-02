@@ -1,6 +1,8 @@
 // 배송지 카드(기본/다른 주소 + Daum 주소검색 + 우편번호/배송권역 확인).
 // Cart.js 원본(299~396행)에서 그대로 옮김 — 마크업/스타일/문구 동일.
 // props 는 useCheckoutFlow() 의 반환값을 그대로 펼쳐서 넘기면 된다.
+import { useDialog } from '../../DialogContext';
+
 function AddressBox({
   darkMode,
   showAddress, setShowAddress,
@@ -11,6 +13,7 @@ function AddressBox({
   checkZipcodeValue,
   matchingZipcode, deliveryInfo,
 }) {
+  const { notify } = useDialog();
   const cardBg = darkMode ? '#242424' : 'white';
   const borderColor = darkMode ? '#2e2e2e' : 'var(--primary-light)';
   const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
@@ -29,7 +32,7 @@ function AddressBox({
   // 경고 쪽에서 부르면(기본주소 모드여도) '다른 주소'로 전환해 방금 검색한 주소가 화면에 그대로
   // 반영되게 한다 — 검색 결과와 화면에 보이는 배송지가 따로 노는 걸 막기 위해.
   const openAddressSearch = (fromWarning) => {
-    if (!window.daum) { alert('주소 검색 서비스를 불러오는 중이에요. 직접 입력해주세요.'); return; }
+    if (!window.daum) { notify('주소 검색 서비스를 불러오는 중이에요. 직접 입력해주세요.'); return; }
     new window.daum.Postcode({
       oncomplete: (data) => {
         if (fromWarning && useDefaultAddress) handleSwitchAddress(false);

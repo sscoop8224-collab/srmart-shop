@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import API from '../api';
+import { useDialog } from '../DialogContext';
 
 // Y5 강제 비밀번호 변경(임시비번, must_change_password=1) — shop 앱 전용 신설 화면.
 // srmart-admin 의 Login.js '강제 비밀번호 변경 모달'과 동일한 흐름을 그대로 미러링한다:
@@ -11,6 +12,7 @@ import API from '../api';
 //   - 성공 시 admin 과 동일하게 토큰을 비우고 재로그인을 유도(서버가 주는 새 정식 토큰을
 //     바로 쓰지 않음 — admin 패턴을 그대로 따라가 로그인 상태 관리 두 갈래를 만들지 않음)
 export default function ForcePasswordChangeModal({ onDone }) {
+  const { notify } = useDialog();
   const [newPw, setNewPw] = useState('');
   const [newPw2, setNewPw2] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -30,7 +32,7 @@ export default function ForcePasswordChangeModal({ onDone }) {
     setLoading(true);
     try {
       await API.post('/auth/admin-change-password', { newPassword: newPw });
-      alert('비밀번호가 변경됐어요! 새 비밀번호로 다시 로그인해주세요.');
+      await notify('비밀번호가 변경됐어요! 새 비밀번호로 다시 로그인해주세요.');
       onDone();
     } catch (err) {
       setError(err.response?.data?.error || '변경에 실패했어요. 잠시 후 다시 시도해주세요.');

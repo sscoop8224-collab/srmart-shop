@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { requestReturn, imgUrl } from '../api';
+import { useDialog } from '../DialogContext';
 
 const getCategoryImage = (large) => {
   switch(large) {
@@ -33,18 +34,19 @@ const TRACKING_URLS = {
 };
 
 function Orders({ orders, goBack }) {
+  const { notify } = useDialog();
   const [returnModal, setReturnModal] = useState(null); // { order, type }
   const [returnReason, setReturnReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const handleReturnSubmit = async () => {
-    if (!returnReason.trim()) { alert('사유를 입력해주세요!'); return; }
+    if (!returnReason.trim()) { notify('사유를 입력해주세요!'); return; }
     setSubmitting(true);
     try {
       await requestReturn(returnModal.order.id, { type: returnModal.type, reason: returnReason });
-      alert(`${returnModal.type} 요청이 접수됐어요!`);
+      notify(`${returnModal.type} 요청이 접수됐어요!`);
       setReturnModal(null); setReturnReason('');
-    } catch (err) { alert(err.response?.data?.error || '요청 실패'); }
+    } catch (err) { notify(err.response?.data?.error || '요청 실패'); }
     finally { setSubmitting(false); }
   };
   return (

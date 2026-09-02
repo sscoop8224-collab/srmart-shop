@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import FindAccount from './FindAccount';
 import srmLogo from '../srm-logo-transparent.png';
 import { getStores, register, getCoverage } from '../api';
+import { useDialog } from '../DialogContext';
 
 // ── 나이 계산 함수 ──────────────────────────────────────────
 function calcAgeFromId(frontId, genderDigit) {
@@ -162,6 +163,7 @@ function GreenHero() {
 
 // ── 메인 컴포넌트 ───────────────────────────────────────────
 function Login({ onLogin, onGuest }) {
+  const { notify } = useDialog();
   const [mode, setMode] = useState('login');
   const [isFindAccount, setIsFindAccount] = useState(false);
 
@@ -214,7 +216,7 @@ function Login({ onLogin, onGuest }) {
         .then(res => setStores(res.data || []))
         .catch(err => {
           console.error('점포 목록 조회 실패:', err);
-          alert('점포 목록을 불러오지 못했어요. 잠시 후 다시 시도해주세요.');
+          notify('점포 목록을 불러오지 못했어요. 잠시 후 다시 시도해주세요.');
         })
         .finally(() => setStoresLoading(false));
     }
@@ -270,18 +272,18 @@ function Login({ onLogin, onGuest }) {
 
   const handleSignup = async () => {
     if (!form.name || !form.username || !form.email || !form.password || !form.phone) {
-      alert('이름, 아이디, 이메일, 비밀번호, 전화번호는 필수예요!'); return;
+      notify('이름, 아이디, 이메일, 비밀번호, 전화번호는 필수예요!'); return;
     }
-    if (!selectedStoreId) { alert('가입점포를 선택해주세요!'); return; }
+    if (!selectedStoreId) { notify('가입점포를 선택해주세요!'); return; }
     if (!form.idFront || form.idFront.length !== 6 || !form.idGender) {
-      alert('주민번호를 올바르게 입력해주세요!'); return;
+      notify('주민번호를 올바르게 입력해주세요!'); return;
     }
-    if (!/^\d{6}$/.test(form.idFront)) { alert('주민번호 앞자리는 숫자 6자리예요!'); return; }
-    if (!['1', '2', '3', '4'].includes(form.idGender)) { alert('주민번호 뒷자리 첫번째가 올바르지 않아요 (1~4)'); return; }
+    if (!/^\d{6}$/.test(form.idFront)) { notify('주민번호 앞자리는 숫자 6자리예요!'); return; }
+    if (!['1', '2', '3', '4'].includes(form.idGender)) { notify('주민번호 뒷자리 첫번째가 올바르지 않아요 (1~4)'); return; }
 
     // (B1) 우편번호 필수 — 주소 찾기로 입력해야 저장·배송권역 매칭 가능. (서버도 400으로 이중 검증)
     if (!signupZipcode || !signupZipcode.trim()) {
-      alert('우편번호가 필요해요. 주소 찾기로 주소를 입력해주세요.'); return;
+      notify('우편번호가 필요해요. 주소 찾기로 주소를 입력해주세요.'); return;
     }
 
     const age = calcAgeFromId(form.idFront, form.idGender);
@@ -305,11 +307,11 @@ function Login({ onLogin, onGuest }) {
         zipcode: signupZipcode || null,
         dong_name: signupDong || null,   // Daum 동 이름 → 체크아웃 배송권역 매칭용 저장
       });
-      alert(form.name + '님 가입을 환영해요! 🎉' + (isAdult ? '' : '\n미성년자로 확인됐어요. 성인 상품 구매가 제한됩니다.'));
+      notify(form.name + '님 가입을 환영해요! 🎉' + (isAdult ? '' : '\n미성년자로 확인됐어요. 성인 상품 구매가 제한됩니다.'));
       setMode('login');
       setForm({ ...emptyForm });
     } catch (err) {
-      alert(err.response?.data?.error || err.message || '회원가입 중 오류가 발생했어요.');
+      notify(err.response?.data?.error || err.message || '회원가입 중 오류가 발생했어요.');
     } finally {
       setSignupLoading(false);
     }

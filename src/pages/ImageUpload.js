@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useDialog } from '../DialogContext';
 
 function ImageUpload({ onImageSelect, currentImage }) {
+  const { notify } = useDialog();
   const [preview, setPreview] = useState(currentImage || null);
 
   const handleImageChange = (e) => {
@@ -8,7 +10,7 @@ function ImageUpload({ onImageSelect, currentImage }) {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('이미지 크기는 5MB 이하만 가능해요!');
+      notify('이미지 크기는 5MB 이하만 가능해요!');
       return;
     }
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { matchZipcode, getMyPoints, getMyActiveCoupons, applyCoupon } from '../api';
 import API from '../api';
 import { getItemPrice } from '../utils/pricing';
+import { useDialog } from '../DialogContext';
 
 // 장바구니(Cart.js)와 바로주문(QuickOrder.js)이 공유하는 결제 준비 로직.
 //   - 배송지 자동채움(회원 기본주소) + 우편번호 → 배송권역 확인
@@ -15,6 +16,7 @@ import { getItemPrice } from '../utils/pricing';
 // appliedCoupon(코드쿠폰)은 이 훅 안에서 독립적으로 관리 — Cart/QuickOrder 가 서로 다른
 // 체크아웃 세션이므로 App 레벨에 둘 이유가 없다(기존엔 App.js 가 들고 Cart 에만 내려줬음).
 export function useCheckoutFlow(items, { user } = {}) {
+  const { notify } = useDialog();
   const [couponInput, setCouponInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [showAddress, setShowAddress] = useState(false);
@@ -142,25 +144,25 @@ export function useCheckoutFlow(items, { user } = {}) {
       const r = await applyCoupon({ code: cp.code, total_amount: totalPrice - discountAmount + totalDeliveryFee });
       setCouponDiscount(r.data.discount_amount || 0);
     } catch (err) {
-      alert(err.response?.data?.message || '쿠폰 적용 실패');
+      notify(err.response?.data?.message || '쿠폰 적용 실패');
       setSelectedCouponId(''); setCouponDiscount(0);
     }
   };
 
   const handleApplyCoupon = async () => {
-    if (!couponInput) { alert('쿠폰 코드를 입력해주세요!'); return; }
+    if (!couponInput) { notify('쿠폰 코드를 입력해주세요!'); return; }
     try {
       const res = await API.post('/coupons/check', { code: couponInput.toUpperCase() });
       const coupon = res.data;
       if (coupon.min_order_amount > 0 && totalPrice < coupon.min_order_amount) {
-        alert(`최소 주문금액 ₩${coupon.min_order_amount.toLocaleString()} 이상이어야 해요!`);
+        notify(`최소 주문금액 ₩${coupon.min_order_amount.toLocaleString()} 이상이어야 해요!`);
         return;
       }
       setAppliedCoupon(coupon);
-      alert((coupon.description || coupon.code) + ' 쿠폰이 적용됐어요! 😊');
+      notify((coupon.description || coupon.code) + ' 쿠폰이 적용됐어요! 😊');
       setCouponInput('');
     } catch (err) {
-      alert(err.response?.data?.error || '유효하지 않은 쿠폰 코드예요!');
+      notify(err.response?.data?.error || '유효하지 않은 쿠폰 코드예요!');
     }
   };
 
