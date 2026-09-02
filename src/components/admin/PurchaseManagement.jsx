@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Sidebar from '../layout/Sidebar';
 
-const sg = '#00c471';
+const sg = 'var(--primary)';
 const sgd = '#009a58';
 const sgl = '#e6f9f1';
 

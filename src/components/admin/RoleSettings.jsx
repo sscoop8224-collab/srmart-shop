@@ -91,7 +91,7 @@ export default function RoleSettings({ setPage, dark, setDark, user }) {
             <button onClick={handleReset} style={{ padding: '8px 16px', borderRadius: 8, border: `1px solid ${c.cardBorder}`, background: 'transparent', color: c.textSecondary, fontSize: 13, cursor: 'pointer' }}>
               초기화
             </button>
-            <button onClick={handleSave} style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: '#00c471', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <button onClick={handleSave} style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               {saved ? '✓ 저장됨' : '저장'}
             </button>
           </div>
@@ -127,7 +127,7 @@ export default function RoleSettings({ setPage, dark, setDark, user }) {
                         type="checkbox"
                         checked={perms[page]?.staff ?? false}
                         onChange={() => toggle(page, 'staff')}
-                        style={{ width: 18, height: 18, accentColor: '#00c471', cursor: 'pointer' }}
+                        style={{ width: 18, height: 18, accentColor: 'var(--primary)', cursor: 'pointer' }}
                       />
                     </td>
                     {/* 매장관리자 체크박스 */}
@@ -136,7 +136,7 @@ export default function RoleSettings({ setPage, dark, setDark, user }) {
                         type="checkbox"
                         checked={perms[page]?.manager ?? false}
                         onChange={() => toggle(page, 'manager')}
-                        style={{ width: 18, height: 18, accentColor: '#00c471', cursor: 'pointer' }}
+                        style={{ width: 18, height: 18, accentColor: 'var(--primary)', cursor: 'pointer' }}
                       />
                     </td>
                     {/* 대표자는 항상 체크 */}
@@ -154,7 +154,7 @@ export default function RoleSettings({ setPage, dark, setDark, user }) {
             </table>
           </div>
 
-          <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 8, background: dark ? '#1a2a1a' : '#e6f9f1', border: '1px solid #00c471' }}>
+          <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 8, background: dark ? '#1a2a1a' : '#e6f9f1', border: '1px solid var(--primary)' }}>
             <p style={{ fontSize: 12, color: dark ? '#88ddaa' : '#007a40', margin: 0, lineHeight: 1.6 }}>
               💡 <strong>저장</strong> 버튼을 눌러야 변경사항이 적용돼요. 매장관리자에 체크하면 직원도 자동으로 포함되지 않으니 각각 설정해주세요.
             </p>

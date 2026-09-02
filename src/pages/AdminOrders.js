@@ -16,18 +16,18 @@ function AdminOrders({ orders, setOrders, goBack, onPrint, darkMode }) {
   const [filterStatus, setFilterStatus] = useState('전체');
   const statusList = ['전체', '결제완료', '배송중', '배송완료', '취소'];
 
-  const bg = darkMode ? '#1a1a1a' : '#f8fffe';
+  const bg = darkMode ? '#1a1a1a' : 'var(--primary-light)';
   const cardBg = darkMode ? '#242424' : 'white';
   const headerBg = darkMode ? '#1a1a1a' : 'white';
-  const borderColor = darkMode ? '#2e2e2e' : '#f0faf5';
+  const borderColor = darkMode ? '#2e2e2e' : 'var(--primary-light)';
   const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
   const subTextColor = darkMode ? '#9e9e9e' : '#adb5bd';
 
   const statusColor = {
-    '결제완료': { bg: darkMode ? '#1e2e24' : '#f0faf5', color: '#00a85e' },
+    '결제완료': { bg: darkMode ? '#1e2e24' : 'var(--primary-light)', color: 'var(--primary-dark)' },
     '배송중': { bg: darkMode ? '#2a2010' : '#fff3cd', color: '#f0a500' },
     '배송완료': { bg: darkMode ? '#1a2030' : '#e8f0fe', color: '#1a73e8' },
-    '취소': { bg: darkMode ? '#2a1010' : '#fff0f1', color: '#ff4757' },
+    '취소': { bg: darkMode ? '#2a1010' : 'var(--accent-light)', color: '#ff4757' },
   };
 
   const filteredOrders = orders.filter((o) =>
@@ -41,7 +41,7 @@ function AdminOrders({ orders, setOrders, goBack, onPrint, darkMode }) {
   return (
     <div style={{ background: bg, minHeight: '100vh', paddingBottom: '80px' }}>
       {/* 헤더 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', background: darkMode ? '#0d4d2a' : 'linear-gradient(135deg, #00c471, #00a85e)', position: 'sticky', top: 0, zIndex: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', background: darkMode ? '#0d4d2a' : 'linear-gradient(135deg, var(--primary), var(--primary-dark))', position: 'sticky', top: 0, zIndex: 10 }}>
         <button onClick={goBack} style={{ width: 40, height: 40, flexShrink: 0, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
@@ -61,7 +61,7 @@ function AdminOrders({ orders, setOrders, goBack, onPrint, darkMode }) {
 
       {filteredOrders.length === 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px' }}>
-          <div style={{ width: '80px', height: '80px', background: darkMode ? '#2e2e2e' : '#f0faf5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+          <div style={{ width: '80px', height: '80px', background: darkMode ? '#2e2e2e' : 'var(--primary-light)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
               <polyline points="14 2 14 8 20 8"/>
@@ -96,14 +96,14 @@ function AdminOrders({ orders, setOrders, goBack, onPrint, darkMode }) {
                         <p style={{ fontSize: '13px', fontWeight: '700', color: textColor, margin: '0 0 2px' }}>{item.name}</p>
                         <p style={{ fontSize: '12px', color: subTextColor, margin: 0 }}>{item.quantity}개 · ₩{item.price.toLocaleString()}</p>
                       </div>
-                      <p style={{ fontSize: '13px', fontWeight: '800', color: '#00c471', margin: 0 }}>₩{(item.price * item.quantity).toLocaleString()}</p>
+                      <p style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary)', margin: 0 }}>₩{(item.price * item.quantity).toLocaleString()}</p>
                     </div>
                   ))}
                 </div>
 
-                <div style={{ padding: '12px 18px', background: darkMode ? '#1e1e1e' : '#f8fffe', borderTop: `1px solid ${borderColor}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ padding: '12px 18px', background: darkMode ? '#1e1e1e' : 'var(--primary-light)', borderTop: `1px solid ${borderColor}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '13px', color: subTextColor, fontWeight: '600' }}>총 결제금액</span>
-                  <span style={{ fontSize: '17px', fontWeight: '900', color: '#00c471' }}>₩{order.totalPrice.toLocaleString()}</span>
+                  <span style={{ fontSize: '17px', fontWeight: '900', color: 'var(--primary)' }}>₩{order.totalPrice.toLocaleString()}</span>
                 </div>
 
                 <div style={{ padding: '12px 16px', display: 'flex', gap: '6px', flexWrap: 'wrap', borderTop: `1px solid ${borderColor}` }}>

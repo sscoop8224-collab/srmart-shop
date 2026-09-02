@@ -46,9 +46,9 @@ function EventManager({ products, goBack, darkMode, events, setEvents }) {
 
   const getStatus = (event) => {
     if (!event.isActive) return { label: '비활성', bg: darkMode ? '#2e2e2e' : '#f1f3f5', color: '#868e96' };
-    if (isExpired(event)) return { label: '종료', bg: darkMode ? '#2a1010' : '#fff0f1', color: '#ff4757' };
+    if (isExpired(event)) return { label: '종료', bg: darkMode ? '#2a1010' : 'var(--accent-light)', color: '#ff4757' };
     if (isNotStarted(event)) return { label: '예정', bg: darkMode ? '#2a2010' : '#fff3cd', color: '#f0a500' };
-    return { label: '진행중', bg: darkMode ? '#1e2e24' : '#f0faf5', color: '#00a85e' };
+    return { label: '진행중', bg: darkMode ? '#1e2e24' : 'var(--primary-light)', color: 'var(--primary-dark)' };
   };
 
   const handleAddProduct = (product) => {
@@ -137,7 +137,7 @@ function EventManager({ products, goBack, darkMode, events, setEvents }) {
     <div style={{ background: bg, minHeight: '100vh', paddingBottom: '80px' }}>
 
       {/* 헤더 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: darkMode ? 'linear-gradient(135deg, #0d4d2a 0%, #1a5c2a 100%)' : 'linear-gradient(135deg, #00c471 0%, #00a85e 100%)', position: 'sticky', top: 0, zIndex: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: darkMode ? 'linear-gradient(135deg, #0d4d2a 0%, #1a5c2a 100%)' : 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button onClick={goBack} style={{ width: 40, height: 40, flexShrink: 0, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -155,7 +155,7 @@ function EventManager({ products, goBack, darkMode, events, setEvents }) {
       {/* 통계 */}
       <div style={{ padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
         {[
-          { label: '전체', value: events.length, color: '#00a85e', bg: darkMode ? '#1e2e24' : '#f0faf5' },
+          { label: '전체', value: events.length, color: 'var(--primary-dark)', bg: darkMode ? '#1e2e24' : 'var(--primary-light)' },
           { label: '진행중', value: activeEvents.length, color: '#1a73e8', bg: darkMode ? '#1a2030' : '#e8f0fe' },
           { label: '종료/예정', value: otherEvents.length, color: '#868e96', bg: darkMode ? '#2e2e2e' : '#f1f3f5' },
         ].map(s => (
@@ -177,17 +177,17 @@ function EventManager({ products, goBack, darkMode, events, setEvents }) {
 
             {/* 행사명 */}
             <div>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '6px' }}>행사명</label>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', display: 'block', marginBottom: '6px' }}>행사명</label>
               <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="예: 봄맞이 특가 행사" style={inputStyle} />
             </div>
 
             {/* 행사 유형 (단일/교차) */}
             <div>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '6px' }}>행사 종류</label>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', display: 'block', marginBottom: '6px' }}>행사 종류</label>
               <div style={{ display: 'flex', gap: '8px' }}>
                 {['단일', '교차'].map(t => (
                   <button key={t} onClick={() => setForm({ ...form, type: t, products: [] })}
-                    style={{ flex: 1, padding: '10px', borderRadius: '12px', border: form.type === t ? '2px solid #00c471' : `1.5px solid ${inputBorder}`, background: form.type === t ? (darkMode ? '#1e2e24' : '#f0faf5') : cardBg, color: form.type === t ? '#00a85e' : subTextColor, fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+                    style={{ flex: 1, padding: '10px', borderRadius: '12px', border: form.type === t ? '2px solid var(--primary)' : `1.5px solid ${inputBorder}`, background: form.type === t ? (darkMode ? '#1e2e24' : 'var(--primary-light)') : cardBg, color: form.type === t ? 'var(--primary-dark)' : subTextColor, fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
                     {t === '단일' ? '단일 상품' : '교차 상품'}
                   </button>
                 ))}
@@ -199,11 +199,11 @@ function EventManager({ products, goBack, darkMode, events, setEvents }) {
 
             {/* 이벤트 타입 */}
             <div>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '6px' }}>행사 방식</label>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', display: 'block', marginBottom: '6px' }}>행사 방식</label>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {EVENT_TYPES.map(t => (
                   <button key={t.value} onClick={() => setForm({ ...form, eventType: t.value })}
-                    style={{ padding: '8px 14px', background: form.eventType === t.value ? '#00c471' : cardBg, color: form.eventType === t.value ? 'white' : textColor, border: form.eventType === t.value ? 'none' : `1.5px solid ${inputBorder}`, borderRadius: '20px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    style={{ padding: '8px 14px', background: form.eventType === t.value ? 'var(--primary)' : cardBg, color: form.eventType === t.value ? 'white' : textColor, border: form.eventType === t.value ? 'none' : `1.5px solid ${inputBorder}`, borderRadius: '20px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}>
                     {t.label}
                   </button>
                 ))}
@@ -217,11 +217,11 @@ function EventManager({ products, goBack, darkMode, events, setEvents }) {
             {form.eventType === '묶음가' && (
               <div style={{ display: 'flex', gap: '8px' }}>
                 <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '6px' }}>묶음 수량</label>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', display: 'block', marginBottom: '6px' }}>묶음 수량</label>
                   <input value={form.bundleQty} onChange={e => setForm({ ...form, bundleQty: e.target.value })} placeholder="예: 5" type="number" style={inputStyle} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '6px' }}>묶음 가격 (원)</label>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', display: 'block', marginBottom: '6px' }}>묶음 가격 (원)</label>
                   <input value={form.bundlePrice} onChange={e => setForm({ ...form, bundlePrice: e.target.value })} placeholder="예: 10000" type="number" style={inputStyle} />
                 </div>
               </div>
@@ -230,7 +230,7 @@ function EventManager({ products, goBack, darkMode, events, setEvents }) {
             {/* 할인값 설정 */}
             {(form.eventType === '퍼센트할인' || form.eventType === '정액할인') && (
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', display: 'block', marginBottom: '6px' }}>
                   {form.eventType === '퍼센트할인' ? '할인율 (%)' : '할인금액 (원)'}
                 </label>
                 <input value={form.discountValue} onChange={e => setForm({ ...form, discountValue: e.target.value })}
@@ -240,7 +240,7 @@ function EventManager({ products, goBack, darkMode, events, setEvents }) {
 
             {/* 상품 선택 */}
             <div>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', display: 'block', marginBottom: '6px' }}>
                 상품 선택 {form.type === '단일' ? '(1개)' : '(여러 개 가능)'}
               </label>
 
@@ -248,8 +248,8 @@ function EventManager({ products, goBack, darkMode, events, setEvents }) {
               {form.products.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
                   {form.products.map(p => (
-                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: darkMode ? '#1e2e24' : '#f0faf5', borderRadius: '20px', padding: '6px 12px', border: `1px solid ${inputBorder}` }}>
-                      <span style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e' }}>{p.name}</span>
+                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: darkMode ? '#1e2e24' : 'var(--primary-light)', borderRadius: '20px', padding: '6px 12px', border: `1px solid ${inputBorder}` }}>
+                      <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)' }}>{p.name}</span>
                       <button onClick={() => handleRemoveProduct(p.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ff4757', fontSize: '14px', padding: 0, lineHeight: 1 }}>✕</button>
                     </div>
                   ))}
@@ -272,7 +272,7 @@ function EventManager({ products, goBack, darkMode, events, setEvents }) {
                           <p style={{ fontSize: '13px', fontWeight: '700', color: textColor, margin: '0 0 2px' }}>{p.name}</p>
                           <p style={{ fontSize: '11px', color: subTextColor, margin: 0 }}>{p.large} · ₩{p.price.toLocaleString()}</p>
                         </div>
-                        <span style={{ fontSize: '12px', color: '#00a85e', fontWeight: '700' }}>+ 추가</span>
+                        <span style={{ fontSize: '12px', color: 'var(--primary-dark)', fontWeight: '700' }}>+ 추가</span>
                       </div>
                     ))
                   )}
@@ -282,7 +282,7 @@ function EventManager({ products, goBack, darkMode, events, setEvents }) {
 
             {/* 기간 설정 */}
             <div>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '6px' }}>행사 기간</label>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', display: 'block', marginBottom: '6px' }}>행사 기간</label>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <input value={form.startDate} onChange={e => setForm({ ...form, startDate: e.target.value })} type="date" style={inputStyle} />
                 <span style={{ color: subTextColor, flexShrink: 0 }}>~</span>
@@ -292,12 +292,12 @@ function EventManager({ products, goBack, darkMode, events, setEvents }) {
 
             {/* 메모 */}
             <div>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '6px' }}>메모 (선택)</label>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', display: 'block', marginBottom: '6px' }}>메모 (선택)</label>
               <input value={form.memo} onChange={e => setForm({ ...form, memo: e.target.value })} placeholder="행사 관련 메모" style={inputStyle} />
             </div>
 
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={handleSave} style={{ flex: 1, padding: '14px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>
+              <button onClick={handleSave} style={{ flex: 1, padding: '14px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>
                 {editId ? '수정 완료' : '행사 등록'}
               </button>
               <button onClick={handleCancel} style={{ padding: '14px 20px', background: inputBg, color: subTextColor, border: `1.5px solid ${inputBorder}`, borderRadius: '14px', fontSize: '15px', cursor: 'pointer', fontWeight: '600' }}>취소</button>
@@ -309,7 +309,7 @@ function EventManager({ products, goBack, darkMode, events, setEvents }) {
       {/* 진행중 행사 */}
       {activeEvents.length > 0 && (
         <div style={{ padding: '0 16px 8px' }}>
-          <p style={{ fontSize: '14px', fontWeight: '800', color: '#00a85e', margin: '0 0 10px' }}>🔥 진행중 행사</p>
+          <p style={{ fontSize: '14px', fontWeight: '800', color: 'var(--primary-dark)', margin: '0 0 10px' }}>🔥 진행중 행사</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {activeEvents.map(event => {
               const status = getStatus(event);
@@ -344,7 +344,7 @@ function EventManager({ products, goBack, darkMode, events, setEvents }) {
 
       {events.length === 0 && !showForm && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 20px' }}>
-          <div style={{ width: '72px', height: '72px', background: darkMode ? '#2e2e2e' : '#f0faf5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+          <div style={{ width: '72px', height: '72px', background: darkMode ? '#2e2e2e' : 'var(--primary-light)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
             </svg>
@@ -372,7 +372,7 @@ function EventCard({ event, status, darkMode, cardBg, borderColor, textColor, su
         <div>
           <p style={{ fontSize: '15px', fontWeight: '800', color: textColor, margin: '0 0 4px' }}>{event.name}</p>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-            <span style={{ background: darkMode ? '#1e2e24' : '#f0faf5', color: '#00a85e', fontSize: '11px', fontWeight: '700', padding: '3px 8px', borderRadius: '10px' }}>{event.type}</span>
+            <span style={{ background: darkMode ? '#1e2e24' : 'var(--primary-light)', color: 'var(--primary-dark)', fontSize: '11px', fontWeight: '700', padding: '3px 8px', borderRadius: '10px' }}>{event.type}</span>
             <span style={{ background: darkMode ? '#1a2030' : '#e8f0fe', color: '#1a73e8', fontSize: '11px', fontWeight: '700', padding: '3px 8px', borderRadius: '10px' }}>{eventTypeLabel}</span>
           </div>
         </div>
@@ -384,13 +384,13 @@ function EventCard({ event, status, darkMode, cardBg, borderColor, textColor, su
         <p style={{ fontSize: '11px', color: subTextColor, margin: '0 0 6px', fontWeight: '600' }}>대상 상품</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
           {event.products.map(p => (
-            <span key={p.id} style={{ background: darkMode ? '#2e2e2e' : '#f8fffe', border: `1px solid ${borderColor}`, color: textColor, fontSize: '12px', fontWeight: '600', padding: '4px 10px', borderRadius: '20px' }}>{p.name}</span>
+            <span key={p.id} style={{ background: darkMode ? '#2e2e2e' : 'var(--primary-light)', border: `1px solid ${borderColor}`, color: textColor, fontSize: '12px', fontWeight: '600', padding: '4px 10px', borderRadius: '20px' }}>{p.name}</span>
           ))}
         </div>
       </div>
 
       {/* 기간 */}
-      <div style={{ background: darkMode ? '#1e1e1e' : '#f8fffe', borderRadius: '10px', padding: '8px 12px', marginBottom: '12px', border: `1px solid ${borderColor}` }}>
+      <div style={{ background: darkMode ? '#1e1e1e' : 'var(--primary-light)', borderRadius: '10px', padding: '8px 12px', marginBottom: '12px', border: `1px solid ${borderColor}` }}>
         <p style={{ fontSize: '12px', color: subTextColor, margin: 0 }}>
           📅 {event.startDate} ~ {event.endDate}
         </p>
@@ -400,13 +400,13 @@ function EventCard({ event, status, darkMode, cardBg, borderColor, textColor, su
       {/* 버튼 */}
       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
         <button onClick={() => onEdit(event)} style={{ padding: '7px 12px', background: darkMode ? '#1a2030' : '#e8f0fe', color: '#1a73e8', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>수정</button>
-        <button onClick={() => onToggle(event.id)} style={{ padding: '7px 12px', background: event.isActive ? (darkMode ? '#2a2010' : '#fff3cd') : (darkMode ? '#1e2e24' : '#f0faf5'), color: event.isActive ? '#f0a500' : '#00a85e', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
+        <button onClick={() => onToggle(event.id)} style={{ padding: '7px 12px', background: event.isActive ? (darkMode ? '#2a2010' : '#fff3cd') : (darkMode ? '#1e2e24' : 'var(--primary-light)'), color: event.isActive ? '#f0a500' : 'var(--primary-dark)', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
           {event.isActive ? '비활성화' : '활성화'}
         </button>
         {event.isActive && (
-          <button onClick={() => onEndNow(event.id)} style={{ padding: '7px 12px', background: darkMode ? '#2a1010' : '#fff0f1', color: '#ff4757', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>즉시 종료</button>
+          <button onClick={() => onEndNow(event.id)} style={{ padding: '7px 12px', background: darkMode ? '#2a1010' : 'var(--accent-light)', color: '#ff4757', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>즉시 종료</button>
         )}
-        <button onClick={() => onDelete(event.id)} style={{ padding: '7px 12px', background: '#fff0f1', color: '#ff4757', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>삭제</button>
+        <button onClick={() => onDelete(event.id)} style={{ padding: '7px 12px', background: 'var(--accent-light)', color: '#ff4757', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>삭제</button>
       </div>
     </div>
   );

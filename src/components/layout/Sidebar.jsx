@@ -72,7 +72,7 @@ const getColors = (dark) => ({
   navText:         dark ? '#bbbbbb' : '#666666',
   navActiveBg:     dark ? '#1a3a2a' : '#e6f9f1',
   navActiveText:   '#009a58',
-  navActiveBorder: '#00c471',
+  navActiveBorder: 'var(--primary)',
   navLocked:       dark ? '#444444' : '#cccccc',
   adminName:       dark ? '#f0f0f0' : '#333333',
   adminRole:       dark ? '#888888' : '#aaaaaa',
@@ -91,7 +91,7 @@ export default function Sidebar({ currentPage, setPage, dark, user }) {
   return (
     <div style={{ width: 220, background: c.sidebarBg, borderRight: `1px solid ${c.border}`, display: 'flex', flexDirection: 'column', flexShrink: 0, height: '100vh', transition: 'background 0.2s' }}>
       <div style={{ paddingLeft: 20, paddingRight: 20, paddingTop: 'max(20px, env(safe-area-inset-top))', paddingBottom: 16, borderBottom: `1px solid ${c.border}` }}>
-        <div style={{ fontSize: 18, fontWeight: 600, color: '#00c471', letterSpacing: '-0.3px' }}>에스알마트</div>
+        <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--primary)', letterSpacing: '-0.3px' }}>에스알마트</div>
         <div style={{ fontSize: 11, color: c.logoSub, marginTop: 2 }}>관리자 시스템</div>
       </div>
 
@@ -107,7 +107,7 @@ export default function Sidebar({ currentPage, setPage, dark, user }) {
           const isShop = item.page === 'home';
           return (
             <div key={item.page} onClick={() => accessible && setPage(item.page)} title={!accessible ? '접근 권한이 없어요' : ''}
-              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px', fontSize: 13, cursor: accessible ? 'pointer' : 'not-allowed', borderLeft: `2px solid ${isActive ? '#00c471' : 'transparent'}`, background: isActive ? c.navActiveBg : 'transparent', color: isActive ? c.navActiveText : !accessible ? c.navLocked : isShop ? '#6c5ce7' : c.navText, fontWeight: isActive ? 600 : isShop ? 500 : 400, opacity: accessible ? 1 : 0.4, transition: 'background 0.1s' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px', fontSize: 13, cursor: accessible ? 'pointer' : 'not-allowed', borderLeft: `2px solid ${isActive ? 'var(--primary)' : 'transparent'}`, background: isActive ? c.navActiveBg : 'transparent', color: isActive ? c.navActiveText : !accessible ? c.navLocked : isShop ? '#6c5ce7' : c.navText, fontWeight: isActive ? 600 : isShop ? 500 : 400, opacity: accessible ? 1 : 0.4, transition: 'background 0.1s' }}>
               <i className={`ti ${item.icon}`} style={{ fontSize: 16, flexShrink: 0 }} />
               {item.label}
               {isShop && accessible && <span style={{ marginLeft: 'auto', fontSize: 10, background: '#ede9fe', color: '#6c5ce7', padding: '1px 6px', borderRadius: 6 }}>앱</span>}

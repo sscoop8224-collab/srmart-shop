@@ -29,7 +29,7 @@ const getColors = (dark) => ({
   navText:       dark ? '#bbbbbb' : '#666666',
   navActiveBg:   dark ? '#1a3a2a' : '#e6f9f1',
   navActiveText: '#009a58',
-  navActiveBorder: '#00c471',
+  navActiveBorder: 'var(--primary)',
   adminName:     dark ? '#f0f0f0' : '#333333',
   adminRole:     dark ? '#888888' : '#aaaaaa',
   avatarBg:      dark ? '#1a3a2a' : '#e6f9f1',
@@ -58,7 +58,7 @@ export default function Sidebar({ currentPage, setPage, dark }) {
         paddingBottom: 16,
         borderBottom: `1px solid ${c.border}`,
       }}>
-        <div style={{ fontSize: 18, fontWeight: 600, color: '#00c471', letterSpacing: '-0.3px' }}>에스알마트</div>
+        <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--primary)', letterSpacing: '-0.3px' }}>에스알마트</div>
         <div style={{ fontSize: 11, color: c.logoSub, marginTop: 2 }}>관리자 시스템</div>
       </div>
 
@@ -81,7 +81,7 @@ export default function Sidebar({ currentPage, setPage, dark }) {
               style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '10px 20px', fontSize: 13, cursor: 'pointer',
-                borderLeft: `2px solid ${isActive ? '#00c471' : 'transparent'}`,
+                borderLeft: `2px solid ${isActive ? 'var(--primary)' : 'transparent'}`,
                 background: isActive ? c.navActiveBg : 'transparent',
                 color: isActive ? c.navActiveText : isShop ? '#6c5ce7' : c.navText,
                 fontWeight: isActive ? 600 : isShop ? 500 : 400,

@@ -11,15 +11,15 @@ function AdminHome({ setPage, products, orders, users, goBack }) {
   const pendingOrders = orders.filter((o) => !o.status || o.status === '결제완료').length;
   const soldOutProducts = products.filter((p) => p.isSoldOut).length;
 
-  const bg = dark ? '#1a1a1a' : '#f8fffe';
+  const bg = dark ? '#1a1a1a' : 'var(--primary-light)';
   const cardBg = dark ? '#2a2a2a' : 'white';
-  const borderColor = dark ? '#2e2e2e' : '#f0faf5';
+  const borderColor = dark ? '#2e2e2e' : 'var(--primary-light)';
   const textColor = dark ? '#f0f0f0' : '#1a1a1a';
   const subTextColor = dark ? '#9e9e9e' : '#adb5bd';
 
   const stats = [
     { label: '전체 상품', value: products.length + '개',
-      color: dark ? '#f0f0f0' : '#00a85e', bg: dark ? '#1a4a2a' : '#e8faf3',
+      color: dark ? '#f0f0f0' : 'var(--primary-dark)', bg: dark ? '#1a4a2a' : 'var(--primary-light)',
       icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg> },
     { label: '전체 주문', value: orders.length + '건',
       color: dark ? '#f0f0f0' : '#1a73e8', bg: dark ? '#1a2f4a' : '#e3f2fd',
@@ -62,21 +62,21 @@ function AdminHome({ setPage, products, orders, users, goBack }) {
   ];
 
   const statusColor = {
-    '결제완료': { bg: dark ? '#1e2e24' : '#e8faf3', color: '#00a85e' },
+    '결제완료': { bg: dark ? '#1e2e24' : 'var(--primary-light)', color: 'var(--primary-dark)' },
     '배송중': { bg: dark ? '#2a2010' : '#fff3cd', color: '#f0a500' },
     '배송완료': { bg: dark ? '#1a2030' : '#e8f0fe', color: '#1a73e8' },
-    '취소': { bg: dark ? '#2a1010' : '#fff0f1', color: '#ff4757' },
+    '취소': { bg: dark ? '#2a1010' : 'var(--accent-light)', color: '#ff4757' },
   };
 
   const alerts = [
     pendingOrders > 0 && { icon: '🔔', text: `미처리 주문 ${pendingOrders}건이 있어요!`, color: dark ? '#2a2010' : '#fff3cd', textColor: '#856404', page: 'adminOrders' },
-    soldOutProducts > 0 && { icon: '⚠️', text: `품절 상품 ${soldOutProducts}개가 있어요!`, color: dark ? '#2a1010' : '#fff0f1', textColor: '#c62828', page: 'adminPC_inventory' },
+    soldOutProducts > 0 && { icon: '⚠️', text: `품절 상품 ${soldOutProducts}개가 있어요!`, color: dark ? '#2a1010' : 'var(--accent-light)', textColor: '#c62828', page: 'adminPC_inventory' },
   ].filter(Boolean);
 
   return (
     <div style={{ background: bg, minHeight: '100vh', paddingBottom: '80px' }}>
       {/* 헤더 */}
-      <div style={{ background: dark ? 'linear-gradient(135deg, #0d4d2a 0%, #1a5c2a 100%)' : 'linear-gradient(135deg, #00c471 0%, #00a85e 100%)', padding: '24px 20px 36px', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ background: dark ? 'linear-gradient(135deg, #0d4d2a 0%, #1a5c2a 100%)' : 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)', padding: '24px 20px 36px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '180px', height: '180px', background: 'rgba(255,255,255,0.08)', borderRadius: '50%' }} />
         <div style={{ position: 'absolute', bottom: '-30px', left: '-20px', width: '120px', height: '120px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 1 }}>
@@ -130,7 +130,7 @@ function AdminHome({ setPage, products, orders, users, goBack }) {
           {menus.map((menu) => (
             <div key={menu.label} onClick={() => setPage(menu.page)}
               style={{ background: cardBg, borderRadius: '16px', padding: '16px 10px', cursor: 'pointer', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: `1px solid ${borderColor}` }}>
-              <div style={{ width: '44px', height: '44px', background: dark ? '#2e2e2e' : '#f0faf5', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px' }}>
+              <div style={{ width: '44px', height: '44px', background: dark ? '#2e2e2e' : 'var(--primary-light)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px' }}>
                 {menu.icon}
               </div>
               <p style={{ fontSize: '12px', fontWeight: '700', color: textColor, margin: '0 0 3px', wordBreak: 'keep-all' }}>{menu.label}</p>
@@ -144,7 +144,7 @@ function AdminHome({ setPage, products, orders, users, goBack }) {
       <div style={{ margin: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <p style={{ fontSize: '15px', fontWeight: '800', color: textColor, margin: 0 }}>최근 주문 내역</p>
-          <button onClick={() => setPage('adminOrders')} style={{ fontSize: '13px', color: '#00c471', fontWeight: '700', background: 'none', border: 'none', cursor: 'pointer' }}>전체보기 →</button>
+          <button onClick={() => setPage('adminOrders')} style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: '700', background: 'none', border: 'none', cursor: 'pointer' }}>전체보기 →</button>
         </div>
         {orders.length === 0 ? (
           <div style={{ background: cardBg, borderRadius: '16px', padding: '40px 20px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', border: `1px solid ${borderColor}` }}>
@@ -166,7 +166,7 @@ function AdminHome({ setPage, products, orders, users, goBack }) {
                     <p style={{ fontSize: '13px', fontWeight: '600', color: textColor, margin: 0 }}>
                       {order.items[0].name} {order.items.length > 1 ? '외 ' + (order.items.length - 1) + '건' : ''}
                     </p>
-                    <p style={{ fontSize: '14px', fontWeight: '800', color: '#00c471', margin: 0 }}>₩{order.totalPrice.toLocaleString()}</p>
+                    <p style={{ fontSize: '14px', fontWeight: '800', color: 'var(--primary)', margin: 0 }}>₩{order.totalPrice.toLocaleString()}</p>
                   </div>
                   <p style={{ fontSize: '11px', color: subTextColor, margin: '4px 0 0' }}>{order.date}</p>
                 </div>

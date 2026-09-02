@@ -19,7 +19,7 @@ function SalesManagement({ goBack, darkMode }) {
   const borderColor = darkMode ? '#3a3a3a' : '#dee2e6';
   const headerBg = darkMode
     ? 'linear-gradient(135deg, #0d4d2a 0%, #1a5c2a 100%)'
-    : 'linear-gradient(135deg, #00c471 0%, #00a85e 100%)';
+    : 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)';
 
   const [sales, setSales] = useState([]);
   const [summary, setSummary] = useState({ total: 0, count: 0, payment: {}, category: {} });
@@ -208,7 +208,7 @@ function SalesManagement({ goBack, darkMode }) {
 
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
           {VIEW_OPTIONS.map((option) => (
-            <button key={option.key} onClick={() => setViewType(option.key)} style={{ flex: 1, minWidth: 100, padding: '10px 12px', borderRadius: 14, border: 'none', cursor: 'pointer', background: viewType === option.key ? '#00c471' : cardBg, color: viewType === option.key ? 'white' : textColor, boxShadow: viewType === option.key ? '0 8px 18px rgba(0,196,113,0.18)' : 'none' }}>
+            <button key={option.key} onClick={() => setViewType(option.key)} style={{ flex: 1, minWidth: 100, padding: '10px 12px', borderRadius: 14, border: 'none', cursor: 'pointer', background: viewType === option.key ? 'var(--primary)' : cardBg, color: viewType === option.key ? 'white' : textColor, boxShadow: viewType === option.key ? '0 8px 18px rgba(0,196,113,0.18)' : 'none' }}>
               {option.label}
             </button>
           ))}
@@ -217,7 +217,7 @@ function SalesManagement({ goBack, darkMode }) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 12 }}>
           <div style={{ background: cardBg, borderRadius: 16, border: `1px solid ${borderColor}`, padding: 14 }}>
             <div style={{ fontSize: 11, color: subTextColor, marginBottom: 8 }}>기간 총 매출</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: '#00c471' }}>₩{(summary.total || 0).toLocaleString()}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--primary)' }}>₩{(summary.total || 0).toLocaleString()}</div>
           </div>
           <div style={{ background: cardBg, borderRadius: 16, border: `1px solid ${borderColor}`, padding: 14 }}>
             <div style={{ fontSize: 11, color: subTextColor, marginBottom: 8 }}>현금 매출</div>
@@ -242,7 +242,7 @@ function SalesManagement({ goBack, darkMode }) {
 
         <div style={{ display: 'flex', gap: 10, marginBottom: 12, alignItems: 'center' }}>
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="주문번호, 상품, 결제수단 검색" style={{ flex: 1, padding: '12px 14px', borderRadius: 16, border: `1px solid ${borderColor}`, background: cardBg, color: textColor, outline: 'none' }} />
-          <button onClick={loadSales} style={{ padding: '12px 14px', borderRadius: 16, border: 'none', background: '#00c471', color: 'white', cursor: 'pointer' }}>새로고침</button>
+          <button onClick={loadSales} style={{ padding: '12px 14px', borderRadius: 16, border: 'none', background: 'var(--primary)', color: 'white', cursor: 'pointer' }}>새로고침</button>
         </div>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
@@ -270,10 +270,10 @@ function SalesManagement({ goBack, darkMode }) {
                     <div style={{ fontSize: 14, fontWeight: 700, color: textColor }}>{sale.product_name || sale.description || '상품명 없음'}</div>
                     <div style={{ fontSize: 12, color: subTextColor, marginTop: 4 }}>{sale.category || ''}</div>
                   </div>
-                  <div style={{ width: 70, textAlign: 'right', fontWeight: 700, color: '#00c471' }}>₩{parseAmount(sale.total_price || sale.amount).toLocaleString()}</div>
+                  <div style={{ width: 70, textAlign: 'right', fontWeight: 700, color: 'var(--primary)' }}>₩{parseAmount(sale.total_price || sale.amount).toLocaleString()}</div>
                   <div style={{ width: 90, textAlign: 'center', fontSize: 12, color: subTextColor }}>{sale.payment_method || sale.paymentMethod || '-'}</div>
                   <div style={{ width: 76, display: 'flex', gap: 6, justifyContent: 'center' }}>
-                    <button onClick={() => handleEditOpen(sale)} style={{ flex: 1, borderRadius: 12, border: `1px solid ${darkMode ? '#3a3a3a' : '#dee2e6'}`, background: 'transparent', color: '#00a85e', padding: '8px 0', cursor: 'pointer', fontSize: 12 }}>수정</button>
+                    <button onClick={() => handleEditOpen(sale)} style={{ flex: 1, borderRadius: 12, border: `1px solid ${darkMode ? '#3a3a3a' : '#dee2e6'}`, background: 'transparent', color: 'var(--primary-dark)', padding: '8px 0', cursor: 'pointer', fontSize: 12 }}>수정</button>
                     <button onClick={() => handleDelete(sale.id)} style={{ flex: 1, borderRadius: 12, border: 'none', background: '#ff4757', color: 'white', padding: '8px 0', cursor: 'pointer', fontSize: 12 }}>삭제</button>
                   </div>
                 </div>
@@ -315,7 +315,7 @@ function SalesManagement({ goBack, darkMode }) {
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
               <button onClick={() => setShowAddModal(false)} style={{ flex: 1, padding: '14px 16px', borderRadius: 14, border: `1px solid ${borderColor}`, background: 'transparent', color: subTextColor, cursor: 'pointer' }}>취소</button>
-              <button onClick={handleCreate} disabled={adding} style={{ flex: 1, padding: '14px 16px', borderRadius: 14, border: 'none', background: adding ? '#888' : '#00c471', color: 'white', cursor: adding ? 'default' : 'pointer' }}>{adding ? '등록 중...' : '등록'}</button>
+              <button onClick={handleCreate} disabled={adding} style={{ flex: 1, padding: '14px 16px', borderRadius: 14, border: 'none', background: adding ? '#888' : 'var(--primary)', color: 'white', cursor: adding ? 'default' : 'pointer' }}>{adding ? '등록 중...' : '등록'}</button>
             </div>
           </div>
         </div>
@@ -353,7 +353,7 @@ function SalesManagement({ goBack, darkMode }) {
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
               <button onClick={() => setEditSale(null)} style={{ flex: 1, padding: '14px 16px', borderRadius: 14, border: `1px solid ${borderColor}`, background: 'transparent', color: subTextColor, cursor: 'pointer' }}>취소</button>
-              <button onClick={handleEditSave} disabled={saving} style={{ flex: 1, padding: '14px 16px', borderRadius: 14, border: 'none', background: saving ? '#888' : '#00c471', color: 'white', cursor: saving ? 'default' : 'pointer' }}>{saving ? '저장 중...' : '저장'}</button>
+              <button onClick={handleEditSave} disabled={saving} style={{ flex: 1, padding: '14px 16px', borderRadius: 14, border: 'none', background: saving ? '#888' : 'var(--primary)', color: 'white', cursor: saving ? 'default' : 'pointer' }}>{saving ? '저장 중...' : '저장'}</button>
             </div>
           </div>
         </div>

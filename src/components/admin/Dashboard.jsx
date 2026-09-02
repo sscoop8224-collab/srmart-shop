@@ -1,7 +1,7 @@
 // ✅ localStorage 완전 제거 — dark/setDark 는 App.js props 만 사용
 import Sidebar from '../layout/Sidebar';
 
-const sg = '#00c471';
+const sg = 'var(--primary)';
 const sgd = '#009a58';
 const sgl = '#e6f9f1';
 

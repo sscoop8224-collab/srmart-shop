@@ -34,13 +34,13 @@ function SalesStats({ orders, products, goBack, darkMode }) {
   const maxRevenue = topProducts.length > 0 ? topProducts[0][1].revenue : 1;
   const maxCat = topCategories.length > 0 ? topCategories[0][1] : 1;
 
-  const rankColor = (i) => i === 0 ? '#ffd700' : i === 1 ? '#c0c0c0' : i === 2 ? '#cd7f32' : (darkMode ? '#2e2e2e' : '#e8faf3');
-  const rankTextColor = (i) => i < 3 ? 'white' : '#00a85e';
+  const rankColor = (i) => i === 0 ? '#ffd700' : i === 1 ? '#c0c0c0' : i === 2 ? '#cd7f32' : (darkMode ? '#2e2e2e' : 'var(--primary-light)');
+  const rankTextColor = (i) => i < 3 ? 'white' : 'var(--primary-dark)';
 
   return (
     <div style={{ background: bg, minHeight: '100vh', paddingBottom: '80px' }}>
       {/* 헤더 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', background: darkMode ? 'linear-gradient(135deg, #0d4d2a 0%, #1a5c2a 100%)' : 'linear-gradient(135deg, #00c471 0%, #00a85e 100%)', position: 'sticky', top: 0, zIndex: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', background: darkMode ? 'linear-gradient(135deg, #0d4d2a 0%, #1a5c2a 100%)' : 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)', position: 'sticky', top: 0, zIndex: 10 }}>
         <button onClick={goBack} style={{ width: 40, height: 40, flexShrink: 0, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6"/>
@@ -52,13 +52,13 @@ function SalesStats({ orders, products, goBack, darkMode }) {
       {/* 요약 카드 */}
       <div style={{ padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
         {[
-          { label: '총 매출', value: '₩' + totalSales.toLocaleString(), color: '#00c471', bg: darkMode ? '#1e2e24' : '#f0faf5',
+          { label: '총 매출', value: '₩' + totalSales.toLocaleString(), color: 'var(--primary)', bg: darkMode ? '#1e2e24' : 'var(--primary-light)',
             icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> },
           { label: '전체 주문', value: totalOrders + '건', color: '#1a73e8', bg: darkMode ? '#1a2030' : '#e8f0fe',
             icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> },
-          { label: '배송완료', value: completedOrders + '건', color: '#00a85e', bg: darkMode ? '#1e2e24' : '#f0faf5',
+          { label: '배송완료', value: completedOrders + '건', color: 'var(--primary-dark)', bg: darkMode ? '#1e2e24' : 'var(--primary-light)',
             icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> },
-          { label: '취소', value: canceledOrders + '건', color: '#ff4757', bg: darkMode ? '#2a1010' : '#fff0f1',
+          { label: '취소', value: canceledOrders + '건', color: '#ff4757', bg: darkMode ? '#2a1010' : 'var(--accent-light)',
             icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff4757" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> },
         ].map((item) => (
           <div key={item.label} style={{ background: cardBg, borderRadius: '18px', padding: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: `1px solid ${borderColor}` }}>
@@ -86,12 +86,12 @@ function SalesStats({ orders, products, goBack, darkMode }) {
                     <span style={{ fontSize: '13px', fontWeight: '600', color: textColor }}>{name}</span>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontSize: '13px', fontWeight: '800', color: '#00c471', margin: 0 }}>₩{data.revenue.toLocaleString()}</p>
+                    <p style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary)', margin: 0 }}>₩{data.revenue.toLocaleString()}</p>
                     <p style={{ fontSize: '11px', color: subTextColor, margin: 0 }}>{data.quantity}개 판매</p>
                   </div>
                 </div>
-                <div style={{ height: '6px', background: darkMode ? '#2e2e2e' : '#f0faf5', borderRadius: '3px', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: (data.revenue / maxRevenue * 100) + '%', background: 'linear-gradient(135deg, #00c471, #00a85e)', borderRadius: '3px' }} />
+                <div style={{ height: '6px', background: darkMode ? '#2e2e2e' : 'var(--primary-light)', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: (data.revenue / maxRevenue * 100) + '%', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', borderRadius: '3px' }} />
                 </div>
               </div>
             ))}
@@ -110,9 +110,9 @@ function SalesStats({ orders, products, goBack, darkMode }) {
               <div key={cat}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                   <span style={{ fontSize: '13px', fontWeight: '600', color: textColor }}>{cat}</span>
-                  <span style={{ fontSize: '13px', fontWeight: '800', color: '#00c471' }}>₩{revenue.toLocaleString()}</span>
+                  <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--primary)' }}>₩{revenue.toLocaleString()}</span>
                 </div>
-                <div style={{ height: '6px', background: darkMode ? '#2e2e2e' : '#f0faf5', borderRadius: '3px', overflow: 'hidden' }}>
+                <div style={{ height: '6px', background: darkMode ? '#2e2e2e' : 'var(--primary-light)', borderRadius: '3px', overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: (revenue / maxCat * 100) + '%', background: 'linear-gradient(135deg, #a29bfe, #6c5ce7)', borderRadius: '3px' }} />
                 </div>
               </div>
@@ -125,16 +125,16 @@ function SalesStats({ orders, products, goBack, darkMode }) {
       <div style={{ margin: '0 16px', background: cardBg, borderRadius: '18px', padding: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: `1px solid ${borderColor}` }}>
         <p style={{ fontSize: '15px', fontWeight: '800', color: textColor, margin: '0 0 14px' }}>상품 현황</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', textAlign: 'center' }}>
-          <div style={{ background: darkMode ? '#2e2e2e' : '#f8fffe', borderRadius: '14px', padding: '14px', border: `1px solid ${borderColor}` }}>
+          <div style={{ background: darkMode ? '#2e2e2e' : 'var(--primary-light)', borderRadius: '14px', padding: '14px', border: `1px solid ${borderColor}` }}>
             <p style={{ fontSize: '22px', fontWeight: '900', color: textColor, margin: '0 0 4px' }}>{products.length}</p>
             <p style={{ fontSize: '11px', color: subTextColor, margin: 0, fontWeight: '600' }}>전체</p>
           </div>
-          <div style={{ background: darkMode ? '#2a1010' : '#fff0f1', borderRadius: '14px', padding: '14px', border: '1px solid #ffd0d4' }}>
+          <div style={{ background: darkMode ? '#2a1010' : 'var(--accent-light)', borderRadius: '14px', padding: '14px', border: '1px solid #ffd0d4' }}>
             <p style={{ fontSize: '22px', fontWeight: '900', color: '#ff4757', margin: '0 0 4px' }}>{products.filter((p) => p.isSoldOut).length}</p>
             <p style={{ fontSize: '11px', color: subTextColor, margin: 0, fontWeight: '600' }}>품절</p>
           </div>
-          <div style={{ background: darkMode ? '#1e2e24' : '#f0faf5', borderRadius: '14px', padding: '14px', border: `1px solid ${borderColor}` }}>
-            <p style={{ fontSize: '22px', fontWeight: '900', color: '#00c471', margin: '0 0 4px' }}>{products.filter((p) => !p.isSoldOut).length}</p>
+          <div style={{ background: darkMode ? '#1e2e24' : 'var(--primary-light)', borderRadius: '14px', padding: '14px', border: `1px solid ${borderColor}` }}>
+            <p style={{ fontSize: '22px', fontWeight: '900', color: 'var(--primary)', margin: '0 0 4px' }}>{products.filter((p) => !p.isSoldOut).length}</p>
             <p style={{ fontSize: '11px', color: subTextColor, margin: 0, fontWeight: '600' }}>판매중</p>
           </div>
         </div>

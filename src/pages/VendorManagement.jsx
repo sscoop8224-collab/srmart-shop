@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import API from '../api';
 
-const G = '#00c471';
-const GD = '#00a85e';
+const G = 'var(--primary)';
+const GD = 'var(--primary-dark)';
 
 const EMPTY_FORM = {
   name: '', business_number: '', phone: '', email: '',
@@ -30,7 +30,7 @@ export default function VendorManagement({ goBack, darkMode }) {
   const borderColor = darkMode ? '#3a3a3a' : '#dee2e6';
   const headerBg = darkMode
     ? 'linear-gradient(135deg, #0d4d2a 0%, #1a5c2a 100%)'
-    : 'linear-gradient(135deg, #00c471 0%, #00a85e 100%)';
+    : 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)';
 
   const [vendors, setVendors]     = useState([]);
   const [loading, setLoading]     = useState(true);
@@ -102,7 +102,7 @@ export default function VendorManagement({ goBack, darkMode }) {
     return (
       <span style={{
         fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 20,
-        background: active ? (dark ? '#1e3a2a' : '#e8faf3') : (dark ? '#3a3a3a' : '#f1f3f5'),
+        background: active ? (dark ? '#1e3a2a' : 'var(--primary-light)') : (dark ? '#3a3a3a' : '#f1f3f5'),
         color: active ? GD : '#868e96',
       }}>
         {status || '거래중'}
@@ -114,7 +114,7 @@ export default function VendorManagement({ goBack, darkMode }) {
     <div style={{ background: bg, minHeight: '100vh', paddingBottom: 100, maxWidth: 480, margin: '0 auto' }}>
 
       {/* 헤더 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: dark ? 'linear-gradient(135deg, #0d4d2a 0%, #1a5c2a 100%)' : 'linear-gradient(135deg, #00c471 0%, #00a85e 100%)', position: 'sticky', top: 0, zIndex: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: dark ? 'linear-gradient(135deg, #0d4d2a 0%, #1a5c2a 100%)' : 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)', position: 'sticky', top: 0, zIndex: 10 }}>
         <button onClick={goBack}
           style={{ width: 40, height: 40, flexShrink: 0, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -136,7 +136,7 @@ export default function VendorManagement({ goBack, darkMode }) {
             style={{
               padding: '7px 16px', borderRadius: 20, border: 'none', cursor: 'pointer',
               fontSize: 13, fontWeight: 600, fontFamily: 'inherit',
-              background: filterTab === f ? G : (dark ? '#333' : '#f0faf5'),
+              background: filterTab === f ? G : (dark ? '#333' : 'var(--primary-light)'),
               color: filterTab === f ? 'white' : subTextColor,
               marginBottom: 12,
             }}>
@@ -177,7 +177,7 @@ export default function VendorManagement({ goBack, darkMode }) {
               <div key={v.id} style={{ background: cardBg, borderRadius: 16, border: `1px solid ${border}`, boxShadow: dark ? 'none' : '0 2px 8px rgba(0,0,0,0.04)', padding: '14px 16px' }}>
                 {/* 카드 상단: 이름 + 뱃지 + 버튼 */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: dark ? '#333' : '#f0faf5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: dark ? '#333' : 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={GD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
                     </svg>
@@ -188,11 +188,11 @@ export default function VendorManagement({ goBack, darkMode }) {
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                     <button onClick={() => openEdit(v)}
-                      style={{ padding: '5px 12px', fontSize: 12, fontWeight: 600, background: dark ? '#333' : '#f0faf5', color: GD, border: 'none', borderRadius: 8, cursor: 'pointer' }}>
+                      style={{ padding: '5px 12px', fontSize: 12, fontWeight: 600, background: dark ? '#333' : 'var(--primary-light)', color: GD, border: 'none', borderRadius: 8, cursor: 'pointer' }}>
                       수정
                     </button>
                     <button onClick={() => handleDelete(v)}
-                      style={{ padding: '5px 12px', fontSize: 12, fontWeight: 600, background: dark ? '#3a1a1a' : '#fff0f1', color: '#ff4757', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
+                      style={{ padding: '5px 12px', fontSize: 12, fontWeight: 600, background: dark ? '#3a1a1a' : 'var(--accent-light)', color: '#ff4757', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
                       삭제
                     </button>
                   </div>

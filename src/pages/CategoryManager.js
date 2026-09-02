@@ -2,17 +2,17 @@ import { useState } from 'react';
 
 function CategoryManager({ categories, setCategories, darkMode }) {
   const cardBg      = darkMode ? '#2a2a2a' : 'white';
-  const border      = darkMode ? '#3a3a3a' : '#f0faf5';
+  const border      = darkMode ? '#3a3a3a' : 'var(--primary-light)';
   const text        = darkMode ? '#f0f0f0' : '#212529';
   const sub         = darkMode ? '#9e9e9e' : '#adb5bd';
-  const inputBg     = darkMode ? '#1a1a1a' : '#f8fffe';
-  const inputBorder = darkMode ? '#3a3a3a' : '#e8faf3';
-  const medBg       = darkMode ? '#2e2e2e' : '#f0faf5';
-  const medCardBg   = darkMode ? '#252525' : '#f8fffe';
-  const medBorder   = darkMode ? '#3a3a3a' : '#e8faf3';
+  const inputBg     = darkMode ? '#1a1a1a' : 'var(--primary-light)';
+  const inputBorder = darkMode ? '#3a3a3a' : 'var(--primary-light)';
+  const medBg       = darkMode ? '#2e2e2e' : 'var(--primary-light)';
+  const medCardBg   = darkMode ? '#252525' : 'var(--primary-light)';
+  const medBorder   = darkMode ? '#3a3a3a' : 'var(--primary-light)';
   const largeBg     = darkMode
     ? 'linear-gradient(135deg, #1a5c2a 0%, #0d4d2a 100%)'
-    : 'linear-gradient(135deg, #00c471 0%, #00a85e 100%)';
+    : 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)';
   const largeShadow = '0 4px 16px rgba(0,0,0,0.15)';
 
   const [form, setForm]           = useState({ large: '', medium: '', small: '' });
@@ -137,8 +137,8 @@ function CategoryManager({ categories, setCategories, darkMode }) {
     <button onClick={onClick} disabled={disabled}
       style={{
         width: 28, height: 28, borderRadius: 8, border: 'none',
-        background: disabled ? (darkMode ? '#333' : '#f1f3f5') : (darkMode ? '#333' : '#f0faf5'),
-        color: disabled ? (darkMode ? '#555' : '#dee2e6') : '#00a85e',
+        background: disabled ? (darkMode ? '#333' : '#f1f3f5') : (darkMode ? '#333' : 'var(--primary-light)'),
+        color: disabled ? (darkMode ? '#555' : '#dee2e6') : 'var(--primary-dark)',
         cursor: disabled ? 'default' : 'pointer',
         fontSize: '11px', fontWeight: '700',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -151,13 +151,13 @@ function CategoryManager({ categories, setCategories, darkMode }) {
     <div>
       {/* 대분류 추가 */}
       <div style={{ background: cardBg, padding: '16px', borderRadius: '16px', marginBottom: '16px', border: `1px solid ${border}`, boxShadow: darkMode ? 'none' : '0 2px 8px rgba(0,0,0,0.04)' }}>
-        <p style={{ fontSize: '13px', fontWeight: '700', color: '#00a85e', margin: '0 0 10px' }}>대분류 추가</p>
+        <p style={{ fontSize: '13px', fontWeight: '700', color: 'var(--primary-dark)', margin: '0 0 10px' }}>대분류 추가</p>
         <div style={{ display: 'flex', gap: '8px' }}>
           <input value={form.large} onChange={(e) => setForm({ ...form, large: e.target.value })}
             placeholder="대분류 이름 (예: 식품)" style={inputStyle}
             onKeyDown={(e) => { if (e.key === 'Enter') handleAddLarge(); }} />
           <button onClick={handleAddLarge}
-            style={{ padding: '10px 16px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: '700', fontSize: '13px', whiteSpace: 'nowrap' }}>
+            style={{ padding: '10px 16px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: '700', fontSize: '13px', whiteSpace: 'nowrap' }}>
             추가
           </button>
         </div>
@@ -165,7 +165,7 @@ function CategoryManager({ categories, setCategories, darkMode }) {
 
       {categories.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px', background: cardBg, borderRadius: '16px', border: `1px solid ${border}` }}>
-          <div style={{ width: 60, height: 60, background: darkMode ? '#333' : '#f0faf5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+          <div style={{ width: 60, height: 60, background: darkMode ? '#333' : 'var(--primary-light)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
             </svg>
@@ -226,7 +226,7 @@ function CategoryManager({ categories, setCategories, darkMode }) {
                       placeholder="중분류 이름 (예: 신선식품)" style={inputStyle}
                       onKeyDown={(e) => { if (e.key === 'Enter') handleAddMedium(large.name); }} />
                     <button onClick={() => handleAddMedium(large.name)}
-                      style={{ padding: '10px 14px', background: darkMode ? '#1e3a2a' : '#f0faf5', color: '#00a85e', border: `1.5px solid ${inputBorder}`, borderRadius: '12px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                      style={{ padding: '10px 14px', background: darkMode ? '#1e3a2a' : 'var(--primary-light)', color: 'var(--primary-dark)', border: `1.5px solid ${inputBorder}`, borderRadius: '12px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', whiteSpace: 'nowrap' }}>
                       중분류 추가
                     </button>
                   </div>
@@ -246,7 +246,7 @@ function CategoryManager({ categories, setCategories, darkMode }) {
                                   style={{ flex: 1, padding: '5px 10px', borderRadius: '8px', border: `1.5px solid ${inputBorder}`, fontSize: '13px', outline: 'none', background: inputBg, color: text }}
                                   autoFocus />
                                 <button onClick={() => saveEditMedium(large.name, medium.name)}
-                                  style={{ padding: '5px 10px', background: '#00c471', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '11px', fontWeight: '700' }}>
+                                  style={{ padding: '5px 10px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '11px', fontWeight: '700' }}>
                                   저장
                                 </button>
                                 <button onClick={cancelEdit}
@@ -255,7 +255,7 @@ function CategoryManager({ categories, setCategories, darkMode }) {
                                 </button>
                               </div>
                             ) : (
-                              <span style={{ fontWeight: '600', cursor: 'pointer', fontSize: '13px', color: '#00a85e', display: 'flex', alignItems: 'center', gap: '6px' }}
+                              <span style={{ fontWeight: '600', cursor: 'pointer', fontSize: '13px', color: 'var(--primary-dark)', display: 'flex', alignItems: 'center', gap: '6px' }}
                                 onClick={() => setOpenMedium(openMedium === large.name + '-' + medium.name ? null : large.name + '-' + medium.name)}>
                                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
                                   style={{ transform: openMedium === large.name + '-' + medium.name ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>
@@ -272,7 +272,7 @@ function CategoryManager({ categories, setCategories, darkMode }) {
                                 수정
                               </button>
                               <button onClick={() => handleDeleteMedium(large.name, medium.name)}
-                                style={{ padding: '4px 10px', background: darkMode ? '#3a1010' : '#fff0f1', color: darkMode ? '#ff9999' : '#ff4757', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '11px', fontWeight: '700' }}>
+                                style={{ padding: '4px 10px', background: darkMode ? '#3a1010' : 'var(--accent-light)', color: darkMode ? '#ff9999' : '#ff4757', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '11px', fontWeight: '700' }}>
                                 삭제
                               </button>
                             </div>
@@ -286,7 +286,7 @@ function CategoryManager({ categories, setCategories, darkMode }) {
                                   placeholder="소분류 이름 (예: 채소)" style={inputStyle}
                                   onKeyDown={(e) => { if (e.key === 'Enter') handleAddSmall(large.name, medium.name); }} />
                                 <button onClick={() => handleAddSmall(large.name, medium.name)}
-                                  style={{ padding: '10px 12px', background: darkMode ? '#1e3a2a' : '#f0faf5', color: '#00a85e', border: `1.5px solid ${inputBorder}`, borderRadius: '12px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                                  style={{ padding: '10px 12px', background: darkMode ? '#1e3a2a' : 'var(--primary-light)', color: 'var(--primary-dark)', border: `1.5px solid ${inputBorder}`, borderRadius: '12px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', whiteSpace: 'nowrap' }}>
                                   소분류 추가
                                 </button>
                               </div>
@@ -303,7 +303,7 @@ function CategoryManager({ categories, setCategories, darkMode }) {
                                             style={{ flex: 1, padding: '5px 10px', borderRadius: '8px', border: `1.5px solid ${inputBorder}`, fontSize: '13px', outline: 'none', background: inputBg, color: text }}
                                             autoFocus />
                                           <button onClick={() => saveEditSmall(large.name, medium.name, small)}
-                                            style={{ padding: '5px 10px', background: '#00c471', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '11px', fontWeight: '700' }}>
+                                            style={{ padding: '5px 10px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '11px', fontWeight: '700' }}>
                                             저장
                                           </button>
                                           <button onClick={cancelEdit}
@@ -322,7 +322,7 @@ function CategoryManager({ categories, setCategories, darkMode }) {
                                           수정
                                         </button>
                                         <button onClick={() => handleDeleteSmall(large.name, medium.name, small)}
-                                          style={{ padding: '4px 10px', background: darkMode ? '#3a1010' : '#fff0f1', color: darkMode ? '#ff9999' : '#ff4757', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '11px', fontWeight: '700' }}>
+                                          style={{ padding: '4px 10px', background: darkMode ? '#3a1010' : 'var(--accent-light)', color: darkMode ? '#ff9999' : '#ff4757', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '11px', fontWeight: '700' }}>
                                           삭제
                                         </button>
                                       </div>

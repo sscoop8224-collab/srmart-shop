@@ -2,10 +2,10 @@ import { useState, useRef } from 'react';
 import BarcodeQRScanner, { ScanButtonIcon } from '../components/common/BarcodeQRScanner';
 
 function SimpleInventory({ products, setProducts, goBack, darkMode }) {
-  const bg        = darkMode ? '#1a1a1a' : '#f8fffe';
+  const bg        = darkMode ? '#1a1a1a' : 'var(--primary-light)';
   const cardBg    = darkMode ? '#2a2a2a' : 'white';
   const headerBg  = darkMode ? '#222' : 'white';
-  const border    = darkMode ? '#3a3a3a' : '#f0faf5';
+  const border    = darkMode ? '#3a3a3a' : 'var(--primary-light)';
   const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
   const subColor  = darkMode ? '#9e9e9e' : '#adb5bd';
   const inputBg   = darkMode ? '#2a2a2a' : 'white';
@@ -61,9 +61,9 @@ function SimpleInventory({ products, setProducts, goBack, darkMode }) {
 
   const getStatus = (p) => {
     const stock = p.stock ?? 0;
-    if (p.isSoldOut || stock === 0) return { label: '품절', color: darkMode ? '#ff8888' : '#ff4757', bg: darkMode ? '#3d1a1a' : '#fff0f1' };
+    if (p.isSoldOut || stock === 0) return { label: '품절', color: darkMode ? '#ff8888' : '#ff4757', bg: darkMode ? '#3d1a1a' : 'var(--accent-light)' };
     if (stock < 20) return { label: '임박', color: darkMode ? '#ffb84d' : '#f0a500', bg: darkMode ? '#3d2818' : '#fff3cd' };
-    return { label: '정상', color: darkMode ? '#4caf50' : '#00c471', bg: darkMode ? '#1a4a2a' : '#e8faf3' };
+    return { label: '정상', color: darkMode ? '#4caf50' : 'var(--primary)', bg: darkMode ? '#1a4a2a' : 'var(--primary-light)' };
   };
 
   const handleReceive = () => {
@@ -98,7 +98,7 @@ function SimpleInventory({ products, setProducts, goBack, darkMode }) {
   return (
     <div style={{ background: bg, minHeight: '100vh', paddingBottom: 100, maxWidth: 480, margin: '0 auto' }}>
       {/* 헤더 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: darkMode ? '#0d4d2a' : 'linear-gradient(135deg, #00c471, #00a85e)', position: 'sticky', top: 0, zIndex: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: darkMode ? '#0d4d2a' : 'linear-gradient(135deg, var(--primary), var(--primary-dark))', position: 'sticky', top: 0, zIndex: 10 }}>
         <button onClick={goBack} style={{ width: 40, height: 40, flexShrink: 0, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
@@ -130,16 +130,16 @@ function SimpleInventory({ products, setProducts, goBack, darkMode }) {
             onKeyDown={handleSearchKeyDown}
           />
           <button onClick={() => setShowScanner(true)}
-            style={{ width: 48, height: 48, flexShrink: 0, background: '#00c471', border: 'none', borderRadius: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', transition: 'background 0.15s' }}
-            onMouseEnter={e => e.currentTarget.style.background = '#00a85e'}
-            onMouseLeave={e => e.currentTarget.style.background = '#00c471'}>
+            style={{ width: 48, height: 48, flexShrink: 0, background: 'var(--primary)', border: 'none', borderRadius: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', transition: 'background 0.15s' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--primary-dark)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--primary)'}>
             <ScanButtonIcon />
           </button>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {['전체', '정상', '품절임박', '품절'].map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              style={{ padding: '6px 14px', borderRadius: 20, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: filter === f ? '#00c471' : cardBg, color: filter === f ? 'white' : subColor, boxShadow: darkMode ? 'none' : '0 1px 4px rgba(0,0,0,0.08)' }}>
+              style={{ padding: '6px 14px', borderRadius: 20, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: filter === f ? 'var(--primary)' : cardBg, color: filter === f ? 'white' : subColor, boxShadow: darkMode ? 'none' : '0 1px 4px rgba(0,0,0,0.08)' }}>
               {f}
             </button>
           ))}
@@ -169,7 +169,7 @@ function SimpleInventory({ products, setProducts, goBack, darkMode }) {
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={() => { setSelected(p); setMode('receive'); setQty(''); }}
-                  style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', background: darkMode ? '#1a4a2a' : '#e8faf3', color: darkMode ? '#66bb6a' : '#00c471', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                  style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', background: darkMode ? '#1a4a2a' : 'var(--primary-light)', color: darkMode ? '#66bb6a' : 'var(--primary)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
                   📦 입고
                 </button>
                 {p.isSoldOut || (p.stock ?? 0) === 0 ? (
@@ -201,7 +201,7 @@ function SimpleInventory({ products, setProducts, goBack, darkMode }) {
             </div>
             <div style={{ background: bg, borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: textColor }}>{selected.name}</div>
-              <div style={{ fontSize: 12, color: subColor, marginTop: 4 }}>현재 재고: <strong style={{ color: '#00c471' }}>{selected.stock ?? 0}개</strong></div>
+              <div style={{ fontSize: 12, color: subColor, marginTop: 4 }}>현재 재고: <strong style={{ color: 'var(--primary)' }}>{selected.stock ?? 0}개</strong></div>
             </div>
             {mode === 'receive' ? (
               <>
@@ -213,18 +213,18 @@ function SimpleInventory({ products, setProducts, goBack, darkMode }) {
                   value={qty} onChange={e => setQty(e.target.value)} autoFocus
                 />
                 {qty && Number(qty) > 0 && (
-                  <div style={{ background: '#e8faf3', borderRadius: 10, padding: '8px 14px', fontSize: 13, color: '#00a85e', fontWeight: 600, marginBottom: 16 }}>
+                  <div style={{ background: 'var(--primary-light)', borderRadius: 10, padding: '8px 14px', fontSize: 13, color: 'var(--primary-dark)', fontWeight: 600, marginBottom: 16 }}>
                     입고 후 재고: {selected.stock ?? 0} + {qty} = <strong>{(selected.stock ?? 0) + Number(qty)}개</strong>
                   </div>
                 )}
                 <button onClick={handleReceive}
-                  style={{ width: '100%', padding: 14, background: 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: 14, fontSize: 15, fontWeight: 700, color: 'white', cursor: 'pointer' }}>
+                  style={{ width: '100%', padding: 14, background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', border: 'none', borderRadius: 14, fontSize: 15, fontWeight: 700, color: 'white', cursor: 'pointer' }}>
                   입고 처리
                 </button>
               </>
             ) : (
               <>
-                <div style={{ background: '#fff0f1', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#ff4757', marginBottom: 16 }}>
+                <div style={{ background: 'var(--accent-light)', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#ff4757', marginBottom: 16 }}>
                   ⚠️ 재고가 0으로 변경되고 앱에서 품절로 표시돼요.
                 </div>
                 <button onClick={handleSoldout}

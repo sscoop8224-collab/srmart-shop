@@ -70,17 +70,17 @@ function CouponManager({ coupons, setCoupons, goBack, darkMode }) {
 
   const getCouponStatus = (coupon) => {
     if (!coupon.isActive) return { label: '비활성', bg: darkMode ? '#2e2e2e' : '#f1f3f5', color: '#868e96' };
-    if (isExpired(coupon)) return { label: '만료', bg: darkMode ? '#2a1010' : '#fff0f1', color: '#ff4757' };
+    if (isExpired(coupon)) return { label: '만료', bg: darkMode ? '#2a1010' : 'var(--accent-light)', color: '#ff4757' };
     if (isNotStarted(coupon)) return { label: '예정', bg: darkMode ? '#2a2010' : '#fff3cd', color: '#f0a500' };
-    if (coupon.usageLimit > 0 && coupon.usageCount >= coupon.usageLimit) return { label: '소진', bg: darkMode ? '#2a1010' : '#fff0f1', color: '#ff4757' };
-    return { label: '사용중', bg: darkMode ? '#1e2e24' : '#f0faf5', color: '#00a85e' };
+    if (coupon.usageLimit > 0 && coupon.usageCount >= coupon.usageLimit) return { label: '소진', bg: darkMode ? '#2a1010' : 'var(--accent-light)', color: '#ff4757' };
+    return { label: '사용중', bg: darkMode ? '#1e2e24' : 'var(--primary-light)', color: 'var(--primary-dark)' };
   };
 
   return (
     <div style={{ background: bg, minHeight: '100vh', paddingBottom: '80px' }}>
 
       {/* 헤더 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: darkMode ? 'linear-gradient(135deg, #0d4d2a 0%, #1a5c2a 100%)' : 'linear-gradient(135deg, #00c471 0%, #00a85e 100%)', position: 'sticky', top: 0, zIndex: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: darkMode ? 'linear-gradient(135deg, #0d4d2a 0%, #1a5c2a 100%)' : 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button onClick={goBack} style={{ width: 40, height: 40, flexShrink: 0, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -103,17 +103,17 @@ function CouponManager({ coupons, setCoupons, goBack, darkMode }) {
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '6px' }}>쿠폰 코드</label>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', display: 'block', marginBottom: '6px' }}>쿠폰 코드</label>
               <input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
                 placeholder="예: SAVE10" readOnly={!!editCode}
                 style={{ ...inputStyle, fontFamily: 'monospace', fontWeight: '700', opacity: editCode ? 0.6 : 1 }} />
             </div>
             <div>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '6px' }}>쿠폰 설명</label>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', display: 'block', marginBottom: '6px' }}>쿠폰 설명</label>
               <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="예: 신규 회원 10% 할인" style={inputStyle} />
             </div>
             <div>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '6px' }}>할인 설정</label>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', display: 'block', marginBottom: '6px' }}>할인 설정</label>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} style={{ ...inputStyle, width: 'auto', flexShrink: 0 }}>
                   <option value="percent">% 할인</option>
@@ -124,18 +124,18 @@ function CouponManager({ coupons, setCoupons, goBack, darkMode }) {
               </div>
             </div>
             <div>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '6px' }}>적용 대상</label>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', display: 'block', marginBottom: '6px' }}>적용 대상</label>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {COUPON_TARGETS.map((t) => (
                   <button key={t.value} onClick={() => setForm({ ...form, target: t.value })}
-                    style={{ padding: '7px 14px', background: form.target === t.value ? '#00c471' : cardBg, color: form.target === t.value ? 'white' : textColor, border: form.target === t.value ? 'none' : `1.5px solid ${inputBorder}`, borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    style={{ padding: '7px 14px', background: form.target === t.value ? 'var(--primary)' : cardBg, color: form.target === t.value ? 'white' : textColor, border: form.target === t.value ? 'none' : `1.5px solid ${inputBorder}`, borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>
                     {t.label}
                   </button>
                 ))}
               </div>
             </div>
             <div>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '6px' }}>사용 기간</label>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', display: 'block', marginBottom: '6px' }}>사용 기간</label>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <input value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} type="date" style={inputStyle} />
                 <span style={{ fontSize: '13px', color: subTextColor, flexShrink: 0 }}>~</span>
@@ -143,21 +143,21 @@ function CouponManager({ coupons, setCoupons, goBack, darkMode }) {
               </div>
             </div>
             <div>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '6px' }}>최소 주문금액 (선택)</label>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', display: 'block', marginBottom: '6px' }}>최소 주문금액 (선택)</label>
               <input value={form.minAmount} onChange={(e) => setForm({ ...form, minAmount: e.target.value })} placeholder="예: 10000" type="number" style={inputStyle} />
             </div>
             {form.type === 'percent' && (
               <div>
-                <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '6px' }}>최대 할인금액 (선택)</label>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', display: 'block', marginBottom: '6px' }}>최대 할인금액 (선택)</label>
                 <input value={form.maxDiscount} onChange={(e) => setForm({ ...form, maxDiscount: e.target.value })} placeholder="예: 5000" type="number" style={inputStyle} />
               </div>
             )}
             <div>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '6px' }}>사용 횟수 제한 (선택)</label>
+              <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', display: 'block', marginBottom: '6px' }}>사용 횟수 제한 (선택)</label>
               <input value={form.usageLimit} onChange={(e) => setForm({ ...form, usageLimit: e.target.value })} placeholder="예: 100" type="number" style={inputStyle} />
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={handleAdd} style={{ flex: 1, padding: '14px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>
+              <button onClick={handleAdd} style={{ flex: 1, padding: '14px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>
                 {editCode ? '수정 완료' : '쿠폰 등록'}
               </button>
               <button onClick={handleCancel} style={{ padding: '14px 20px', background: inputBg, color: subTextColor, border: `1.5px solid ${inputBorder}`, borderRadius: '14px', fontSize: '15px', cursor: 'pointer', fontWeight: '600' }}>취소</button>
@@ -170,7 +170,7 @@ function CouponManager({ coupons, setCoupons, goBack, darkMode }) {
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {coupons.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 20px' }}>
-            <div style={{ width: '72px', height: '72px', background: darkMode ? '#2e2e2e' : '#f0faf5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+            <div style={{ width: '72px', height: '72px', background: darkMode ? '#2e2e2e' : 'var(--primary-light)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
               </svg>
@@ -189,13 +189,13 @@ function CouponManager({ coupons, setCoupons, goBack, darkMode }) {
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
                     <span style={{ background: status.bg, color: status.color, padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>{status.label}</span>
-                    <span style={{ background: coupon.type === 'percent' ? (darkMode ? '#1e2e24' : '#f0faf5') : (darkMode ? '#1a2030' : '#e8f0fe'), color: coupon.type === 'percent' ? '#00a85e' : '#1a73e8', padding: '4px 10px', borderRadius: '20px', fontSize: '13px', fontWeight: '800' }}>
+                    <span style={{ background: coupon.type === 'percent' ? (darkMode ? '#1e2e24' : 'var(--primary-light)') : (darkMode ? '#1a2030' : '#e8f0fe'), color: coupon.type === 'percent' ? 'var(--primary-dark)' : '#1a73e8', padding: '4px 10px', borderRadius: '20px', fontSize: '13px', fontWeight: '800' }}>
                       {coupon.type === 'percent' ? `-${coupon.discount}%` : `-₩${coupon.discount.toLocaleString()}`}
                     </span>
                   </div>
                 </div>
 
-                <div style={{ background: darkMode ? '#1e1e1e' : '#f8fffe', borderRadius: '12px', padding: '10px 12px', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '4px', border: `1px solid ${borderColor}` }}>
+                <div style={{ background: darkMode ? '#1e1e1e' : 'var(--primary-light)', borderRadius: '12px', padding: '10px 12px', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '4px', border: `1px solid ${borderColor}` }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
                     <span style={{ color: subTextColor }}>적용 대상</span>
                     <span style={{ fontWeight: '600', color: textColor }}>{COUPON_TARGETS.find((t) => t.value === (coupon.target || 'all'))?.label}</span>
@@ -222,10 +222,10 @@ function CouponManager({ coupons, setCoupons, goBack, darkMode }) {
 
                 <div style={{ display: 'flex', gap: '6px' }}>
                   <button onClick={() => handleEdit(coupon)} style={{ padding: '7px 12px', background: darkMode ? '#1a2030' : '#e8f0fe', color: '#1a73e8', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>수정</button>
-                  <button onClick={() => handleToggle(coupon.code)} style={{ padding: '7px 12px', background: coupon.isActive ? (darkMode ? '#2a2010' : '#fff3cd') : (darkMode ? '#1e2e24' : '#f0faf5'), color: coupon.isActive ? '#f0a500' : '#00a85e', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
+                  <button onClick={() => handleToggle(coupon.code)} style={{ padding: '7px 12px', background: coupon.isActive ? (darkMode ? '#2a2010' : '#fff3cd') : (darkMode ? '#1e2e24' : 'var(--primary-light)'), color: coupon.isActive ? '#f0a500' : 'var(--primary-dark)', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
                     {coupon.isActive ? '비활성화' : '활성화'}
                   </button>
-                  <button onClick={() => handleDelete(coupon.code)} style={{ padding: '7px 12px', background: '#fff0f1', color: '#ff4757', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>삭제</button>
+                  <button onClick={() => handleDelete(coupon.code)} style={{ padding: '7px 12px', background: 'var(--accent-light)', color: '#ff4757', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>삭제</button>
                 </div>
               </div>
             );

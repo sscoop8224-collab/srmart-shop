@@ -14,7 +14,7 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
   const borderColor = darkMode ? '#3a3a3a' : '#dee2e6';
   const headerBg = darkMode
     ? 'linear-gradient(135deg, #0d4d2a 0%, #1a5c2a 100%)'
-    : 'linear-gradient(135deg, #00c471 0%, #00a85e 100%)';
+    : 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)';
 
   const [tab, setTab] = useState('inspect'); // inspect | history | returns
   const [search, setSearch] = useState('');
@@ -151,7 +151,7 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
       <div style={{ display: 'flex', background: headerBg, borderBottom: `1px solid ${borderColor}` }}>
         {[{ key: 'inspect', label: '🔍 검수 입고' }, { key: 'history', label: '📋 매입 내역' }, { key: 'returns', label: '↩ 반품' }].map(t => (
           <div key={t.key} onClick={() => setTab(t.key)}
-            style={{ flex: 1, padding: '12px 0', textAlign: 'center', fontSize: 13, fontWeight: tab === t.key ? 700 : 400, color: tab === t.key ? '#00a85e' : subTextColor, borderBottom: tab === t.key ? '2px solid #00c471' : '2px solid transparent', cursor: 'pointer' }}>
+            style={{ flex: 1, padding: '12px 0', textAlign: 'center', fontSize: 13, fontWeight: tab === t.key ? 700 : 400, color: tab === t.key ? 'var(--primary-dark)' : subTextColor, borderBottom: tab === t.key ? '2px solid var(--primary)' : '2px solid transparent', cursor: 'pointer' }}>
             {t.label}
           </div>
         ))}
@@ -195,7 +195,7 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
                 value={search} onChange={e => setSearch(e.target.value)}
               />
               <button onClick={() => setShowScanner(true)}
-                style={{ width: 44, height: 44, flexShrink: 0, background: '#00c471', border: 'none', borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                style={{ width: 44, height: 44, flexShrink: 0, background: 'var(--primary)', border: 'none', borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
                 <ScanButtonIcon />
               </button>
             </div>
@@ -208,7 +208,7 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
                       <div style={{ fontSize: 11, color: '#adb5bd' }}>재고 {p.stock ?? 0}개</div>
                     </div>
                     <button onClick={() => addToList(p)}
-                      style={{ padding: '6px 12px', background: '#00c471', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                      style={{ padding: '6px 12px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                       + 추가
                     </button>
                   </div>
@@ -249,7 +249,7 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
                         </div>
                       </div>
                     </div>
-                    <div style={{ textAlign: 'right', fontSize: 12, fontWeight: 700, color: '#00a85e', marginTop: 6 }}>
+                    <div style={{ textAlign: 'right', fontSize: 12, fontWeight: 700, color: 'var(--primary-dark)', marginTop: 6 }}>
                       소계: ₩{(item.costPrice * item.qty).toLocaleString()}
                     </div>
                   </div>
@@ -262,7 +262,7 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
                   {payType === '외상' && <div style={{ fontSize: 11, color: '#ff4757', marginTop: 2 }}>⚠ 외상 처리</div>}
                 </div>
                 <button onClick={saveInspect}
-                  style={{ padding: '12px 20px', background: 'linear-gradient(135deg, #00c471, #00a85e)', border: 'none', borderRadius: 14, fontSize: 14, fontWeight: 700, color: 'white', cursor: 'pointer' }}>
+                  style={{ padding: '12px 20px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', border: 'none', borderRadius: 14, fontSize: 14, fontWeight: 700, color: 'white', cursor: 'pointer' }}>
                   {payType === '매입' ? '✅ 매입 입고' : '↩ 반품 출고'}
                 </button>
               </div>
@@ -285,14 +285,14 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
                 <div key={r.id} style={{ background: cardBg, borderRadius: 16, padding: '14px 16px', boxShadow: darkMode ? 'none' : '0 2px 8px rgba(0,0,0,0.05)', border: `1px solid ${border}` }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: textColor }}>{r.supplier}</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: r.status === '완료' ? '#e8faf3' : '#fff0f1', color: r.status === '완료' ? '#00a85e' : '#ff4757' }}>{r.status}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: r.status === '완료' ? 'var(--primary-light)' : 'var(--accent-light)', color: r.status === '완료' ? 'var(--primary-dark)' : '#ff4757' }}>{r.status}</span>
                   </div>
                   <div style={{ fontSize: 11, color: '#adb5bd', marginBottom: 4 }}>{r.date}</div>
                   <div style={{ fontSize: 12, color: '#868e96', marginBottom: 8 }}>{r.items.length}개 품목 · {r.payType}</div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 16, fontWeight: 900, color: '#00c471' }}>₩{r.totalAmount.toLocaleString()}</span>
+                    <span style={{ fontSize: 16, fontWeight: 900, color: 'var(--primary)' }}>₩{r.totalAmount.toLocaleString()}</span>
                     <button onClick={() => openReturn(r)}
-                      style={{ padding: '6px 12px', background: '#fff0f1', color: '#ff4757', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                      style={{ padding: '6px 12px', background: 'var(--accent-light)', color: '#ff4757', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                       ↩ 반품
                     </button>
                   </div>
@@ -315,10 +315,10 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {returnHistory.map(r => (
-                <div key={r.id} style={{ background: cardBg, borderRadius: 16, padding: '14px 16px', boxShadow: darkMode ? 'none' : '0 2px 8px rgba(0,0,0,0.05)', border: darkMode ? `1px solid ${border}` : '1px solid #fff0f1' }}>
+                <div key={r.id} style={{ background: cardBg, borderRadius: 16, padding: '14px 16px', boxShadow: darkMode ? 'none' : '0 2px 8px rgba(0,0,0,0.05)', border: darkMode ? `1px solid ${border}` : '1px solid var(--accent-light)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: textColor }}>{r.supplier}</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: '#fff0f1', color: '#ff4757' }}>반품완료</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: 'var(--accent-light)', color: '#ff4757' }}>반품완료</span>
                   </div>
                   <div style={{ fontSize: 11, color: '#adb5bd', marginBottom: 4 }}>{r.date}</div>
                   <div style={{ fontSize: 12, color: '#868e96', marginBottom: 6 }}>사유: {r.reason}</div>
@@ -363,7 +363,7 @@ function SimplePurchase({ products, setProducts, goBack, darkMode }) {
                     <button onClick={() => updateReturnQty(item.id, item.returnQty - 1)}
                       style={{ width: 26, height: 26, borderRadius: 6, border: `1px solid ${inputBorder}`, background: cardBg, color: textColor, cursor: 'pointer', fontSize: 13 }}>−</button>
                     <input type="number" value={item.returnQty} onChange={e => updateReturnQty(item.id, e.target.value)}
-                      style={{ width: 36, textAlign: 'center', padding: '3px', border: `1px solid ${inputBorder}`, borderRadius: 6, fontSize: 13, outline: 'none', background: item.returnQty > 0 ? (darkMode ? '#3a1a1a' : '#fff0f1') : cardBg, color: item.returnQty > 0 ? '#ff4757' : textColor }} />
+                      style={{ width: 36, textAlign: 'center', padding: '3px', border: `1px solid ${inputBorder}`, borderRadius: 6, fontSize: 13, outline: 'none', background: item.returnQty > 0 ? (darkMode ? '#3a1a1a' : 'var(--accent-light)') : cardBg, color: item.returnQty > 0 ? '#ff4757' : textColor }} />
                     <button onClick={() => updateReturnQty(item.id, item.returnQty + 1)}
                       style={{ width: 26, height: 26, borderRadius: 6, border: `1px solid ${inputBorder}`, background: cardBg, color: textColor, cursor: 'pointer', fontSize: 13 }}>+</button>
                   </div>

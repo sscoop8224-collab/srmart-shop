@@ -21,21 +21,21 @@ function ImageUploadMulti({ images, onImagesChange, darkMode }) {
 
   return (
     <div style={{ marginBottom: '12px' }}>
-      <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '8px' }}>상품 이미지 ({images.length}/5)</label>
+      <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', display: 'block', marginBottom: '8px' }}>상품 이미지 ({images.length}/5)</label>
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         {images.map((img, index) => (
           <div key={index} style={{ position: 'relative' }}>
-            <img src={imgUrl(img)} alt={'상품' + (index + 1)} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '12px', border: '2px solid #e8faf3' }} />
-            {index === 0 && <span style={{ position: 'absolute', bottom: '4px', left: '4px', background: '#00c471', color: 'white', fontSize: '9px', padding: '2px 6px', borderRadius: '6px', fontWeight: '700' }}>대표</span>}
+            <img src={imgUrl(img)} alt={'상품' + (index + 1)} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '12px', border: '2px solid var(--primary-light)' }} />
+            {index === 0 && <span style={{ position: 'absolute', bottom: '4px', left: '4px', background: 'var(--primary)', color: 'white', fontSize: '9px', padding: '2px 6px', borderRadius: '6px', fontWeight: '700' }}>대표</span>}
             <button onClick={() => handleRemove(index)} style={{ position: 'absolute', top: '3px', right: '3px', background: '#ff4757', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
           </div>
         ))}
         {images.length < 5 && (
-          <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '80px', height: '80px', border: `2px dashed ${darkMode ? '#444' : '#e8faf3'}`, borderRadius: '12px', cursor: 'pointer', background: darkMode ? '#2a2a2a' : '#f8fffe' }}>
+          <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '80px', height: '80px', border: `2px dashed ${darkMode ? '#444' : 'var(--primary-light)'}`, borderRadius: '12px', cursor: 'pointer', background: darkMode ? '#2a2a2a' : 'var(--primary-light)' }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
             </svg>
-            <span style={{ fontSize: '11px', color: '#00a85e', marginTop: '4px', fontWeight: '600' }}>추가</span>
+            <span style={{ fontSize: '11px', color: 'var(--primary-dark)', marginTop: '4px', fontWeight: '600' }}>추가</span>
             <input type="file" accept="image/*" multiple onChange={handleAdd} style={{ display: 'none' }} />
           </label>
         )}
@@ -50,23 +50,23 @@ const emptyForm = {
 };
 
 const inputStyle = {
-  padding: '12px 14px', borderRadius: '12px', border: '1.5px solid #e8faf3',
-  fontSize: '14px', outline: 'none', background: '#f8fffe',
+  padding: '12px 14px', borderRadius: '12px', border: '1.5px solid var(--primary-light)',
+  fontSize: '14px', outline: 'none', background: 'var(--primary-light)',
   fontFamily: 'inherit', width: '100%', boxSizing: 'border-box'
 };
 
 const selectStyle = {
-  padding: '12px 14px', borderRadius: '12px', border: '1.5px solid #e8faf3',
-  fontSize: '14px', outline: 'none', background: '#f8fffe',
+  padding: '12px 14px', borderRadius: '12px', border: '1.5px solid var(--primary-light)',
+  fontSize: '14px', outline: 'none', background: 'var(--primary-light)',
   fontFamily: 'inherit', width: '100%', boxSizing: 'border-box'
 };
 
 function Admin({ products, setProducts, categories, setCategories, messages, setMessages, goBack, darkMode }) {
-  const bg        = darkMode ? '#1a1a1a' : '#f8fffe';
+  const bg        = darkMode ? '#1a1a1a' : 'var(--primary-light)';
   const cardBg    = darkMode ? '#2a2a2a' : '#ffffff';
   const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
   const subColor  = darkMode ? '#9e9e9e' : '#adb5bd';
-  const border    = darkMode ? '#3a3a3a' : '#f0faf5';
+  const border    = darkMode ? '#3a3a3a' : 'var(--primary-light)';
   const inputBg   = darkMode ? '#2a2a2a' : '#ffffff';
   const inputBorder = darkMode ? '#3a3a3a' : '#dee2e6';
 
@@ -152,7 +152,7 @@ function Admin({ products, setProducts, categories, setCategories, messages, set
     <div style={{ background: bg, minHeight: '100vh', paddingBottom: '80px' }}>
 
       {/* 헤더 */}
-      <div style={{ background: darkMode ? '#0d4d2a' : 'linear-gradient(135deg, #00c471, #00a85e)', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px', position: 'sticky', top: 0, zIndex: 10 }}>
+      <div style={{ background: darkMode ? '#0d4d2a' : 'linear-gradient(135deg, var(--primary), var(--primary-dark))', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px', position: 'sticky', top: 0, zIndex: 10 }}>
         <button onClick={goBack} style={{ width: 40, height: 40, flexShrink: 0, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
@@ -162,7 +162,7 @@ function Admin({ products, setProducts, categories, setCategories, messages, set
       {/* 탭 */}
       <div style={{ background: cardBg, display: 'flex', borderBottom: `1px solid ${border}`, padding: '0 16px' }}>
         {tabs.map((t) => (
-          <button key={t.key} onClick={() => setTab(t.key)} style={{ flex: 1, padding: '14px 8px', background: 'transparent', color: tab === t.key ? '#00c471' : subColor, border: 'none', borderBottom: tab === t.key ? '2px solid #00c471' : '2px solid transparent', cursor: 'pointer', fontWeight: tab === t.key ? '700' : '500', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', fontFamily: 'inherit' }}>
+          <button key={t.key} onClick={() => setTab(t.key)} style={{ flex: 1, padding: '14px 8px', background: 'transparent', color: tab === t.key ? 'var(--primary)' : subColor, border: 'none', borderBottom: tab === t.key ? '2px solid var(--primary)' : '2px solid transparent', cursor: 'pointer', fontWeight: tab === t.key ? '700' : '500', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', fontFamily: 'inherit' }}>
             {t.icon}{t.label}
           </button>
         ))}
@@ -193,7 +193,7 @@ function Admin({ products, setProducts, categories, setCategories, messages, set
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input name="barcode" value={form.barcode} onChange={handleChange} placeholder="바코드 번호 (선택)" style={{ ...dynInputStyle, flex: 1 }} />
                   <button type="button" onClick={() => setShowScanner(true)}
-                    style={{ width: 48, height: 48, flexShrink: 0, background: '#00c471', border: 'none', borderRadius: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                    style={{ width: 48, height: 48, flexShrink: 0, background: 'var(--primary)', border: 'none', borderRadius: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
                     <ScanButtonIcon />
                   </button>
                 </div>
@@ -208,10 +208,10 @@ function Admin({ products, setProducts, categories, setCategories, messages, set
 
                 {/* 영양정보 이미지 */}
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '8px' }}>영양정보 이미지 (선택)</label>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', display: 'block', marginBottom: '8px' }}>영양정보 이미지 (선택)</label>
                   {form.nutritionImage && (
                     <div style={{ position: 'relative', marginBottom: '8px' }}>
-                      <img src={imgUrl(form.nutritionImage)} alt="영양정보" style={{ width: '100%', borderRadius: '12px', border: '1px solid #e8faf3' }} />
+                      <img src={imgUrl(form.nutritionImage)} alt="영양정보" style={{ width: '100%', borderRadius: '12px', border: '1px solid var(--primary-light)' }} />
                       <button onClick={() => setForm({ ...form, nutritionImage: null })} style={{ position: 'absolute', top: '8px', right: '8px', background: '#ff4757', color: 'white', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', fontSize: '12px' }}>✕</button>
                     </div>
                   )}
@@ -219,7 +219,7 @@ function Admin({ products, setProducts, categories, setCategories, messages, set
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
                     </svg>
-                    <span style={{ fontSize: '13px', color: '#00a85e', fontWeight: '600' }}>영양정보 이미지 추가</span>
+                    <span style={{ fontSize: '13px', color: 'var(--primary-dark)', fontWeight: '600' }}>영양정보 이미지 추가</span>
                     <input type="file" accept="image/*" onChange={(e) => {
                       const file = e.target.files[0];
                       if (!file) return;
@@ -250,7 +250,7 @@ function Admin({ products, setProducts, categories, setCategories, messages, set
                 )}
 
                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                  <button onClick={handleSubmit} style={{ flex: 1, padding: '14px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '14px', fontSize: '15px', cursor: 'pointer', fontWeight: '700', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
+                  <button onClick={handleSubmit} style={{ flex: 1, padding: '14px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '14px', fontSize: '15px', cursor: 'pointer', fontWeight: '700', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
                     {editId !== null ? '수정 완료' : '상품 등록'}
                   </button>
                   {editId !== null && (
@@ -264,12 +264,12 @@ function Admin({ products, setProducts, categories, setCategories, messages, set
             <h3 style={{ marginBottom: '12px', color: textColor, fontSize: '15px', fontWeight: '800' }}>등록된 상품 ({products.length}개)</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {products.map((product) => (
-                <div key={product.id} style={{ background: editId === product.id ? (darkMode ? '#1e3a2a' : '#f0faf5') : cardBg, borderRadius: '16px', border: editId === product.id ? '1.5px solid #00c471' : `1px solid ${border}`, padding: '14px', display: 'flex', gap: '12px', alignItems: 'flex-start', boxShadow: darkMode ? 'none' : '0 2px 8px rgba(0,0,0,0.04)', opacity: product.isSoldOut ? 0.8 : 1 }}>
+                <div key={product.id} style={{ background: editId === product.id ? (darkMode ? '#1e3a2a' : 'var(--primary-light)') : cardBg, borderRadius: '16px', border: editId === product.id ? '1.5px solid var(--primary)' : `1px solid ${border}`, padding: '14px', display: 'flex', gap: '12px', alignItems: 'flex-start', boxShadow: darkMode ? 'none' : '0 2px 8px rgba(0,0,0,0.04)', opacity: product.isSoldOut ? 0.8 : 1 }}>
                   <div style={{ width: '70px', height: '70px', borderRadius: '12px', overflow: 'hidden', flexShrink: 0 }}>
                     {product.image ? (
                       <img src={imgUrl(product.image)} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
-                      <div style={{ width: '100%', height: '100%', background: darkMode ? '#333' : '#f0faf5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ width: '100%', height: '100%', background: darkMode ? '#333' : 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
                         </svg>
@@ -282,18 +282,18 @@ function Admin({ products, setProducts, categories, setCategories, messages, set
                         <p style={{ fontWeight: '700', fontSize: '14px', color: textColor, margin: 0 }}>{product.name}</p>
                         {product.isSoldOut && <span style={{ background: '#ff4757', color: 'white', fontSize: '10px', padding: '2px 6px', borderRadius: '8px', fontWeight: '700' }}>품절</span>}
                       </div>
-                      <p style={{ fontWeight: '800', fontSize: '14px', color: '#00c471', margin: 0, flexShrink: 0 }}>₩{product.price.toLocaleString()}</p>
+                      <p style={{ fontWeight: '800', fontSize: '14px', color: 'var(--primary)', margin: 0, flexShrink: 0 }}>₩{product.price.toLocaleString()}</p>
                     </div>
                     {product.stock && <p style={{ fontSize: '12px', color: subColor, margin: '0 0 3px' }}>재고: {product.stock}개</p>}
                     {product.barcode && <p style={{ fontSize: '11px', color: subColor, margin: '0 0 6px', fontFamily: 'monospace' }}>{product.barcode}</p>}
                     <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '10px' }}>
-                      {product.large && <span style={{ background: darkMode ? '#1e3a2a' : '#f0faf5', color: '#00a85e', padding: '3px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>{product.large}</span>}
+                      {product.large && <span style={{ background: darkMode ? '#1e3a2a' : 'var(--primary-light)', color: 'var(--primary-dark)', padding: '3px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>{product.large}</span>}
                       {product.medium && <span style={{ background: darkMode ? '#333' : '#f1f3f5', color: darkMode ? '#ccc' : '#495057', padding: '3px 8px', borderRadius: '20px', fontSize: '11px' }}>{product.medium}</span>}
                       {product.small && <span style={{ background: darkMode ? '#333' : '#f1f3f5', color: subColor, padding: '3px 8px', borderRadius: '20px', fontSize: '11px' }}>{product.small}</span>}
                     </div>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                       <button onClick={() => handleEdit(product)} style={{ padding: '7px 12px', background: darkMode ? '#1a2a40' : '#e8f0fe', color: '#1a73e8', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>수정</button>
-                      <button onClick={() => handleToggleSoldOut(product.id)} style={{ padding: '7px 12px', background: product.isSoldOut ? (darkMode ? '#1e3a2a' : '#f0faf5') : (darkMode ? '#3a1a1a' : '#fff0f1'), color: product.isSoldOut ? '#00a85e' : '#ff4757', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
+                      <button onClick={() => handleToggleSoldOut(product.id)} style={{ padding: '7px 12px', background: product.isSoldOut ? (darkMode ? '#1e3a2a' : 'var(--primary-light)') : (darkMode ? '#3a1a1a' : 'var(--accent-light)'), color: product.isSoldOut ? 'var(--primary-dark)' : '#ff4757', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
                         {product.isSoldOut ? '품절해제' : '품절처리'}
                       </button>
                       <button onClick={() => handleDelete(product.id)} style={{ padding: '7px 12px', background: darkMode ? '#333' : '#f1f3f5', color: subColor, border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>삭제</button>
@@ -319,11 +319,11 @@ function Admin({ products, setProducts, categories, setCategories, messages, set
                 { key: 'logout', label: '로그아웃 메시지' },
               ].map((item) => (
                 <div key={item.key}>
-                  <label style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', display: 'block', marginBottom: '6px' }}>{item.label}</label>
+                  <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', display: 'block', marginBottom: '6px' }}>{item.label}</label>
                   <input value={msgForm[item.key]} onChange={(e) => setMsgForm({ ...msgForm, [item.key]: e.target.value })} style={dynInputStyle} />
                 </div>
               ))}
-              <button onClick={handleMsgSave} style={{ padding: '14px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '14px', fontSize: '15px', cursor: 'pointer', fontWeight: '700', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
+              <button onClick={handleMsgSave} style={{ padding: '14px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '14px', fontSize: '15px', cursor: 'pointer', fontWeight: '700', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
                 문구 저장
               </button>
             </div>

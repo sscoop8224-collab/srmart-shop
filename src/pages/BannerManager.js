@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 const BG_OPTIONS = [
-  { label: '그린', value: 'linear-gradient(135deg, #00c471, #00a85e)' },
+  { label: '그린', value: 'linear-gradient(135deg, var(--primary), var(--primary-dark))' },
   { label: '레드', value: 'linear-gradient(135deg, #ff6b6b, #ee5a24)' },
   { label: '퍼플', value: 'linear-gradient(135deg, #a29bfe, #6c5ce7)' },
   { label: '오렌지', value: 'linear-gradient(135deg, #fdcb6e, #e17055)' },
@@ -57,7 +57,7 @@ function BannerManager({ banners, setBanners, categories, goBack, darkMode }) {
   return (
     <div style={{ background: bg, minHeight: '100vh', paddingBottom: '80px' }}>
       {/* 헤더 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: darkMode ? 'linear-gradient(135deg, #0d4d2a 0%, #1a5c2a 100%)' : 'linear-gradient(135deg, #00c471 0%, #00a85e 100%)', position: 'sticky', top: 0, zIndex: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: darkMode ? 'linear-gradient(135deg, #0d4d2a 0%, #1a5c2a 100%)' : 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button onClick={goBack} style={{ width: 40, height: 40, flexShrink: 0, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -81,7 +81,7 @@ function BannerManager({ banners, setBanners, categories, goBack, darkMode }) {
             <input value={form.emoji} onChange={(e) => setForm({ ...form, emoji: e.target.value })} placeholder="이모지 (예: 🛒)" style={inputStyle} />
 
             <div>
-              <p style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', margin: '0 0 8px' }}>배경색</p>
+              <p style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', margin: '0 0 8px' }}>배경색</p>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {BG_OPTIONS.map((bgOpt) => (
                   <button key={bgOpt.value} onClick={() => setForm({ ...form, bg: bgOpt.value })}
@@ -93,7 +93,7 @@ function BannerManager({ banners, setBanners, categories, goBack, darkMode }) {
             </div>
 
             <div>
-              <p style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', margin: '0 0 8px' }}>카테고리 연결 (선택)</p>
+              <p style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', margin: '0 0 8px' }}>카테고리 연결 (선택)</p>
               <select value={form.filter} onChange={(e) => setForm({ ...form, filter: e.target.value })} style={inputStyle}>
                 <option value="">없음</option>
                 {categories.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
@@ -101,7 +101,7 @@ function BannerManager({ banners, setBanners, categories, goBack, darkMode }) {
             </div>
 
             <div>
-              <p style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', margin: '0 0 8px' }}>미리보기</p>
+              <p style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', margin: '0 0 8px' }}>미리보기</p>
               <div style={{ background: form.bg, borderRadius: '16px', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.85)', margin: '0 0 3px', fontWeight: '600' }}>{form.label || '라벨'}</p>
@@ -112,7 +112,7 @@ function BannerManager({ banners, setBanners, categories, goBack, darkMode }) {
               </div>
             </div>
 
-            <button onClick={handleAdd} style={{ padding: '14px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>
+            <button onClick={handleAdd} style={{ padding: '14px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>
               배너 등록
             </button>
           </div>
@@ -136,9 +136,9 @@ function BannerManager({ banners, setBanners, categories, goBack, darkMode }) {
                 {banner.filter ? '→ ' + banner.filter : '링크 없음'}
               </span>
               <div style={{ display: 'flex', gap: '6px' }}>
-                <button onClick={() => moveUp(index)} style={{ width: '32px', height: '32px', background: darkMode ? '#2e2e2e' : '#f0faf5', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', color: '#00a85e', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>↑</button>
-                <button onClick={() => moveDown(index)} style={{ width: '32px', height: '32px', background: darkMode ? '#2e2e2e' : '#f0faf5', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', color: '#00a85e', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>↓</button>
-                <button onClick={() => handleDelete(banner.id)} style={{ padding: '6px 12px', background: '#fff0f1', color: '#ff4757', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>삭제</button>
+                <button onClick={() => moveUp(index)} style={{ width: '32px', height: '32px', background: darkMode ? '#2e2e2e' : 'var(--primary-light)', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', color: 'var(--primary-dark)', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>↑</button>
+                <button onClick={() => moveDown(index)} style={{ width: '32px', height: '32px', background: darkMode ? '#2e2e2e' : 'var(--primary-light)', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '13px', color: 'var(--primary-dark)', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>↓</button>
+                <button onClick={() => handleDelete(banner.id)} style={{ padding: '6px 12px', background: 'var(--accent-light)', color: '#ff4757', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>삭제</button>
               </div>
             </div>
           </div>
