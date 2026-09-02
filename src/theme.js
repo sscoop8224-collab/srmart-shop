@@ -1,11 +1,11 @@
 // ── 색상 토큰 ────────────────────────────────────────────────
 export const colors = {
   // Green scale
-  green50:  '#f0faf5',
-  green100: '#e8faf3',
+  green50:  'var(--primary-light)',
+  green100: 'var(--primary-light)',
   green200: '#c8f0df',
-  green300: '#00c471',  // primary
-  green400: '#00a85e',  // primary dark
+  green300: 'var(--primary)',  // primary
+  green400: 'var(--primary-dark)',  // primary dark
   green500: '#008a4e',
   green700: '#0d4d2a',  // dark mode header
   green800: '#083d20',
@@ -37,12 +37,12 @@ export const colors = {
   // Semantic
   danger:       '#ff4757',
   dangerDark:   '#c62828',
-  dangerLight:  '#fff0f1',
+  dangerLight:  'var(--accent-light)',
   warning:      '#f0a500',
   warningLight: '#fff3cd',
   info:         '#1a73e8',
   infoLight:    '#e8f0fe',
-  success:      '#00c471',
+  success:      'var(--primary)',
 
   white: '#ffffff',
   black: '#000000',

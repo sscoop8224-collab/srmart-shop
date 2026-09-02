@@ -106,7 +106,7 @@ export default function BarcodeQRScanner({ onScanSuccess, onClose, darkMode }) {
     onClose();
   };
 
-  const green = '#00c471';
+  const green = 'var(--primary)';
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.94)', zIndex: 2000, display: 'flex', flexDirection: 'column' }}>

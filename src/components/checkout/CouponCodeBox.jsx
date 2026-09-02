@@ -1,10 +1,10 @@
 // 쿠폰 코드 입력 카드. Cart.js 원본(273~297행)에서 그대로 옮김 — 마크업/스타일 동일.
 function CouponCodeBox({ darkMode, appliedCoupon, couponInput, setCouponInput, onApply, onRemove }) {
   const cardBg = darkMode ? '#242424' : 'white';
-  const borderColor = darkMode ? '#2e2e2e' : '#f0faf5';
+  const borderColor = darkMode ? '#2e2e2e' : 'var(--primary-light)';
   const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
-  const inputBg = darkMode ? '#2e2e2e' : '#f8fffe';
-  const inputBorder = darkMode ? '#3a3a3a' : '#e8faf3';
+  const inputBg = darkMode ? '#2e2e2e' : 'var(--primary-light)';
+  const inputBorder = darkMode ? '#3a3a3a' : 'var(--primary-light)';
   const inputStyle = {
     padding: '11px 14px', borderRadius: '12px', border: `1.5px solid ${inputBorder}`,
     fontSize: '14px', outline: 'none', fontFamily: 'inherit',
@@ -21,19 +21,19 @@ function CouponCodeBox({ darkMode, appliedCoupon, couponInput, setCouponInput, o
         쿠폰 코드
       </p>
       {appliedCoupon ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: darkMode ? '#2e2e2e' : '#f0faf5', borderRadius: '12px', padding: '12px 14px', border: `1px solid ${inputBorder}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: darkMode ? '#2e2e2e' : 'var(--primary-light)', borderRadius: '12px', padding: '12px 14px', border: `1px solid ${inputBorder}` }}>
           <div>
-            <p style={{ fontSize: '13px', fontWeight: '700', color: '#00a85e', margin: '0 0 2px' }}>{appliedCoupon.code}</p>
-            <p style={{ fontSize: '12px', color: '#00a85e', margin: 0 }}>{appliedCoupon.description}</p>
+            <p style={{ fontSize: '13px', fontWeight: '700', color: 'var(--primary-dark)', margin: '0 0 2px' }}>{appliedCoupon.code}</p>
+            <p style={{ fontSize: '12px', color: 'var(--primary-dark)', margin: 0 }}>{appliedCoupon.description}</p>
           </div>
-          <button onClick={onRemove} style={{ background: '#fff0f1', border: 'none', cursor: 'pointer', color: '#ff4757', fontSize: '12px', padding: '4px 8px', borderRadius: '8px', fontWeight: '700' }}>제거</button>
+          <button onClick={onRemove} style={{ background: 'var(--accent-light)', border: 'none', cursor: 'pointer', color: '#ff4757', fontSize: '12px', padding: '4px 8px', borderRadius: '8px', fontWeight: '700' }}>제거</button>
         </div>
       ) : (
         <div style={{ display: 'flex', gap: '8px' }}>
           <input value={couponInput} onChange={(e) => setCouponInput(e.target.value)}
             placeholder="쿠폰 코드 입력" style={{ ...inputStyle, flex: 1 }}
             onKeyDown={(e) => { if (e.key === 'Enter') onApply(); }} />
-          <button onClick={onApply} style={{ padding: '11px 16px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', whiteSpace: 'nowrap' }}>적용</button>
+          <button onClick={onApply} style={{ padding: '11px 16px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', whiteSpace: 'nowrap' }}>적용</button>
         </div>
       )}
     </div>

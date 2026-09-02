@@ -67,7 +67,7 @@ const Chatbot = () => {
           aria-label="AI 상담"
           style={{
             width: '52px', height: '52px', borderRadius: '50%',
-            backgroundColor: '#00c471', border: 'none', cursor: 'pointer',
+            backgroundColor: 'var(--primary)', border: 'none', cursor: 'pointer',
             color: 'white', fontSize: '22px',
             boxShadow: '0 4px 14px rgba(0,196,113,0.45)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -76,7 +76,7 @@ const Chatbot = () => {
           {isOpen ? '✕' : '💬'}
         </button>
         {!isOpen && !collapsed && (
-          <span style={{ fontSize: '10px', fontWeight: 700, color: 'white', background: '#00c471', padding: '2px 8px', borderRadius: '8px', boxShadow: '0 2px 6px rgba(0,0,0,0.28)', whiteSpace: 'nowrap', letterSpacing: '-0.2px' }}>AI 상담</span>
+          <span style={{ fontSize: '10px', fontWeight: 700, color: 'white', background: 'var(--primary)', padding: '2px 8px', borderRadius: '8px', boxShadow: '0 2px 6px rgba(0,0,0,0.28)', whiteSpace: 'nowrap', letterSpacing: '-0.2px' }}>AI 상담</span>
         )}
       </div>
 
@@ -95,11 +95,11 @@ const Chatbot = () => {
           flexDirection: 'column',
           zIndex: 1001,
           overflow: 'hidden',
-          border: '1px solid #f0faf5',
+          border: '1px solid var(--primary-light)',
         }}>
           {/* 헤더 */}
           <div style={{
-            background: 'linear-gradient(135deg, #00c471, #00a85e)',
+            background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
             padding: '14px 16px',
             fontWeight: 'bold',
             fontSize: '15px',
@@ -116,7 +116,7 @@ const Chatbot = () => {
           <div style={{
             flex: 1, overflowY: 'auto', padding: '12px',
             display: 'flex', flexDirection: 'column', gap: '8px',
-            background: '#f8fffe',
+            background: 'var(--primary-light)',
           }}>
             {messages.map((msg, idx) => (
               <div key={idx} style={{
@@ -126,7 +126,7 @@ const Chatbot = () => {
                 <div style={{
                   maxWidth: '80%', padding: '10px 13px',
                   borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                  backgroundColor: msg.role === 'user' ? '#00c471' : 'white',
+                  backgroundColor: msg.role === 'user' ? 'var(--primary)' : 'white',
                   color: msg.role === 'user' ? 'white' : '#1a1a1a',
                   fontSize: '13px', lineHeight: '1.5',
                   whiteSpace: 'pre-wrap',
@@ -152,7 +152,7 @@ const Chatbot = () => {
 
           {/* 입력창 */}
           <div style={{
-            padding: '10px', borderTop: '1px solid #f0faf5',
+            padding: '10px', borderTop: '1px solid var(--primary-light)',
             display: 'flex', gap: '8px', background: 'white',
           }}>
             <input
@@ -162,8 +162,8 @@ const Chatbot = () => {
               placeholder="메시지를 입력하세요..."
               style={{
                 flex: 1, padding: '8px 12px', borderRadius: '20px',
-                border: '1.5px solid #e8faf3', fontSize: '13px',
-                outline: 'none', background: '#f8fffe',
+                border: '1.5px solid var(--primary-light)', fontSize: '13px',
+                outline: 'none', background: 'var(--primary-light)',
               }}
             />
             <button
@@ -171,7 +171,7 @@ const Chatbot = () => {
               disabled={loading}
               style={{
                 padding: '8px 14px', borderRadius: '20px',
-                background: 'linear-gradient(135deg, #00c471, #00a85e)',
+                background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
                 border: 'none', cursor: 'pointer',
                 fontWeight: 'bold', fontSize: '13px',
                 color: 'white',

@@ -10,12 +10,12 @@ export default function Input({
   const { darkMode } = useTheme();
   const [focused, setFocused] = useState(false);
 
-  const bg     = darkMode ? '#1e1e1e' : '#f8fffe';
+  const bg     = darkMode ? '#1e1e1e' : 'var(--primary-light)';
   const border = error
     ? '#ff4757'
     : focused
-      ? '#00c471'
-      : (darkMode ? '#3a3a3a' : '#e8faf3');
+      ? 'var(--primary)'
+      : (darkMode ? '#3a3a3a' : 'var(--primary-light)');
   const text   = darkMode ? '#f0f0f0' : '#212529';
   const sub    = darkMode ? '#9e9e9e' : '#adb5bd';
 
@@ -33,7 +33,7 @@ export default function Input({
   return (
     <div style={style}>
       {label && (
-        <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#00a85e', marginBottom: 6 }}>
+        <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--primary-dark)', marginBottom: 6 }}>
           {label}
         </label>
       )}

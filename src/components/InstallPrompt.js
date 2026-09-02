@@ -109,7 +109,7 @@ export default function InstallPrompt() {
           {!showIOS && (
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={install} style={{
-                background: 'linear-gradient(135deg, #00c471, #00a85e)',
+                background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
                 color: 'white', border: 'none', borderRadius: 10,
                 padding: '8px 16px', fontSize: 13, fontWeight: 700,
                 cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,196,113,0.3)',

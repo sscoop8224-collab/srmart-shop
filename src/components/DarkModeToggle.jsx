@@ -61,7 +61,7 @@ export default function DarkModeToggle() {
             onClick={() => handleSelect(id)}
             style={{
               ...btnBase,
-              background: isActive ? '#00c471' : 'transparent',
+              background: isActive ? 'var(--primary)' : 'transparent',
               color: isActive ? 'white' : (darkMode ? '#9e9e9e' : '#666'),
               boxShadow: isActive ? '0 2px 8px rgba(0,196,113,0.35)' : 'none',
             }}

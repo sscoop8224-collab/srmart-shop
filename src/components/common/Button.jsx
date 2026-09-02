@@ -2,7 +2,7 @@ import { useTheme } from '../../ThemeContext';
 
 const variants = {
   primary: (t) => ({
-    background: 'linear-gradient(135deg, #00c471, #00a85e)',
+    background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
     color: '#fff',
     border: 'none',
     boxShadow: '0 4px 16px rgba(0,196,113,0.28)',
@@ -21,7 +21,7 @@ const variants = {
   }),
   ghost: (t) => ({
     background: 'transparent',
-    color: '#00a85e',
+    color: 'var(--primary-dark)',
     border: `1.5px solid ${t.borderLight}`,
     boxShadow: 'none',
   }),
@@ -78,8 +78,8 @@ function buildTheme(dark) {
   return {
     surface:     dark ? '#2a2a2a' : '#ffffff',
     text:        dark ? '#f0f0f0' : '#212529',
-    borderLight: dark ? '#3a3a3a' : '#e8faf3',
-    dangerBg:    dark ? '#3a1a1a' : '#fff0f1',
+    borderLight: dark ? '#3a3a3a' : 'var(--primary-light)',
+    dangerBg:    dark ? '#3a1a1a' : 'var(--accent-light)',
     dangerText:  dark ? '#ff9999' : '#ff4757',
     infoBg:      dark ? '#1a2a40' : '#e8f0fe',
     infoText:    '#1a73e8',

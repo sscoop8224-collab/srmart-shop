@@ -14,11 +14,11 @@ function SummaryBar({
   onPay,
   payLabel = '결제하기',
 }) {
-  const borderColor = darkMode ? '#2e2e2e' : '#f0faf5';
+  const borderColor = darkMode ? '#2e2e2e' : 'var(--primary-light)';
   const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
   const subTextColor = darkMode ? '#9e9e9e' : '#adb5bd';
-  const inputBg = darkMode ? '#2e2e2e' : '#f8fffe';
-  const inputBorder = darkMode ? '#3a3a3a' : '#e8faf3';
+  const inputBg = darkMode ? '#2e2e2e' : 'var(--primary-light)';
+  const inputBorder = darkMode ? '#3a3a3a' : 'var(--primary-light)';
   const fixedBg = darkMode ? '#1a1a1a' : 'white';
   const barRef = useRef(null);
   usePublishBottomBarHeight(barRef);
@@ -31,14 +31,14 @@ function SummaryBar({
       </div>
       {appliedCoupon && (
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-          <span style={{ fontSize: '13px', color: '#00a85e' }}>쿠폰 할인</span>
-          <span style={{ fontSize: '13px', color: '#00a85e', fontWeight: '700' }}>-₩{discountAmount.toLocaleString()}</span>
+          <span style={{ fontSize: '13px', color: 'var(--primary-dark)' }}>쿠폰 할인</span>
+          <span style={{ fontSize: '13px', color: 'var(--primary-dark)', fontWeight: '700' }}>-₩{discountAmount.toLocaleString()}</span>
         </div>
       )}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
         <span style={{ fontSize: '13px', color: subTextColor }}>
           배송비
-          {freeDeliveryMin > 0 && deliveryFee === 0 && <span style={{ color: '#00a85e', marginLeft: 6, fontWeight: 700 }}>무료배송 적용</span>}
+          {freeDeliveryMin > 0 && deliveryFee === 0 && <span style={{ color: 'var(--primary-dark)', marginLeft: 6, fontWeight: 700 }}>무료배송 적용</span>}
         </span>
         <span style={{ fontSize: '13px', color: textColor, fontWeight: '600' }}>₩{deliveryFee.toLocaleString()}</span>
       </div>
@@ -81,12 +81,12 @@ function SummaryBar({
       )}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', paddingTop: '10px', borderTop: `1px solid ${borderColor}` }}>
         <span style={{ fontSize: '15px', fontWeight: '700', color: textColor }}>총 결제금액</span>
-        <span style={{ fontSize: '22px', fontWeight: '900', color: '#00c471' }}>₩{finalPrice.toLocaleString()}</span>
+        <span style={{ fontSize: '22px', fontWeight: '900', color: 'var(--primary)' }}>₩{finalPrice.toLocaleString()}</span>
       </div>
       <button
         disabled={!canPay}
         onClick={onPay}
-        style={{ width: '100%', padding: '16px', background: !canPay ? '#dee2e6' : 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '16px', fontSize: '16px', cursor: !canPay ? 'not-allowed' : 'pointer', fontWeight: '800', boxShadow: !canPay ? 'none' : '0 4px 20px rgba(0,196,113,0.35)', letterSpacing: '-0.3px' }}>
+        style={{ width: '100%', padding: '16px', background: !canPay ? '#dee2e6' : 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '16px', fontSize: '16px', cursor: !canPay ? 'not-allowed' : 'pointer', fontWeight: '800', boxShadow: !canPay ? 'none' : '0 4px 20px rgba(0,196,113,0.35)', letterSpacing: '-0.3px' }}>
         {!zipcode ? '주소를 검색해주세요' : !deliveryInfo?.zoneName ? '배송 구역을 확인해주세요' : payLabel}
       </button>
     </div>

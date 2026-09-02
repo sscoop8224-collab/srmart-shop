@@ -10,7 +10,7 @@ export default function Card({
 }) {
   const { darkMode } = useTheme();
   const surface     = darkMode ? '#2a2a2a' : '#ffffff';
-  const borderColor = darkMode ? '#3a3a3a' : '#f0faf5';
+  const borderColor = darkMode ? '#3a3a3a' : 'var(--primary-light)';
   const cardShadow  = darkMode ? 'none' : '0 2px 12px rgba(0,0,0,0.06)';
 
   return (

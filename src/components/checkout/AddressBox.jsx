@@ -12,11 +12,11 @@ function AddressBox({
   matchingZipcode, deliveryInfo,
 }) {
   const cardBg = darkMode ? '#242424' : 'white';
-  const borderColor = darkMode ? '#2e2e2e' : '#f0faf5';
+  const borderColor = darkMode ? '#2e2e2e' : 'var(--primary-light)';
   const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
   const subTextColor = darkMode ? '#9e9e9e' : '#adb5bd';
-  const inputBg = darkMode ? '#2e2e2e' : '#f8fffe';
-  const inputBorder = darkMode ? '#3a3a3a' : '#e8faf3';
+  const inputBg = darkMode ? '#2e2e2e' : 'var(--primary-light)';
+  const inputBorder = darkMode ? '#3a3a3a' : 'var(--primary-light)';
   const inputStyle = {
     padding: '11px 14px', borderRadius: '12px', border: `1.5px solid ${inputBorder}`,
     fontSize: '14px', outline: 'none', fontFamily: 'inherit',
@@ -48,7 +48,7 @@ function AddressBox({
           </svg>
           배송지
         </p>
-        <button onClick={() => setShowAddress(!showAddress)} style={{ padding: '6px 14px', background: darkMode ? '#2e2e2e' : '#f0faf5', border: 'none', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', color: '#00a85e' }}>
+        <button onClick={() => setShowAddress(!showAddress)} style={{ padding: '6px 14px', background: darkMode ? '#2e2e2e' : 'var(--primary-light)', border: 'none', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)' }}>
           {showAddress ? '접기' : '변경'}
         </button>
       </div>
@@ -56,19 +56,19 @@ function AddressBox({
       {hasDefaultAddress && (
         <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
           <button onClick={() => handleSwitchAddress(true)}
-            style={{ flex: 1, padding: '10px', borderRadius: '12px', border: useDefaultAddress ? '2px solid #00c471' : `1.5px solid ${inputBorder}`, background: useDefaultAddress ? (darkMode ? '#2e2e2e' : '#f0faf5') : cardBg, color: useDefaultAddress ? '#00a85e' : subTextColor, fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+            style={{ flex: 1, padding: '10px', borderRadius: '12px', border: useDefaultAddress ? '2px solid var(--primary)' : `1.5px solid ${inputBorder}`, background: useDefaultAddress ? (darkMode ? '#2e2e2e' : 'var(--primary-light)') : cardBg, color: useDefaultAddress ? 'var(--primary-dark)' : subTextColor, fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
             기본 주소
           </button>
           <button onClick={() => handleSwitchAddress(false)}
-            style={{ flex: 1, padding: '10px', borderRadius: '12px', border: !useDefaultAddress ? '2px solid #00c471' : `1.5px solid ${inputBorder}`, background: !useDefaultAddress ? (darkMode ? '#2e2e2e' : '#f0faf5') : cardBg, color: !useDefaultAddress ? '#00a85e' : subTextColor, fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
+            style={{ flex: 1, padding: '10px', borderRadius: '12px', border: !useDefaultAddress ? '2px solid var(--primary)' : `1.5px solid ${inputBorder}`, background: !useDefaultAddress ? (darkMode ? '#2e2e2e' : 'var(--primary-light)') : cardBg, color: !useDefaultAddress ? 'var(--primary-dark)' : subTextColor, fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
             다른 주소
           </button>
         </div>
       )}
 
       {useDefaultAddress && hasDefaultAddress && (
-        <div style={{ background: darkMode ? '#2e2e2e' : '#f0faf5', borderRadius: '12px', padding: '12px 14px', border: `1px solid ${inputBorder}` }}>
-          <p style={{ fontSize: '13px', fontWeight: '700', color: '#00a85e', margin: '0 0 4px' }}>✅ 기본 배송지</p>
+        <div style={{ background: darkMode ? '#2e2e2e' : 'var(--primary-light)', borderRadius: '12px', padding: '12px 14px', border: `1px solid ${inputBorder}` }}>
+          <p style={{ fontSize: '13px', fontWeight: '700', color: 'var(--primary-dark)', margin: '0 0 4px' }}>✅ 기본 배송지</p>
           <p style={{ fontSize: '13px', color: textColor, margin: '0 0 2px', fontWeight: '600' }}>{defaultAddress.name} · {defaultAddress.phone}</p>
           <p style={{ fontSize: '13px', color: darkMode ? '#c0c0c0' : '#495057', margin: 0 }}>{defaultAddress.address} {defaultAddress.detail}</p>
         </div>
@@ -83,14 +83,14 @@ function AddressBox({
               onClick={() => openAddressSearch(false)}
             />
             <button onClick={() => openAddressSearch(false)}
-              style={{ padding: '11px 14px', background: 'linear-gradient(135deg, #00c471, #00a85e)', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', whiteSpace: 'nowrap' }}>
+              style={{ padding: '11px 14px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', whiteSpace: 'nowrap' }}>
               주소 찾기
             </button>
           </div>
           <input value={address.detail} onChange={(e) => setAddress({ ...address, detail: e.target.value })} placeholder="상세 주소 (동/호수 등)" style={inputStyle} />
           {address.name && address.phone && address.address && (
-            <div style={{ background: darkMode ? '#2e2e2e' : '#f0faf5', borderRadius: '12px', padding: '12px 14px', border: `1px solid ${inputBorder}` }}>
-              <p style={{ fontSize: '12px', fontWeight: '700', color: '#00a85e', margin: '0 0 4px' }}>✅ 배송지 입력 완료</p>
+            <div style={{ background: darkMode ? '#2e2e2e' : 'var(--primary-light)', borderRadius: '12px', padding: '12px 14px', border: `1px solid ${inputBorder}` }}>
+              <p style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary-dark)', margin: '0 0 4px' }}>✅ 배송지 입력 완료</p>
               <p style={{ fontSize: '12px', color: darkMode ? '#c0c0c0' : '#495057', margin: 0 }}>{address.name} · {address.phone}</p>
               <p style={{ fontSize: '12px', color: darkMode ? '#c0c0c0' : '#495057', margin: 0 }}>{address.address} {address.detail}</p>
             </div>
@@ -114,7 +114,7 @@ function AddressBox({
         )}
         {matchingZipcode && <p style={{ fontSize: 12, color: subTextColor, margin: '4px 0 0' }}>배송 구역 확인 중...</p>}
         {deliveryInfo?.zoneName && (
-          <div style={{ fontSize: 13, marginTop: 6, color: '#00a85e', fontWeight: 600 }}>
+          <div style={{ fontSize: 13, marginTop: 6, color: 'var(--primary-dark)', fontWeight: 600 }}>
             ✓ {deliveryInfo.zoneName} 배송 가능
           </div>
         )}
@@ -133,7 +133,7 @@ function AddressBox({
             </span>
             {deliveryInfo.noDong && (
               <button onClick={() => openAddressSearch(true)} style={{
-                flexShrink: 0, padding: '6px 12px', background: '#00c471', color: 'white',
+                flexShrink: 0, padding: '6px 12px', background: 'var(--primary)', color: 'white',
                 border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
               }}>
                 주소 찾기
