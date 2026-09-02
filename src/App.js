@@ -14,6 +14,7 @@ import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import './App.css';
 import srmLogo from './srm_logo.png';
 import { ThemeProvider, useTheme } from './ThemeContext';
+import { DialogProvider, useDialog } from './DialogContext';
 
 import { kakaoPayReady } from './pages/KakaoPay';
 import { useAuth } from './AuthContext';
@@ -71,6 +72,7 @@ function AppContent() {
   const { darkMode, setDarkMode } = useTheme();
   const handleSetDark = (val) => setDarkMode(val);
   const { guestStoreId, currentStoreId, currentStore, isGuest, setGuestStoreId } = useStore();
+  const { notify } = useDialog();
 
   // 웹은 내장 랜딩(homepage)을 건너뛰고 게스트로 바로 쇼핑앱 진입, 네이티브 앱은 로그인 우선
   // (회사 정적 홈페이지가 이미 랜딩 역할을 하므로 웹에서 HomePage.jsx는 표시하지 않음)
@@ -395,10 +397,10 @@ function AppContent() {
     localStorage.removeItem('srmart_token');
     authLogout();
     setUser(null); setCart([]); setOrders([]); setProducts([]); setPageHistory([]); handleGuest();   // 로그아웃 후 게스트 홈
-    alert(messages.logout);
+    notify(messages.logout);
   };
 
-  const requireLogin = () => { alert('로그인이 필요해요! 😊'); setPage('login'); };
+  const requireLogin = () => { notify('로그인이 필요해요! 😊'); setPage('login'); };
 
   const addToCart = (product) => {
     if (!user) { requireLogin(); return; }
@@ -479,10 +481,10 @@ function AppContent() {
   const selectedMediumObj = selectedLargeObj && selectedLargeObj.children.find((m) => m.name === filterMedium);
 
   const handlePayment = async (finalPrice, orderExtras = {}) => {
-    if (cart.length === 0) { alert('장바구니가 비어있어요!'); return; }
+    if (cart.length === 0) { notify('장바구니가 비어있어요!'); return; }
     const latestUser = users.find(u => u.email === user.email) || user;
     if (cart.some(item => item.isAdult) && !latestUser.isAdult) {
-      alert('🔞 장바구니에 성인 상품이 있어요. 19세 이상만 구매할 수 있어요!'); return;
+      notify('🔞 장바구니에 성인 상품이 있어요. 19세 이상만 구매할 수 있어요!'); return;
     }
     try {
       const orderId = 'order_' + Date.now();
@@ -515,7 +517,7 @@ function AppContent() {
         goToPage('receipt');
       }
     } catch (error) {
-      alert('결제 준비 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.');
+      notify('결제 준비 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.');
     }
   };
 
@@ -523,10 +525,10 @@ function AppContent() {
   // (장바구니를 거치지 않은 주문이므로 읽지도 비우지도 않음). 두 결제 흐름이 갈리지 않도록
   // orderInfo/createOrder 페이로드 구성 방식은 handlePayment 와 1:1로 맞춰뒀다.
   const handleQuickPayment = async (item, finalPrice, orderExtras = {}) => {
-    if (!item) { alert('주문할 상품이 없어요!'); return; }
+    if (!item) { notify('주문할 상품이 없어요!'); return; }
     const latestUser = users.find(u => u.email === user.email) || user;
     if (item.isAdult && !latestUser.isAdult) {
-      alert('🔞 성인 상품은 19세 이상만 구매할 수 있어요!'); return;
+      notify('🔞 성인 상품은 19세 이상만 구매할 수 있어요!'); return;
     }
     try {
       const orderId = 'order_' + Date.now();
@@ -559,7 +561,7 @@ function AppContent() {
         goToPage('receipt');
       }
     } catch (error) {
-      alert('결제 준비 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.');
+      notify('결제 준비 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.');
     }
   };
 
@@ -890,7 +892,9 @@ function AppContent() {
 function App() {
   return (
     <ThemeProvider>
-      <AppContent />
+      <DialogProvider>
+        <AppContent />
+      </DialogProvider>
     </ThemeProvider>
   );
 }
