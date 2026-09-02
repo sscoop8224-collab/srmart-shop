@@ -103,7 +103,7 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
         zIndex: 10,
       }}>
         <button onClick={onBack} style={{
-          width: 40, height: 40, flexShrink: 0,
+          width: 44, height: 44, flexShrink: 0,
           background: 'rgba(255,255,255,0.15)',
           border: 'none', borderRadius: '50%', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -114,7 +114,7 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
           </svg>
         </button>
         <h2 style={{ margin: 0, fontSize: '17px', fontWeight: '700', color: 'white' }}>상품 상세</h2>
-        <button onClick={handleWishlist} style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <button onClick={handleWishlist} style={{ width: 44, height: 44, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill={wishlisted ? '#ff4757' : 'none'} stroke={wishlisted ? '#ff4757' : 'white'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </button>
       </div>
@@ -257,10 +257,10 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
             <span style={{ fontSize: '15px', fontWeight: '700', color: text }}>무게</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: inputBg, border: `1.5px solid ${inputBorder}`, borderRadius: '16px', padding: '8px 16px' }}>
               <button onClick={() => setGrams(Math.max(100, grams - 100))}
-                style={{ width: '32px', height: '32px', background: cardBg, border: `1.5px solid ${border}`, borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: text, fontWeight: 'bold' }}>-</button>
+                style={{ width: '44px', height: '44px', background: cardBg, border: `1.5px solid ${border}`, borderRadius: '50%', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: text, fontWeight: 'bold' }}>-</button>
               <span style={{ fontSize: '15px', fontWeight: '800', minWidth: '48px', textAlign: 'center', color: text }}>{grams}g</span>
               <button onClick={() => setGrams(grams + 100)}
-                style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
+                style={{ width: '44px', height: '44px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
             </div>
           </div>
         ) : (
@@ -268,10 +268,10 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
             <span style={{ fontSize: '15px', fontWeight: '700', color: text }}>수량</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: inputBg, border: `1.5px solid ${inputBorder}`, borderRadius: '16px', padding: '8px 16px' }}>
               <button onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                style={{ width: '32px', height: '32px', background: cardBg, border: `1.5px solid ${border}`, borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: text, fontWeight: 'bold' }}>-</button>
+                style={{ width: '44px', height: '44px', background: cardBg, border: `1.5px solid ${border}`, borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: text, fontWeight: 'bold' }}>-</button>
               <span style={{ fontSize: '16px', fontWeight: '800', minWidth: '32px', textAlign: 'center', color: text }}>{quantity}</span>
               <button onClick={() => setQuantity(quantity + 1)}
-                style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
+                style={{ width: '44px', height: '44px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
             </div>
           </div>
         )}

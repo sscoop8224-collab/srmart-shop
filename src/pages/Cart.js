@@ -107,18 +107,18 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, user, darkMode }) {
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                   <button onClick={() => removeFromCart(item.id)} style={{ background: 'var(--accent-light)', border: 'none', cursor: 'pointer', color: '#ff4757', fontSize: '12px', padding: '4px 8px', borderRadius: '8px', fontWeight: '700' }}>삭제</button>
                   {item.pricing_type === 'weight' ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: darkMode ? '#1a1a1a' : 'var(--primary-light)', border: `1px solid ${inputBorder}`, borderRadius: '20px', padding: '4px 8px' }}>
-                      <button onClick={() => updateGrams(item.id, -100)} style={{ width: '24px', height: '24px', background: darkMode ? '#2e2e2e' : 'white', border: `1.5px solid ${inputBorder}`, borderRadius: '50%', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: textColor, fontWeight: 'bold' }}>-</button>
-                      <span style={{ fontSize: '12px', fontWeight: '700', minWidth: '36px', textAlign: 'center', color: textColor }}>{item.grams || 100}g</span>
-                      <button onClick={() => updateGrams(item.id, 100)} style={{ width: '24px', height: '24px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px', background: darkMode ? '#1a1a1a' : 'var(--primary-light)', border: `1px solid ${inputBorder}`, borderRadius: '26px', padding: '2px' }}>
+                      <button onClick={() => updateGrams(item.id, -100)} style={{ width: '44px', height: '44px', background: darkMode ? '#2e2e2e' : 'white', border: `1.5px solid ${inputBorder}`, borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: textColor, fontWeight: 'bold' }}>-</button>
+                      <span style={{ fontSize: '12px', fontWeight: '700', minWidth: '32px', textAlign: 'center', color: textColor }}>{item.grams || 100}g</span>
+                      <button onClick={() => updateGrams(item.id, 100)} style={{ width: '44px', height: '44px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: darkMode ? '#1a1a1a' : 'var(--primary-light)', border: `1px solid ${inputBorder}`, borderRadius: '20px', padding: '4px 8px' }}>
-                      <button onClick={() => updateQuantity(item.id, -1)} style={{ width: '24px', height: '24px', background: darkMode ? '#2e2e2e' : 'white', border: `1.5px solid ${inputBorder}`, borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: textColor, fontWeight: 'bold' }}>-</button>
-                      <span style={{ fontSize: '14px', fontWeight: '700', minWidth: '20px', textAlign: 'center', color: textColor }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px', background: darkMode ? '#1a1a1a' : 'var(--primary-light)', border: `1px solid ${inputBorder}`, borderRadius: '26px', padding: '2px' }}>
+                      <button onClick={() => updateQuantity(item.id, -1)} style={{ width: '44px', height: '44px', background: darkMode ? '#2e2e2e' : 'white', border: `1.5px solid ${inputBorder}`, borderRadius: '50%', cursor: 'pointer', fontSize: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: textColor, fontWeight: 'bold' }}>-</button>
+                      <span style={{ fontSize: '14px', fontWeight: '700', minWidth: '18px', textAlign: 'center', color: textColor }}>
                         {item.purchase_type === 'box' ? `${item.quantity}박스` : item.quantity}
                       </span>
-                      <button onClick={() => updateQuantity(item.id, 1)} style={{ width: '24px', height: '24px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
+                      <button onClick={() => updateQuantity(item.id, 1)} style={{ width: '44px', height: '44px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
                     </div>
                   )}
                 </div>

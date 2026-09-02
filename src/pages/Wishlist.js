@@ -76,8 +76,8 @@ function Wishlist({ wishlist, onProductClick, onAddToCart, onToggleWishlist, goB
                   <img src={product.image ? imgUrl(product.image) : getCategoryImage(product.large)} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
                   {!product.image && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,196,113,0.06)' }} />}
                   <button onClick={(e) => { e.stopPropagation(); onToggleWishlist(product); }}
-                    style={{ position: 'absolute', top: '8px', right: '8px', width: '30px', height: '30px', borderRadius: '50%', background: 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#ff4757" stroke="#ff4757" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    style={{ position: 'absolute', top: '4px', right: '4px', width: '44px', height: '44px', borderRadius: '50%', background: 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#ff4757" stroke="#ff4757" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                     </svg>
                   </button>

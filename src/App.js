@@ -799,7 +799,7 @@ function AppContent() {
                       )}
                       {product.isAdult && !product.eventLabel && <div style={{ position: 'absolute', top: 8, left: 8, background: '#ff4757', color: 'white', fontSize: '10px', fontWeight: '800', padding: '2px 7px', borderRadius: '8px' }}>🔞 성인</div>}
                       <button onClick={(e) => { e.stopPropagation(); toggleWishlist(product); }}
-                        style={{ position: 'absolute', top: '8px', right: '8px', width: '30px', height: '30px', borderRadius: '50%', background: darkMode ? '#3a3a3a' : 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+                        style={{ position: 'absolute', top: '4px', right: '4px', width: '44px', height: '44px', borderRadius: '50%', background: darkMode ? '#3a3a3a' : 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
                         {wishlist.find((item) => item.id === product.id) ? '❤️' : '🤍'}
                       </button>
                     </div>
@@ -818,7 +818,7 @@ function AppContent() {
                           )}
                         </div>
                         <button onClick={(e) => { e.stopPropagation(); addToCart(product); }} disabled={product.isSoldOut}
-                          style={{ width: '30px', height: '30px', borderRadius: '50%', background: product.isSoldOut ? '#dee2e6' : 'linear-gradient(135deg, var(--primary), var(--primary-dark))', border: 'none', cursor: product.isSoldOut ? 'not-allowed' : 'pointer', fontSize: '20px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: product.isSoldOut ? 'none' : '0 2px 8px rgba(0,196,113,0.4)', lineHeight: 1, fontWeight: '300' }}>+</button>
+                          style={{ width: '44px', height: '44px', borderRadius: '50%', background: product.isSoldOut ? '#dee2e6' : 'linear-gradient(135deg, var(--primary), var(--primary-dark))', border: 'none', cursor: product.isSoldOut ? 'not-allowed' : 'pointer', fontSize: '22px', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: product.isSoldOut ? 'none' : '0 2px 8px rgba(0,196,113,0.4)', lineHeight: 1, fontWeight: '300' }}>+</button>
                       </div>
                     </div>
                   </div>
