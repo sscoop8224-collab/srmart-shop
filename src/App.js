@@ -378,7 +378,15 @@ function AppContent() {
     localStorage.setItem('srmart_token', token);
     setUser(dbUser);
     authLogin(dbUser);
-    await Promise.all([loadProducts(dbUser.store_id), loadMyOrders(), loadWishlist()]);
+    if (dbUser.role === 'owner') {
+      // 오너는 store_id가 항상 null이라 여기서 loadProducts(null)을 부르면 백엔드 기본값(1번 매장)으로
+      // 잠깐 떴다가, 바로 이어서 StoreContext의 currentStoreId(미리보기 매장) 반응형 effect가 다시
+      // 불러서 실제 선택된 매장으로 덮어쓴다 — 매장이 1번이 아니면 로그인 직후 상품 목록이 한 번
+      // 바뀌는 깜빡임 + 중복 요청이 생긴다. 오너는 그 effect 하나에만 맡긴다.
+      await Promise.all([loadMyOrders(), loadWishlist()]);
+    } else {
+      await Promise.all([loadProducts(dbUser.store_id), loadMyOrders(), loadWishlist()]);
+    }
     goToPage('home');
   };
 
@@ -701,6 +709,17 @@ function AppContent() {
           )}
         </div>
       </header>
+
+      {/* 오너 매장 미리보기 배너 — 헤더의 작은 드롭다운만으로는 놓치기 쉬워서(실제로 이걸로 인해
+          "로그인하면 상품 이미지가 사라진다"는 혼란이 있었음 — 재고 0인 매장을 미리보기 중이라
+          품절 처리(어둡게+품절 배지)된 걸 이미지 버그로 오인한 것) 화면 전체에 눈에 띄게 상시 고지. */}
+      {isOwner && currentStore && (
+        <div style={{ background: '#fff3e0', borderBottom: '1px solid #ffe0b2', padding: '8px 16px', textAlign: 'center' }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#e65100' }}>
+            🔍 매장 미리보기 중: {currentStore.name} — 이 매장의 실제 가격·재고 기준으로 보여요
+          </span>
+        </div>
+      )}
 
       <div className="main-content">
         {page === 'home' && (
