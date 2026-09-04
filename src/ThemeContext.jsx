@@ -2,9 +2,19 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const ThemeContext = createContext(null);
 
+// 정적 <meta name=theme-color media=...> 두 개는 OS 다크모드 기준 폴백일 뿐 — 앱 내 수동
+// 라이트/다크 토글(darkMode 수동 오버라이드)은 media query로 못 잡으므로, 실제 적용된 헤더
+// 배경색(--white 토큰)과 항상 일치하도록 여기서 직접 갱신한다. media 속성이 있는 태그는 그대로
+// 두고(OS 미리보기용), media 없는 순수 fallback 태그 하나만 갱신 대상으로 쓴다.
+function syncThemeColorMeta(dark) {
+  const meta = document.querySelector('meta[name="theme-color"]:not([media])');
+  if (meta) meta.setAttribute('content', dark ? '#1a1a1a' : '#ffffff');
+}
+
 function applyDarkVars(dark) {
   const el = document.documentElement;
   document.body.classList.toggle('dark', dark);
+  syncThemeColorMeta(dark);
   if (dark) {
     el.style.setProperty('--white', '#1a1a1a');
     el.style.setProperty('--gray-50', '#1e1e1e');
