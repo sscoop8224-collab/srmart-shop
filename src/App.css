@@ -151,6 +151,11 @@ body {
   min-width: 0;
 }
 
+/* 모바일: 로고 텍스트 숨기고 이미지만 — 좁은 화면에서 매장 배지·아이콘 버튼들과 한 줄에
+   같이 들어가야 하는데 로고 이미지+텍스트+뱃지+아이콘 3~4개가 다 들어갈 폭이 안 나옴
+   (2026-09-03, 실기기에서 로고 텍스트가 매장 배지에 가려지는 문제로 확인됨). */
+.header-logo-text { display: none; }
+
 .header-actions {
   display: flex;
   align-items: center;
@@ -874,6 +879,7 @@ body {
 /* 데스크탑/태블릿(≥768): 상단 메뉴 노출 + 하단 탭바 숨김 */
 @media (min-width: 768px) {
   .header-logo { flex: 0 0 auto; }        /* 로고는 자연폭, 가운데를 메뉴에 양보 */
+  .header-logo-text { display: inline; }  /* 데스크탑은 폭 여유 있으니 텍스트 로고 복원 */
   .header-nav {
     display: flex;
     flex: 1;

@@ -643,31 +643,18 @@ function AppContent() {
       {/* 헤더 */}
       <header className="header">
         <div className="header-logo" onClick={() => goToPage('home')}>
-          <img src={srmLogo} alt="SR Mart" style={{ height: '34px', objectFit: 'contain' }} />
-          <span style={{ fontFamily: "'Nanum Pen Script', cursive", fontSize: 'clamp(16px, 5vw, 26px)', color: '#1b5e20', fontWeight: '700', lineHeight: '1', marginTop: '2px', whiteSpace: 'nowrap' }}>에스알마트</span>
+          <img src={srmLogo} alt="SR Mart" style={{ height: '34px', objectFit: 'contain', flexShrink: 0 }} />
+          <span className="header-logo-text" style={{ fontFamily: "'Nanum Pen Script', cursive", fontSize: 'clamp(16px, 5vw, 26px)', color: '#1b5e20', fontWeight: '700', lineHeight: '1', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>에스알마트</span>
         </div>
         {user && currentStore && !isOwner && (
           <span style={{ fontSize: 12, color: '#178a2d', fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 100 }}>
             🏪 {currentStore.name}
           </span>
         )}
-        {/* 오너 전용 — 오너는 가입점포가 없어(전 매장 관리자) 손님 화면을 검증하려면 매장을
-            직접 골라야 한다. "미리보기" 배지를 항상 같이 붙여 실제 손님 계정으로 착각하지
-            않게 한다 — 세션 동안 선택 유지(StoreContext, sessionStorage). */}
-        {isOwner && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-            <span style={{ fontSize: 10, fontWeight: 800, color: '#e65100', background: '#fff3e0', padding: '2px 6px', borderRadius: 6, whiteSpace: 'nowrap' }}>미리보기</span>
-            <select
-              value={ownerViewStoreId || 1}
-              onChange={(e) => setOwnerViewStoreId(Number(e.target.value))}
-              style={{ fontSize: 12, fontWeight: 700, color: '#178a2d', background: 'var(--primary-light)', border: '1.5px solid var(--primary)', borderRadius: 8, padding: '3px 6px', maxWidth: 110, fontFamily: 'inherit' }}
-            >
-              {stores.map(s => (
-                <option key={s.id} value={s.id}>🏪 {s.name}</option>
-              ))}
-            </select>
-          </div>
-        )}
+        {/* 오너 매장 선택은 헤더가 아니라 아래 미리보기 배너 쪽으로 옮김(2026-09-03) — 로고·배지·
+            드롭다운·아이콘 4개가 좁은 화면 한 줄에 다 안 들어가 로고 텍스트를 가리는 문제가 있었음.
+            배너는 풀폭이라 여유가 있고, 원래도 매장 미리보기 고지 목적으로 있던 자리라 합치는 게
+            자연스럽다. 선택 상태(ownerViewStoreId)는 그대로 StoreContext/sessionStorage 유지. */}
         {/* 데스크탑 상단 메뉴 (모바일에서는 CSS로 숨김, 하단 탭바 사용) */}
         <nav className="header-nav">
           <button className={'header-nav-item' + (page === 'home' ? ' active' : '')} onClick={() => goToPage('home')}>홈</button>
@@ -714,10 +701,19 @@ function AppContent() {
           "로그인하면 상품 이미지가 사라진다"는 혼란이 있었음 — 재고 0인 매장을 미리보기 중이라
           품절 처리(어둡게+품절 배지)된 걸 이미지 버그로 오인한 것) 화면 전체에 눈에 띄게 상시 고지. */}
       {isOwner && currentStore && (
-        <div style={{ background: '#fff3e0', borderBottom: '1px solid #ffe0b2', padding: '8px 16px', textAlign: 'center' }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#e65100' }}>
-            🔍 매장 미리보기 중: {currentStore.name} — 이 매장의 실제 가격·재고 기준으로 보여요
+        <div style={{ background: '#fff3e0', borderBottom: '1px solid #ffe0b2', padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 6 }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#e65100', whiteSpace: 'nowrap' }}>
+            🔍 매장 미리보기 중 — 실제 가격·재고 기준으로 보여요
           </span>
+          <select
+            value={ownerViewStoreId || 1}
+            onChange={(e) => setOwnerViewStoreId(Number(e.target.value))}
+            style={{ fontSize: 12, fontWeight: 700, color: '#e65100', background: '#fff', border: '1.5px solid #ffb74d', borderRadius: 8, padding: '3px 8px', fontFamily: 'inherit' }}
+          >
+            {stores.map(s => (
+              <option key={s.id} value={s.id}>🏪 {s.name}</option>
+            ))}
+          </select>
         </div>
       )}
 
