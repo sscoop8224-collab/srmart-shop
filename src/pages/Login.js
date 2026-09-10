@@ -5,6 +5,37 @@ import { getStores, register, getCoverage } from '../api';
 import { useDialog } from '../DialogContext';
 
 // ── 나이 계산 함수 ──────────────────────────────────────────
+// 동의 한 줄 — 체크박스 + 제목 + 설명.
+//
+// 설명을 접어두지 않고 **항상 펼쳐서** 보여준다. 접어두면 대부분 안 펴보고 체크하는데,
+// 그건 동의를 받았다고 하기 어렵다. 특히 선택 항목은 "동의 안 해도 된다" 는 사실이
+// 보여야 의미가 있다.
+//
+// label 전체를 누를 수 있게 <label> 로 감싼다 — 휴대폰에서 체크박스만 겨냥하기 어렵다.
+function ConsentRow({ checked, onChange, label, detail, required = false }) {
+  return (
+    <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', cursor: 'pointer' }}>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={e => onChange(e.target.checked)}
+        style={{ width: 20, height: 20, marginTop: 1, accentColor: COLORS.greenDark, flexShrink: 0 }}
+      />
+      <span>
+        <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink900 }}>
+          <span style={{ color: required ? COLORS.danger : COLORS.ink500, marginRight: 4 }}>
+            [{required ? '필수' : '선택'}]
+          </span>
+          {label}
+        </span>
+        <span style={{ display: 'block', marginTop: 4, fontSize: 12, lineHeight: 1.55, color: COLORS.ink500 }}>
+          {detail}
+        </span>
+      </span>
+    </label>
+  );
+}
+
 // 만 나이 — **생년월일**에서 계산한다.
 //
 // 예전엔 주민등록번호 앞 6자리 + 성별자리를 받아 계산했다(calcAgeFromId). 그 값은 서버에
@@ -210,6 +241,23 @@ function Login({ onLogin, onGuest }) {
   const [signupDong, setSignupDong] = useState('');         // Daum에서 받은 동 이름(bname) — 커버리지 주 기준
   const [signupZipcode, setSignupZipcode] = useState('');
 
+  // 동의 항목 (2026-09-10 신설).
+  //
+  // 그전까지 가입 화면에는 **동의 항목이 하나도 없었다.** 개인정보 수집·이용 동의는 받아야
+  // 하는 것이고(개인정보보호법 제15조), 동의를 받았다는 사실의 입증 책임은 사업자에게 있다.
+  //
+  // 두 개를 **분리해서** 받는다 — 묶으면 안 된다:
+  //   · 개인정보 수집·이용 [필수] — 서비스 제공에 필요한 최소한. 없으면 가입이 성립 안 함.
+  //   · 지점 통합 회원·포인트 제3자 제공 [선택] — 5개 지점이 **서로 다른 사업자**라,
+  //     한 곳에서 가입한 회원 정보를 다른 지점이 쓰려면 제3자 제공 동의가 필요하다.
+  //     동의하지 않아도 가입·주문은 그대로 되고, 매장 포인트 통합만 빠진다.
+  //
+  // "전체 동의" 체크박스는 두지 않는다 — 선택 항목이 함께 켜지면 분리한 의미가 없다.
+  const [privacyConsent, setPrivacyConsent] = useState(false);
+  const [thirdPartyConsent, setThirdPartyConsent] = useState(false);
+
+  const resetConsents = () => { setPrivacyConsent(false); setThirdPartyConsent(false); };
+
   const emptyForm = {
     name: '', username: '', email: '', password: '', phone: '',
     address: '', addressDetail: '', birth: '',
@@ -290,6 +338,10 @@ function Login({ onLogin, onGuest }) {
       notify('우편번호가 필요해요. 주소 찾기로 주소를 입력해주세요.'); return;
     }
 
+    if (!privacyConsent) {
+      notify('개인정보 수집·이용에 동의해주세요.'); return;
+    }
+
     const age = calcAgeFromBirth(form.birth);
     const isAdult = age !== null && age >= 19;
 
@@ -304,6 +356,8 @@ function Login({ onLogin, onGuest }) {
         address: form.address,
         addressDetail: form.addressDetail,
         birth: form.birth,        // 서버가 이 값으로 is_adult/age 를 다시 계산한다
+        privacyConsent,           // 필수 — 서버도 없으면 400 으로 막는다
+        thirdPartyConsent,        // 선택 — 미동의면 온라인 전용 회원이 된다
         isAdult,
         age,
         store_id: Number(selectedStoreId),
@@ -574,6 +628,30 @@ function Login({ onLogin, onGuest }) {
 
               </div>
 
+              {/* 동의 항목 — 필수·선택을 나눠서 받는다(위 상태 주석 참고). */}
+              <div style={{ marginTop: 18, padding: 14, borderRadius: 12, background: COLORS.greenTint, border: `1px solid ${COLORS.greenBorder}` }}>
+                <ConsentRow
+                  checked={privacyConsent}
+                  onChange={setPrivacyConsent}
+                  required
+                  label="개인정보 수집·이용 동의"
+                  detail="이름, 아이디, 이메일, 휴대전화번호, 생년월일, 주소를 회원 관리와 주문·배송에 이용합니다."
+                />
+                <div style={{ height: 10 }} />
+                <ConsentRow
+                  checked={thirdPartyConsent}
+                  onChange={setThirdPartyConsent}
+                  label="지점 통합 회원·포인트 이용 동의"
+                  detail="에스알마트 각 지점(승학·검암·왕길·신흥·고촌)은 서로 다른 사업자입니다. 동의하시면 모든 지점에서 포인트를 함께 쌓고 쓰실 수 있어요. 동의하지 않으셔도 가입과 온라인 주문은 그대로 가능하며, 이 경우 매장 포인트 적립·사용만 제한됩니다."
+                />
+                <div style={{ marginTop: 12, fontSize: 12 }}>
+                  <a href="https://dongsinmarket.co.kr/privacy.html" target="_blank" rel="noreferrer"
+                    style={{ color: COLORS.greenDark, fontWeight: 600 }}>
+                    개인정보처리방침 전문 보기
+                  </a>
+                </div>
+              </div>
+
               <button onClick={handleSignup} disabled={signupLoading || stores.length === 0}
                 style={{
                   marginTop: 20, height: 52, borderRadius: 14, border: 'none',
@@ -585,14 +663,14 @@ function Login({ onLogin, onGuest }) {
                 {signupLoading ? '가입 중...' : '회원가입'}
               </button>
 
-              <button onClick={() => { setMode('login'); resetSignup(); }}
+              <button onClick={() => { setMode('login'); resetSignup(); resetConsents(); }}
                 style={{ marginTop: 10, height: 48, borderRadius: 14, border: `1.5px solid ${COLORS.greenBorder}`, background: COLORS.greenTint, color: COLORS.greenDark, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                 취소
               </button>
 
               <div style={{ textAlign: 'center', marginTop: 12, fontSize: 13, color: COLORS.ink500 }}>
                 이미 계정이 있으신가요?{' '}
-                <button type="button" onClick={() => { setMode('login'); resetSignup(); }}
+                <button type="button" onClick={() => { setMode('login'); resetSignup(); resetConsents(); }}
                   style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', fontSize: 13, fontWeight: 700, color: COLORS.greenDark, borderBottom: `2px solid ${COLORS.yellow}`, paddingBottom: 1 }}>
                   로그인하러 가기
                 </button>
