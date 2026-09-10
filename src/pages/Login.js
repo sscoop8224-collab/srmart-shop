@@ -5,21 +5,21 @@ import { getStores, register, getCoverage } from '../api';
 import { useDialog } from '../DialogContext';
 
 // ── 나이 계산 함수 ──────────────────────────────────────────
-function calcAgeFromId(frontId, genderDigit) {
-  if (!frontId || frontId.length !== 6) return null;
-  const yy = parseInt(frontId.slice(0, 2));
-  const mm = parseInt(frontId.slice(2, 4));
-  const dd = parseInt(frontId.slice(4, 6));
-  if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
-  const g = parseInt(genderDigit);
-  let fullYear;
-  if (g === 1 || g === 2) fullYear = 1900 + yy;
-  else if (g === 3 || g === 4) fullYear = 2000 + yy;
-  else return null;
+// 만 나이 — **생년월일**에서 계산한다.
+//
+// 예전엔 주민등록번호 앞 6자리 + 성별자리를 받아 계산했다(calcAgeFromId). 그 값은 서버에
+// 평문으로 저장됐지만 읽는 코드가 한 곳도 없었고, 성인 여부는 여기서 나온 파생값만으로
+// 끝난다. 주민등록번호는 법령 근거 없이는 수집 자체가 금지라(개인정보보호법 제24조의2)
+// 생년월일로 바꿨다 — 성인 확인이라는 목적은 그대로 이루면서 받는 정보는 줄어든다.
+function calcAgeFromBirth(birth) {
+  if (!birth) return null;
+  const d = new Date(birth);
+  if (Number.isNaN(d.getTime())) return null;
   const today = new Date();
-  let age = today.getFullYear() - fullYear;
-  const birthday = new Date(fullYear, mm - 1, dd);
-  if (today < birthday) age--;
+  let age = today.getFullYear() - d.getFullYear();
+  const m = today.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age -= 1;
+  if (age < 0 || age > 120) return null;
   return age;
 }
 
@@ -197,7 +197,7 @@ function Login({ onLogin, onGuest }) {
   // 회원가입 상태
   const [form, setForm] = useState({
     name: '', username: '', email: '', password: '', phone: '',
-    address: '', addressDetail: '', idFront: '', idGender: '',
+    address: '', addressDetail: '', birth: '',
   });
   // 전화 인증은 SMS/알림톡 연동(Part 2) 전까지 비활성 — 인증 없이 가입 허용.
   // (가짜 클라이언트 인증 목업 제거됨. 서버 인증 설계: srmart-backend/SMS_AUTH_DESIGN.md)
@@ -212,7 +212,7 @@ function Login({ onLogin, onGuest }) {
 
   const emptyForm = {
     name: '', username: '', email: '', password: '', phone: '',
-    address: '', addressDetail: '', idFront: '', idGender: '',
+    address: '', addressDetail: '', birth: '',
   };
 
   useEffect(() => {
@@ -281,18 +281,16 @@ function Login({ onLogin, onGuest }) {
       notify('이름, 아이디, 이메일, 비밀번호, 전화번호는 필수예요!'); return;
     }
     if (!selectedStoreId) { notify('가입점포를 선택해주세요!'); return; }
-    if (!form.idFront || form.idFront.length !== 6 || !form.idGender) {
-      notify('주민번호를 올바르게 입력해주세요!'); return;
+    if (!form.birth || calcAgeFromBirth(form.birth) === null) {
+      notify('생년월일을 올바르게 입력해주세요!'); return;
     }
-    if (!/^\d{6}$/.test(form.idFront)) { notify('주민번호 앞자리는 숫자 6자리예요!'); return; }
-    if (!['1', '2', '3', '4'].includes(form.idGender)) { notify('주민번호 뒷자리 첫번째가 올바르지 않아요 (1~4)'); return; }
 
     // (B1) 우편번호 필수 — 주소 찾기로 입력해야 저장·배송권역 매칭 가능. (서버도 400으로 이중 검증)
     if (!signupZipcode || !signupZipcode.trim()) {
       notify('우편번호가 필요해요. 주소 찾기로 주소를 입력해주세요.'); return;
     }
 
-    const age = calcAgeFromId(form.idFront, form.idGender);
+    const age = calcAgeFromBirth(form.birth);
     const isAdult = age !== null && age >= 19;
 
     try {
@@ -305,8 +303,7 @@ function Login({ onLogin, onGuest }) {
         phone: form.phone,
         address: form.address,
         addressDetail: form.addressDetail,
-        idFront: form.idFront,
-        idGender: form.idGender,
+        birth: form.birth,        // 서버가 이 값으로 is_adult/age 를 다시 계산한다
         isAdult,
         age,
         store_id: Number(selectedStoreId),
@@ -552,25 +549,21 @@ function Login({ onLogin, onGuest }) {
                 </div>
 
                 <div>
-                  <label style={labelStyle}>주민등록번호 (성인 확인용) *</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <input name="idFront" value={form.idFront}
-                      onChange={e => setForm(p => ({ ...p, idFront: e.target.value.replace(/\D/g, '').slice(0, 6) }))}
-                      placeholder="앞 6자리" maxLength={6} type="text" inputMode="numeric"
-                      style={{ ...inputStyle, flex: 1, letterSpacing: 4 }} onFocus={inputFocus} onBlur={inputBlur} />
-                    <span style={{ fontSize: 20, color: COLORS.ink300, fontWeight: 700 }}>-</span>
-                    <input name="idGender" value={form.idGender}
-                      onChange={e => setForm(p => ({ ...p, idGender: e.target.value.replace(/\D/g, '').slice(0, 1) }))}
-                      placeholder="1" maxLength={1} type="text" inputMode="numeric"
-                      style={{ ...inputStyle, width: 44, textAlign: 'center', flexShrink: 0 }} onFocus={inputFocus} onBlur={inputBlur} />
-                    <div style={{ flex: 1, height: 52, padding: '0 16px', borderRadius: 14, border: `1.5px solid ${COLORS.greenBorder}`, background: '#f1f3f5', color: COLORS.ink300, fontSize: 18, letterSpacing: 6, display: 'flex', alignItems: 'center' }}>
-                      ******
-                    </div>
+                  {/* 예전엔 주민등록번호 앞 6자리 + 성별자리를 받았다. 그 값은 서버에 평문으로
+                      저장됐지만 읽는 코드가 한 곳도 없었고, 성인 확인은 여기서 나온 만 나이만으로
+                      끝난다. 주민등록번호는 법령 근거 없이는 수집 자체가 금지라(개인정보보호법
+                      제24조의2) 생년월일로 바꿨다 — 목적은 그대로 이루면서 받는 정보는 줄어든다. */}
+                  <label style={labelStyle}>생년월일 (성인 확인용) *</label>
+                  <input name="birth" value={form.birth} type="date"
+                    max={new Date().toISOString().slice(0, 10)}
+                    onChange={e => setForm(p => ({ ...p, birth: e.target.value }))}
+                    style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
+                  <div style={{ fontSize: 11, color: COLORS.ink300, marginTop: 6 }}>
+                    성인 여부 확인·생일 혜택에만 쓰고, 주민등록번호는 받지 않아요
                   </div>
-                  <div style={{ fontSize: 11, color: COLORS.ink300, marginTop: 6 }}>성인 확인 목적으로만 사용되며 전체번호는 저장되지 않아요</div>
-                  {form.idFront.length === 6 && form.idGender && (() => {
-                    const age = calcAgeFromId(form.idFront, form.idGender);
-                    if (age === null) return <div style={{ fontSize: 12, color: COLORS.danger, marginTop: 4 }}>올바른 주민등록번호를 입력해주세요</div>;
+                  {form.birth && (() => {
+                    const age = calcAgeFromBirth(form.birth);
+                    if (age === null) return <div style={{ fontSize: 12, color: COLORS.danger, marginTop: 4 }}>올바른 생년월일을 입력해주세요</div>;
                     return (
                       <div style={{ fontSize: 12, marginTop: 6, color: age >= 19 ? '#009a58' : COLORS.danger, fontWeight: 600 }}>
                         {age >= 19 ? `✅ 성인 확인됐어요! (만 ${age}세)` : `⚠️ 미성년자예요 (만 ${age}세) - 성인 상품 구매가 제한됩니다`}
