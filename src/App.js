@@ -7,6 +7,7 @@ import API from './api';
 import Chatbot from './components/Chatbot';
 import StoreSelectionModal from './components/StoreSelectionModal';
 import ForcePasswordChangeModal from './components/ForcePasswordChangeModal';
+import ThirdPartyConsentModal from './components/ThirdPartyConsentModal';
 import ConfirmModal from './components/ConfirmModal';
 import InstallPrompt from './components/InstallPrompt';
 import SplashAd from './components/SplashAd';
@@ -81,6 +82,9 @@ function AppContent() {
   const [showStoreModal, setShowStoreModal] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [mcpUser, setMcpUser] = useState(null);   // Y5 강제비번변경 대상(must_change_password=1) — 로그인 응답의 dbUser
+  // 제3자 제공 동의를 아직 물어본 적 없는 기존 회원인가(로그인 응답의 needsThirdPartyConsent).
+  // 동의 항목이 2026-09-11 에 생겨서, 그 전 가입자는 답한 적이 없다 — 로그인 직후 한 번 묻는다.
+  const [needsConsent, setNeedsConsent] = useState(false);
   const [products, setProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [productsError, setProductsError] = useState(false);
@@ -378,6 +382,7 @@ function AppContent() {
     localStorage.setItem('srmart_token', token);
     setUser(dbUser);
     authLogin(dbUser);
+    setNeedsConsent(!!dbUser.needsThirdPartyConsent);
     if (dbUser.role === 'owner') {
       // 오너는 store_id가 항상 null이라 여기서 loadProducts(null)을 부르면 백엔드 기본값(1번 매장)으로
       // 잠깐 떴다가, 바로 이어서 StoreContext의 currentStoreId(미리보기 매장) 반응형 effect가 다시
@@ -424,6 +429,7 @@ function AppContent() {
   const handleLogout = () => setShowLogoutConfirm(true);
 
   const confirmLogout = () => {
+    setNeedsConsent(false);
     setShowLogoutConfirm(false);
     localStorage.removeItem('srmart_auto_login');
     localStorage.removeItem('srmart_token');
@@ -607,6 +613,16 @@ function AppContent() {
         </Suspense>
         {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
         {mcpUser && <ForcePasswordChangeModal onDone={handleForcePasswordChangeDone} />}
+      {needsConsent && (
+        <ThirdPartyConsentModal
+          onDone={(agreed) => {
+            setNeedsConsent(false);
+            // 답을 했으면(동의/거절) 그 값을 사용자 정보에도 반영한다 — 마이페이지가
+            // 다시 조회하지 않아도 맞는 상태를 보여준다. '나중에'(null)면 그대로 둔다.
+            if (agreed !== null) setUser(u => (u ? { ...u, thirdPartyConsent: agreed ? 1 : 0 } : u));
+          }}
+        />
+      )}
       </div>
     );
   }
