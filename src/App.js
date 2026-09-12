@@ -26,6 +26,7 @@ import { initPush } from './pushSetup';
 const HomePage = lazy(() => import('./pages/HomePage'));
 const Login = lazy(() => import('./pages/Login'));
 const Orders = lazy(() => import('./pages/Orders'));
+const Purchases = lazy(() => import('./pages/Purchases'));
 const Cart = lazy(() => import('./pages/Cart'));
 const Search = lazy(() => import('./pages/Search'));
 const ProductDetail = lazy(() => import('./pages/ProductDetail'));
@@ -85,6 +86,8 @@ function AppContent() {
   // 제3자 제공 동의를 아직 물어본 적 없는 기존 회원인가(로그인 응답의 needsThirdPartyConsent).
   // 동의 항목이 2026-09-11 에 생겨서, 그 전 가입자는 답한 적이 없다 — 로그인 직후 한 번 묻는다.
   const [needsConsent, setNeedsConsent] = useState(false);
+  // 전자영수증 알림을 탭해 들어온 경우 그 매출 번호. 구매 내역이 열리면서 바로 그 영수증을 편다.
+  const [pushSaleId, setPushSaleId] = useState(null);
   const [products, setProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [productsError, setProductsError] = useState(false);
@@ -120,7 +123,15 @@ function AppContent() {
   }, []);
 
   // 앱 최초 실행 시 푸시 알림 권한 요청 + FCM 토큰 등록 (네이티브만, 웹은 무시)
-  useEffect(() => { initPush(); }, []);
+  // 알림을 탭하면 **그 영수증으로.** 목록만 열면 손님이 다시 찾아 들어가야 한다.
+  useEffect(() => {
+    initPush((ev) => {
+      if (ev?.type !== 'pos_receipt') return;
+      setPushSaleId(ev.saleId || null);
+      goToPage('purchases');
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 콘텐츠 로드 후(스플래시 종료 이후) 상태바를 다크모드에 맞춤 — 라이트=흰 배경/어두운 아이콘,
   // 다크=#1a1a1a(홈 헤더의 다크모드 배경과 동일)/밝은 아이콘. setBackgroundColor는 안드로이드 전용
@@ -910,9 +921,21 @@ function AppContent() {
         {page === 'quickOrder'      && <QuickOrder item={quickOrderItem} onBack={goBack} onPayment={handleQuickPayment} user={currentUser} darkMode={darkMode} />}
         {page === 'cart'            && <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} user={currentUser} darkMode={darkMode} />}
         {page === 'orders'          && <Orders orders={orders} goBack={goBack} />}
+        {page === 'purchases'       && <Purchases goBack={goBack} onOpenConsent={() => setNeedsConsent(true)} openSaleId={pushSaleId} onOpened={() => setPushSaleId(null)} />}
         {page === 'receipt'         && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
         {page === 'mypage'          && <MyPage user={currentUser} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} users={users} setUsers={setUsers} isAdmin={isAdmin} />}
         </Suspense>
+
+        {/* 제3자 제공 동의 팝업 — 로그인 직후 자동으로 뜨는 것 말고, 구매 내역에서
+            직접 열 수도 있다(거절했던 회원이 마음을 바꿀 길). */}
+        {needsConsent && (
+          <ThirdPartyConsentModal
+            onDone={(agreed) => {
+              setNeedsConsent(false);
+              if (agreed !== null) setUser(u => (u ? { ...u, thirdPartyConsent: agreed ? 1 : 0 } : u));
+            }}
+          />
+        )}
       </div>
 
       {/* 하단 탭 */}

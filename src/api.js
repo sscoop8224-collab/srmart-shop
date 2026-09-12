@@ -93,4 +93,11 @@ export const getRelatedProducts = (id) => API.get(`/products/${id}/related`);
 export const getFrequentlyBought = (id) => API.get(`/products/${id}/frequently-bought-together`);
 export const getRecommendations = () => API.get('/recommendations');
 
+// 구매 내역(온라인 주문 + 매장 구매) — 전자영수증을 "받는 쪽".
+// 전부 **본인 것만** 나온다. 서버가 req.user 로만 대상을 정하고, 회원 번호를 넘길 자리가
+// 아예 없다(srmart-backend/src/routes/myPurchases.js).
+export const getMyPurchases = (params) => API.get('/me/purchases', { params });
+export const getStorePurchase = (saleId) => API.get(`/me/purchases/store/${saleId}`);
+export const getOnlinePurchase = (orderId) => API.get(`/me/purchases/online/${orderId}`);
+
 export default API;

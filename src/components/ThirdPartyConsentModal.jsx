@@ -39,24 +39,27 @@ export default function ThirdPartyConsentModal({ onDone }) {
   return (
     <div style={overlay} role="dialog" aria-modal="true" aria-labelledby="tpc-title">
       <div style={sheet}>
-        <div id="tpc-title" style={title}>매장에서도 포인트를 쌓으시겠어요?</div>
+        <div id="tpc-title" style={title}>매장 이용도 함께 하시겠어요?</div>
 
         <p style={body}>
           에스알마트 <b>검암점·왕길점·신흥점·고촌점·승학점</b>은 각각 다른 사업자예요.
-          매장에서 포인트를 쌓고 쓰시려면 이름·연락처·회원번호·포인트 내역을 각 지점에
-          제공하는 데 동의가 필요해요.
+          매장에서 포인트를 쌓고 쓰시고 <b>매장에서 사신 영수증을 앱에서 보시려면</b>,
+          이름·연락처·회원번호·포인트 내역과 매장 구매 내역을 각 지점에 제공하는 데
+          동의가 필요해요.
         </p>
 
         <div style={noteBox}>
           <div style={noteTitle}>동의하지 않으셔도 괜찮아요</div>
           <div style={noteBody}>
-            온라인 주문과 온라인 포인트는 그대로 쓰실 수 있어요. 매장 적립만 빠져요.
+            온라인 주문과 온라인 포인트는 그대로 쓰실 수 있어요. 매장 적립과 매장
+            영수증 보기만 빠져요.
           </div>
         </div>
 
         <p style={fine}>
-          제공 항목 이름·연락처·회원번호·포인트 내역 · 목적 지점 통합 회원·포인트 운영 ·
-          보유 기간 회원 탈퇴 시까지. 자세한 내용은 개인정보처리방침에서 보실 수 있어요.
+          제공 항목 이름·연락처·회원번호·포인트 내역·매장 구매 내역 · 목적 지점 통합 회원·
+          포인트 운영·구매 내역 표시 · 보유 기간 회원 탈퇴 시까지. 자세한 내용은
+          개인정보처리방침에서 보실 수 있어요.
         </p>
 
         {!!error && <div style={errorText}>{error}</div>}
@@ -66,7 +69,7 @@ export default function ThirdPartyConsentModal({ onDone }) {
             동의 안 함
           </button>
           <button type="button" style={{ ...btn, ...btnPrimary, opacity: saving ? 0.6 : 1 }} disabled={saving} onClick={() => answer(true)}>
-            {saving ? '저장 중...' : '동의하고 매장 적립'}
+            {saving ? '저장 중...' : '동의하고 매장 이용'}
           </button>
         </div>
 
