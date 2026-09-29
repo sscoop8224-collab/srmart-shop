@@ -1,7 +1,7 @@
 // 하단 고정 결제 요약(상품금액/할인/배송비/보유쿠폰/포인트/총결제금액/결제버튼).
 // Cart.js 원본(400~493행)에서 그대로 옮김 — 마크업/스타일/문구/버튼 활성화조건 동일.
 // props 는 useCheckoutFlow() 의 반환값을 그대로 펼쳐서 넘기면 된다. onPay 만 호출부(Cart/QuickOrder)가 넘긴다.
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import usePublishBottomBarHeight from '../../hooks/usePublishBottomBarHeight';
 
 function SummaryBar({
@@ -27,8 +27,63 @@ function SummaryBar({
   // 접어두고 필요할 때만 펼치게 함(2026-09-03).
   const [pointsExpanded, setPointsExpanded] = useState(false);
 
+  /**
+   * 🔴 **결제 칸 전체 접기** (2026-09-29)
+   *
+   * 2026-09-04 에 "포인트 영역 기본 접힘"(커밋 1a489695)을 넣었지만, 그건 **칸 안의 한
+   * 조각**만 접는 것이었다. 상품금액·배송비·포인트·총결제·버튼이 그대로 쌓여 있어
+   * 아이폰에서는 여전히 목록을 크게 가린다. **칸 전체를 접는 것은 만든 적이 없다** —
+   * 빠진 게 아니라 아직 없던 기능이다(git 이력 확인).
+   *
+   * 동작:
+   *   · 목록을 **스크롤하면 접힌다** — 손님이 지금 보려는 건 상품이다
+   *   · 접혀도 **총 결제금액 한 줄과 주문 버튼은 남는다** — 얼마인지 모르고 누르게 하면 안 된다
+   *   · 접힌 칸을 **누르거나 위로 밀면 펼쳐진다**
+   *   · 스크롤이 맨 위면 펼친 채로 둔다(막 들어왔을 때는 전체가 보이는 게 맞다)
+   *
+   * 스크롤로 자동으로 접되 **자동으로 펼치지는 않는다.** 스크롤을 멈췄다고 펼치면
+   * 손님이 읽던 상품 줄을 덮어 버린다 — 펼치는 건 사람이 정한다.
+   */
+  const [collapsed, setCollapsed] = useState(false);
+  const touchStartY = useRef(null);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY || document.documentElement.scrollTop || 0;
+      // 맨 위 근처(40px 이내)면 펼친 상태를 유지한다 — 들어오자마자 접히면 뭘 접었는지 모른다.
+      if (y <= 40) { setCollapsed(false); return; }
+      setCollapsed(true);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true, capture: true });
+    return () => window.removeEventListener('scroll', onScroll, { capture: true });
+  }, []);
+
+  // 위로 밀어 펼치기 — 접힌 칸에서만 듣는다.
+  const onTouchStart = (e) => { touchStartY.current = e.touches?.[0]?.clientY ?? null; };
+  const onTouchEnd = (e) => {
+    const start = touchStartY.current;
+    touchStartY.current = null;
+    if (start == null || !collapsed) return;
+    const end = e.changedTouches?.[0]?.clientY ?? start;
+    if (start - end > 24) setCollapsed(false);   // 24px 이상 위로 밀면 펼친다
+  };
+
   return (
-    <div ref={barRef} className="cart-checkout" style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: fixedBg, padding: '14px 20px calc(30px + env(safe-area-inset-bottom))', borderTop: `1px solid ${borderColor}`, boxShadow: '0 -4px 20px rgba(0,0,0,0.08)', zIndex: 'var(--z-fixed-actionbar)' }}>
+    <div
+      ref={barRef}
+      className="cart-checkout"
+      onClick={collapsed ? () => setCollapsed(false) : undefined}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: fixedBg, padding: collapsed ? '8px 20px calc(30px + env(safe-area-inset-bottom))' : '14px 20px calc(30px + env(safe-area-inset-bottom))', borderTop: `1px solid ${borderColor}`, boxShadow: '0 -4px 20px rgba(0,0,0,0.08)', zIndex: 'var(--z-fixed-actionbar)', cursor: collapsed ? 'pointer' : 'default', transition: 'padding .18s ease' }}
+    >
+      {/* 접힘 손잡이 — 접힌 상태에서 "누르면 펼쳐진다" 를 말해 주는 유일한 표시다.
+          펼친 상태에서도 같은 자리에 둬서 칸 높이가 들쑥날쑥하지 않게 한다. */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: collapsed ? 6 : 8 }}>
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: borderColor }} />
+      </div>
+      {/* 접히면 여기서부터 포인트 칸까지가 통째로 사라진다. 총 결제금액과 버튼만 남는다. */}
+      {!collapsed && (<>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
         <span style={{ fontSize: '13px', color: subTextColor }}>상품 금액</span>
         <span style={{ fontSize: '13px', color: textColor, fontWeight: '600' }}>₩{totalPrice.toLocaleString()}</span>
@@ -95,7 +150,8 @@ function SummaryBar({
           )}
         </div>
       )}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', paddingTop: '8px', borderTop: `1px solid ${borderColor}` }}>
+      </>)}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', paddingTop: collapsed ? 0 : '8px', borderTop: collapsed ? 'none' : `1px solid ${borderColor}` }}>
         <span style={{ fontSize: '15px', fontWeight: '700', color: textColor }}>총 결제금액</span>
         <span style={{ fontSize: '22px', fontWeight: '900', color: 'var(--primary)' }}>₩{finalPrice.toLocaleString()}</span>
       </div>

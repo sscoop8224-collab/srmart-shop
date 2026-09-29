@@ -123,13 +123,27 @@ body {
 }
 
 /* 헤더 */
+/* 🔴 아이폰에서 헤더 내용이 아래 띠에 겹치던 버그 (2026-09-29)
+ *
+ * `box-sizing: border-box` 인데 `height: 58px` 에 `padding-top: env(safe-area-inset-top)`
+ * 을 더했다. border-box 에서는 패딩이 **높이 안쪽을 먹으므로**, 노치가 있는 아이폰
+ * (safe-area 47px)에서는 내용이 쓸 수 있는 높이가 **58 - 47 = 11px** 밖에 안 남는다.
+ * 로고·사용자·공지·로그아웃이 그 11px 안에 안 들어가니 밖으로 삐져나가 아래 주황
+ * "매장 미리보기" 띠를 덮었다. 안드로이드·데스크탑은 safe-area 가 0이라 멀쩡해 보였다.
+ *
+ * 그래서 **높이에 safe-area 를 더해 준다.** 내용이 쓰는 높이는 어느 기기에서나 정확히
+ * 58px 이 되고, 노치 영역은 그 위에 얹힌다.
+ *
+ * ⚠️ 띠(미리보기 배너)는 헤더 **밖**에 있고 sticky 도 아니라, 띠가 없을 때도 헤더 높이가
+ *    그대로라 레이아웃이 안 흔들린다. 띠는 문서 흐름을 따라 헤더 바로 아래에 쌓인다.
+ */
 .header {
   position: sticky;
   top: 0;
   z-index: 100;
   background: var(--white);
   border-bottom: 1px solid var(--gray-100);
-  height: var(--header-height);
+  height: calc(var(--header-height) + env(safe-area-inset-top));
   display: flex;
   align-items: center;
   justify-content: space-between;

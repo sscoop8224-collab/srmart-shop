@@ -12,6 +12,25 @@ const Chatbot = () => {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // 스크롤 중인지 — 이 동안 AI 상담 버튼이 작아져 아래 조작 버튼을 안 가린다.
+  // 0.6초 동안 스크롤이 없으면 원래 크기로 돌아온다(멈추자마자 커지면 손가락 밑에서
+  // 튀어나와 오히려 방해가 된다).
+  const [scrolling, setScrolling] = useState(false);
+  useEffect(() => {
+    let timer = null;
+    const onScroll = () => {
+      setScrolling(true);
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => setScrolling(false), 600);
+    };
+    // capture:true — 목록이 내부 스크롤 컨테이너를 쓰더라도 잡는다(창 스크롤만 보면 놓친다).
+    window.addEventListener('scroll', onScroll, { passive: true, capture: true });
+    return () => {
+      if (timer) clearTimeout(timer);
+      window.removeEventListener('scroll', onScroll, { capture: true });
+    };
+  }, []);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -61,7 +80,23 @@ const Chatbot = () => {
       {/* 상담 진입 — 원형 말풍선 버튼 + 아래 라벨(하단 탭 아이콘+글자 구조). 스크롤 시 라벨만 접힘.
           bottom은 탭바 높이(68px)+safe-area 기본 여백에, 화면별 하단 액션바가 떠 있으면
           usePublishBottomBarHeight가 갱신하는 --bottom-bar-extra만큼 추가로 끌어올려 겹치지 않게 한다. */}
-      <div style={{ position: 'fixed', bottom: 'calc(76px + env(safe-area-inset-bottom) + var(--bottom-bar-extra, 0px))', right: '16px', zIndex: 1001, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+      {/* 🔴 스크롤 중에는 **작아지고 흐려진다** (2026-09-29).
+          하단 결제 칸 위로 띄우는 것(--bottom-bar-extra)만으로는 부족했다 — 버튼이 오른쪽에
+          고정돼 있어서 **상품 줄의 +·삭제 버튼과 가로로 겹쳤다.** 세로로 아무리 올려도
+          목록을 스크롤하는 동안에는 어느 줄이든 그 자리에 온다.
+          그래서 스크롤 중엔 절반 크기로 줄고 반투명해져 **아래 버튼이 비쳐 보이고 눌린다**
+          (pointerEvents: 'none'). 멈추면 0.6초 뒤 원래대로 돌아온다. */}
+      <div style={{
+        position: 'fixed',
+        bottom: 'calc(76px + env(safe-area-inset-bottom) + var(--bottom-bar-extra, 0px))',
+        right: '16px', zIndex: 1001,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px',
+        transform: scrolling ? 'scale(0.45)' : 'scale(1)',
+        transformOrigin: 'bottom right',
+        opacity: scrolling ? 0.35 : 1,
+        pointerEvents: scrolling ? 'none' : 'auto',
+        transition: 'transform .18s ease, opacity .18s ease',
+      }}>
         <button
           onClick={() => setIsOpen(!isOpen)}
           aria-label="AI 상담"
