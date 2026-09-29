@@ -108,6 +108,12 @@ function Orders({ orders, goBack }) {
                       </div>
                       <div style={{ flex: 1 }}>
                         <p style={{ fontSize: '13px', fontWeight: '700', color: '#1a1a1a', margin: '0 0 3px' }}>{item.name}</p>
+                        {/* 규격은 **주문 시점 스냅샷**(order_items.spec)이다 — 지금 값을 보여주면
+                            규격이 바뀐 뒤 과거 주문이 통째로 틀리게 보인다. 2026-09-29 이전
+                            주문은 스냅샷이 없어 빈칸이다(그게 "모른다" 는 사실 그대로다). */}
+                        {item.spec && (
+                          <p style={{ fontSize: '11px', color: '#888', margin: '0 0 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.spec}</p>
+                        )}
                         <p style={{ fontSize: '12px', color: '#adb5bd', margin: 0 }}>{item.quantity}개</p>
                       </div>
                       <p style={{ fontSize: '14px', fontWeight: '800', color: '#1a1a1a', margin: 0 }}>₩{(item.price * item.quantity).toLocaleString()}</p>

@@ -65,6 +65,10 @@ function QuickOrder({ item, onBack, onPayment, user, darkMode }) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: '11px', color: 'var(--primary)', margin: '0 0 3px', fontWeight: '700' }}>{item.large}</p>
                 <p style={{ fontSize: '14px', fontWeight: '700', color: textColor, margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</p>
+                {/* 규격 — 위 장바구니와 같은 이유. 없으면 자리도 안 차지한다. */}
+                {item.spec && (
+                  <p style={{ fontSize: '11px', color: '#888', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.spec}</p>
+                )}
                 {item.purchase_type === 'box' && (
                   <p style={{ fontSize: '10px', color: '#e17055', margin: '0 0 2px', fontWeight: '700' }}>박스 구매 · {item.quantity}박스</p>
                 )}

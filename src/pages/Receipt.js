@@ -76,6 +76,10 @@ function Receipt({ order, onClose, onGoHome, earnPoints }) {
               </div>
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: '13px', fontWeight: '700', color: '#1a1a1a', margin: '0 0 3px' }}>{item.name}</p>
+                {/* 규격 — 주문 시점 스냅샷(위 주문내역과 같은 이유). */}
+                {item.spec && (
+                  <p style={{ fontSize: '11px', color: '#888', margin: '0 0 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.spec}</p>
+                )}
                 <p style={{ fontSize: '12px', color: '#adb5bd', margin: 0 }}>{item.quantity}개 · ₩{item.price.toLocaleString()}</p>
               </div>
               <p style={{ fontSize: '14px', fontWeight: '800', color: '#1a1a1a', margin: 0 }}>₩{(item.price * item.quantity).toLocaleString()}</p>

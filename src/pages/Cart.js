@@ -96,6 +96,11 @@ function Cart({ cart, setCart, onPayment, onHome, goBack, user, darkMode }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: '11px', color: 'var(--primary)', margin: '0 0 3px', fontWeight: '700' }}>{item.large}</p>
                   <p style={{ fontSize: '14px', fontWeight: '700', color: textColor, margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</p>
+                  {/* 규격 — 같은 상품도 용량이 여러 가지라(500ml/1.5L) 이게 없으면 장바구니에
+                      담은 것이 어느 물건인지 모른다. 길면 말줄임으로 잘려 칸은 안 깨진다. */}
+                  {item.spec && (
+                    <p style={{ fontSize: '11px', color: '#888', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.spec}</p>
+                  )}
                   {item.purchase_type === 'box' && (
                     <p style={{ fontSize: '10px', color: '#e17055', margin: '0 0 2px', fontWeight: '700' }}>박스 구매</p>
                   )}
