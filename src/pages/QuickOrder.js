@@ -110,6 +110,7 @@ function QuickOrder({ item, onBack, onPayment, user, darkMode }) {
             totalPrice={checkout.totalPrice} appliedCoupon={checkout.appliedCoupon} discountAmount={checkout.discountAmount}
             deliveryFee={checkout.deliveryFee} freeDeliveryMin={checkout.freeDeliveryMin}
             myCoupons={checkout.myCoupons} selectedCouponId={checkout.selectedCouponId} handleCouponSelect={checkout.handleCouponSelect} couponDiscount={checkout.couponDiscount}
+            benefitsError={checkout.benefitsError} benefitsLoading={checkout.benefitsLoading} retryBenefits={checkout.retryBenefits}
             myPoints={checkout.myPoints} usePoints={checkout.usePoints} setUsePoints={checkout.setUsePoints} clampedUsePoints={checkout.clampedUsePoints}
             finalPrice={checkout.finalPrice} canPay={checkout.canPay} zipcode={checkout.zipcode} deliveryInfo={checkout.deliveryInfo}
             onPay={() => onPayment(item, checkout.finalPrice, checkout.buildOrderExtras())}

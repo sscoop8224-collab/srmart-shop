@@ -120,6 +120,10 @@ function CameraScanner({ onDetected, c, s }) {
   };
 
   const stopScanner = async () => {
+    // swallow-ok: 카메라 스캐너를 **끄는** 길이다. 이미 꺼졌거나 화면이 사라지는 중이면
+    //   stop() 이 던지는데, 그때 할 일이 아무것도 없다 — 어차피 끄려던 것이고
+    //   scannerRef 를 null 로 두면 다음 열기가 새로 만든다. 언마운트 정리에서도 불리므로
+    //   여기서 경고를 띄우면 **화면을 떠나는 순간 오류가 뜬다.** 금액·장부와 무관하다.
     if (scannerRef.current) { try { await scannerRef.current.stop(); scannerRef.current.clear(); } catch {} scannerRef.current = null; }
     setActive(false);
   };

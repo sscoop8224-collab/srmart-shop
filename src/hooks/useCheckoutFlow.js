@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { matchZipcode, getMyPoints, getMyActiveCoupons, applyCoupon } from '../api';
 import API from '../api';
 import { getItemPrice } from '../utils/pricing';
@@ -35,6 +35,9 @@ export function useCheckoutFlow(items, { user } = {}) {
   const [myCoupons, setMyCoupons] = useState([]);
   const [selectedCouponId, setSelectedCouponId] = useState('');
   const [couponDiscount, setCouponDiscount] = useState(0);
+  // 🔴 쿠폰·포인트를 못 불러왔을 때 **손님에게 보여 줄 말**. 빈 문자열이면 정상.
+  const [benefitsError, setBenefitsError] = useState('');
+  const [benefitsLoading, setBenefitsLoading] = useState(false);
 
   const defaultAddress = {
     name: user?.name || '',
@@ -97,12 +100,45 @@ export function useCheckoutFlow(items, { user } = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  useEffect(() => {
-    if (user) {
-      getMyPoints().then(r => setMyPoints(r.data?.points || 0)).catch(() => {});
-      getMyActiveCoupons().then(r => setMyCoupons((r.data || []).filter(c => !c.used_at))).catch(() => {});
-    }
+  // ── 🔴 보유 쿠폰·포인트 — **못 불러왔으면 손님에게 말한다** (2026-10-22 지시 3) ──
+  //
+  // 예전엔 이랬다:
+  //
+  //     getMyPoints().then(...).catch(() => {});
+  //     getMyActiveCoupons().then(...).catch(() => {});
+  //
+  // 🔴 `/api/users/me/coupons` 가 **4개월째 500** 이었는데 아무 데도 안 보였다.
+  //    쿠폰 칸은 `myCoupons.length > 0` 일 때만 그려지므로(SummaryBar), 실패하면
+  //    **칸 자체가 조용히 사라진다** — 손님은 쿠폰이 없는 줄 알고 그냥 결제한다.
+  //    즉 이 빈 catch 가 손님에게 **돈을 더 내게 했다.**
+  //
+  // 그래서 실패를 상태로 남기고, 결제 요약에 한 줄로 띄우고, **다시 시도**를 준다.
+  //   · 결제 자체를 막지는 않는다 — 손님이 지금 사고 싶을 수 있다
+  //   · 다만 **할인이 빠진다는 사실**을 반드시 말한다. 그게 이 경고의 목적이다
+  const loadBenefits = useCallback(() => {
+    if (!user) return;
+    setBenefitsError('');
+    setBenefitsLoading(true);
+    Promise.allSettled([getMyPoints(), getMyActiveCoupons()]).then(([pt, cp]) => {
+      setBenefitsLoading(false);
+      if (pt.status === 'fulfilled') setMyPoints(pt.value.data?.points || 0);
+      if (cp.status === 'fulfilled') setMyCoupons((cp.value.data || []).filter(c => !c.used_at));
+      const failed = [];
+      if (pt.status === 'rejected') failed.push('포인트');
+      if (cp.status === 'rejected') failed.push('쿠폰');
+      if (!failed.length) return;
+      const e = (pt.status === 'rejected' ? pt.reason : cp.reason);
+      // 🔴 이유를 가른다 — "잠시 뒤 다시" 와 "우리 쪽 문제" 는 손님이 할 일이 다르다.
+      const why = !e?.response ? '인터넷 연결을 확인해주세요'
+        : e.response.status === 401 ? '다시 로그인해주세요'
+        : e.response.status >= 500 ? '잠시 뒤 다시 시도해주세요 (서버 문제예요)'
+        : (e.response.data?.error || '잠시 뒤 다시 시도해주세요');
+      setBenefitsError(`보유 ${failed.join('·')}을 불러오지 못했어요 — ${why}.`
+        + ' 지금 결제하면 할인이 빠진 금액으로 결제돼요.');
+    });
   }, [user]);
+
+  useEffect(() => { loadBenefits(); }, [loadBenefits]);
 
   const handleSwitchAddress = (useDefault) => {
     setUseDefaultAddress(useDefault);
@@ -209,6 +245,8 @@ export function useCheckoutFlow(items, { user } = {}) {
     // 쿠폰
     couponInput, setCouponInput, appliedCoupon, handleApplyCoupon, handleRemoveCoupon,
     myCoupons, selectedCouponId, couponDiscount, handleCouponSelect,
+    // 🔴 쿠폰·포인트를 못 불러왔다는 사실 — 화면이 반드시 띄운다
+    benefitsError, benefitsLoading, retryBenefits: loadBenefits,
     // 포인트
     myPoints, usePoints, setUsePoints, clampedUsePoints,
     // 금액 — deliveryFee 는 단일 최종 배송비(권역 매칭 시 권역값, 아니면 점포 기본 폴백)

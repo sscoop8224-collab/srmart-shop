@@ -24,6 +24,8 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
   const [reviews, setReviews] = useState([]);
   const [reviewStats, setReviewStats] = useState(null);
   const [related, setRelated] = useState([]);
+  // 🔴 리뷰를 못 불러왔다는 사실. 빈 문자열이면 정상(= 진짜로 리뷰가 없다).
+  const [reviewsError, setReviewsError] = useState('');
   const [showReviewForm, setShowReviewForm] = useState(false);
   const cartBarRef = useRef(null);
   usePublishBottomBarHeight(cartBarRef);
@@ -33,8 +35,21 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
 
   useEffect(() => {
     if (!product) return;
+    // swallow-ok: 최근 본 상품 기록은 **손님 화면에 아무것도 바꾸지 않는다**(나중에
+    //   다른 화면의 목록에 한 줄 덜 뜰 뿐). 알려도 손님이 할 일이 없고 금액·장부와도 무관하다.
     if (user) recordRecentView(product.id).catch(() => {});
-    getProductReviews(product.id).then(r => { setReviews(r.data.reviews || []); setReviewStats(r.data.stats); }).catch(() => {});
+    // 🔴 **리뷰는 조용히 비워 두면 안 된다** (2026-10-22 지시 3).
+    //    실패하면 reviews 가 빈 배열로 남고, 화면은 **"첫 리뷰를 작성해주세요!"** 를
+    //    띄운다 — 🔴 리뷰가 20개 있어도 손님에게는 "리뷰 없는 상품" 으로 보인다.
+    //    그건 틀린 말이고, 손님의 구매 판단을 바꾼다.
+    setReviewsError('');
+    getProductReviews(product.id)
+      .then(r => { setReviews(r.data.reviews || []); setReviewStats(r.data.stats); })
+      .catch((e) => setReviewsError(!e?.response
+        ? '리뷰를 불러오지 못했어요 — 인터넷 연결을 확인해주세요.'
+        : '리뷰를 불러오지 못했어요. 잠시 뒤 새로고침해 주세요.'));
+    // swallow-ok: 관련 상품은 **곁들임**이다 — 못 불러오면 그 줄이 안 뜨고, 보고 있는
+    //   상품의 정보·가격·리뷰는 그대로다. 여기까지 경고를 띄우면 정작 중요한 경고가 묻힌다.
     getRelatedProducts(product.id).then(r => setRelated(r.data || [])).catch(() => {});
   }, [product?.id]); // eslint-disable-line
 
@@ -391,7 +406,11 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
             </button>
           </div>
         )}
-        {reviews.length === 0 ? (
+        {/* 🔴 **"리뷰 없음" 과 "못 불러옴" 을 가른다.** 둘을 같은 문구로 보여 주면
+            리뷰가 있는 상품이 없는 것처럼 보인다 — 손님이 그걸 보고 안 산다. */}
+        {reviewsError ? (
+          <div role="alert" style={{ textAlign: 'center', padding: '24px 0', color: darkMode ? '#ff8a80' : '#c62828', fontSize: 14, fontWeight: 600 }}>{reviewsError}</div>
+        ) : reviews.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '24px 0', color: sub, fontSize: 14 }}>첫 리뷰를 작성해주세요!</div>
         ) : reviews.map(r => (
           <div key={r.id} style={{ padding: '14px 0', borderBottom: `1px solid ${darkMode ? '#2a2a2a' : '#f0f0f0'}` }}>

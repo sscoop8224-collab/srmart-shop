@@ -9,6 +9,9 @@ function SummaryBar({
   totalPrice, appliedCoupon, discountAmount,
   deliveryFee, freeDeliveryMin,
   myCoupons, selectedCouponId, handleCouponSelect, couponDiscount,
+  // 🔴 쿠폰·포인트를 못 불러왔으면 **반드시 보여 준다** — 안 보여 주면 칸이
+  //    조용히 사라져 손님이 할인 없이 결제한다(useCheckoutFlow 머리말).
+  benefitsError = '', benefitsLoading = false, retryBenefits,
   myPoints, usePoints, setUsePoints, clampedUsePoints,
   finalPrice, canPay, zipcode, deliveryInfo,
   onPay,
@@ -101,6 +104,20 @@ function SummaryBar({
         </span>
         <span style={{ fontSize: '13px', color: textColor, fontWeight: '600' }}>₩{deliveryFee.toLocaleString()}</span>
       </div>
+      {/* 🔴 **보유 쿠폰·포인트를 못 불러왔다** — 결제 버튼 바로 위에 띄운다.
+          결제를 막지는 않는다(손님이 지금 사고 싶을 수 있다). 다만 **할인이
+          빠진다는 사실**은 반드시 말한다 — 그게 이 줄의 목적이다. */}
+      {!!benefitsError && (
+        <div role="alert" style={{ marginBottom: '8px', padding: '10px 14px', background: darkMode ? '#3a1f1f' : '#fff3f3', borderRadius: 12, border: `1px solid ${darkMode ? '#5a2a2a' : '#ffcdd2'}` }}>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: darkMode ? '#ff8a80' : '#c62828', lineHeight: 1.5 }}>{benefitsError}</div>
+          {!!retryBenefits && (
+            <button type="button" onClick={retryBenefits} disabled={benefitsLoading}
+              style={{ marginTop: 8, padding: '7px 14px', borderRadius: 9, border: `1.5px solid ${darkMode ? '#ff8a80' : '#c62828'}`, background: 'transparent', color: darkMode ? '#ff8a80' : '#c62828', fontSize: '13px', fontWeight: 700, fontFamily: 'inherit', cursor: benefitsLoading ? 'default' : 'pointer' }}>
+              {benefitsLoading ? '불러오는 중…' : '다시 시도'}
+            </button>
+          )}
+        </div>
+      )}
       {/* 보유 쿠폰 선택 */}
       {myCoupons.length > 0 && (
         <div style={{ marginBottom: '8px', padding: '10px 14px', background: darkMode ? '#2a1a10' : '#fff8f0', borderRadius: 12, border: `1px solid ${darkMode ? '#3a2a20' : '#ffe0b2'}` }}>
