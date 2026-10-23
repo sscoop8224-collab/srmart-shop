@@ -3,6 +3,7 @@ import FindAccount from './FindAccount';
 import srmLogo from '../srm-logo-transparent.png';
 import { getStores, register, getCoverage } from '../api';
 import { useDialog } from '../DialogContext';
+import { todayYmd } from '../utils/localDate';
 
 // ── 나이 계산 함수 ──────────────────────────────────────────
 // 동의 한 줄 — 체크박스 + 제목 + 설명.
@@ -610,7 +611,8 @@ function Login({ onLogin, onGuest }) {
                       제24조의2) 생년월일로 바꿨다 — 목적은 그대로 이루면서 받는 정보는 줄어든다. */}
                   <label style={labelStyle}>생년월일 (성인 확인용) *</label>
                   <input name="birth" value={form.birth} type="date"
-                    max={new Date().toISOString().slice(0, 10)}
+                    /* 🔴 **한국 시간으로** (판단 ③) — UTC 상한이면 오전 9시 전엔 오늘 날짜를 못 고른다. */
+                    max={todayYmd()}
                     onChange={e => setForm(p => ({ ...p, birth: e.target.value }))}
                     style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
                   <div style={{ fontSize: 11, color: COLORS.ink300, marginTop: 6 }}>

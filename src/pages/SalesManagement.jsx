@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import API from '../api';
 import { useDialog } from '../DialogContext';
+import { ymdLocal } from '../utils/localDate';
 
 const PAYMENT_METHODS = ['현금', '카드', '계좌이체'];
 const VIEW_OPTIONS = [
@@ -9,7 +10,9 @@ const VIEW_OPTIONS = [
   { key: 'monthly', label: '월별' },
 ];
 
-const formatDate = (date) => date.toISOString().slice(0, 10);
+// 🔴 **한국 시간으로** (2026-10-23 판단 ③). UTC 로 자르면 오전 9시 전에 "오늘" 을
+//    조회해도 **어제까지**만 나온다 — 숫자가 비어 보이고 그 이유를 알 수 없다.
+const formatDate = (date) => ymdLocal(date);
 const parseAmount = (value) => Number(value || 0);
 
 function SalesManagement({ goBack, darkMode }) {

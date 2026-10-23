@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useDialog } from '../DialogContext';
+import { todayYmd } from '../utils/localDate';
 
 const EVENT_TYPES = [
   { value: '1+1', label: '1+1', desc: '1개 구매시 1개 무료' },
@@ -123,7 +124,9 @@ function EventManager({ products, goBack, darkMode, events, setEvents }) {
 
   const handleEndNow = async (id) => {
     if (await confirm('행사를 즉시 종료할까요?')) {
-      setEvents(events.map(e => e.id === id ? { ...e, endDate: new Date().toISOString().split('T')[0], isActive: false } : e));
+      // 🔴 **한국 시간으로** (2026-10-23 판단 ③). UTC 로 자르면 오전 9시 전에 종료한 행사가
+      //    **어제 끝난 것**으로 기록된다.
+      setEvents(events.map(e => e.id === id ? { ...e, endDate: todayYmd(), isActive: false } : e));
     }
   };
 
