@@ -13,7 +13,9 @@ const getCategoryImage = (large) => {
   return map[large] || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&q=80';
 };
 
-function Search({ products, categories, goBack, onProductClick, onAddToCart, darkMode, user }) {
+// 🔴 `storeId` 를 **반드시 보낸다.** 안 보내면 서버가 기본 매장(검암)으로 떨어져
+//    **다른 매장 손님에게 엉뚱한 가격**을 보여 준다 — 예전엔 아예 안 보냈다.
+function Search({ products, categories, goBack, onProductClick, onAddToCart, darkMode, user, storeId }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState(products);
   const [popular, setPopular] = useState([]);
@@ -43,7 +45,7 @@ function Search({ products, categories, goBack, onProductClick, onAddToCart, dar
     if (!trimmed) { setResults(products); setHasSearched(false); return; }
     setSearching(true); setHasSearched(true); setShowSuggest(false);
     try {
-      const r = await searchProducts({ q: trimmed, sort, category: filterCat !== '전체' ? filterCat : undefined, in_stock: inStockOnly || undefined });
+      const r = await searchProducts({ q: trimmed, sort, category: filterCat !== '전체' ? filterCat : undefined, in_stock: inStockOnly || undefined, store_id: storeId || undefined });
       setResults(r.data.products || []);
     } catch {
       setResults(products.filter(p => p.name.toLowerCase().includes(trimmed.toLowerCase())));

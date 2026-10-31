@@ -119,6 +119,15 @@ function Orders({ orders, goBack }) {
                       </span>
                       <span style={{ color: rc.color, fontSize: '12px', lineHeight: 1.4 }}>
                         {order.return_message}
+                        {/* 🔴 **반려는 이유와 다음 길을 같이 말한다.** 서버가 `return_note` 를
+                            실어 보내는데 예전엔 화면이 안 썼다 — 적어 둔 이유가 손님에게
+                            닿지 않았다. 「반려됐어요」 한 줄은 막다른 문구다(CLAUDE.md). */}
+                        {order.return_status === '반려' && (
+                          <>
+                            {order.return_note ? <><br />사유: {order.return_note}</> : null}
+                            <br />다시 요청하시려면 아래 버튼으로 새로 접수해주세요.
+                          </>
+                        )}
                       </span>
                     </div>
                   );
