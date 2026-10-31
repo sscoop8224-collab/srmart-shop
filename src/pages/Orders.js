@@ -26,6 +26,16 @@ const statusStyle = (status) => {
   return map[status] || { bg: 'var(--primary-light)', color: 'var(--primary-dark)' };
 };
 
+// 🔴 **환불·교환 요청의 단계** — 주문 상태와는 다른 것이라 따로 보여 준다.
+//    「승인」은 **아직 돈이 돌아오기 전**이다. 그걸 안 적으면 손님이
+//    **환불된 줄 알고 기다린다.**
+const returnStyle = (status) => ({
+  '대기': { bg: '#fff3e0', color: '#e65100' },
+  '승인': { bg: '#e8f0fe', color: '#1a73e8' },
+  '완료': { bg: '#e6f9f1', color: '#009a58' },
+  '반려': { bg: 'var(--accent-light)', color: '#ff4757' },
+}[status] || { bg: 'var(--primary-light)', color: 'var(--primary-dark)' });
+
 const TRACKING_URLS = {
   'CJ대한통운': 'https://www.cjlogistics.com/ko/tool/parcel/tracking?gnbInvcNo=',
   '한진택배': 'https://www.hanjin.com/kor/CMS/DeliveryMgr/WaybillSch.do?mCode=MN038&schLang=KR&wblnumText2=',
@@ -43,8 +53,10 @@ function Orders({ orders, goBack }) {
     if (!returnReason.trim()) { notify('사유를 입력해주세요!'); return; }
     setSubmitting(true);
     try {
-      await requestReturn(returnModal.order.id, { type: returnModal.type, reason: returnReason });
-      notify(`${returnModal.type} 요청이 접수됐어요!`);
+      // 🔴 **서버가 주는 말을 그대로 쓴다.** 여기서 따로 적으면 서버와 화면이
+      //    다른 말을 하게 되고, 단계 뜻이 바뀔 때 한쪽만 고쳐진다.
+      const res = await requestReturn(returnModal.order.id, { type: returnModal.type, reason: returnReason });
+      notify(res?.data?.message || `${returnModal.type} 요청이 접수됐어요!`);
       setReturnModal(null); setReturnReason('');
     } catch (err) { notify(err.response?.data?.error || '요청 실패'); }
     finally { setSubmitting(false); }
@@ -94,6 +106,23 @@ function Orders({ orders, goBack }) {
                     {order.status || '결제완료'}
                   </span>
                 </div>
+
+                {/* 🔴 환불·교환 요청을 했으면 **그 진행 상태**를 보여 준다.
+                    예전엔 요청 직후 알림 한 번이 전부라, 승인됐는지 완료됐는지
+                    손님이 알 길이 없었다. 「승인」은 **아직 돈이 오기 전**이다. */}
+                {order.return_status && (() => {
+                  const rc = returnStyle(order.return_status);
+                  return (
+                    <div style={{ padding: '10px 18px', background: rc.bg, borderBottom: '1px solid var(--primary-light)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ color: rc.color, fontSize: '11px', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                        {order.return_type || '환불'} {order.return_status}
+                      </span>
+                      <span style={{ color: rc.color, fontSize: '12px', lineHeight: 1.4 }}>
+                        {order.return_message}
+                      </span>
+                    </div>
+                  );
+                })()}
 
                 {/* 상품 목록 */}
                 <div style={{ padding: '12px 18px' }}>
