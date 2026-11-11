@@ -5,7 +5,7 @@
  *
  * - 폰 390×844(배율 2) → docs/shots/mockup/S01_light.png · S01_dark.png
  * - 태블릿 820×1180   → docs/shots/mockup/tablet/S01_tablet_light.png … (깨지는지 보는 용도)
- * - 목업은 ?solo=ID&theme=light|dark 로 한 화면만 꽉 차게 그린다.
+ * - 목업은 ?solo=ID&theme=light|dark 로 한 화면만 꽉 차게 그린다. 버튼 초록은 목업 기본값(후보 B)으로 찍힌다.
  * - 화면마다 ⑴ 스크립트 오류 ⑵ 가로 넘침(가로 스크롤이 생기는 요소)을 재서 보고한다 — 넘치면 🔴.
  * - 서버를 띄우지 않는다(file:// 로 연다). 외부 요청은 전부 막는다(목업은 외부 CDN 을 안 쓴다 — 쓰면 여기서 🔴).
  */
@@ -19,7 +19,7 @@ const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? proces
 const MOCK = arg('--mockup', 'C:/srmart/srmart-shop-mockup/index.html');
 const OUT = arg('--out', path.join(__dirname, '../../docs/shots/mockup'));
 const NO_TABLET = process.argv.includes('--no-tablet');
-const ONLY = process.argv.slice(2).filter(a => /^[SP]\d\d$/.test(a));
+const ONLY = process.argv.slice(2).filter(a => /^[SPD]\d\d$/.test(a));   // S 화면 · P 제안 · D 대표님이 고를 것
 
 const DEVICES = [
   { key: '', viewport: { width: 390, height: 844 }, dsf: 2, dir: OUT },
