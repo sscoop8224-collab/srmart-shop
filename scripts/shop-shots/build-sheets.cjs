@@ -10,7 +10,7 @@
  * 글자가 한글이라 이미지 합성 대신 **HTML 로 짜서 Playwright 로 찍는다**(Pretendard 로 또렷하게).
  * 배율 2 로 찍어 사진 속 앱 글자도 읽힌다.
  * 현재 사진이 없는 화면(S39 앱 전용 · S40 들어갈 길 없음)은 이유를 적은 빈 칸,
- * 제안(P01~)은 대응하는 첫 화면의 현재 사진을 쓴다. 결정용(D01~)은 앱에 없는 화면이라 현재 칸을 비운다.
+ * 제안(P01~)은 대응하는 첫 화면의 현재 사진을 쓴다. 결정 기록(D01~)은 앱에 없는 화면이라 현재 칸을 비운다.
  */
 const path = require('path');
 const fs = require('fs');
@@ -49,10 +49,10 @@ const NO_BEFORE = {
       if (s.prop) { const m = (s.covers || '').match(/S\d\d/); beforeId = m ? m[0] : ''; cap = `현재 (${beforeId})`; }
       const bf = path.join(ROOT, 'docs/shots/before', `${beforeId}_light.png`);
       const before = !s.dec && fs.existsSync(bf) ? `<img src="${url(bf)}">`
-        : `<div class="none">${s.dec ? '결정용 화면 — 앱에는 없다(대표님이 고르실 후보)' : NO_BEFORE[s.id] || '현재 사진 없음'}</div>`;
+        : `<div class="none">${s.dec ? '결정 기록 화면 — 앱에는 없다' : NO_BEFORE[s.id] || '현재 사진 없음'}</div>`;
       const shot = (dir, suf) => `<img src="${url(path.join(ROOT, 'docs/shots/mockup', dir, `${s.id}_${suf}.png`))}">`;
       const fig = (c, body, cls = '') => `<figure class="${cls}"><figcaption>${c}</figcaption>${body}</figure>`;
-      const em = s.prop ? ' <em>제안 · 채택 방향(최종 확정 전)</em>' : s.dec ? ' <em class="d">대표님 선택</em>' : '';
+      const em = s.prop ? ' <em>제안 · 채택 방향(최종 확정 전)</em>' : s.dec ? ' <em class="d">결정 · 확정</em>' : '';
       const cols = CHANGES.length
         ? fig(cap + '(폰)', before) + fig('폰 밝게', shot('', 'light')) + fig('폰 어둡게', shot('', 'dark'))
           + fig('태블릿 밝게', shot('tablet', 'tablet_light'), 't') + fig('태블릿 어둡게', shot('tablet', 'tablet_dark'), 't')
@@ -78,7 +78,7 @@ const NO_BEFORE = {
       img, .none { width: 100%; aspect-ratio: 390 / 844; border-radius: 14px; border: 1px solid #ccc; object-fit: cover; object-position: top; background: #f2f2f7; }
       figure.t img { aspect-ratio: 820 / 1180; }
       .none { display: flex; align-items: center; justify-content: center; text-align: center; padding: 20px; color: #888; font-size: 15px; }
-    </style></head><body><header><h1>에스알마트 쇼핑앱 — ${CHANGES.length ? '바뀐 화면 · 폰·태블릿' : '현재 | 목업'} (${first}~${last})</h1><p>목업 2차(대표님 결정 2~8 반영) · 승인 전(정본 아님) · 2026-11-11 · 버튼 초록은 임시 후보 B · 로그인 화면 데이터는 가짜 응답</p></header><div class="grid">${cells}</div></body></html>`;
+    </style></head><body><header><h1>에스알마트 쇼핑앱 — ${CHANGES.length ? '바뀐 화면 · 폰·태블릿' : '현재 | 목업'} (${first}~${last})</h1><p>목업 2차(대표님 결정 2~8 반영) · 승인 전(정본 아님) · 2026-11-11 · 버튼 초록 B(#00864a) 확정 · 로그인 화면 데이터는 가짜 응답</p></header><div class="grid">${cells}</div></body></html>`;
     const tmp = path.join(OUT, '_sheet.html');
     fs.writeFileSync(tmp, html);
     const page = await browser.newPage({ viewport: { width: 1768, height: 800 }, deviceScaleFactor: CHANGES.length ? 1.5 : 2 });
