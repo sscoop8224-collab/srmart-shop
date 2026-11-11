@@ -1,6 +1,6 @@
 #!/bin/sh
 # 쇼핑앱 디자인 재정비 — 진행표 「완료」 줄은 비교 사진이 있어야 커밋된다.
-# 설치(로컬 저장소마다 한 번):  cp scripts/hooks/pre-commit .git/hooks/pre-commit
+# 설치: npm install 때 자동(package.json "prepare" → scripts/hooks/install.cjs 가 core.hooksPath=scripts/hooks)
 # 검사기: scripts/check-progress.js (npm run check:progress 와 같다)
 node scripts/check-progress.js
 status=$?

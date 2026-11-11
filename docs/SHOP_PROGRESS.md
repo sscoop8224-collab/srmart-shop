@@ -16,7 +16,7 @@
 ## 🔴 「완료」는 기계가 확인한다 — `npm run check:progress`
 
 `상태` 가 **완료** 인 줄은 아래가 **모두** 있어야 통과한다. 하나라도 없으면 **커밋이 막힌다**
-(로컬 git pre-commit 관문 — 설치: `cp scripts/hooks/pre-commit .git/hooks/pre-commit`).
+(로컬 git pre-commit 관문 — `npm install` 때 `prepare` 가 자동 설치: `core.hooksPath=scripts/hooks`).
 
 1. `docs/shots/compare/<ID>_light.png` 와 `<ID>_dark.png` — **목업과 앱을 나란히 놓은** 비교 사진
 2. `docs/shots/app/<ID>_light.png` 와 `<ID>_dark.png` — 고친 뒤 앱 사진
