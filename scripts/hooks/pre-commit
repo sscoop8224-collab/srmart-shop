@@ -1,0 +1,11 @@
+#!/bin/sh
+# 쇼핑앱 디자인 재정비 — 진행표 「완료」 줄은 비교 사진이 있어야 커밋된다.
+# 설치(로컬 저장소마다 한 번):  cp scripts/hooks/pre-commit .git/hooks/pre-commit
+# 검사기: scripts/check-progress.js (npm run check:progress 와 같다)
+node scripts/check-progress.js
+status=$?
+if [ $status -ne 0 ]; then
+  echo "🔴 커밋을 멈췄다 — 위 항목을 고치거나, 그 줄의 상태를 「완료」에서 내린 뒤 다시 커밋하세요."
+  exit 1
+fi
+exit 0
