@@ -164,7 +164,10 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
       {/* 상품 정보 카드 */}
       <div className="pd-info" style={{
         background: cardBg, borderRadius: '24px 24px 0 0',
-        marginTop: '-16px', position: 'relative', zIndex: 1,
+        // zIndex 를 주지 않는다 — 주면 이 카드가 쌓임 맥락을 만들어, 안에 든 하단 고정 바(.pd-cart-bar,
+        // z 150)가 그 안에 갇히고 하단 탭바(z 100)가 버튼 가운데를 덮는다(2026-11-11 F11: 폰에서 담기·바로 주문의
+        // 위쪽 26px 만 눌렸다). 사진 위로 겹치는 것은 DOM 순서(사진 다음)만으로 된다.
+        marginTop: '-16px', position: 'relative',
         padding: '24px 20px 20px',
         boxShadow: darkMode ? 'none' : '0 -4px 20px rgba(0,0,0,0.06)'
       }}>
