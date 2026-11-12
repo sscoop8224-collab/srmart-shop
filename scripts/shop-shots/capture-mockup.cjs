@@ -19,7 +19,7 @@ const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? proces
 const MOCK = arg('--mockup', 'C:/srmart/srmart-shop-mockup/index.html');
 const OUT = arg('--out', path.join(__dirname, '../../docs/shots/mockup'));
 const NO_TABLET = process.argv.includes('--no-tablet');
-const ONLY = process.argv.slice(2).filter(a => /^[SPD]\d\d$/.test(a));   // S 화면 · P 제안 · D 대표님이 고를 것
+const ONLY = process.argv.slice(2).filter(a => /^[SPD]\d\d$/.test(a));   // S 화면 · P 확정 화면(옛 화면을 대신) · D 결정 기록
 
 const DEVICES = [
   { key: '', viewport: { width: 390, height: 844 }, dsf: 2, dir: OUT },
