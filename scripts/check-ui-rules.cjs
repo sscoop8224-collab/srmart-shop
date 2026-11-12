@@ -33,6 +33,11 @@ const STRICT = [
   'src/DialogContext.jsx',
   'src/ThemeContext.jsx',
   'src/pages/Offline.js',
+  // 묶음 2 — 홈·검색
+  'src/styles/shop.css',
+  'src/pages/Home.jsx',
+  'src/pages/Search.js',
+  'src/components/StoreSelectionModal.jsx',
 ];
 
 // 주석을 지운다 — 설명 글에 쓴 「window.alert 금지」·「#00c471」 같은 글자를 세지 않게(줄 수는 지킨다)

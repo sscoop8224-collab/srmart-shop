@@ -40,6 +40,12 @@ const SIZES = [
   { key: 'tablet', tag: 'tablet_', label: '태블릿 세로', viewport: { width: 820, height: 1180 }, dsf: 1 },
   { key: 'tland', tag: 'tland_', label: '태블릿 가로', viewport: { width: 1180, height: 820 }, dsf: 1 },
 ];
+// 몇 화면만 더 찍는 크기(묶음 2 계획: 「폰 가로·PC 는 P05 만」) — 화면 줄에 extraSizes: true
+const EXTRA_SIZES = [
+  { key: 'pland', tag: 'pland_', label: '폰 가로', viewport: { width: 844, height: 390 }, dsf: 2 },
+  { key: 'pc', tag: 'pc_', label: 'PC', viewport: { width: 1440, height: 900 }, dsf: 1 },
+];
+const sizesOf = s => (s.extraSizes ? [...SIZES, ...EXTRA_SIZES] : SIZES);
 const ANDROID_UA = 'Mozilla/5.0 (Linux; Android 12; SM-A125N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Mobile Safari/537.36';
 const wait = (p, ms) => p.waitForTimeout(ms);
 
@@ -50,6 +56,10 @@ async function login(p) {
   await p.getByRole('button', { name: '로그인', exact: true }).filter({ visible: true }).first().click();
   await wait(p, 900);
 }
+const pd = async (p, name) => { await p.locator('.pgrid .pc', { hasText: name }).first().locator('img').click(); await wait(p, 1000); };
+const cartOf = async p => { await login(p); await p.locator('.pgrid .add').nth(0).click(); await wait(p, 250); await p.locator('.pgrid .add').nth(1).click(); await wait(p, 250); await tab(p, '장바구니').click(); await wait(p, 1200); };
+// P03 — 장바구니의 「주문하기」 → 주문서(배송지·할인·결제 금액은 여기)
+const orderOf = async p => { await cartOf(p); await p.getByRole('button', { name: '주문하기', exact: true }).click(); await wait(p, 1200); };
 const tab = (p, label) => p.locator('.tabbar .tab', { hasText: label }).first();
 
 /**
@@ -59,11 +69,64 @@ const tab = (p, label) => p.locator('.tabbar .tab', { hasText: label }).first();
 const BUNDLES = {
   1: [
     { id: 'S34', name: '확인창 — 안내(로그인이 필요해요)', state: '안내', go: async p => { await tab(p, '장바구니').click(); await wait(p, 500); }, part: ['.alert', '.alert'] },
-    { id: 'S35', name: '토스트 — 담김', state: '담김', go: async p => { await login(p); await p.locator('.product-grid button', { hasText: '+' }).first().click(); await wait(p, 300); }, part: ['.toast', '.toast'] },
+    { id: 'S35', name: '토스트 — 담김', state: '담김', go: async p => { await login(p); await p.locator('.pgrid .add').first().click(); await wait(p, 300); }, part: ['.toast', '.toast'] },
     { id: 'S36', name: '오프라인', state: '기본', go: async (p, c) => { await c.setOffline(true); await wait(p, 900); } },
     { id: 'S43', name: '불러오는 중(화면 조각을 받는 동안)', go: async (p, c, ctl) => { ctl.holdChunks = true; await tab(p, '검색').click(); await wait(p, 700); } },
     { id: 'P05H', mock: 'P05', name: '홈 헤더(로그인 안 함)', state: '로그인 안 함', go: async () => {}, part: ['.homebar', '.homebar'], partOnly: true },
     { id: 'P05T', mock: 'P05', name: '하단 탭바(홈)', state: '로그인 안 함', go: async () => {}, part: ['.tabbar .in', '.tabbar .in'], partOnly: true },
+  ],
+  // 묶음 2 — 홈·검색(P05 · S02 · S03 · S06 · S07 · S30). 부품: 첫 상품 카드 · 배송 한 줄 · 쿠폰 띠 · 배너 · 사업자 정보 · 칩
+  2: [
+    { id: 'P05', name: '홈 — 로그인 안 함', state: '로그인 안 함', extraSizes: true, go: async () => {}, part: ['.grid .pc', '.pgrid .pc'] },
+    { id: 'P05L', mock: 'P05', name: '홈 — 로그인함', state: '로그인함', go: async p => { await login(p); }, part: ['.grid .pc', '.pgrid .pc'] },
+    { id: 'P05K', mock: 'P05', name: '가입 쿠폰 띠', state: '로그인 안 함', go: async () => {}, part: ['.cpn', '.cpn'], partOnly: true },
+    { id: 'P05N', mock: 'P05', name: '배너(토큰 색 — 관리자 색 없이)', state: '로그인 안 함', opts: { bannerTokenBg: true }, go: async () => {}, part: ['.banner', '.banner'], partOnly: true },
+    { id: 'P05P', mock: 'P05', name: '배송 한 줄 — 오늘 도착', state: '로그인 안 함', go: async () => {}, part: ['.promise', '.promise'], partOnly: true },
+    { id: 'P05D', mock: 'P05', name: '배송 한 줄 — 마감 후', state: '마감 후', opts: { deliv: 'tomorrow' }, go: async () => {}, part: ['.promise', '.promise'], partOnly: true },
+    { id: 'P05X', mock: 'P05', name: '배송 한 줄 — 당일배송 불가', state: '당일배송 불가', opts: { deliv: 'closed' }, go: async () => {}, part: ['.promise', '.promise'], partOnly: true },
+    { id: 'P05V', mock: 'P05', name: '배송 한 줄 — 배송 휴무', state: '배송 휴무', opts: { deliv: 'holiday' }, go: async () => {}, part: ['.promise', '.promise'], partOnly: true },
+    { id: 'P05C', mock: 'P05', name: '홈 — 가입 쿠폰 꺼짐', state: '가입 쿠폰 꺼짐', opts: { noCoupon: true }, go: async () => {} },
+    { id: 'P05B', mock: 'P05', name: '사업자 정보 펼침', state: '사업자 정보 펼침', go: async p => { await p.locator('.biz .bh').click(); await wait(p, 300); }, part: ['.biz', '.biz'], partOnly: true },
+    { id: 'S02', name: '매장 미리보기(사장님)', opts: { user: { ...customer, role: 'owner', username: 'owner_demo' } }, go: async p => { await login(p); }, part: ['.owner', '.owner'] },
+    { id: 'S03', name: '홈 — 오류', state: '오류', opts: { productsFail: true }, go: async () => {} },
+    { id: 'S03L', mock: 'S03', name: '홈 — 불러오는 중', state: '불러오는 중', opts: { productsSlow: true }, go: async () => {} },
+    { id: 'S03E', mock: 'S03', name: '홈 — 분류에 상품 없음', state: '분류에 상품 없음', opts: { noProducts: true }, go: async () => {} },
+    { id: 'S03V', mock: 'S03', name: '홈 — 행사 없음', state: '행사 없음', go: async p => { await p.locator('.chips .chip', { hasText: '행사상품' }).first().click(); await wait(p, 500); } },
+    { id: 'S06', name: '검색', opts: { searchLikeMock: true }, go: async p => { await tab(p, '검색').click(); await wait(p, 700); await p.locator('.search input').fill('라면'); await p.keyboard.press('Enter'); await wait(p, 500); await p.locator('[role=switch]').first().click({ timeout: 8000 }); await wait(p, 600); } },
+    { id: 'S07', name: '검색 — 자동완성', state: '자동완성', go: async p => { await tab(p, '검색').click(); await wait(p, 700); await p.locator('.search input').fill('콜라'); await wait(p, 800); } },
+    { id: 'S07N', mock: 'S07', name: '검색 — 결과 없음', state: '결과 없음', go: async p => { await tab(p, '검색').click(); await wait(p, 700); await p.locator('.search input').fill('없는상품'); await wait(p, 400); await p.keyboard.press('Enter'); await wait(p, 600); } },
+    { id: 'S07S', mock: 'S07', name: '검색 — 검색 중', state: '검색 중', opts: { searchSlow: true }, go: async p => { await tab(p, '검색').click(); await wait(p, 700); await p.locator('.search input').fill('콜라'); await wait(p, 400); await p.keyboard.press('Enter'); await wait(p, 400); } },
+    { id: 'S30', name: '점포 선택', state: '목록', go: async p => { await p.locator('.store-chip').first().click(); await wait(p, 500); }, part: ['.sheet', '.sheet'] },
+  ],
+  // 묶음 3 — 상품 상세(S04 · S05). 배송 한 줄 넷 · 재고 셋 · 무게 · 리뷰 셋. 부품: 머리(가격·배송) · 정보 묶음 · 아래 바
+  3: [
+    { id: 'S04', name: '상세 — 낱개·박스', state: '낱개·박스', go: async p => { await pd(p, '메론킥'); }, part: ['.d-head', '.d-head'] },
+    { id: 'S04B', mock: 'S04', name: '상세 — 아래 바', state: '낱개·박스', go: async p => { await pd(p, '메론킥'); }, part: ['.bar', '.v2 .bar'], partOnly: true },
+    { id: 'S04L', mock: 'S04', name: '상세 — 재고 적음', state: '재고 적음', opts: { lowStock: true }, go: async p => { await pd(p, '메론킥'); }, part: ['.group', '.v2 .sec .group'] },
+    { id: 'S04W', mock: 'S04', name: '상세 — 무게 상품', state: '무게 상품', go: async p => { await pd(p, '한우'); } },
+    { id: 'S04S', mock: 'S04', name: '상세 — 품절', state: '품절', go: async p => { await pd(p, '퐁퐁'); }, part: ['.bar', '.v2 .bar'] },
+    { id: 'S04D', mock: 'S04', name: '상세 — 마감 후', state: '마감 후', opts: { deliv: 'tomorrow' }, go: async p => { await pd(p, '메론킥'); }, part: ['.promise', '.promise'] },
+    { id: 'S04X', mock: 'S04', name: '상세 — 당일배송 불가', state: '당일배송 불가', opts: { deliv: 'closed' }, go: async p => { await pd(p, '메론킥'); }, part: ['.promise', '.promise'] },
+    { id: 'S04V', mock: 'S04', name: '상세 — 배송 휴무', state: '배송 휴무', opts: { deliv: 'holiday' }, go: async p => { await pd(p, '메론킥'); }, part: ['.promise', '.promise'] },
+    { id: 'S05', name: '리뷰 — 쓰기', state: '쓰기', go: async p => { await login(p); await pd(p, '메론킥'); await p.locator('.v2 .link', { hasText: '리뷰 쓰기' }).click(); await wait(p, 400); }, part: ['.bar', '.v2 .bar'] },
+    { id: 'S05F', mock: 'S05', name: '리뷰 — 못 불러옴', state: '못 불러옴', opts: { reviewsFail: true }, go: async p => { await pd(p, '메론킥'); await p.locator('.notice.r').scrollIntoViewIfNeeded(); await wait(p, 300); }, part: ['.notice.r', '.notice.r'] },
+    { id: 'S05E', mock: 'S05', name: '리뷰 — 첫 리뷰', state: '첫 리뷰', opts: { noReviews: true }, go: async p => { await pd(p, '메론킥'); await p.locator('.ui-empty', { hasText: '리뷰' }).scrollIntoViewIfNeeded(); await wait(p, 300); }, part: ['.empty', '.v2 .ui-empty'] },
+    // 장바구니·결제(S08~S12). 목업 장바구니는 박스·2개·300g 세 줄이라 앱(낱개 두 줄)과 금액이 다르다 — 부품은 배송 한 줄·결제 바 모양만
+    { id: 'S08', name: '장바구니 — 오늘 도착', state: '오늘 도착', go: async p => { await cartOf(p); }, part: ['.bar', '.v2 .bar'] },
+    { id: 'S08D', mock: 'S08', name: '장바구니 — 마감 후', state: '마감 후', opts: { deliv: 'tomorrow' }, go: async p => { await cartOf(p); }, part: ['.promise', '.promise'], partOnly: true },
+    { id: 'S08X', mock: 'S08', name: '장바구니 — 당일배송 불가', state: '당일배송 불가', opts: { deliv: 'closed' }, go: async p => { await cartOf(p); }, part: ['.promise', '.promise'], partOnly: true },
+    { id: 'S08V', mock: 'S08', name: '장바구니 — 배송 휴무', state: '배송 휴무', opts: { deliv: 'holiday' }, go: async p => { await cartOf(p); }, part: ['.promise', '.promise'], partOnly: true },
+    { id: 'S09', name: '장바구니 — 비어 있음', go: async p => { await login(p); await tab(p, '장바구니').click(); await wait(p, 900); }, part: ['.empty', '.v2 .ui-empty'] },
+    { id: 'S10', name: '결제 요약 — 포인트 펼침', state: '포인트 펼침', go: async p => { await orderOf(p); await p.locator('.v2 .row.tap', { hasText: '포인트' }).click(); await wait(p, 300); await p.locator('.v2 .kv.total').scrollIntoViewIfNeeded(); }, part: ['.sec:has(.kv)', '.v2 .sec:has(.kv)'] },
+    { id: 'S10F', mock: 'S10', name: '결제 요약 — 혜택 못 불러옴', state: '혜택 못 불러옴', opts: { benefitsFail: true }, go: async p => { await orderOf(p); await p.locator('.v2 .notice.r').scrollIntoViewIfNeeded(); }, part: ['.notice.r', '.v2 .notice.r'] },
+    { id: 'S10N', mock: 'S10', name: '결제 요약 — 주소 없음', state: '결제 못 함(주소 없음)', opts: { user: { ...customer, address: '', addressDetail: '', zipcode: '', dong_name: '' } }, go: async p => { await orderOf(p); }, part: ['.bar', '.v2 .bar'] },
+    { id: 'S11', name: '배송지 시트 — 배송 가능', state: '배송 가능', go: async p => { await orderOf(p); await p.locator('.v2 .row.tap', { hasText: '변경' }).first().click(); await wait(p, 500); }, part: ['.notice.g', '.sheet .notice.g'] },
+    { id: 'S11X', mock: 'S11', name: '배송지 시트 — 배송 불가', state: '배송 불가', opts: { noZone: true }, go: async p => { await orderOf(p); await p.locator('.v2 .row.tap', { hasText: '변경' }).first().click(); await wait(p, 500); }, part: ['.notice.r', '.sheet .notice.r'] },
+    { id: 'S11N', mock: 'S11', name: '배송지 시트 — 동 정보 없음', state: '동 정보 없음', opts: { user: { ...customer, dong_name: '' } }, go: async p => { await orderOf(p); await p.locator('.v2 .row.tap', { hasText: '변경' }).first().click(); await wait(p, 500); }, part: ['.notice.o', '.sheet .notice.o'] },
+    { id: 'P03', name: '주문서 한 장', go: async p => { await orderOf(p); }, part: ['.bar', '.v2 .bar'] },
+    { id: 'P03C', mock: 'P03', name: '주문서 — 쿠폰 시트', go: async p => { await orderOf(p); await p.locator('.v2 .row.tap', { hasText: '쿠폰' }).first().click(); await wait(p, 500); }, part: ['.bar', '.v2 .bar'] },
+    { id: 'S13', name: '주문 완료(영수증)', go: async p => { await orderOf(p); await p.locator('.pay-bar button').click(); await wait(p, 1500); }, part: ['.bar', '.v2 .bar'] },
+    { id: 'S12', name: '바로 주문', state: '기본', go: async p => { await login(p); await pd(p, '메론킥'); await p.getByRole('button', { name: '바로 주문', exact: true }).click(); await wait(p, 1200); }, part: ['.bar', '.v2 .bar'] },
   ],
 };
 
@@ -88,9 +151,11 @@ async function shootApp(browser, s, size, theme) {
     if (u.origin === new URL(BASE).origin && u.pathname.startsWith('/api/')) {
       const res = route(u.pathname.slice(4), r.request().method(), u.search, s.opts || {});
       if (res.delay) return;
+      if (res.abort) return r.abort();   // 인터넷이 끊긴 것처럼(응답 자체가 없다)
       return r.fulfill({ status: res.status, contentType: 'application/json', body: JSON.stringify(res.body) });
     }
     if (ctl.holdChunks && /\.chunk\.js$/.test(u.pathname)) return;   // 조각을 끝까지 안 준다 → 불러오는 중 화면
+    if (u.hostname === 'localhost' && u.port === '5001') return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ next_redirect_pc_url: 'about:blank' }) });   // 카카오페이 준비(가짜 — capture-app 과 같다)
     if (u.origin !== new URL(BASE).origin) return r.abort();          // 외부(글꼴·우편번호·사진 CDN)는 막는다 — 사진이 그날 인터넷에 좌우되지 않게
     return r.continue();
   });
@@ -125,7 +190,7 @@ async function diff(a, b) {
   return { pct: Math.round((n / (W * H)) * 1000) / 10, png };
 }
 
-const small = buf => sharp(buf).png({ palette: true, quality: 90, compressionLevel: 9 }).toBuffer();
+const small = buf => sharp(buf, { limitInputPixels: false }).png({ palette: true, quality: 90, compressionLevel: 9 }).toBuffer();
 
 // 두 칸(목업|앱) 사진 — check-progress.js 가 보는 compare/<ID>_<theme>.png
 async function sideBySide(a, b) {
@@ -136,9 +201,15 @@ async function sideBySide(a, b) {
     .composite([{ input: a, left: 0, top: 0 }, { input: bb, left: ma.width + gap, top: 0 }]).png({ palette: true, compressionLevel: 9 }).toBuffer();
 }
 
-async function sheet(browser, rows, theme) {
+// 시트는 화면 5개씩 나눈다 — 묶음 2(21화면)를 한 장으로 붙였더니 sharp 의 픽셀 한도를 넘어 시트가 안 나왔다
+const SHEET_PER = 5;
+async function sheets(browser, rows, theme) {
+  const all = [...new Set(rows.filter(r => r.theme === theme).map(c => c.id))];
+  const pages = Math.ceil(all.length / SHEET_PER);
+  for (let i = 0; i < pages; i++) await sheet(browser, rows, theme, all.slice(i * SHEET_PER, (i + 1) * SHEET_PER), pages > 1 ? `_${i + 1}` : '', pages > 1 ? ` (${i + 1}/${pages})` : '');
+}
+async function sheet(browser, rows, theme, ids, suffix, pageLabel) {
   const cells = rows.filter(r => r.theme === theme);
-  const ids = [...new Set(cells.map(c => c.id))];
   const rel = f => pathToFileURL(f).href;
   const html = `<!doctype html><meta charset="utf-8"><style>
     body{margin:0;padding:24px;font:14px/1.4 -apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:${theme === 'dark' ? '#111' : '#f4f4f6'};color:${theme === 'dark' ? '#eee' : '#111'}}
@@ -148,10 +219,10 @@ async function sheet(browser, rows, theme) {
     .sz b{display:block;margin:0 0 4px} .trip{display:flex;gap:6px} .trip figure{margin:0}
     .trip img{height:300px;border:1px solid #888;display:block} figcaption{font-size:12px;color:#888;text-align:center}
     .pct{font-weight:700;color:#e33}
-  </style><h1>묶음 ${BUNDLE} 비교 — ${theme === 'dark' ? '어둡게' : '밝게'} · 목업 | 앱 | 차이(빨강)</h1>
+  </style><h1>묶음 ${BUNDLE} 비교 — ${theme === 'dark' ? '어둡게' : '밝게'} · 목업 | 앱 | 차이(빨강)${pageLabel}</h1>
   <p class="n">차이 % = 목업 크기로 맞춘 두 사진에서 다른 점의 비율. 전체 칸은 목업 기기 액자(상태바 시계·홈 막대) 때문에 0 이 될 수 없다 — 「부품」 칸이 진짜 비교다.</p>
   ${ids.map(id => { const rs = cells.filter(c => c.id === id); return `<div class="row"><h2>${id} ${rs[0].name}</h2>${rs.map(c => `<div class="sz"><b>${c.label}${c.part ? ' · 부품' : ''} <span class="pct">${c.pct}%</span></b><div class="trip"><figure><img src="${rel(c.mockFile)}"><figcaption>목업</figcaption></figure><figure><img src="${rel(c.appFile)}"><figcaption>앱</figcaption></figure><figure><img src="${rel(c.diffFile)}"><figcaption>차이</figcaption></figure></div></div>`).join('')}</div>`; }).join('')}`;
-  const f = path.join(OUT, `_sheet_${theme}.html`);
+  const f = path.join(OUT, `_sheet_${theme}${suffix}.html`);
   fs.writeFileSync(f, html);
   const ctx = await browser.newContext({ viewport: { width: 2400, height: 900 } });
   const p = await ctx.newPage();
@@ -159,7 +230,7 @@ async function sheet(browser, rows, theme) {
   await wait(p, 600);
   const buf = await p.screenshot({ fullPage: true });
   await ctx.close();
-  fs.writeFileSync(path.join(OUT, `sheet_${theme}.png`), await small(buf));
+  fs.writeFileSync(path.join(OUT, `sheet_${theme}${suffix}.png`), await small(buf));
   fs.unlinkSync(f);
 }
 
@@ -170,7 +241,7 @@ async function sheet(browser, rows, theme) {
   const browser = await chromium.launch();
   const rows = [];
   for (const s of list) {
-    for (const size of SIZES) for (const theme of ['light', 'dark']) {
+    for (const size of sizesOf(s)) for (const theme of ['light', 'dark']) {
       const m = await shootMock(browser, s, size, theme);
       let a;
       try { a = await shootApp(browser, s, size, theme); } catch (e) { console.log(`🔴 ${s.id} ${size.label} ${theme} 앱 사진 실패 — ${e.message.split('\n')[0]}`); continue; }
@@ -178,7 +249,7 @@ async function sheet(browser, rows, theme) {
       if (!s.partOnly) {
         const appFile = path.join(APP_DIR, `${base}.png`);
         fs.writeFileSync(appFile, await small(a.full));
-        if (size.key !== 'tablet') fs.writeFileSync(path.join(CMP_DIR, `${base}.png`), await sideBySide(m.full, a.full));
+        if (size.key === 'phone' || size.key === 'tland') fs.writeFileSync(path.join(CMP_DIR, `${base}.png`), await sideBySide(m.full, a.full));
         const dd = await diff(m.full, a.full);
         const mockFile = path.join(OUT, `${base}_mock.png`), diffFile = path.join(OUT, `${base}_diff.png`), appCopy = path.join(OUT, `${base}_app.png`);
         fs.writeFileSync(mockFile, await small(m.full)); fs.writeFileSync(diffFile, await small(dd.png)); fs.writeFileSync(appCopy, await small(a.full));
@@ -196,16 +267,17 @@ async function sheet(browser, rows, theme) {
     const mine = rows.filter(r => r.id === s.id);
     console.log(`${s.id} ${s.name} — ${mine.map(r => `${r.label}${r.part ? '·부품' : ''}·${r.theme === 'dark' ? '어둡게' : '밝게'} ${r.pct}%`).join(' | ')}${mine.some(r => r.errors.length) ? ' 🔴 스크립트 오류: ' + [...new Set(mine.flatMap(r => r.errors))].join(' / ') : ''}`);
   }
-  for (const t of ['light', 'dark']) await sheet(browser, rows, t);
-  await browser.close();
   const relp = f => path.relative(ROOT, f).split(path.sep).join('/');
   fs.writeFileSync(path.join(OUT, 'report.json'), JSON.stringify(rows.map(r => ({ ...r, mockFile: relp(r.mockFile), appFile: relp(r.appFile), diffFile: relp(r.diffFile) })), null, 1));
   const md = [`# 묶음 ${BUNDLE} 픽셀 차이 (${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC)`, '', '| 화면 | 크기 | 비교 | 밝게 % | 어둡게 % |', '|---|---|---|---|---|'];
-  for (const s of list) for (const size of SIZES) for (const part of [false, true]) {
+  for (const s of list) for (const size of sizesOf(s)) for (const part of [false, true]) {
     const l = rows.find(r => r.id === s.id && r.size === size.key && r.part === part && r.theme === 'light');
     const d = rows.find(r => r.id === s.id && r.size === size.key && r.part === part && r.theme === 'dark');
     if (l || d) md.push(`| ${s.id} ${s.name} | ${size.label} | ${part ? '부품' : '화면 전체'} | ${l ? l.pct : '-'} | ${d ? d.pct : '-'} |`);
   }
   fs.writeFileSync(path.join(OUT, 'report.md'), md.join('\n') + '\n');
+  // 숫자를 먼저 적고 시트를 만든다 — 시트가 실패해도 숫자는 남는다
+  for (const t of ['light', 'dark']) await sheets(browser, rows, t);
+  await browser.close();
   console.log('저장: ' + relp(OUT));
 })().catch(e => { console.error('🔴', e); process.exit(1); });

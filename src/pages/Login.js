@@ -202,9 +202,9 @@ function GreenHero({ compact = false }) {
 }
 
 // ── 메인 컴포넌트 ───────────────────────────────────────────
-function Login({ onLogin, onGuest }) {
+function Login({ onLogin, onGuest, initialMode }) {
   const { notify } = useDialog();
-  const [mode, setMode] = useState('login');
+  const [mode, setMode] = useState(initialMode === 'signup' ? 'signup' : 'login');   // 홈 가입 쿠폰 띠 「가입하기」 → 바로 가입(묶음 2)
   const [isFindAccount, setIsFindAccount] = useState(false);
 
   // 로그인 상태

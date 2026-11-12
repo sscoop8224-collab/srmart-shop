@@ -70,7 +70,8 @@ async function run({ breaker = null, quiet = false } = {}) {
   await ctx.route('**/*', async r => {
     const u = new URL(r.request().url());
     if (u.origin === new URL(BASE).origin && u.pathname.startsWith('/api/')) {
-      const res = route(u.pathname.slice(4), r.request().method(), u.search, {});
+      // manyProducts — 태블릿 4칸에서도 홈이 한 화면을 넘게(묶음 2 부터 8개로는 스크롤이 안 생겨 「스크롤 튐」을 못 쟀다)
+      const res = route(u.pathname.slice(4), r.request().method(), u.search, { manyProducts: true });
       if (res.delay) return;
       return r.fulfill({ status: res.status, contentType: 'application/json', body: JSON.stringify(res.body) });
     }
@@ -89,13 +90,13 @@ async function run({ breaker = null, quiet = false } = {}) {
   await p.getByPlaceholder('아이디를 입력해주세요').fill('guest_demo');
   await p.getByPlaceholder('비밀번호를 입력해주세요').fill('x');
   await p.getByRole('button', { name: '로그인', exact: true }).filter({ visible: true }).first().click(); await wait(900);
-  const plus = p.locator('.product-grid button', { hasText: '+' });
+  const plus = p.locator('.pgrid .add');
   await plus.nth(0).click(); await wait(200); await plus.nth(1).click(); await wait(1700);
   await p.evaluate(() => { window.__rotMark = 'same-page'; });
   // ② 스크롤 — 홈을 내리고, 그때 화면 위쪽에 보이는 상품 카드를 표시해 둔다
   await p.evaluate(() => window.scrollTo(0, 700)); await wait(300);
   await p.evaluate(() => {
-    const cards = [...document.querySelectorAll('.product-grid > *')];
+    const cards = [...document.querySelectorAll('.pgrid > *')];
     const c = cards.find(el => { const r = el.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; });
     if (c) c.setAttribute('data-rot-anchor', '1');
   });

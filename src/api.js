@@ -53,6 +53,11 @@ export const getStores = () => API.get('/stores', { params: { audience: 'custome
 // 가입 쿠폰 문구 — 서버가 「지급 가능」(정책 켬 + 문자 인증 연동 켬)일 때만 { enabled:true, label, sub } 를 준다.
 // 🔴 화면은 이 값에만 따른다. 쿠폰 금액·문구를 화면에 직접 적지 않는다(지킬 수 없는 약속이 된다).
 export const getSignupCoupon = () => API.get('/signup-coupon');
+// 홈 배송 한 줄(묶음 2) — 매장 배송 설정에서 서버가 계산한 약속. mode: today | tomorrow | closed | holiday | off(안 보인다).
+// 🔴 화면은 시각·문구를 직접 만들지 않는다 — 서버의 label·sub 만 쓴다(마감 시각이 바뀌면 화면이 거짓말을 한다).
+export const getDeliveryPromise = (storeId) => API.get(`/stores/${storeId}/delivery-promise`);
+// 홈 맨 아래 사업자 정보(묶음 2) — 어드민 「사업자 정보」(대표만)에서 채운다. 빈 칸은 화면이 안 그린다.
+export const getBusinessInfo = () => API.get('/shop/business-info');
 // 진행 중인 행사(프로모션) — 상품마다 `promo_price`(1개만 사도 깎이는 행사) 또는 문구(`label`).
 export const getActivePromotions = (storeId) => API.get('/promotions/active', storeId ? { params: { store_id: storeId } } : {});
 export const getCategories = () => API.get('/categories');

@@ -1,87 +1,48 @@
-import { useState } from 'react';
+// 점포 선택 (목업 정본 v1 의 S30, 묶음 2 · 2026-11-12 밤)
+// 처음 들어오면 반드시 고른다(닫기 없음). 줄을 누르면 바로 그 매장으로 — 따로 「확인」 단추가 없다.
+// 목록은 StoreContext 가 받은 「손님에게 보이는 매장」(GET /api/stores?audience=customer). 색·크기는 styles/shop.css.
 import { useStore } from '../StoreContext';
-import { useDialog } from '../DialogContext';
+import Icon from './ui/Icon';
 
 export default function StoreSelectionModal({ onSelected }) {
   const { stores, storesLoading, setGuestStoreId } = useStore();
-  const { notify } = useDialog();
-  const [selected, setSelected] = useState('');
 
-  const handleConfirm = () => {
-    if (!selected) {
-      notify('점포를 선택해주세요!');
-      return;
-    }
-    const storeId = Number(selected);
+  const choose = (id) => {
+    const storeId = Number(id);
     setGuestStoreId(storeId);
     onSelected?.(storeId);
   };
 
   return (
-    <div style={overlayStyle}>
-      <div style={modalStyle}>
-        <div style={{ fontSize: 32, textAlign: 'center', marginBottom: 8 }}>🏪</div>
-        <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800, textAlign: 'center', color: '#14110F' }}>
-          둘러보실 점포를 선택해주세요
-        </h3>
-        <p style={{ color: '#6B6259', fontSize: 13, margin: '0 0 20px', textAlign: 'center', lineHeight: 1.5 }}>
-          지역마다 가격과 취급 상품이 달라요.
-        </p>
-        {storesLoading ? (
-          <p style={{ textAlign: 'center', color: '#B6ADA4' }}>점포 목록 불러오는 중...</p>
-        ) : stores.length === 0 ? (
-          <p style={{ textAlign: 'center', color: '#E5484D' }}>현재 둘러볼 수 있는 점포가 없어요.</p>
-        ) : (
-          <>
-            <select
-              value={selected}
-              onChange={(e) => setSelected(e.target.value)}
-              style={selectStyle}
-            >
-              <option value="">점포 선택</option>
-              {stores.map(s => (
-                <option key={s.id} value={s.id}>
-                  {s.name}{s.address ? ` (${s.address})` : ''}
-                </option>
-              ))}
-            </select>
-            <button onClick={handleConfirm} style={buttonStyle}>
-              둘러보기 시작
-            </button>
-          </>
-        )}
-        <p style={{ fontSize: 12, color: '#B6ADA4', marginTop: 16, textAlign: 'center' }}>
-          가입하시면 가입점포가 자동으로 적용돼요.
-        </p>
+    <div className="overlay sheet-over" role="dialog" aria-modal="true" aria-labelledby="store-pick-title">
+      <div className="sheet v2">
+        <div className="grabber" />
+        <div className="sheet-h">
+          <div className="nav-side" />
+          <div className="nav-title" id="store-pick-title">어느 매장에서 둘러볼까요?</div>
+          <div className="nav-side r" />
+        </div>
+        <div className="sheet-b">
+          {storesLoading ? (
+            <div className="ui-empty"><div className="spin" /><p>점포 목록을 불러오는 중…</p></div>
+          ) : stores.length === 0 ? (
+            <div className="ui-empty"><div className="big"><Icon name="store" /></div><h3>지금 둘러볼 수 있는 점포가 없어요</h3></div>
+          ) : (
+            <section className="sec">
+              <div className="group">
+                {stores.map((s) => (
+                  <button key={s.id} className="row ind" onClick={() => choose(s.id)}>
+                    <span className="ricon"><Icon name="store" /></span>
+                    <span className="lbl">{s.name}{s.address && <small>{s.address}</small>}</span>
+                    <span className="chev"><Icon name="chevR" size="sm" /></span>
+                  </button>
+                ))}
+              </div>
+              <div className="sec-f">고른 매장의 가격·재고로 보여 드려요. 나중에 홈 위쪽에서 바꿀 수 있어요.</div>
+            </section>
+          )}
+        </div>
       </div>
     </div>
   );
 }
-
-const overlayStyle = {
-  position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-  background: 'rgba(0,0,0,0.5)',
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-  zIndex: 9999,
-};
-const modalStyle = {
-  background: '#fff', padding: '28px 24px', borderRadius: 16,
-  width: '90%', maxWidth: 360,
-  boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
-};
-const selectStyle = {
-  width: '100%', padding: '12px 14px',
-  borderRadius: 12, border: '1.5px solid rgba(31,169,56,0.18)',
-  fontSize: 14, marginBottom: 12, outline: 'none',
-  background: '#F2FBF4', color: '#14110F',
-  fontFamily: 'inherit', cursor: 'pointer',
-  boxSizing: 'border-box',
-};
-const buttonStyle = {
-  width: '100%', padding: '14px',
-  borderRadius: 12, border: 'none',
-  background: 'linear-gradient(180deg, #2BC047 0%, #178A2D 100%)',
-  color: '#fff', fontSize: 15, fontWeight: 700,
-  cursor: 'pointer', boxShadow: '0 6px 16px rgba(23,138,45,0.28)',
-  fontFamily: 'inherit',
-};

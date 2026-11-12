@@ -45,9 +45,9 @@ const DEVICES = [
       await p.locator('.app-nav button', { hasText: '로그인' }).click(); await p.waitForTimeout(500);
       await p.getByPlaceholder('아이디를 입력해주세요').fill('guest_demo'); await p.getByPlaceholder('비밀번호를 입력해주세요').fill('x');
       await p.getByRole('button', { name: '로그인', exact: true }).filter({ visible: true }).first().click(); await p.waitForTimeout(1500);
-      await p.locator('.product-grid img[alt="농심 메론킥"]').click(); await p.waitForTimeout(1000);
+      await p.locator('.pgrid img[alt="농심 메론킥"]').click(); await p.waitForTimeout(1000);
       const probe = await p.evaluate(() => {
-        const bar = document.querySelector('.pd-cart-bar');
+        const bar = document.querySelector('.pd-bar, .pd-cart-bar');
         return [...bar.querySelectorAll('button')].map(b => {
           const r = b.getBoundingClientRect(); let ok = 0, n = 0; const blockers = new Set();
           for (let i = 1; i <= 7; i++) for (let j = 1; j <= 5; j++) {
@@ -60,7 +60,7 @@ const DEVICES = [
         });
       });
       // 바 영역 사진(버튼과 그 아래 탭바까지)
-      const box = await p.locator('.pd-cart-bar').boundingBox();
+      const box = await p.locator('.pd-bar, .pd-cart-bar').boundingBox();
       const y0 = Math.max(0, Math.floor(box.y) - 60);
       const shot = path.join(OUT, `F11_${TAG}_${dev.key}_${dark ? 'dark' : 'light'}.png`);
       await p.screenshot({ path: shot, clip: { x: 0, y: y0, width: dev.viewport.width, height: dev.viewport.height - y0 } });
@@ -70,7 +70,7 @@ const DEVICES = [
         await p.getByRole('button', { name: '바로 주문', exact: true }).filter({ visible: true }).first().click({ timeout: 4000 });
         await p.waitForTimeout(1200);
         // 넘어갔으면 상세의 버튼 바가 사라지고 QuickOrder 의 제목(h2 「바로 주문」)이 보인다
-        const moved = (await p.locator('.pd-cart-bar').count()) === 0 && (await p.locator('h2', { hasText: '바로 주문' }).filter({ visible: true }).count()) > 0;
+        const moved = (await p.locator('.pd-bar, .pd-cart-bar').count()) === 0 && (await p.locator('h2', { hasText: '바로 주문' }).filter({ visible: true }).count()) > 0;
         clicked = moved ? '바로 주문 화면으로 넘어감' : '🔴 눌렀는데 바로 주문 화면이 안 나옴';
       } catch (e) { clicked = '🔴 가운데를 못 누름(' + e.message.split('\n')[0].slice(0, 60) + ')'; }
       const allOk = probe.every(b => b.ok === b.n) && !clicked.startsWith('🔴');

@@ -88,7 +88,7 @@ const reviews = {
     { id: 1, user_name: '김*희', rating: 5, content: '아이들이 정말 좋아해요. 또 살게요!', created_at: '2026-11-02T10:00:00+09:00', reply: '감사합니다 :)' },
     { id: 2, user_name: '박*수', rating: 4, content: '맛있는데 양이 조금 적어요.', created_at: '2026-10-28T10:00:00+09:00' },
   ],
-  stats: { avg: 4.5, count: 2 },
+  stats: { avg_rating: 4.5, total: 2 },   // 서버 /products/:id/reviews 와 같은 이름(예전 avg·count 는 틀린 이름이었다)
 };
 
 const loginHistory = [
@@ -97,17 +97,33 @@ const loginHistory = [
   { created_at: '2026-11-09T08:44:00+09:00', ip: '118.235.*.*', success: 0, user_agent: 'iPhone' },
 ];
 
+// 묶음 2 — 홈 배송 한 줄(GET /stores/:id/delivery-promise). 서버 computePromise 의 모양 그대로(목업 DELIV 와 같은 날)
+const DELIV = {
+  today: { mode: 'today', date: '2026-11-12', cutoff: '15:00', start: '16:00', label: '오후 3시까지 주문하면 오늘 도착', sub: '오늘 오후 4시 출발' },
+  tomorrow: { mode: 'tomorrow', date: '2026-11-13', cutoff: '15:00', start: '16:00', label: '내일 배송', sub: '오늘 주문 마감(오후 3시)이 지났어요' },
+  closed: { mode: 'closed', date: '2026-11-13', cutoff: '15:00', start: '16:00', label: '내일 배송', sub: '오늘은 당일배송이 불가해요' },
+  holiday: { mode: 'holiday', date: '2026-11-14', cutoff: '15:00', start: '16:00', label: '14일 배송', sub: '11월 13일은 배송 휴무예요' },
+  off: { mode: 'off', date: null, cutoff: null, start: null, label: null, sub: null, text: null },
+};
+// 사업자 정보 — 목업처럼 상호만 채우고 나머지는 「—」(값은 대표님이 어드민에서 채운다)
+const bizInfo = { company_name: '동신마켓', ceo_name: '—', address: '—', phone: '—', business_number: '—', mail_order_number: '—', privacy_officer: '—' };
+
 /** /api 하위 경로 → 응답. 함수면 (url, method, body) 로 부른다. */
 function route(pathname, method, search, opts = {}) {
   const user = opts.user || customer;
   const j = (b, s = 200) => ({ status: s, body: b });
   if (pathname === '/stores') return j(stores);
+  if (/^\/stores\/\d+\/delivery-promise$/.test(pathname)) return j(DELIV[opts.deliv || 'today']);
+  if (pathname === '/signup-coupon') return j(opts.noCoupon ? { enabled: false } : { enabled: true, label: '신규회원 10% 할인 쿠폰', sub: '2만 원 이상 주문 · 가입 후 30일' });
+  if (pathname === '/shop/business-info') return j(bizInfo);
   if (pathname === '/categories') return j(catRows);
-  if (pathname === '/banners') return j(opts.noBanners ? [] : banners);
+  if (pathname === '/banners') return j(opts.noBanners ? [] : opts.bannerTokenBg ? banners.map(({ bg, ...b }) => b) : banners);   // bannerTokenBg — 관리자가 고른 색(bg) 없이: 목업처럼 토큰 초록으로(모양만 비교)
   if (pathname === '/splash-ads') return j([]);
   if (pathname === '/products/active' || pathname === '/products') {
     if (opts.productsFail) return j({ error: 'fail' }, 500);
     if (opts.productsSlow) return { status: 200, body: products, delay: 60000 };
+    if (opts.lowStock) return j(products.map(p => (p.id === 101 ? { ...p, stock: 7, stock_state: 'low', stock_left: 7 } : p)));   // 상세 「7개 남음」(목업 S04 재고 적음)
+    if (opts.manyProducts) return j([0, 1, 2, 3].flatMap(k => products.map(p => (k ? { ...p, id: p.id + k * 100 } : p))));   // 32개 — 회전 검사가 스크롤을 잴 수 있게
     return j(opts.noProducts ? [] : products);
   }
   if (pathname === '/events/active') return j(events);
@@ -118,6 +134,7 @@ function route(pathname, method, search, opts = {}) {
   if (pathname === '/orders/my') return j(myOrders);
   if (pathname === '/users/me/wishlist') return j(opts.emptyWish ? [] : [products[0], products[3]]);
   if (pathname === '/wishlist') return j({ wishlisted: true, message: '찜 목록에 담았어요!' });
+  if (opts.benefitsFail && (pathname === '/me/points' || pathname === '/users/me/coupons')) return { abort: true };   // 보유 쿠폰·포인트를 못 불러옴(목업 S10)
   if (pathname === '/me/points') return j({ points: 3820, expiring_soon: 500 });
   if (pathname === '/users/me/coupons') return j(userCoupons);
   if (pathname === '/coupons/my') return j(userCoupons.filter(c => !c.used_at));
@@ -125,14 +142,18 @@ function route(pathname, method, search, opts = {}) {
   if (pathname === '/me/purchases') return j(opts.noConsent ? { ...purchases, store_visible: false, purchases: purchases.purchases.filter(p => p.kind === 'online') } : purchases);
   if (pathname.startsWith('/me/purchases/store/')) return j(storePurchase);
   if (pathname.startsWith('/me/purchases/online/')) return j(onlinePurchase);
-  if (/^\/products\/\d+\/reviews$/.test(pathname)) return j(reviews);
+  // reviewsFail — 응답 자체가 없다(인터넷 끊김) · noReviews — 리뷰 0개(첫 리뷰)
+  if (/^\/products\/\d+\/reviews$/.test(pathname)) return opts.reviewsFail ? { abort: true } : j(opts.noReviews ? { reviews: [], stats: { avg_rating: 0, total: 0 } } : reviews);
   if (/^\/products\/\d+\/related$/.test(pathname)) return j(products.slice(2, 6));
   if (pathname === '/search/popular') return j([{ keyword: '콜라' }, { keyword: '라면' }, { keyword: '사과' }, { keyword: '과자' }]);
   if (pathname === '/search/suggest') return j(['코카콜라 1.5L', '코카콜라 제로', '콜라겐']);
   if (pathname === '/search') {
+    if (opts.searchSlow) return { status: 200, body: {}, delay: 60000 };
+    if (opts.searchLikeMock) return j({ products: [103, 108, 101].map(id => products.find(p => p.id === id)) });   // 목업 S06 「라면」 결과 3개와 같은 줄
     const q = new URLSearchParams(search).get('q') || '';
     return j({ products: q === '없는상품' ? [] : products.filter(p => p.name.includes(q) || q === '') });
   }
+  if (pathname === '/store/match-zipcode' && opts.noZone) return j({ matched: false, message: '배송할 수 없는 지역이에요' });   // 목업 S11 배송 불가
   if (pathname === '/store/match-zipcode') return j({ matched: true, zone: { zone_name: '왕길동 배송구역', free_delivery_min: 30000 }, delivery_fee: 3000 });
   if (pathname === '/store/coverage') return j({ stores: [{ store_id: 11, store_name: '에스알마트 왕길점' }], recommended: { store_id: 11, store_name: '에스알마트 왕길점' } });
   if (pathname === '/orders') return j({ ok: true });

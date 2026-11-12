@@ -74,7 +74,7 @@ const SECRETS = ['guest_demo', 'demo@example.com', '010-1234-5678', 'mock.token.
   let moved = 0;
   for (let round = 1; round <= 2; round++) {
     // 🔴 p.goBack() 을 쓰지 않는다 — 이 앱은 주소가 안 바뀌는 한 장짜리라 브라우저 뒤로가기는 about:blank 로 나간다
-    await step('상품 상세', async () => { await p.locator('.product-grid img').first().click({ timeout: 4000 }); await p.waitForTimeout(900); moved++; await tab('홈').click({ timeout: 3000 }).catch(() => p.goto(BASE + '/')); await p.waitForTimeout(600); });
+    await step('상품 상세', async () => { await p.locator('.pgrid img').first().click({ timeout: 4000 }); await p.waitForTimeout(900); moved++; await tab('홈').click({ timeout: 3000 }).catch(() => p.goto(BASE + '/')); await p.waitForTimeout(600); });
     for (const t of tabs) await step(`탭 ${t}`, async () => {
       // 장바구니처럼 하단 탭을 숨기는 화면이 있다 — 탭이 안 보이면 첫 화면을 다시 연다(새로 고침도 한 번 더 되는 셈)
       if (!(await tab(t).isVisible().catch(() => false))) { await p.goto(BASE + '/'); await p.waitForTimeout(1200); }
