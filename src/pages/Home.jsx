@@ -15,7 +15,7 @@ import { getDeliveryPromise, getSignupCoupon, getBusinessInfo, imgUrl } from '..
 const won = (n) => `${Number(n || 0).toLocaleString('ko-KR')}원`;
 
 // 배송 한 줄 — 서버 문구에서 굵게 할 곳만 고른다(목업 promise())
-function DeliveryLine({ p, storeShort }) {
+export function DeliveryLine({ p, storeShort }) {
   if (!p || !p.mode || p.mode === 'off' || !p.label) return null;
   if (p.mode === 'today') {
     const m = /^(.*까지) 주문하면 (.*)$/.exec(p.label);
@@ -43,6 +43,18 @@ function DeliveryLine({ p, storeShort }) {
   );
 }
 
+// 배송 한 줄 자료 — 홈과 상세가 같이 쓴다. 못 받으면 null(줄이 없다)
+export function useDeliveryPromise(storeId) {
+  const [promise, setPromise] = useState(null);
+  useEffect(() => {
+    if (!storeId) { setPromise(null); return; }
+    let live = true;
+    getDeliveryPromise(storeId).then((r) => { if (live) setPromise(r.data); }).catch(() => { if (live) setPromise(null); });
+    return () => { live = false; };
+  }, [storeId]);
+  return promise;
+}
+
 // '16:00' → '오후 4시' · '09:30' → '오전 9시 30분' (서버 deliveryPromise.koTime 과 같은 말)
 function koTime(hm) {
   const [h, m] = String(hm).split(':').map(Number);
@@ -66,9 +78,12 @@ export function ProductCard({ product: p, wished, adultOk, fallbackImage, onOpen
           {p.eventLabel && <span className="pill solid-r">{p.eventLabel}</span>}
           {p.isAdult && <span className="pill r">19</span>}
         </div>
-        <button className={`heart${wished ? ' on' : ''}`} aria-label={wished ? '찜 빼기' : '찜'} onClick={(e) => { e.stopPropagation(); onWish(p); }}>
-          <Icon name="heart" size={wished ? 'sm fill' : 'sm'} />
-        </button>
+        {/* 찜 단추는 찜을 받는 화면에서만(상세의 관련 상품 줄에는 없다 — 눌러도 아무 일이 없는 단추를 두지 않는다) */}
+        {onWish && (
+          <button className={`heart${wished ? ' on' : ''}`} aria-label={wished ? '찜 빼기' : '찜'} onClick={(e) => { e.stopPropagation(); onWish(p); }}>
+            <Icon name="heart" size={wished ? 'sm fill' : 'sm'} />
+          </button>
+        )}
         {!p.isSoldOut && !lock && (
           <button className="add" aria-label="담기" onClick={(e) => { e.stopPropagation(); onAdd(p); }}>
             <Icon name="plus" />
@@ -167,14 +182,8 @@ export default function Home({
   list, loading, error, onRetry, sortOrder, setSortOrder,
   wishlist, onWish, onAdd, onOpen, onSearch, onSignup, fallbackImage,
 }) {
-  const [promise, setPromise] = useState(null);
+  const promise = useDeliveryPromise(storeId);
   const [coupon, setCoupon] = useState(null);
-  useEffect(() => {
-    if (!storeId) { setPromise(null); return; }
-    let live = true;
-    getDeliveryPromise(storeId).then((r) => { if (live) setPromise(r.data); }).catch(() => { if (live) setPromise(null); });
-    return () => { live = false; };
-  }, [storeId]);
   useEffect(() => {
     if (user) { setCoupon(null); return; }
     getSignupCoupon().then((r) => setCoupon(r.data && r.data.enabled ? r.data : null)).catch(() => setCoupon(null));

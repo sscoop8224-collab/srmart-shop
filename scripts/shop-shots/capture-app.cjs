@@ -48,7 +48,7 @@ async function login(p) {
 }
 async function addTwo(p) {
   // 홈 카드의 「+」 — 메론킥·코카콜라
-  const plus = p.locator('.product-grid button', { hasText: '+' });
+  const plus = p.locator('.pgrid .add');
   await plus.nth(0).click(); await wait(p, 200);
   await plus.nth(1).click(); await wait(p, 1700);   // 토스트가 사라질 때까지
 }
@@ -65,9 +65,9 @@ const SCREENS = [
   { id: 'S01', name: '홈 — 상품 목록', go: async () => {} },
   { id: 'S02', name: '홈 — 매장 미리보기 띠(사장님)', opts: { user: { ...customer, role: 'owner', store_id: null, name: '대표님' } }, go: login },
   { id: 'S03', name: '홈 — 상품을 못 불러옴', opts: { productsFail: true }, go: async () => {} },
-  { id: 'S04', name: '상품 상세', go: async p => { await p.locator('.product-grid img[alt="농심 메론킥"]').click(); await wait(p, 900); } },
+  { id: 'S04', name: '상품 상세', go: async p => { await p.locator('.pgrid img[alt="농심 메론킥"]').click(); await wait(p, 900); } },
   { id: 'S05', name: '상품 상세 — 리뷰', go: async p => {
-    await login(p); await p.locator('.product-grid img[alt="농심 메론킥"]').click(); await wait(p, 900);
+    await login(p); await p.locator('.pgrid img[alt="농심 메론킥"]').click(); await wait(p, 900);
     // 「리뷰 쓰기」 버튼은 지금 앱에서 안 보인다 — App.js 가 ProductDetail 에 user 를 안 넘긴다(SHOP_SCREENS F10).
     // 그래서 리뷰 영역(목록·평균)까지만 찍는다.
     await p.evaluate(() => { const el = [...document.querySelectorAll('span')].find(x => x.textContent === '리뷰'); if (el) el.scrollIntoView({ block: 'start' }); window.scrollBy(0, -60); });
@@ -79,21 +79,25 @@ const SCREENS = [
   { id: 'S09', name: '장바구니 — 비어 있음', go: async p => { await login(p); await nav(p, '장바구니').click(); await wait(p, 900); } },
   { id: 'S10', name: '결제 요약 — 쿠폰·포인트', go: async p => {
     await login(p); await addTwo(p); await nav(p, '장바구니').click(); await wait(p, 1500);
-    await p.getByText('포인트 사용', { exact: false }).first().click(); await wait(p, 400);
+    await btn(p, '주문하기').click(); await wait(p, 1200);   // P03 — 할인은 주문서에(묶음 3)
+    await p.locator('.v2 .row.tap', { hasText: '포인트' }).first().click(); await wait(p, 400);
   } },
   { id: 'S11', name: '배송지 — 다른 주소', go: async p => {
     await login(p); await addTwo(p); await nav(p, '장바구니').click(); await wait(p, 1200);
+    await btn(p, '주문하기').click(); await wait(p, 1200);   // P03 — 배송지는 주문서에(묶음 3)
+    await p.locator('.v2 .row.tap', { hasText: '변경' }).first().click(); await wait(p, 400);   // 배송지 줄 → 시트(묶음 3)
     const b = btn(p, '다른 주소'); await b.scrollIntoViewIfNeeded(); await b.click(); await wait(p, 400);
     await p.getByPlaceholder('받는 분 이름').scrollIntoViewIfNeeded();
   } },
   { id: 'S12', name: '바로 주문', go: async p => {
-    await login(p); await p.locator('.product-grid img[alt="농심 메론킥"]').click(); await wait(p, 900);
+    await login(p); await p.locator('.pgrid img[alt="농심 메론킥"]').click(); await wait(p, 900);
     // 폰 폭에선 이 버튼 가운데를 하단 탭바가 덮는다(SHOP_SCREENS F11) — 위쪽 띠를 누른다(손님도 거기만 눌린다)
     await btn(p, '바로 주문').click({ position: { x: 40, y: 8 } }); await wait(p, 1500);
   } },
   { id: 'S13', name: '주문 완료(영수증)', go: async p => {
     await login(p); await addTwo(p); await nav(p, '장바구니').click(); await wait(p, 1800);
-    await p.locator('.cart-checkout button').last().click(); await wait(p, 1500);
+    await btn(p, '주문하기').click(); await wait(p, 1200);   // P03(묶음 3)
+    await p.locator('.pay-bar button, .cart-checkout button').last().click(); await wait(p, 1500);
   } },
   { id: 'S14', name: '주문내역', go: async p => { await login(p); await openMyMenu(p, '주문내역'); } },
   { id: 'S15', name: '환불·교환 요청', go: async p => { await login(p); await openMyMenu(p, '주문내역'); await btn(p, '환불 요청').click(); await wait(p, 500); } },
@@ -116,7 +120,7 @@ const SCREENS = [
   { id: 'S32', name: '매장 이용 동의', opts: { user: { ...customer, needsThirdPartyConsent: true } }, go: login },
   { id: 'S33', name: '로그아웃 확인', go: async p => { await login(p); await nav(p, '마이').click(); await wait(p, 800); const b = p.getByText('로그아웃', { exact: true }).last(); await b.scrollIntoViewIfNeeded(); await b.click(); await wait(p, 400); } },   // 헤더 로그아웃은 묶음 1 에서 빠졌다(마이 맨 아래)
   { id: 'S34', name: '알림·확인창(공용)', go: async p => { await nav(p, '장바구니').click(); await wait(p, 400); } },
-  { id: 'S35', name: '토스트', go: async p => { await login(p); await p.locator('.product-grid button', { hasText: '+' }).first().click(); await wait(p, 300); } },
+  { id: 'S35', name: '토스트', go: async p => { await login(p); await p.locator('.pgrid .add').first().click(); await wait(p, 300); } },
   { id: 'S36', name: '오프라인', go: async (p, c) => { await c.setOffline(true); await wait(p, 700); } },
   { id: 'S37', name: 'AI 상담', go: async p => {
     await p.getByRole('button', { name: 'AI 상담' }).click(); await wait(p, 500);

@@ -1,8 +1,16 @@
+// 상품 상세 (목업 정본 v1 의 S04 · S05, 묶음 3 · 2026-11-12 밤)
+//
+// 사진(넘김·썸네일) → 분류 길 · 이름 규격 · 별점·행사·품절 · 가격 · 배송 한 줄 → 제조사/원산지 · 바코드 · 재고(상태로) →
+// 구매 단위(낱개/박스) · 수량 또는 무게 → 상품 설명 → 상품 정보(영양 사진) → 리뷰 → 관련 상품.
+// 아래 고정 바: 합계 · 「장바구니 담기」 · 「바로 주문」. 리뷰를 쓰는 동안은 바가 「취소 · 리뷰 등록」(S05 — 본문 단추가 바 밑에 깔리던 것).
+// 이 화면에는 탭바가 없다(App.js). 색·크기는 styles/shop.css(토큰 이름만).
 import { useState, useEffect, useRef } from 'react';
-import { getProductReviews, createReview, toggleWishlist, getRelatedProducts, recordRecentView, imgUrl } from '../api';
+import { getProductReviews, createReview, getRelatedProducts, recordRecentView, imgUrl } from '../api';
 import { buildCartItem } from '../utils/cartItem';
 import usePublishBottomBarHeight from '../hooks/usePublishBottomBarHeight';
 import { useDialog } from '../DialogContext';
+import Icon from '../components/ui/Icon';
+import { ProductCard, DeliveryLine, useDeliveryPromise } from './Home';
 
 const getCategoryImage = (large) => {
   switch(large) {
@@ -14,13 +22,26 @@ const getCategoryImage = (large) => {
     default: return 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&q=80';
   }
 };
+const won = (n) => `${Number(n || 0).toLocaleString('ko-KR')}원`;
 
-function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user }) {
+// 재고는 숫자를 그대로 보이지 않는다(B-5) — 서버의 stock_state 가 있으면 그것, 없으면(옛 서버) 숫자로 같은 판정
+function stockView(p) {
+  const st = p.stock_state || (p.stock == null ? null : Number(p.stock) <= 0 ? 'soldout' : Number(p.stock) <= 10 ? 'low' : 'in_stock');
+  if (st === 'soldout' || p.isSoldOut) return { text: '품절', cls: 'bad', sold: true };
+  if (st === 'low') return { text: `${p.stock_left ?? p.stock}개 남음`, cls: 'warn' };
+  if (st === 'in_stock') return { text: '재고 있음', cls: '' };
+  return null;
+}
+
+function Stars({ n, size = 'sm' }) {
+  return <span className="stars">{[1, 2, 3, 4, 5].map(i => <Icon key={i} name="star" size={size} fill={i <= n} />)}</span>;
+}
+
+function ProductDetail({ product, onBack, onAddToCart, onBuyNow, user, storeId, storeShort, wished, wishlist = [], onToggleWish, onNeedLogin, onOpenProduct, adultOk }) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [grams, setGrams] = useState(100);
   const [purchaseType, setPurchaseType] = useState('single');
-  const [wishlisted, setWishlisted] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [reviewStats, setReviewStats] = useState(null);
   const [related, setRelated] = useState([]);
@@ -32,66 +53,70 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
   const { notify } = useDialog();
   const [reviewForm, setReviewForm] = useState({ rating: 5, content: '' });
   const [submittingReview, setSubmittingReview] = useState(false);
+  const promise = useDeliveryPromise(storeId);
 
   useEffect(() => {
     if (!product) return;
+    setSelectedImage(0); setQuantity(1); setGrams(100); setPurchaseType('single'); setShowReviewForm(false);
     // swallow-ok: 최근 본 상품 기록은 **손님 화면에 아무것도 바꾸지 않는다**(나중에
     //   다른 화면의 목록에 한 줄 덜 뜰 뿐). 알려도 손님이 할 일이 없고 금액·장부와도 무관하다.
     if (user) recordRecentView(product.id).catch(() => {});
     // 🔴 **리뷰는 조용히 비워 두면 안 된다** (2026-10-22 지시 3).
-    //    실패하면 reviews 가 빈 배열로 남고, 화면은 **"첫 리뷰를 작성해주세요!"** 를
+    //    실패하면 reviews 가 빈 배열로 남고, 화면은 「첫 리뷰를 작성해 주세요!」를
     //    띄운다 — 🔴 리뷰가 20개 있어도 손님에게는 "리뷰 없는 상품" 으로 보인다.
     //    그건 틀린 말이고, 손님의 구매 판단을 바꾼다.
     setReviewsError('');
     getProductReviews(product.id)
       .then(r => { setReviews(r.data.reviews || []); setReviewStats(r.data.stats); })
-      .catch((e) => setReviewsError(!e?.response
-        ? '리뷰를 불러오지 못했어요 — 인터넷 연결을 확인해주세요.'
-        : '리뷰를 불러오지 못했어요. 잠시 뒤 새로고침해 주세요.'));
+      .catch((e) => setReviewsError(!e?.response ? 'internet' : 'server'));
     // swallow-ok: 관련 상품은 **곁들임**이다 — 못 불러오면 그 줄이 안 뜨고, 보고 있는
     //   상품의 정보·가격·리뷰는 그대로다. 여기까지 경고를 띄우면 정작 중요한 경고가 묻힌다.
     getRelatedProducts(product.id).then(r => setRelated(r.data || [])).catch(() => {});
+    window.scrollTo(0, 0);
   }, [product?.id]); // eslint-disable-line
 
-  const handleWishlist = async () => {
-    if (!user) { notify('로그인이 필요해요!'); return; }
-    try { const r = await toggleWishlist(product.id); setWishlisted(r.data.wishlisted); notify(r.data.message); }
-    catch { notify('오류가 발생했어요.'); }
+  const openReviewForm = () => {
+    if (!user) { onNeedLogin?.('리뷰 쓰기는'); return; }
+    setShowReviewForm(true);
   };
 
   const handleSubmitReview = async () => {
-    if (!reviewForm.content.trim()) { notify('리뷰 내용을 입력해주세요!'); return; }
+    if (!reviewForm.content.trim()) { notify({ icon: 'alert', title: '리뷰 내용을 적어 주세요' }); return; }
     setSubmittingReview(true);
     try {
       await createReview({ product_id: product.id, rating: reviewForm.rating, content: reviewForm.content });
-      notify('리뷰가 등록됐어요! 😊');
+      notify({ icon: 'check', title: '리뷰를 등록했어요' });
       setShowReviewForm(false);
       setReviewForm({ rating: 5, content: '' });
       const r = await getProductReviews(product.id);
       setReviews(r.data.reviews || []); setReviewStats(r.data.stats);
-    } catch (err) { notify(err.response?.data?.error || '오류가 발생했어요.'); }
+    } catch (err) { notify({ icon: 'alert', title: '리뷰를 등록하지 못했어요', message: err.response?.data?.error || '잠시 뒤 다시 시도해 주세요.' }); }
     finally { setSubmittingReview(false); }
   };
-
-  const bg          = darkMode ? '#1a1a1a' : '#ffffff';
-  const cardBg      = darkMode ? '#2a2a2a' : '#ffffff';
-  const border      = darkMode ? '#3a3a3a' : '#dee2e6';
-  const text        = darkMode ? '#f0f0f0' : '#212529';
-  const sub         = darkMode ? '#a0a0a0' : '#6c757d';
-  const inputBg     = darkMode ? '#2a2a2a' : '#ffffff';
-  const inputBorder = darkMode ? '#3a3a3a' : '#dee2e6';
-  const badgeBg     = darkMode ? '#1a4a2a' : 'var(--primary-light)';
-  const totalBg     = darkMode ? '#1a4a2a' : 'var(--primary-light)';
-  const totalBorder = darkMode ? '#2a5c3a' : '#c8f0df';
 
   if (!product) return null;
 
   const images = product.images && product.images.length > 0
     ? product.images
     : product.image ? [product.image] : [];
+  const weight = product.pricing_type === 'weight';
+  const unit = product.unit_price || product.price;
+  const hasBox = !!(product.box_price_override && product.box_quantity);
+  const stock = stockView(product);
+  const sold = !!(stock && stock.sold);
+  const total = weight ? unit * grams / 100
+    : hasBox && purchaseType === 'box' ? product.box_price_override * quantity
+    : product.price * quantity;
+  const nutrition = (() => {
+    const imgs = Array.isArray(product.nutrition_images) ? product.nutrition_images.filter(Boolean)
+      : typeof product.nutrition_images === 'string' ? (() => { try { return JSON.parse(product.nutrition_images) || []; } catch { return []; } })() : [];
+    if (product.nutritionImage && !imgs.length) imgs.push(product.nutritionImage);   // 레거시 단일 호환
+    return imgs;
+  })();
+  const fresh = ['농산물', '축산물', '수산물'].includes(product.product_type);
 
   // 박스 구매도 단품처럼 count 만큼 반복 담기 — 화면에 보이는 '박스가 × 수량' 합계와
-  // 실제 장바구니에 담기는 수량이 이제 일치한다(예전엔 박스가 항상 1개만 담겼음).
+  // 실제 장바구니에 담기는 수량이 일치한다(예전엔 박스가 항상 1개만 담겼음).
   const handleAddToCart = () => {
     const { item, count } = buildCartItem(product, { quantity, purchaseType, grams });
     for (let i = 0; i < count; i++) onAddToCart(item);
@@ -105,345 +130,218 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, darkMode, user 
     onBuyNow({ ...item, quantity: count });
   };
 
+  const img = images[selectedImage];
+
   return (
-    <div className="pd-root" style={{ background: bg, minHeight: '100vh', paddingBottom: 'calc(120px + env(safe-area-inset-bottom))' }}>
-
-      {/* 헤더 */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '16px 20px', position: 'sticky', top: 0,
-        background: darkMode
-          ? 'linear-gradient(135deg, #0d4d2a 0%, #1a5c2a 100%)'
-          : 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
-        zIndex: 10,
-      }}>
-        <button onClick={onBack} style={{
-          width: 44, height: 44, flexShrink: 0,
-          background: 'rgba(255,255,255,0.15)',
-          border: 'none', borderRadius: '50%', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'white',
-        }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
-        </button>
-        <h2 style={{ margin: 0, fontSize: '17px', fontWeight: '700', color: 'white' }}>상품 상세</h2>
-        <button onClick={handleWishlist} style={{ width: 44, height: 44, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill={wishlisted ? '#ff4757' : 'none'} stroke={wishlisted ? '#ff4757' : 'white'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        </button>
-      </div>
-
-      {/* 상단 2단(데스크탑): 이미지 | 정보+담기 */}
-      <div className="pd-top">
-      {/* 이미지 영역 */}
-      <div className="pd-media" style={{ position: 'relative', background: cardBg }}>
-        {images.length > 0 ? (
-          <>
-            <img src={imgUrl(images[selectedImage])} alt={product.name}
-              style={{ width: '100%', height: '44vh', maxHeight: '420px', objectFit: 'contain', background: '#fff', display: 'block' }} />
-            {images.length > 1 && (
-              <div style={{ display: 'flex', gap: '8px', padding: '12px 16px', overflowX: 'auto', background: cardBg }}>
-                {images.map((img, index) => (
-                  <img key={index} src={imgUrl(img)} alt={'상품' + (index + 1)}
-                    onClick={() => setSelectedImage(index)}
-                    style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '10px', border: selectedImage === index ? '2px solid var(--primary)' : `2px solid ${border}`, cursor: 'pointer', flexShrink: 0 }} />
-                ))}
-              </div>
-            )}
-          </>
-        ) : (
-          <div style={{ position: 'relative', height: '44vh', maxHeight: '420px', overflow: 'hidden' }}>
-            <img src={getCategoryImage(product.large)} alt={product.large}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,196,113,0.05), rgba(0,168,94,0.15))' }} />
-          </div>
-        )}
-      </div>
-
-      {/* 상품 정보 카드 */}
-      <div className="pd-info" style={{
-        background: cardBg, borderRadius: '24px 24px 0 0',
-        // zIndex 를 주지 않는다 — 주면 이 카드가 쌓임 맥락을 만들어, 안에 든 하단 고정 바(.pd-cart-bar,
-        // z 150)가 그 안에 갇히고 하단 탭바(z 100)가 버튼 가운데를 덮는다(2026-11-11 F11: 폰에서 담기·바로 주문의
-        // 위쪽 26px 만 눌렸다). 사진 위로 겹치는 것은 DOM 순서(사진 다음)만으로 된다.
-        marginTop: '-16px', position: 'relative',
-        padding: '24px 20px 20px',
-        boxShadow: darkMode ? 'none' : '0 -4px 20px rgba(0,0,0,0.06)'
-      }}>
-        {/* 카테고리 태그 */}
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
-          {product.large && (
-            <span style={{ background: badgeBg, color: 'var(--primary-dark)', padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>
-              {product.large}
-            </span>
-          )}
-          {product.medium && (
-            <span style={{ background: darkMode ? '#333' : '#f1f3f5', color: darkMode ? '#ccc' : '#495057', padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '600' }}>
-              {product.medium}
-            </span>
-          )}
-          {product.small && (
-            <span style={{ background: darkMode ? '#333' : '#f1f3f5', color: sub, padding: '4px 12px', borderRadius: '20px', fontSize: '11px' }}>
-              {product.small}
-            </span>
-          )}
+    <div className="v2 plain detail-v2">
+      <header className="nav-clear">
+        <div className="nav-row">
+          <button className="circle-btn" aria-label="뒤로" onClick={onBack}><Icon name="chevL" size="sm" /></button>
+          <button className={`circle-btn${wished ? ' on' : ''}`} aria-label={wished ? '찜 빼기' : '찜'}
+            onClick={() => (user ? onToggleWish?.(product) : onNeedLogin?.('찜은'))}>
+            <Icon name="heart" size="sm" fill={!!wished} />
+          </button>
         </div>
+      </header>
 
-        {/* 상품명 (+ 규격 병기) */}
-        <h1 style={{ fontSize: '22px', fontWeight: '800', color: text, margin: '0 0 6px', letterSpacing: '-0.5px' }}>
-          {product.name}
-          {product.spec && <span style={{ fontWeight: 600, color: sub }}> {product.spec}</span>}
-        </h1>
-
-        {/* 바코드 */}
-        {product.barcode && (
-          <p style={{ fontSize: '12px', color: sub, margin: '0 0 8px', fontFamily: 'monospace' }}>
-            바코드: {product.barcode}
-          </p>
-        )}
-
-        {/* 원산지 / 제조사 */}
-        {['농산물', '축산물', '수산물'].includes(product.product_type) ? (
-          product.origin_country && (
-            <p style={{ fontSize: '13px', color: 'var(--primary-dark)', margin: '0 0 8px', fontWeight: '700' }}>
-              📍 원산지: {product.origin_country}
-            </p>
-          )
-        ) : (
-          product.manufacturer && (
-            <p style={{ fontSize: '13px', color: 'var(--primary-dark)', margin: '0 0 8px', fontWeight: '700' }}>
-              🏭 제조사: {product.manufacturer}
-            </p>
-          )
-        )}
-
-        {/* 재고 */}
-        {product.stock !== undefined && (
-          <p style={{ fontSize: '12px', color: product.stock === 0 ? '#ff4757' : sub, margin: '0 0 12px' }}>
-            {product.stock === 0
-              ? '품절'
-              : product.box_quantity
-                ? `재고 ${product.stock}개 · 박스 ${Math.floor(product.stock / product.box_quantity)}개 가능`
-                : `재고 ${product.stock}개`
-            }
-          </p>
-        )}
-
-        {/* 가격 */}
-        {product.pricing_type === 'weight' ? (
-          <div style={{ marginBottom: '20px' }}>
-            <p style={{ fontSize: '13px', color: sub, margin: '0 0 2px' }}>
-              100g당 ₩{(product.unit_price || product.price).toLocaleString()}
-            </p>
-            <p style={{ fontSize: '30px', fontWeight: '900', color: text, margin: 0, letterSpacing: '-1px' }}>
-              ₩{((product.unit_price || product.price) * grams / 100).toLocaleString()}
-            </p>
+      <div className="hero-wrap">
+        <div>
+          <div className="hero">
+            <div className="pimg">
+              <img src={img ? imgUrl(img) : getCategoryImage(product.large)} alt={product.name} />
+            </div>
+            {images.length > 1 && <div className="dots">{images.map((_, i) => <i key={i} className={i === selectedImage ? 'on' : ''} />)}</div>}
           </div>
-        ) : (
-          <p style={{ fontSize: '30px', fontWeight: '900', color: text, margin: '0 0 20px', letterSpacing: '-1px' }}>
-            ₩{product.price.toLocaleString()}
-          </p>
-        )}
-
-        <div style={{ height: '1px', background: border, margin: '0 0 20px' }} />
-
-        {/* 박스 구매 옵션 */}
-        {product.box_price_override && product.box_quantity && (
-          <div style={{ marginBottom: '16px' }}>
-            <span style={{ fontSize: '15px', fontWeight: '700', color: text, display: 'block', marginBottom: '10px' }}>구매 단위</span>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              {[
-                { value: 'single', label: '낱개', price: `₩${product.price.toLocaleString()}` },
-                { value: 'box', label: `박스 (${product.box_quantity}개)`, price: `₩${product.box_price_override.toLocaleString()}` },
-              ].map(opt => (
-                <label key={opt.value} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px', background: purchaseType === opt.value ? 'var(--primary-light)' : inputBg, border: `1.5px solid ${purchaseType === opt.value ? 'var(--primary)' : inputBorder}`, borderRadius: '14px', padding: '12px 14px', cursor: 'pointer' }}>
-                  <input type="radio" name="purchaseType" value={opt.value} checked={purchaseType === opt.value} onChange={() => setPurchaseType(opt.value)} style={{ accentColor: 'var(--primary)' }} />
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: '700', color: text }}>{opt.label}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--primary-dark)', fontWeight: '600' }}>{opt.price}</div>
-                  </div>
-                </label>
+          {images.length > 1 && (
+            <div className="thumbs">
+              {images.map((src, i) => (
+                <button key={i} className={`pimg${i === selectedImage ? ' on' : ''}`} onClick={() => setSelectedImage(i)} aria-label={`사진 ${i + 1}`}>
+                  <img src={imgUrl(src)} alt="" />
+                </button>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* 수량/무게 선택 */}
-        {product.pricing_type === 'weight' ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <span style={{ fontSize: '15px', fontWeight: '700', color: text }}>무게</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: inputBg, border: `1.5px solid ${inputBorder}`, borderRadius: '16px', padding: '8px 16px' }}>
-              <button onClick={() => setGrams(Math.max(100, grams - 100))}
-                style={{ width: '44px', height: '44px', background: cardBg, border: `1.5px solid ${border}`, borderRadius: '50%', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: text, fontWeight: 'bold' }}>-</button>
-              <span style={{ fontSize: '15px', fontWeight: '800', minWidth: '48px', textAlign: 'center', color: text }}>{grams}g</span>
-              <button onClick={() => setGrams(grams + 100)}
-                style={{ width: '44px', height: '44px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <span style={{ fontSize: '15px', fontWeight: '700', color: text }}>수량</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: inputBg, border: `1.5px solid ${inputBorder}`, borderRadius: '16px', padding: '8px 16px' }}>
-              <button onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                style={{ width: '44px', height: '44px', background: cardBg, border: `1.5px solid ${border}`, borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: text, fontWeight: 'bold' }}>-</button>
-              <span style={{ fontSize: '16px', fontWeight: '800', minWidth: '32px', textAlign: 'center', color: text }}>{quantity}</span>
-              <button onClick={() => setQuantity(quantity + 1)}
-                style={{ width: '44px', height: '44px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>+</button>
-            </div>
-          </div>
-        )}
-
-        {/* 총 금액 */}
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          background: totalBg, borderRadius: '16px', padding: '16px 20px', marginBottom: '20px',
-          border: `1px solid ${totalBorder}`
-        }}>
-          <span style={{ fontSize: '14px', color: 'var(--primary-dark)', fontWeight: '600' }}>
-            {product.pricing_type === 'weight' ? `${grams}g 합계` : '총 금액'}
-          </span>
-          <span style={{ fontSize: '24px', fontWeight: '900', color: 'var(--primary-dark)' }}>
-            {product.pricing_type === 'weight'
-              ? `₩${((product.unit_price || product.price) * grams / 100).toLocaleString()}`
-              : product.box_price_override && purchaseType === 'box'
-                ? `₩${(product.box_price_override * quantity).toLocaleString()}`
-                : `₩${(product.price * quantity).toLocaleString()}`
-            }
-          </span>
+          )}
         </div>
 
-        {/* 장바구니 담기 + 바로 주문 (모바일=하단 고정 / 데스크탑=정보 영역 내) */}
-        <div ref={cartBarRef} className="pd-cart-bar" style={{
-          position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-          width: '100%', maxWidth: '480px', padding: '16px 20px calc(36px + env(safe-area-inset-bottom))',
-          background: cardBg, borderTop: `1px solid ${border}`,
-          boxShadow: '0 -4px 20px rgba(0,0,0,0.06)', boxSizing: 'border-box',
-          display: 'flex', gap: '10px', zIndex: 'var(--z-fixed-actionbar)',
-        }}>
-          <button onClick={handleAddToCart} style={{
-            flex: 1, padding: '16px',
-            background: 'transparent',
-            color: 'var(--primary-dark)', border: '2px solid var(--primary)', borderRadius: '16px',
-            fontSize: '15px', fontWeight: '800', cursor: 'pointer',
-            letterSpacing: '-0.3px'
-          }}>
-            🛒 장바구니 담기
-          </button>
-          <button onClick={handleBuyNow} style={{
-            flex: 1, padding: '16px',
-            background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
-            color: 'white', border: 'none', borderRadius: '16px',
-            fontSize: '15px', fontWeight: '800', cursor: 'pointer',
-            boxShadow: '0 4px 20px rgba(0,196,113,0.35)',
-            letterSpacing: '-0.3px'
-          }}>
-            바로 주문
-          </button>
+        <div>
+          <div className="d-head">
+            <div className="crumb">
+              {[product.large, product.medium, product.small].filter(Boolean).map((c, i) => (
+                <span key={i} style={{ display: 'contents' }}>{i > 0 && <Icon name="chevR" size="sm" />}{c}</span>
+              ))}
+            </div>
+            <h1>{product.name}{product.spec && <> <span className="spec">{product.spec}</span></>}</h1>
+            <div className="tags">
+              {reviewStats && reviewStats.total > 0 && (
+                <span className="rating"><Icon name="star" size="sm" fill /><b>{reviewStats.avg_rating}</b>({reviewStats.total})</span>
+              )}
+              {product.eventLabel && <span className="pill solid-r">{product.eventLabel}</span>}
+              {sold && <span className="pill r">품절</span>}
+            </div>
+            <div className="price">
+              {weight ? <>{won(unit)}<span className="was per">/100g</span></> : won(product.price)}
+            </div>
+            {!sold && promise && promise.mode !== 'off' && (
+              <div style={{ marginTop: 'var(--sp-3)' }}><DeliveryLine p={promise} storeShort={storeShort} /></div>
+            )}
+          </div>
+
+          <section className="sec">
+            <div className="group">
+              {fresh ? (product.origin_country && <div className="row"><span className="lbl">원산지</span><span className="val">{product.origin_country}</span></div>)
+                : (product.manufacturer && <div className="row"><span className="lbl">제조사</span><span className="val">{product.manufacturer}</span></div>)}
+              {product.barcode && <div className="row"><span className="lbl">바코드</span><span className="val">{product.barcode}</span></div>}
+              {stock && <div className="row"><span className="lbl">재고</span><span className={`val ${stock.cls}`}>{stock.text}</span></div>}
+            </div>
+          </section>
+
+          {!sold && (weight ? (
+            <section className="sec">
+              <div className="sec-h">무게</div>
+              <div className="group pad spread">
+                <div><b>{grams}g</b><div className="f-hint">100g당 {won(unit)}</div></div>
+                <span className="step">
+                  <button aria-label="100g 빼기" disabled={grams <= 100} onClick={() => setGrams(Math.max(100, grams - 100))}><Icon name="minus" size="sm" /></button>
+                  <span>{grams}g</span>
+                  <button aria-label="100g 더하기" onClick={() => setGrams(grams + 100)}><Icon name="plus" size="sm" /></button>
+                </span>
+              </div>
+            </section>
+          ) : (
+            <>
+              {hasBox && (
+                <section className="sec">
+                  <div className="sec-h">구매 단위</div>
+                  <div className="optrow" role="radiogroup" aria-label="구매 단위">
+                    <button role="radio" aria-checked={purchaseType === 'single'} className={`opt${purchaseType === 'single' ? ' on' : ''}`} onClick={() => setPurchaseType('single')}>
+                      <b>낱개</b><span>{won(product.price)}</span>
+                    </button>
+                    <button role="radio" aria-checked={purchaseType === 'box'} className={`opt${purchaseType === 'box' ? ' on' : ''}`} onClick={() => setPurchaseType('box')}>
+                      <b>박스 ({product.box_quantity}개)</b><span>{won(product.box_price_override)}</span>
+                    </button>
+                  </div>
+                </section>
+              )}
+              <section className="sec">
+                <div className="group pad spread">
+                  <span>수량</span>
+                  <span className="step">
+                    <button aria-label="하나 빼기" disabled={quantity <= 1} onClick={() => setQuantity(Math.max(1, quantity - 1))}><Icon name="minus" size="sm" /></button>
+                    <span>{quantity}</span>
+                    <button aria-label="하나 더하기" onClick={() => setQuantity(quantity + 1)}><Icon name="plus" size="sm" /></button>
+                  </span>
+                </div>
+              </section>
+            </>
+          ))}
         </div>
       </div>
-      </div>
 
-      {/* 상품 설명 */}
       {product.description && (
-        <div style={{ background: cardBg, margin: '8px 0', padding: '20px', borderTop: `1px solid ${border}` }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '800', color: text, margin: '0 0 12px' }}>📝 상품 설명</h3>
-          <div style={{ background: inputBg, borderRadius: '14px', padding: '16px', border: `1px solid ${border}` }}>
-            <p style={{ fontSize: '14px', color: darkMode ? '#ccc' : '#495057', margin: 0, lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>
-              {product.description}
-            </p>
-          </div>
-        </div>
+        <section className="sec">
+          <div className="sec-h">상품 설명</div>
+          <div className="group pad"><div className="desc">{product.description}</div></div>
+        </section>
       )}
 
-      {/* 상품 정보 — 성분표·영양정보·상세컷을 세로로 크게 (쿠팡식, 원본 비율 유지). 이미지 없으면 섹션 숨김 */}
-      {(() => {
-        const imgs = Array.isArray(product.nutrition_images) ? product.nutrition_images.filter(Boolean) : [];
-        if (product.nutritionImage && !imgs.length) imgs.push(product.nutritionImage);   // 레거시 단일 호환
-        if (!imgs.length) return null;
-        return (
-          <div style={{ background: cardBg, margin: '8px 0', padding: '20px', borderTop: `1px solid ${border}` }}>
-            <h3 style={{ fontSize: '16px', fontWeight: '800', color: text, margin: '0 0 12px' }}>📋 상품 정보</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {imgs.map((src, i) => (
-                <img key={i} src={imgUrl(src)} alt={`상품 정보 ${i + 1}`}
-                  style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '14px', border: `1px solid ${border}` }} />
-              ))}
-            </div>
-          </div>
-        );
-      })()}
+      {nutrition.length > 0 && (
+        <section className="sec">
+          <div className="sec-h">상품 정보</div>
+          {nutrition.map((src, i) => <div key={i} className="info-img"><img src={imgUrl(src)} alt={`상품 정보 ${i + 1}`} /></div>)}
+        </section>
+      )}
 
-      {/* 리뷰 섹션 */}
-      <div style={{ margin: '12px 0', background: cardBg, borderTop: `8px solid ${darkMode ? '#111' : '#f8f9fa'}`, padding: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <div>
-            <span style={{ fontSize: '17px', fontWeight: '800', color: text }}>리뷰</span>
-            {reviewStats && <span style={{ fontSize: '14px', color: sub, marginLeft: 8 }}>{reviewStats.total}개</span>}
-          </div>
-          {user && (
-            <button onClick={() => setShowReviewForm(!showReviewForm)} style={{ padding: '6px 14px', background: 'var(--primary-light)', color: 'var(--primary-dark)', border: 'none', borderRadius: 20, fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
-              {showReviewForm ? '취소' : '리뷰 쓰기'}
-            </button>
-          )}
-        </div>
-        {reviewStats && reviewStats.total > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, padding: '12px 14px', background: darkMode ? '#1a1a1a' : '#f8f9fa', borderRadius: 12 }}>
+      {/* 리뷰 — 🔴 「리뷰 없음」과 「못 불러옴」을 가른다(둘을 같은 문구로 보이면 리뷰 있는 상품이 없는 것처럼 보인다) */}
+      {showReviewForm && (
+        <section className="sec">
+          <div className="group pad">
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 32, fontWeight: 800, color: text }}>{reviewStats.avg_rating}</div>
-              <div style={{ color: '#ffd700', fontSize: 14 }}>{'★'.repeat(Math.round(reviewStats.avg_rating))}{'☆'.repeat(5 - Math.round(reviewStats.avg_rating))}</div>
-            </div>
-          </div>
-        )}
-        {showReviewForm && (
-          <div style={{ background: darkMode ? '#1a1a1a' : '#f8f9fa', borderRadius: 12, padding: 14, marginBottom: 14 }}>
-            <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-              {[1,2,3,4,5].map(r => (
-                <button key={r} onClick={() => setReviewForm(f => ({ ...f, rating: r }))} style={{ fontSize: 22, background: 'none', border: 'none', cursor: 'pointer', color: r <= reviewForm.rating ? '#ffd700' : '#ddd' }}>★</button>
-              ))}
-            </div>
-            <textarea value={reviewForm.content} onChange={e => setReviewForm(f => ({ ...f, content: e.target.value }))} placeholder="리뷰를 작성해주세요 (구매 후 작성 가능)" rows={3}
-              style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: `1px solid ${darkMode ? '#3a3a3a' : '#ddd'}`, fontSize: 14, outline: 'none', background: darkMode ? '#2a2a2a' : 'white', color: text, boxSizing: 'border-box', resize: 'none', fontFamily: 'inherit' }} />
-            <button onClick={handleSubmitReview} disabled={submittingReview} style={{ marginTop: 8, width: '100%', padding: '10px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-              {submittingReview ? '등록 중...' : '리뷰 등록'}
-            </button>
-          </div>
-        )}
-        {/* 🔴 **"리뷰 없음" 과 "못 불러옴" 을 가른다.** 둘을 같은 문구로 보여 주면
-            리뷰가 있는 상품이 없는 것처럼 보인다 — 손님이 그걸 보고 안 산다. */}
-        {reviewsError ? (
-          <div role="alert" style={{ textAlign: 'center', padding: '24px 0', color: darkMode ? '#ff8a80' : '#c62828', fontSize: 14, fontWeight: 600 }}>{reviewsError}</div>
-        ) : reviews.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '24px 0', color: sub, fontSize: 14 }}>첫 리뷰를 작성해주세요!</div>
-        ) : reviews.map(r => (
-          <div key={r.id} style={{ padding: '14px 0', borderBottom: `1px solid ${darkMode ? '#2a2a2a' : '#f0f0f0'}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: text }}>{r.user_name || '익명'}</span>
-                <span style={{ color: '#ffd700', fontSize: 13 }}>{'★'.repeat(r.rating)}</span>
+              <div className="f-hint">이 상품 어떠셨어요?</div>
+              <div className="stars big" style={{ marginTop: 'var(--sp-2)' }} role="radiogroup" aria-label="별점">
+                {[1, 2, 3, 4, 5].map(r => (
+                  <button key={r} role="radio" aria-checked={reviewForm.rating === r} aria-label={`${r}점`} onClick={() => setReviewForm(f => ({ ...f, rating: r }))}>
+                    <Icon name="star" fill={r <= reviewForm.rating} />
+                  </button>
+                ))}
               </div>
-              <span style={{ fontSize: 11, color: sub }}>{new Date(r.created_at).toLocaleDateString('ko-KR')}</span>
             </div>
-            <p style={{ margin: 0, fontSize: 13, color: text, lineHeight: 1.6 }}>{r.content}</p>
-            {r.reply && <div style={{ marginTop: 8, padding: '8px 12px', background: darkMode ? '#1a4a2a' : 'var(--primary-light)', borderRadius: 8, fontSize: 12, color: '#009a58' }}>💬 판매자: {r.reply}</div>}
+            <textarea className="area" style={{ marginTop: 'var(--sp-3)' }} rows={4} value={reviewForm.content}
+              onChange={e => setReviewForm(f => ({ ...f, content: e.target.value }))} placeholder="맛·양·배송은 어땠는지 적어 주세요" aria-label="리뷰 내용" />
           </div>
-        ))}
-      </div>
-
-      {/* 관련 상품 */}
-      {related.length > 0 && (
-        <div style={{ margin: '0', background: cardBg, borderTop: `8px solid ${darkMode ? '#111' : '#f8f9fa'}`, padding: '20px' }}>
-          <div style={{ fontSize: '17px', fontWeight: '800', color: text, marginBottom: 14 }}>관련 상품</div>
-          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
-            {related.map(p => (
-              <div key={p.id} style={{ flexShrink: 0, width: 120, background: darkMode ? '#1a1a1a' : 'var(--primary-light)', borderRadius: 12, overflow: 'hidden', border: `1px solid ${border}` }}>
-                <img src={getCategoryImage(p.large)} alt={p.name} style={{ width: '100%', height: 80, objectFit: 'cover' }} />
-                <div style={{ padding: '8px 10px', fontSize: 12, fontWeight: 600, color: text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+        </section>
+      )}
+      {reviewsError ? (
+        <section className="sec">
+          <div className="notice r" role="alert"><Icon name="wifiOff" /><div><b>리뷰를 불러오지 못했어요</b><br />{reviewsError === 'internet' ? '인터넷 연결을 확인해 주세요.' : '잠시 뒤 다시 열어 주세요.'}</div></div>
+        </section>
+      ) : reviews.length === 0 ? (
+        !showReviewForm && (
+          <section className="sec">
+            <div className="sec-h">리뷰</div>
+            <div className="group">
+              <div className="ui-empty">
+                <div className="big"><Icon name="msg" /></div>
+                <h3>아직 리뷰가 없어요</h3>
+                <p>첫 리뷰를 작성해 주세요!</p>
+                <button className="ui-btn md pri" onClick={openReviewForm}>리뷰 쓰기</button>
+              </div>
+            </div>
+          </section>
+        )
+      ) : (
+        <section className="sec">
+          <div className="sec-h">
+            <span>리뷰 {reviewStats?.total ?? reviews.length}개{showReviewForm && reviewStats?.avg_rating ? ` · 평균 ${reviewStats.avg_rating}` : ''}</span>
+            {!showReviewForm && <> · <button className="link" onClick={openReviewForm}>리뷰 쓰기</button></>}
+          </div>
+          <div className="group">
+            {reviews.map(r => (
+              <div key={r.id} className="review">
+                <div className="who">
+                  <span><Stars n={r.rating} /> {r.user_name || '익명'}</span>
+                  <span>{new Date(r.created_at).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }).replace(/\s/g, '').replace(/\.$/, '')}</span>
+                </div>
+                <p>{r.content}</p>
+                {r.reply && <div className="reply">사장님 답글 · {r.reply}</div>}
               </div>
             ))}
           </div>
-        </div>
+        </section>
       )}
+
+      {related.length > 0 && (
+        <>
+          <div className="list-h"><h3>관련 상품</h3></div>
+          <div className="hscroll">
+            {related.map(p => (
+              <ProductCard key={p.id} product={{ ...p, isAdult: !!(p.is_adult ?? p.isAdult), isSoldOut: p.isSoldOut ?? (p.is_available === 0 || (p.stock != null && Number(p.stock) <= 0)) }}
+                adultOk={adultOk} fallbackImage={getCategoryImage}
+                wished={wishlist.some((w) => w.id === p.id)} onWish={(x) => (user ? onToggleWish?.(x) : onNeedLogin?.('찜은'))}
+                onOpen={(x) => onOpenProduct?.(x)} onAdd={(x) => onAddToCart(x)} />
+            ))}
+          </div>
+        </>
+      )}
+
+      <div className="pad-bar" />
+      <div ref={cartBarRef} className="bar pd-bar">
+        <div className="in">
+          {showReviewForm ? (
+            <>
+              <button className="ui-btn gray" style={{ flex: 1 }} onClick={() => { setShowReviewForm(false); setReviewForm({ rating: 5, content: '' }); }}>취소</button>
+              <button className="ui-btn pri" style={{ flex: 2 }} disabled={submittingReview} onClick={handleSubmitReview}>{submittingReview ? '등록 중…' : '리뷰 등록'}</button>
+            </>
+          ) : sold ? (
+            <button className="ui-btn full dis" disabled>품절된 상품이에요</button>
+          ) : (
+            <>
+              <div className="sum"><small>합계</small><b>{won(total)}</b></div>
+              <button className="ui-btn sec" onClick={handleAddToCart}>장바구니 담기</button>
+              <button className="ui-btn pri" onClick={handleBuyNow}>바로 주문</button>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,9 +1,16 @@
+// 주문서 한 장 (목업 정본 v1 의 P03 · S10 · S11 · S12, 묶음 3 · 2026-11-12 밤)
+//
+// 장바구니의 「주문하기」(제목 「주문서」, 담은 것 전부)와 상세의 「바로 주문」(제목 「바로 주문」, 고른 상품 1건)이 **같은 화면**을 쓴다(P03).
+// 주문 상품 → 배송지(누르면 시트 S11) → 할인(쿠폰 한 줄 → 시트 · 포인트) → 결제 금액 → 아래 바 「○원 결제하기」.
+// 박스·무게·수량은 여기서 못 바꾼다(장바구니·상세에서 바꾼다). 바로 주문은 장바구니를 건드리지 않는다.
+// 배송지/쿠폰/포인트/배송권역/합계 계산은 예전과 같은 useCheckoutFlow — 장바구니(옛 Cart.js)·바로 주문(옛 QuickOrder.js)이 쓰던 그 훅을
+// 그대로 부른다(넘기는 상품 배열만 다름). 계산식이 갈리지 않는다. 그리는 부품은 components/checkout/CheckoutParts.jsx.
+import { useState } from 'react';
 import { imgUrl } from '../api';
 import { useCheckoutFlow } from '../hooks/useCheckoutFlow';
 import { getItemPrice } from '../utils/pricing';
-import CouponCodeBox from '../components/checkout/CouponCodeBox';
-import AddressBox from '../components/checkout/AddressBox';
-import SummaryBar from '../components/checkout/SummaryBar';
+import { AddressSection, DiscountSection, PayRows, BenefitsError, PayBar, summaryOf } from '../components/checkout/CheckoutParts';
+import Icon from '../components/ui/Icon';
 
 const getCategoryImage = (large) => {
   switch (large) {
@@ -15,110 +22,91 @@ const getCategoryImage = (large) => {
     default: return 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=200&q=80';
   }
 };
+const won = (n) => `${Number(n || 0).toLocaleString('ko-KR')}원`;
+const what = (item) => item.purchase_type === 'box' ? `박스 구매 · ${item.quantity}박스`
+  : item.pricing_type === 'weight' ? `${item.grams || 100}g` : `수량 ${item.quantity}개`;
 
-// 상품 상세에서 고른 수량/옵션 그대로 장바구니를 거치지 않고 바로 결제로 진입.
-// 배송지/쿠폰/포인트/배송권역/합계 계산은 Cart.js 와 완전히 동일한 useCheckoutFlow 를 공유한다
-// (item 1개짜리 배열을 넘기는 것만 다름) — 계산식이 두 갈래로 갈리지 않는다.
-function QuickOrder({ item, onBack, onPayment, user, darkMode }) {
-  const checkout = useCheckoutFlow(item ? [item] : [], { user });
-
-  const bg = darkMode ? '#1a1a1a' : 'var(--primary-light)';
-  const cardBg = darkMode ? '#242424' : 'white';
-  const headerBg = darkMode ? '#1a1a1a' : 'white';
-  const borderColor = darkMode ? '#2e2e2e' : 'var(--primary-light)';
-  const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
-  const subTextColor = darkMode ? '#9e9e9e' : '#adb5bd';
-
-  if (!item) {
-    return (
-      <div style={{ background: bg, minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px' }}>
-        <p style={{ fontSize: '15px', color: subTextColor, margin: '0 0 20px' }}>주문할 상품 정보를 찾을 수 없어요.</p>
-        <button onClick={onBack} style={{ padding: '12px 28px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '14px', cursor: 'pointer', fontSize: '15px', fontWeight: '700' }}>
-          돌아가기
-        </button>
-      </div>
-    );
-  }
-
+function ItemRow({ item }) {
   return (
-    <div className="cart-root" style={{ background: bg, minHeight: '100vh', paddingBottom: 'calc(180px + env(safe-area-inset-bottom))' }}>
-      {/* 헤더 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: headerBg, borderBottom: `1px solid ${borderColor}`, position: 'sticky', top: 0, zIndex: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={onBack} style={{ width: '38px', height: '38px', background: darkMode ? '#2e2e2e' : 'var(--primary-light)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#f0f0f0' : '#1a1a1a'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: textColor }}>바로 주문</h2>
+    <div className="row">
+      <div className="prow" style={{ flex: 1, minWidth: 0 }}>
+        <div className="pimg"><img src={item.image ? imgUrl(item.image) : getCategoryImage(item.large)} alt={item.name} onError={e => { e.currentTarget.src = getCategoryImage(item.large); }} /></div>
+        <div className="info">
+          <div className="nm">{item.name}</div>
+          {/* 규격 — 장바구니와 같은 이유(같은 이름에 용량만 다른 물건이 많다) */}
+          <div className="spec">{item.spec}{item.spec ? ' · ' : ''}<span className={item.purchase_type === 'box' ? 'box' : undefined}>{what(item)}</span></div>
+          <div className="price">{won(getItemPrice(item))}</div>
         </div>
       </div>
-
-      <div className="cart-layout">
-        <div className="cart-main">
-          {/* 주문 상품 요약 — 상세에서 고른 옵션/수량 그대로, 여기서는 변경 불가 */}
-          <div style={{ padding: '16px' }}>
-            <div style={{ background: cardBg, borderRadius: '18px', padding: '14px', display: 'flex', gap: '12px', alignItems: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: `1px solid ${borderColor}` }}>
-              <div style={{ width: '72px', height: '72px', borderRadius: '14px', overflow: 'hidden', flexShrink: 0 }}>
-                <img src={item.image ? imgUrl(item.image) : getCategoryImage(item.large)} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: '11px', color: 'var(--primary)', margin: '0 0 3px', fontWeight: '700' }}>{item.large}</p>
-                <p style={{ fontSize: '14px', fontWeight: '700', color: textColor, margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</p>
-                {/* 규격 — 위 장바구니와 같은 이유. 없으면 자리도 안 차지한다. */}
-                {item.spec && (
-                  <p style={{ fontSize: '11px', color: '#888', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.spec}</p>
-                )}
-                {item.purchase_type === 'box' && (
-                  <p style={{ fontSize: '10px', color: '#e17055', margin: '0 0 2px', fontWeight: '700' }}>박스 구매 · {item.quantity}박스</p>
-                )}
-                {item.pricing_type === 'weight' && (
-                  <p style={{ fontSize: '10px', color: subTextColor, margin: '0 0 2px' }}>{item.grams || 100}g</p>
-                )}
-                {item.purchase_type !== 'box' && item.pricing_type !== 'weight' && (
-                  <p style={{ fontSize: '10px', color: subTextColor, margin: '0 0 2px' }}>수량 {item.quantity}개</p>
-                )}
-                <p style={{ fontSize: '15px', fontWeight: '800', color: 'var(--primary)', margin: 0 }}>₩{getItemPrice(item).toLocaleString()}</p>
-              </div>
-            </div>
-          </div>
-
-          <CouponCodeBox
-            darkMode={darkMode}
-            appliedCoupon={checkout.appliedCoupon}
-            couponInput={checkout.couponInput}
-            setCouponInput={checkout.setCouponInput}
-            onApply={checkout.handleApplyCoupon}
-            onRemove={checkout.handleRemoveCoupon}
-          />
-
-          <AddressBox
-            darkMode={darkMode}
-            showAddress={checkout.showAddress} setShowAddress={checkout.setShowAddress}
-            useDefaultAddress={checkout.useDefaultAddress} handleSwitchAddress={checkout.handleSwitchAddress}
-            hasDefaultAddress={checkout.hasDefaultAddress} defaultAddress={checkout.defaultAddress}
-            address={checkout.address} setAddress={checkout.setAddress}
-            zipcode={checkout.zipcode} setZipcode={checkout.setZipcode}
-            checkZipcodeValue={checkout.checkZipcodeValue}
-            matchingZipcode={checkout.matchingZipcode} deliveryInfo={checkout.deliveryInfo}
-          />
-        </div>{/* /cart-main */}
-
-        <div className="cart-side">
-          <SummaryBar
-            darkMode={darkMode}
-            totalPrice={checkout.totalPrice} appliedCoupon={checkout.appliedCoupon} discountAmount={checkout.discountAmount}
-            deliveryFee={checkout.deliveryFee} freeDeliveryMin={checkout.freeDeliveryMin}
-            myCoupons={checkout.myCoupons} selectedCouponId={checkout.selectedCouponId} handleCouponSelect={checkout.handleCouponSelect} couponDiscount={checkout.couponDiscount}
-            benefitsError={checkout.benefitsError} benefitsLoading={checkout.benefitsLoading} retryBenefits={checkout.retryBenefits}
-            myPoints={checkout.myPoints} usePoints={checkout.usePoints} setUsePoints={checkout.setUsePoints} clampedUsePoints={checkout.clampedUsePoints}
-            finalPrice={checkout.finalPrice} canPay={checkout.canPay} zipcode={checkout.zipcode} deliveryInfo={checkout.deliveryInfo}
-            onPay={() => onPayment(item, checkout.finalPrice, checkout.buildOrderExtras())}
-          />
-        </div>{/* /cart-side */}
-      </div>{/* /cart-layout */}
     </div>
   );
 }
 
-export default QuickOrder;
+// items — 주문할 상품 배열(장바구니 전체 또는 바로 주문 1건) · onPayment(finalPrice, orderExtras)
+function OrderSheet({ items, title = '주문서', onBack, onPayment, user }) {
+  const list = items || [];
+  const checkout = useCheckoutFlow(list, { user });
+  const [pointsOpen, setPointsOpen] = useState(false);
+  // 상품이 여러 개면 한 줄로 접는다(P03 「주문 상품 3개 · ○○ 외 2건」) — 누르면 펼친다
+  const [itemsOpen, setItemsOpen] = useState(false);
+
+  const head = (
+    <header className="app-nav line">
+      <div className="nav-row">
+        <div className="nav-side"><button className="nav-btn" aria-label="뒤로" onClick={onBack}><Icon name="chevL" /></button></div>
+        <h2 className="nav-title">{title}</h2>
+        <div className="nav-side r" />
+      </div>
+    </header>
+  );
+
+  if (list.length === 0) {
+    return (
+      <div className="v2 qo-v2">
+        {head}
+        <div className="ui-empty">
+          <div className="big"><Icon name="alert" /></div>
+          <h3>주문할 상품 정보를 찾을 수 없어요</h3>
+          <p>상품 화면에서 다시 시도해 주세요.</p>
+          <button className="ui-btn md gray" onClick={onBack}>돌아가기</button>
+        </div>
+      </div>
+    );
+  }
+
+  const first = list[0];
+  return (
+    <div className="v2 qo-v2">
+      {head}
+      <div className="split">
+        <div>
+          <section className="sec">
+            <div className="sec-h">주문 상품</div>
+            <div className="group">
+              {list.length === 1 ? <ItemRow item={first} /> : (
+                <>
+                  <button className="row tap" onClick={() => setItemsOpen(v => !v)} aria-expanded={itemsOpen}>
+                    <span className="ricon"><Icon name="cart" /></span>
+                    <span className="lbl">주문 상품 {list.length}개<small>{first.name} 외 {list.length - 1}건</small></span>
+                    <span className="val">{won(checkout.totalPrice)}</span>
+                    <span className="chev"><Icon name={itemsOpen ? 'chevD' : 'chevR'} size="sm" /></span>
+                  </button>
+                  {itemsOpen && list.map((item, i) => <ItemRow key={item.id ?? i} item={item} />)}
+                </>
+              )}
+            </div>
+          </section>
+          <AddressSection c={checkout} />
+        </div>
+        <div>
+          <DiscountSection c={checkout} pointsOpen={pointsOpen} setPointsOpen={setPointsOpen} />
+          <PayRows c={checkout} />
+          <BenefitsError c={checkout} />
+        </div>
+      </div>
+      <PayBar c={checkout} onPay={() => onPayment(checkout.finalPrice, { ...checkout.buildOrderExtras(), summary: summaryOf(checkout) })} />
+    </div>
+  );
+}
+
+export default OrderSheet;

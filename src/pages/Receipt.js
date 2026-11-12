@@ -1,4 +1,13 @@
+// 주문 완료 · 영수증 (목업 정본 v1 의 S13, 묶음 3 · 2026-11-12 밤)
+//
+// 큰 확인 표시 → 주문번호·일시·상태 → 주문 상품 → 금액 → 아래 바 「주문내역」 / 「쇼핑 계속하기」.
+// 🔴 금액은 **결제 화면이 보여 준 그 값**(order.summary — 장바구니·바로 주문의 「결제 금액」 칸)을 그대로 쓴다.
+//    예전엔 결제 금액(할인·배송비 반영)을 「상품 금액」으로 적고 배송비를 늘 「무료」로 적었다 — 배송비 3,000원을 낸 손님에게도.
+//    줄 금액도 단가 × 수량이라 박스·무게 상품이 틀렸다(이제 장바구니와 같은 getItemPrice).
+// 색·크기는 styles/shop.css(토큰 이름만).
 import { imgUrl } from '../api';
+import { getItemPrice } from '../utils/pricing';
+import Icon from '../components/ui/Icon';
 
 const getCategoryImage = (large) => {
   switch(large) {
@@ -10,109 +19,72 @@ const getCategoryImage = (large) => {
     default: return 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=200&q=80';
   }
 };
+const won = (n) => `${Number(n || 0).toLocaleString('ko-KR')}원`;
+const TONE = { '결제완료': 'g', '배송중': 'b', '배송완료': 'g', '취소': 'r' };
 
 function Receipt({ order, onClose, onGoHome, earnPoints }) {
   if (!order) return null;
 
   const status = order.status || '결제완료';
-  const statusColor = {
-    '결제완료': { bg: 'var(--primary-light)', color: 'var(--primary-dark)' },
-    '배송중': { bg: '#fff3cd', color: '#f0a500' },
-    '배송완료': { bg: '#e8f0fe', color: '#1a73e8' },
-    '취소': { bg: 'var(--accent-light)', color: '#ff4757' },
-  };
-  const sc = statusColor[status] || statusColor['결제완료'];
+  const sm = order.summary;   // 없으면(옛 주문 기록) 총 결제금액만 보인다 — 모르는 값을 지어내지 않는다
+  const what = (item) => item.purchase_type === 'box' ? `${item.quantity}박스`
+    : item.pricing_type === 'weight' ? `${item.grams || 100}g` : `${item.quantity}개`;
 
   return (
-    <div style={{ background: 'var(--primary-light)', minHeight: '100vh', paddingBottom: '120px' }}>
-
-      {/* 헤더 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'white', borderBottom: '1px solid var(--primary-light)', position: 'sticky', top: 0, zIndex: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={onClose} style={{ width: '38px', height: '38px', background: 'var(--primary-light)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          </button>
-          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#1a1a1a' }}>주문 영수증</h2>
+    <div className="v2 receipt-v2">
+      <div style={{ height: 'calc(env(safe-area-inset-top) + var(--sp-8))' }} />
+      <div className="tw">
+        <div className="ui-empty">
+          <div className="big g"><Icon name="check" /></div>
+          <h3>주문이 완료됐어요</h3>
+          <p>주문해 주셔서 감사해요!</p>
+          {earnPoints > 0 && <span className="pill b">배송 완료 시 {earnPoints.toLocaleString('ko-KR')}P 적립 예정</span>}
         </div>
-      </div>
 
-      {/* 완료 아이콘 */}
-      <div style={{ background: 'white', padding: '36px 20px 28px', textAlign: 'center', borderBottom: '8px solid var(--primary-light)' }}>
-        <div style={{ width: '80px', height: '80px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', boxShadow: '0 8px 24px rgba(0,196,113,0.3)' }}>
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-        </div>
-        <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#1a1a1a', margin: '0 0 8px' }}>주문이 완료됐어요! 🎉</h2>
-        <p style={{ fontSize: '14px', color: '#adb5bd', margin: '0 0 8px' }}>주문해 주셔서 감사해요!</p>
-        {earnPoints > 0 && (
-          <div style={{ display: 'inline-block', background: '#e8f0fe', color: '#1a73e8', borderRadius: 20, padding: '5px 14px', fontSize: '13px', fontWeight: 700 }}>
-            배송 완료 시 {earnPoints.toLocaleString()}P 적립 예정
+        <section className="sec">
+          <div className="group">
+            <div className="row"><span className="lbl">주문번호</span><span className="val">{order.id}</span></div>
+            <div className="row"><span className="lbl">주문 일시</span><span className="val">{order.date}</span></div>
+            <div className="row"><span className="lbl">상태</span><span className={`pill ${TONE[status] || 'g'}`} style={{ marginLeft: 'auto' }}>{status}</span></div>
           </div>
-        )}
-      </div>
+        </section>
 
-      {/* 주문 정보 */}
-      <div style={{ margin: '16px', background: 'white', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', border: '1px solid var(--primary-light)' }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--primary-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <p style={{ fontSize: '11px', color: '#adb5bd', margin: '0 0 4px', fontFamily: 'monospace' }}>{order.id}</p>
-            <p style={{ fontSize: '12px', color: '#adb5bd', margin: 0 }}>{order.date}</p>
-          </div>
-          <span style={{ background: sc.bg, color: sc.color, padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>{status}</span>
-        </div>
-
-        {/* 상품 목록 */}
-        <div style={{ padding: '14px 20px' }}>
-          <p style={{ fontSize: '13px', fontWeight: '700', color: '#adb5bd', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>주문 상품</p>
-          {order.items.map((item, index) => (
-            <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 0', borderBottom: index < order.items.length - 1 ? '1px solid var(--primary-light)' : 'none' }}>
-              <div style={{ width: '52px', height: '52px', borderRadius: '12px', overflow: 'hidden', flexShrink: 0 }}>
-                <img
-                  src={item.image ? imgUrl(item.image) : getCategoryImage(item.large)}
-                  alt={item.name}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
+        <section className="sec">
+          <div className="sec-h">주문 상품</div>
+          <div className="group">
+            {order.items.map((item, index) => (
+              <div key={index} className="row">
+                <div className="prow" style={{ flex: 1, minWidth: 0 }}>
+                  <div className="pimg"><img src={item.image ? imgUrl(item.image) : getCategoryImage(item.large)} alt={item.name} onError={e => { e.currentTarget.src = getCategoryImage(item.large); }} /></div>
+                  <div className="info">
+                    <div className="nm">{item.name}</div>
+                    {/* 규격 — 주문 시점 스냅샷(주문내역과 같은 이유) */}
+                    <div className="spec">{item.spec}{item.spec ? ' · ' : ''}{what(item)}</div>
+                    <div className="price">{won(getItemPrice(item))}</div>
+                  </div>
+                </div>
               </div>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: '13px', fontWeight: '700', color: '#1a1a1a', margin: '0 0 3px' }}>{item.name}</p>
-                {/* 규격 — 주문 시점 스냅샷(위 주문내역과 같은 이유). */}
-                {item.spec && (
-                  <p style={{ fontSize: '11px', color: '#888', margin: '0 0 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.spec}</p>
-                )}
-                <p style={{ fontSize: '12px', color: '#adb5bd', margin: 0 }}>{item.quantity}개 · ₩{item.price.toLocaleString()}</p>
-              </div>
-              <p style={{ fontSize: '14px', fontWeight: '800', color: '#1a1a1a', margin: 0 }}>₩{(item.price * item.quantity).toLocaleString()}</p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </section>
 
-        {/* 결제 정보 */}
-        <div style={{ padding: '16px 20px', background: 'var(--primary-light)', borderTop: '1px solid var(--primary-light)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ fontSize: '13px', color: '#adb5bd' }}>상품 금액</span>
-            <span style={{ fontSize: '13px', color: '#1a1a1a', fontWeight: '600' }}>₩{order.totalPrice.toLocaleString()}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ fontSize: '13px', color: '#adb5bd' }}>배송비</span>
-            <span style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: '700' }}>무료</span>
-          </div>
-          <div style={{ height: '1px', background: 'var(--primary-light)', margin: '12px 0' }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '15px', fontWeight: '700', color: '#1a1a1a' }}>총 결제금액</span>
-            <span style={{ fontSize: '22px', fontWeight: '900', color: 'var(--primary)' }}>₩{order.totalPrice.toLocaleString()}</span>
-          </div>
-        </div>
+        <section className="sec">
+          <div className="group"><div className="pad">
+            {sm && <div className="kv"><span>상품 금액</span><span>{won(sm.goods)}</span></div>}
+            {sm && sm.coupon > 0 && <div className="kv"><span>쿠폰 할인</span><span className="minus">−{won(sm.coupon)}</span></div>}
+            {sm && sm.points > 0 && <div className="kv"><span>포인트</span><span className="minus">−{won(sm.points)}</span></div>}
+            {sm && <div className="kv"><span>배송비</span><span>{sm.deliveryFee > 0 ? won(sm.deliveryFee) : '무료'}</span></div>}
+            <div className="kv total"><span>총 결제금액</span><span>{won(order.totalPrice)}</span></div>
+          </div></div>
+        </section>
       </div>
 
-      {/* 하단 버튼 */}
-      <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', padding: '16px 20px 36px', background: 'white', borderTop: '1px solid var(--primary-light)', boxShadow: '0 -4px 20px rgba(0,0,0,0.06)', display: 'flex', gap: '12px' }}>
-        <button onClick={onClose} style={{ flex: 1, padding: '14px', background: 'var(--primary-light)', color: 'var(--primary-dark)', border: '1.5px solid var(--primary-light)', borderRadius: '16px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' }}>
-          주문내역
-        </button>
-        <button onClick={onGoHome} style={{ flex: 2, padding: '14px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '16px', fontSize: '15px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
-          쇼핑 계속하기
-        </button>
+      <div className="pad-bar" />
+      <div className="bar">
+        <div className="in">
+          <button className="ui-btn gray" style={{ flex: 1 }} onClick={onClose}>주문내역</button>
+          <button className="ui-btn pri" style={{ flex: 1 }} onClick={onGoHome}>쇼핑 계속하기</button>
+        </div>
       </div>
     </div>
   );

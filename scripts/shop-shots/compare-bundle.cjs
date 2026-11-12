@@ -104,7 +104,8 @@ const BUNDLES = {
     { id: 'S04B', mock: 'S04', name: '상세 — 아래 바', state: '낱개·박스', go: async p => { await pd(p, '메론킥'); }, part: ['.bar', '.v2 .bar'], partOnly: true },
     { id: 'S04L', mock: 'S04', name: '상세 — 재고 적음', state: '재고 적음', opts: { lowStock: true }, go: async p => { await pd(p, '메론킥'); }, part: ['.group', '.v2 .sec .group'] },
     { id: 'S04W', mock: 'S04', name: '상세 — 무게 상품', state: '무게 상품', go: async p => { await pd(p, '한우'); } },
-    { id: 'S04S', mock: 'S04', name: '상세 — 품절', state: '품절', go: async p => { await pd(p, '퐁퐁'); }, part: ['.bar', '.v2 .bar'] },
+    // 품절 상품은 홈 카드가 안 열린다(누르면 그대로) — 검색 결과 줄로 들어간다
+    { id: 'S04S', mock: 'S04', name: '상세 — 품절', state: '품절', go: async p => { await tab(p, '검색').click(); await wait(p, 700); await p.locator('.search input').fill('퐁퐁'); await p.keyboard.press('Enter'); await wait(p, 700); await p.locator('.v2 .row', { hasText: '퐁퐁' }).first().click(); await wait(p, 1000); }, part: ['.bar', '.v2 .bar'] },
     { id: 'S04D', mock: 'S04', name: '상세 — 마감 후', state: '마감 후', opts: { deliv: 'tomorrow' }, go: async p => { await pd(p, '메론킥'); }, part: ['.promise', '.promise'] },
     { id: 'S04X', mock: 'S04', name: '상세 — 당일배송 불가', state: '당일배송 불가', opts: { deliv: 'closed' }, go: async p => { await pd(p, '메론킥'); }, part: ['.promise', '.promise'] },
     { id: 'S04V', mock: 'S04', name: '상세 — 배송 휴무', state: '배송 휴무', opts: { deliv: 'holiday' }, go: async p => { await pd(p, '메론킥'); }, part: ['.promise', '.promise'] },
@@ -124,7 +125,8 @@ const BUNDLES = {
     { id: 'S11X', mock: 'S11', name: '배송지 시트 — 배송 불가', state: '배송 불가', opts: { noZone: true }, go: async p => { await orderOf(p); await p.locator('.v2 .row.tap', { hasText: '변경' }).first().click(); await wait(p, 500); }, part: ['.notice.r', '.sheet .notice.r'] },
     { id: 'S11N', mock: 'S11', name: '배송지 시트 — 동 정보 없음', state: '동 정보 없음', opts: { user: { ...customer, dong_name: '' } }, go: async p => { await orderOf(p); await p.locator('.v2 .row.tap', { hasText: '변경' }).first().click(); await wait(p, 500); }, part: ['.notice.o', '.sheet .notice.o'] },
     { id: 'P03', name: '주문서 한 장', go: async p => { await orderOf(p); }, part: ['.bar', '.v2 .bar'] },
-    { id: 'P03C', mock: 'P03', name: '주문서 — 쿠폰 시트', go: async p => { await orderOf(p); await p.locator('.v2 .row.tap', { hasText: '쿠폰' }).first().click(); await wait(p, 500); }, part: ['.bar', '.v2 .bar'] },
+    // 목업 P03 에는 쿠폰 시트 상태가 없다 — 모양을 보는 사진(화면 전체 %는 시트 때문에 크다 · 부품 비교 없음)
+    { id: 'P03C', mock: 'P03', name: '주문서 — 쿠폰 시트(목업에 없는 상태)', go: async p => { await orderOf(p); await p.locator('.v2 .row.tap', { hasText: '쿠폰' }).first().click(); await wait(p, 500); } },
     { id: 'S13', name: '주문 완료(영수증)', go: async p => { await orderOf(p); await p.locator('.pay-bar button').click(); await wait(p, 1500); }, part: ['.bar', '.v2 .bar'] },
     { id: 'S12', name: '바로 주문', state: '기본', go: async p => { await login(p); await pd(p, '메론킥'); await p.getByRole('button', { name: '바로 주문', exact: true }).click(); await wait(p, 1200); }, part: ['.bar', '.v2 .bar'] },
   ],

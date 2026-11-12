@@ -546,7 +546,7 @@ function AppContent() {
       };
       const result = await kakaoPayReady(orderInfo);
       if (result.next_redirect_pc_url) {
-        const newOrder = { id: orderId, date: new Date().toLocaleString('ko-KR'), items: [...cart], totalPrice: finalPrice || totalPrice, userId: user.email, status: '결제완료' };
+        const newOrder = { id: orderId, date: new Date().toLocaleString('ko-KR'), items: [...cart], totalPrice: finalPrice || totalPrice, summary: orderExtras.summary, userId: user.email, status: '결제완료' };   // summary — 영수증(S13)에 결제 화면과 같은 금액을 보이려고(서버로는 안 보낸다)
         createOrder({
           id: orderId,
           final_amount: finalPrice,                 // 서버 검증용 실결제(서버가 재계산 후 대조)
@@ -591,7 +591,7 @@ function AppContent() {
       };
       const result = await kakaoPayReady(orderInfo);
       if (result.next_redirect_pc_url) {
-        const newOrder = { id: orderId, date: new Date().toLocaleString('ko-KR'), items: [item], totalPrice: finalPrice, userId: user.email, status: '결제완료' };
+        const newOrder = { id: orderId, date: new Date().toLocaleString('ko-KR'), items: [item], totalPrice: finalPrice, summary: orderExtras.summary, userId: user.email, status: '결제완료' };
         createOrder({
           id: orderId,
           final_amount: finalPrice,
@@ -656,10 +656,12 @@ function AppContent() {
   }
 
   // 목업대로 옮긴 화면 — 바탕을 목업의 --bg 로(옛 화면은 --white 그대로). 묶음이 늘 때마다 여기에 더한다
-  const v2Page = page === 'home' || page === 'search';
+  const v2Page = ['home', 'search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt'].includes(page);
+  // 아래 고정 바가 있는 화면은 탭바를 안 그린다(목업 S04·S08·S12·P03 — 바가 탭바를 덮던 것). 빈 장바구니(S09)는 탭바 — 묶음 3
+  const noTab = ['productDetail', 'quickOrder', 'orderSheet', 'receipt'].includes(page) || (page === 'cart' && cart.length > 0);
 
   return (
-    <div className={`App${v2Page ? ' app-v2' : ''}`}>
+    <div className={`App${v2Page ? ' app-v2' : ''}${noTab ? ' no-tab' : ''}`}>
       {Capacitor.isNativePlatform() && <SplashAd visible={splashAdVisible} storeId={currentStoreId} onReady={hideSplash} />}
       <InstallPrompt />
       {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
@@ -673,7 +675,7 @@ function AppContent() {
       )}
       {/* 헤더(P05) — 로고 이미지 · 매장 · AI 상담 · 종 · 로그인. 로그아웃은 마이 맨 아래(결정 11) — 묶음 1 */}
       {/* 검색 화면은 검색창이 헤더다(목업 S06) — 묶음 2 */}
-      {page !== 'search' && <AppHeader
+      {!['search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt'].includes(page) && <AppHeader
         storeName={storeShort}
         onStoreClick={!user && !isOwner ? () => setShowStoreModal(true) : null}
         onHome={() => goToPage('home')}
@@ -726,9 +728,11 @@ function AppContent() {
         {page === 'notice'          && <Notice notices={notices} setNotices={setNotices} isAdmin={isAdmin} goBack={goBack} goToHome={() => goToPage('home')} darkMode={darkMode} />}
         {page === 'wishlist'        && <Wishlist wishlist={wishlist} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWishlist={toggleWishlist} goBack={goBack} goToHome={() => goToPage('home')} darkMode={darkMode} />}
         {page === 'search'          && <Search products={products} goBack={goBack} storeId={currentStoreId} user={currentUser} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} />}
-        {page === 'productDetail'   && <ProductDetail product={selectedProduct} onBack={goBack} onAddToCart={addToCart} onBuyNow={(item) => { if (!user) { requireLogin(); return; } setQuickOrderItem(item); goToPage('quickOrder'); }} darkMode={darkMode} />}
-        {page === 'quickOrder'      && <QuickOrder item={quickOrderItem} onBack={goBack} onPayment={handleQuickPayment} user={currentUser} darkMode={darkMode} />}
-        {page === 'cart'            && <Cart cart={cart} setCart={setCart} onPayment={handlePayment} onHome={() => goToPage('home')} goBack={goBack} user={currentUser} darkMode={darkMode} />}
+        {page === 'productDetail'   && <ProductDetail product={selectedProduct} onBack={goBack} onAddToCart={addToCart} onBuyNow={(item) => { if (!user) { requireLogin(); return; } setQuickOrderItem(item); goToPage('quickOrder'); }} user={currentUser} storeId={currentStoreId} storeShort={storeShort} adultOk={!!(currentUser && currentUser.isAdult)} wished={!!(selectedProduct && wishlist.some((w) => w.id === selectedProduct.id))} wishlist={wishlist} onToggleWish={toggleWishlist} onNeedLogin={requireLogin} onOpenProduct={(p) => setSelectedProduct(products.find((x) => x.id === p.id) || p)} />}
+        {/* 주문서 한 장(P03) — 바로 주문(1건)과 장바구니의 「주문하기」(전부)가 같은 화면 · 결제 함수는 예전 그대로 둘 — 묶음 3 */}
+        {page === 'quickOrder'      && <QuickOrder items={quickOrderItem ? [quickOrderItem] : []} title="바로 주문" onBack={goBack} onPayment={(finalPrice, extras) => handleQuickPayment(quickOrderItem, finalPrice, extras)} user={currentUser} />}
+        {page === 'orderSheet'      && <QuickOrder items={cart} title="주문서" onBack={goBack} onPayment={handlePayment} user={currentUser} />}
+        {page === 'cart'            && <Cart cart={cart} setCart={setCart} onOrder={() => goToPage('orderSheet')} onHome={() => goToPage('home')} />}
         {page === 'orders'          && <Orders orders={orders} goBack={goBack} />}
         {page === 'purchases'       && <Purchases goBack={goBack} onOpenConsent={() => setNeedsConsent(true)} openSaleId={pushSaleId} onOpened={() => setPushSaleId(null)} />}
         {page === 'receipt'         && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
@@ -749,7 +753,7 @@ function AppContent() {
       </div>
 
       {/* 하단 탭 — 홈·검색·장바구니·주문내역·마이(결정 6). 폰·태블릿 모두 — 묶음 1 */}
-      <TabBar page={page} cartCount={cart.length} loggedIn={!!user} onGo={goToPage} onNeedLogin={(key) => requireLogin({ cart: '장바구니는', orders: '주문내역은', mypage: '마이 화면은' }[key])} />
+      {!noTab && <TabBar page={page} cartCount={cart.length} loggedIn={!!user} onGo={goToPage} onNeedLogin={(key) => requireLogin({ cart: '장바구니는', orders: '주문내역은', mypage: '마이 화면은' }[key])} />}
 
       {/* 토스트(S35) — 탭바 바로 위. 담김은 확인 표시, 막힘은 경고 표시 — 묶음 1 */}
       {toast && (
