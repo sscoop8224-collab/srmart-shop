@@ -19,7 +19,8 @@
  *     ⑷ 확인하는 동안 nginx 기록에 시험 브라우저(HeadlessChrome)의 /api 요청이 0줄인지(가짜 응답만 썼는지)
  *  6. 하나라도 실패하면: 멈춤 → build 를 build_failed_<시각> 로 · build_prev_<시각> 를 build 로 → 시작 → 옛 번들인지 확인
  *
- * 🔴 백엔드·어드민은 건드리지 않는다. nginx 도 안 건드린다. 지우는 것도 없다(보관 폴더 정리는 사람이 한다).
+ * 🔴 백엔드·어드민은 건드리지 않는다. nginx 도 안 건드린다. 반영 흐름은 아무것도 지우지 않는다
+ *    (보관 폴더 정리는 따로: --prune 으로 보고 --prune --yes 로 최근 2개만 남긴다 — 아래 prune()).
  * 종료코드: 0 반영 완료 · 1 실패(되돌림 완료) · 3 실패했고 되돌리기도 실패 — 🔴 사람이 바로 봐야 한다
  */
 const { spawnSync } = require('child_process');
@@ -107,7 +108,42 @@ async function verify(expectMain) {
   return bad;
 }
 
+/**
+ * 보관 폴더 정리 — 본 흐름과 따로 부른다. 본 흐름(반영)은 여전히 아무것도 지우지 않는다.
+ *
+ *   node scripts/deploy-shop.cjs --prune          # 무엇을 지울지 보여 주기만
+ *   node scripts/deploy-shop.cjs --prune --yes    # 최근 2개(build_prev_*)만 남기고 지운다
+ *
+ * 🔴 지우는 것은 이름이 정확히 build_prev_YYYYMMDD 또는 build_prev_YYYYMMDD_HHMM 인 폴더뿐이다.
+ *    운영 build · build_next · build_failed_* 는 건드리지 않는다(실패본은 원인을 보기 전까지 사람이 판단).
+ *    지울 때는 저장소 안의 그 폴더 전체 경로를 하나씩 집어서 지운다(* 를 쓰지 않는다 — CLAUDE.md).
+ */
+const PRUNE_KEEP = 2;
+function prune(yes) {
+  const re = /^build_prev_(\d{8})(?:_(\d{4}))?$/;
+  const list = fs.readdirSync(ROOT, { withFileTypes: true })
+    .filter(d => d.isDirectory() && re.test(d.name))
+    .map(d => { const m = d.name.match(re); return { name: d.name, key: m[1] + (m[2] || '0000') }; })
+    .sort((a, b) => (a.key < b.key ? 1 : a.key > b.key ? -1 : 0));   // 최근 것이 앞
+  const keep = list.slice(0, PRUNE_KEEP), drop = list.slice(PRUNE_KEEP);
+  log(`보관 폴더 ${list.length}개 — 남김 ${keep.map(x => x.name).join(', ') || '(없음)'}`);
+  if (!drop.length) { log('✅ 지울 것 없음'); return 0; }
+  log(`${yes ? '지움' : '지울 것(보기만 — 지우려면 --yes)'}: ${drop.map(x => x.name).join(', ')}`);
+  if (!yes) return 0;
+  for (const d of drop) {
+    const full = path.resolve(ROOT, d.name);
+    // 저장소 바로 아래 · 이름 규칙 재확인 — 경로가 어긋나면 지우지 않는다
+    if (path.dirname(full) !== path.resolve(ROOT) || !re.test(path.basename(full))) { log(`🔴 ${full} — 경로가 이상해 건너뜀`); return 1; }
+    fs.rmSync(full, { recursive: true, force: false });
+    log(`  지움 ${full}`);
+  }
+  const left = fs.readdirSync(ROOT).filter(n => re.test(n));
+  log(`✅ 남은 보관 폴더: ${left.join(', ')}`);
+  return 0;
+}
+
 (async () => {
+  if (process.argv.includes('--prune')) process.exit(prune(process.argv.includes('--yes')));
   log(`쇼핑앱 운영 반영 ${STAMP}${CHECK_ONLY ? ' (확인만)' : ''} · 손님 주소 ${SITE}/`);
   if (CHECK_ONLY) { const bad = await verify(''); bad.forEach(b => log('🔴 ' + b)); log(bad.length ? '🔴 확인 실패' : '✅ 확인 통과'); process.exit(bad.length ? 1 : 0); }
 
