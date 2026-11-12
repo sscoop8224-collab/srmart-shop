@@ -4,11 +4,20 @@
  *
  *   node scripts/deploy-shop.cjs                # 빌드 → 바꿔 끼우기 → 확인 → (실패 시) 되돌리기
  *   node scripts/deploy-shop.cjs --check-only   # 지금 운영에 확인만 돌린다(아무것도 안 바꾼다)
+ *   node scripts/deploy-shop.cjs --build-only [--out <저장소 밖 폴더>]
+ *                                               # 시험: HEAD 꺼내기·빌드·산출물 확인·치우기까지만(pm2·build 안 건드림)
  *
  * 순서
- *  0. 사전 점검: src/·public/·package*.json 에 커밋 안 된 변경이 있으면 멈춘다
- *     (커밋에 없는 코드로 운영을 만들면 나중에 무엇이 나가 있는지 코드로 확인할 수 없다)
- *  1. build_next 로 따로 빌드(운영 build 는 안 건드림)
+ *  0. 사전 점검: 작업 폴더의 미커밋 변경(git status --porcelain)을 **보여 주고 경고만** 한다 —
+ *     🔴 빌드는 작업 폴더가 아니라 **커밋된 HEAD** 로 하므로 그 변경들은 이번 배포에 들어가지 않는다.
+ *     (2026-11-12 대표님 지시 7: 다른 창의 미커밋 줄이 작업 폴더 빌드에 섞여 운영에 나갈 뻔했다)
+ *  1. HEAD 를 깨끗한 폴더로 꺼내(git worktree add --detach C:/srmart/_deploy_wt-shop-<시각>) 거기서 빌드 →
+ *     산출물에 BUILD_COMMIT.txt(커밋 해시)를 넣고 → 작업 폴더의 build_next 로 옮긴다 → worktree 를 치운다.
+ *     · node_modules 는 작업 폴더 것을 junction 으로 연결한다(다시 설치하지 않는다).
+ *       🔴 치울 때는 junction 을 **먼저 링크만** 풀고(unlink) 그 다음 worktree remove — 순서가 바뀌면
+ *          원본 node_modules 가 지워진다. junction 에 rmSync recursive 를 쓰지 않는다.
+ *     · .env* (git 에 없는 빌드 설정, 예: .env.local 의 REACT_APP_SITE)는 worktree 로 복사해 같은 값으로 빌드한다.
+ *     · worktree 를 저장소 **옆**(C:/srmart 바로 아래)에 두는 이유: 옆 저장소를 ../srmart-* 로 찾는 검사기가 그대로 돈다.
  *  2. pm2 stop srmart-shop
  *  3. 운영 build → build_prev_<날짜_시각> 로 보관(이름 바꾸기) · build_next → build
  *     🔴 윈도에서는 serve 가 build 폴더를 잡고 있어 **멈추기 전에는 이름을 못 바꾼다**(2026-11-11 실측 —
@@ -77,6 +86,94 @@ async function sameAsBuild(base) {
   }
   return out;
 }
+// ── HEAD 를 깨끗한 폴더로 꺼내 빌드한다 (2026-11-12 대표님 지시 7) ─────────────────────────
+const WT_PARENT = path.resolve(ROOT, '..');
+const WT_PREFIX = '_deploy_wt-shop-';
+const ENV_FILES = ['.env', '.env.local', '.env.production', '.env.production.local'];
+const git = args => run('git', args, { shell: false });
+const samePath = (a, b) => path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
+function ourWorktrees() {
+  return git(['worktree', 'list', '--porcelain']).out.split('\n')
+    .filter(l => l.startsWith('worktree ')).map(l => path.resolve(l.slice(9).trim()))
+    .filter(p => path.basename(p).startsWith(WT_PREFIX));
+}
+// 🔴 node_modules junction 은 **링크만** 푼다. 진짜 폴더로 보이면(링크 아님) 그건 worktree 자신의 것이라 그대로 둔다.
+function unlinkJunction(link) {
+  let st; try { st = fs.lstatSync(link); } catch (e) { return true; }
+  let isLink = st.isSymbolicLink();
+  try { if (!samePath(fs.realpathSync(link), link)) isLink = true; } catch (e) { /* 끊긴 링크 */ isLink = true; }
+  if (!isLink) return true;
+  try { fs.unlinkSync(link); } catch (e) { try { fs.rmdirSync(link); } catch (e2) { log(`🔴 링크 풀기 실패 ${link}: ${e2.code}`); return false; } }
+  try { fs.lstatSync(link); log(`🔴 링크가 아직 있다 ${link}`); return false; } catch (e) { return true; }
+}
+function cleanupWorktree(wt) {
+  if (!unlinkJunction(path.join(wt, 'node_modules'))) { log(`🔴 junction 을 못 풀어 worktree 를 치우지 않았다 — ${wt} 를 사람이 본다(원본 node_modules 보호)`); return false; }
+  const r = git(['worktree', 'remove', '--force', wt]);
+  if (r.code !== 0) log(`   ⚠ git worktree remove 종료코드 ${r.code}: ${r.out.trim().slice(0, 300)}`);
+  git(['worktree', 'prune']);
+  const left = fs.existsSync(wt) || ourWorktrees().some(p => samePath(p, wt));
+  if (left) log(`🔴 worktree 가 남았다 — ${wt}`);
+  return !left;
+}
+/** HEAD 를 꺼내 빌드하고, 산출물 폴더를 take(buildDir) 에 넘긴 뒤 worktree 를 치운다. */
+function buildFromHead(take) {
+  const hash = git(['rev-parse', 'HEAD']).out.trim();
+  const subj = git(['log', '-1', '--format=%s']).out.trim();
+  const sec = pad(new Date().getSeconds());
+  const wt = path.join(WT_PARENT, WT_PREFIX + STAMP + sec);
+  const res = { hash, subj, wt, ok: false, main: '', env: [], secs: 0, out: '' };
+  if (!/^[0-9a-f]{40}$/.test(hash)) { res.out = 'HEAD 를 못 읽었다'; return res; }
+  if (fs.existsSync(wt)) { res.out = `${wt} 가 이미 있다`; return res; }
+  // 🔴 core.autocrlf=false — 이 PC 는 전역 autocrlf=true 라 새로 꺼내면 CRLF 가 된다. 그러면 커밋과 바이트가 달라져
+  //    「사본이 한 바이트도 같은가」 검사(어드민 check-selftests ④)가 거짓으로 실패한다. 커밋된 바이트 그대로 꺼낸다.
+  const add = git(['-c', 'core.autocrlf=false', 'worktree', 'add', '--detach', wt, hash]);
+  if (add.code !== 0) { res.out = 'git worktree add 실패\n' + add.out; res.cleaned = true; return res; }
+  log(`   worktree ${wt} (${hash.slice(0, 8)})`);
+  try {
+    fs.symlinkSync(P('node_modules'), path.join(wt, 'node_modules'), 'junction');
+    for (const f of ENV_FILES) if (fs.existsSync(P(f)) && !fs.existsSync(path.join(wt, f))) { fs.copyFileSync(P(f), path.join(wt, f)); res.env.push(f); }
+    if (res.env.length) log(`   git 에 없는 빌드 설정 복사: ${res.env.join(', ')}`);
+    // 옆 저장소 검사기(예: 백엔드 check-store-settings-defaults)가 「이 앱」을 작업 폴더가 아니라 꺼낸 폴더에서 읽게 한다
+    const env = { ...process.env, REPO_DIR_SHOP: wt }; delete env.BUILD_PATH;
+    const t = Date.now();
+    const b = run('npm', ['run', 'build'], { cwd: wt, env, timeout: 900000 });
+    res.secs = (Date.now() - t) / 1000; res.out = b.out;
+    const idx = path.join(wt, 'build', 'index.html');
+    res.main = fs.existsSync(idx) ? mainOf(fs.readFileSync(idx, 'utf8')) : '';
+    if (b.code === 0 && res.main) {
+      fs.writeFileSync(path.join(wt, 'build', 'BUILD_COMMIT.txt'), `${hash}\n${subj}\nbuilt ${new Date().toISOString()}\n`);
+      res.ok = take(path.join(wt, 'build'), res) !== false;
+    }
+  } catch (e) { res.out += '\n' + (e.stack || e); res.ok = false; }
+  finally { res.cleaned = cleanupWorktree(wt); }
+  return res;
+}
+function moveDirSync(src, dst) {
+  for (let i = 0; i < 6; i++) {
+    try { fs.renameSync(src, dst); return true; } catch (e) {
+      if (i === 5) { log(`🔴 ${src} → ${dst} 옮기기 실패: ${e.code}`); return false; }
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 700);
+    }
+  }
+}
+// --build-only: 산출물을 확인만 하고(원하면 저장소 밖 --out 으로 복사) 작업 폴더에는 아무것도 안 남긴다
+function buildOnly() {
+  const i = process.argv.indexOf('--out');
+  const out = i > 0 ? path.resolve(process.argv[i + 1] || '') : '';
+  if (out && (samePath(out, ROOT) || path.resolve(out).toLowerCase().startsWith(path.resolve(ROOT).toLowerCase() + path.sep))) { log('🔴 --out 은 저장소 밖이어야 한다'); return 1; }
+  if (out && fs.existsSync(out)) { log(`🔴 --out ${out} 가 이미 있다 — 새 이름으로`); return 1; }
+  const r = buildFromHead((dir) => {
+    const js = path.join(dir, mainOfPath(dir));
+    log(`   산출물 index.html ${fs.statSync(path.join(dir, 'index.html')).size}B · main ${fs.statSync(js).size}B · BUILD_COMMIT.txt ${fs.existsSync(path.join(dir, 'BUILD_COMMIT.txt')) ? '있음' : '없음'}`);
+    if (out) { fs.cpSync(dir, out, { recursive: true }); log(`   복사 → ${out}`); }
+  });
+  log(`   빌드 ${r.secs.toFixed(0)}초 · 번들 ${r.main || '(없음)'} · 커밋 ${r.hash.slice(0, 8)} ${r.subj}`);
+  if (!r.ok) log('🔴 빌드 실패\n' + r.out.slice(-1500));
+  log(`   worktree 치움 ${r.cleaned ? '✅' : '🔴 실패'} · build_next ${fs.existsSync(P('build_next')) ? '🔴 있음' : '없음'} · node_modules ${fs.existsSync(P('node_modules/react-scripts/package.json')) ? '멀쩡' : '🔴 이상'}`);
+  return r.ok && r.cleaned ? 0 : 1;
+}
+const mainOfPath = dir => mainOf(fs.readFileSync(path.join(dir, 'index.html'), 'utf8'));
+
 const nginxLines = () => { try { return fs.readFileSync(NGINX_LOG, 'utf8').split('\n').length; } catch (e) { return -1; } };
 
 async function verify(expectMain) {
@@ -149,20 +246,27 @@ function prune(yes) {
 
   // 0. 사전 점검
   // git 은 셸 없이 부른다 — 윈도 셸이 %s 같은 글자를 망가뜨린다(2026-11-12 「0. 커밋」 줄이 빈칸으로 나왔다)
-  const dirty = run('git', ['status', '--porcelain', '--', 'src', 'public', 'package.json', 'package-lock.json'], { shell: false });
+  const dirty = git(['status', '--porcelain']);
   if (dirty.code !== 0) { log('🔴 git status 를 못 읽었다 — 커밋 상태를 셀 수 없으면 반영하지 않는다'); process.exit(1); }
-  if (dirty.out.trim()) { log('🔴 커밋 안 된 변경이 있다 — 커밋한 뒤 다시:\n' + dirty.out); process.exit(1); }
+  if (dirty.out.trim()) {
+    log('⚠ 작업 폴더에 커밋 안 된 변경이 있다 — 🔴 이 변경들은 이번 배포에 들어가지 않습니다(빌드는 커밋된 HEAD 로 한다):');
+    log(dirty.out.trimEnd().split('\n').map(l => '      ' + l).join('\n'));
+  }
+  const stale = ourWorktrees();
+  if (stale.length) log(`⚠ 지난 배포의 worktree 가 남아 있다(중단된 듯) — 확인 후 치울 것: ${stale.join(', ')}`);
+  if (process.argv.includes('--build-only')) { log('시험 모드(--build-only) — pm2·build 는 안 건드린다'); process.exit(buildOnly()); }
   if (fs.existsSync(P('build_next'))) { log('🔴 build_next 가 이미 있다 — 무엇인지 확인하고 치운 뒤 다시(이 스크립트는 지우지 않는다)'); process.exit(1); }
   if (fs.existsSync(P(`build_prev_${STAMP}`))) { log(`🔴 build_prev_${STAMP} 가 이미 있다 — 1분 뒤 다시`); process.exit(1); }
-  const head = run('git', ['log', '-1', '--format=%h %s'], { shell: false }).out.trim();
+  const head = git(['log', '-1', '--format=%h %s']).out.trim();
   log(`0. 커밋 ${head}`);
 
-  // 1. 빌드
-  log('1. build_next 로 빌드');
-  const b = run('npm', ['run', 'build'], { env: { ...process.env, BUILD_PATH: 'build_next' }, timeout: 900000 });
-  const newMain = fs.existsSync(P('build_next/index.html')) ? mainOf(fs.readFileSync(P('build_next/index.html'), 'utf8')) : '';
-  if (b.code !== 0 || !newMain) { log('🔴 빌드 실패 — 운영은 그대로\n' + b.out.slice(-1500)); process.exit(1); }
+  // 1. 빌드 — 커밋된 HEAD 를 깨끗한 폴더로 꺼내서
+  log('1. HEAD 를 꺼내 빌드 → build_next');
+  const b = buildFromHead(dir => moveDirSync(dir, P('build_next')));
+  const newMain = b.ok && fs.existsSync(P('build_next/index.html')) ? mainOf(fs.readFileSync(P('build_next/index.html'), 'utf8')) : '';
+  if (!b.ok || !newMain) { log('🔴 빌드 실패 — 운영은 그대로\n' + b.out.slice(-1500)); process.exit(1); }
   const oldMain = mainOf(fs.readFileSync(P('build/index.html'), 'utf8'));
+  log(`   빌드 ${b.secs.toFixed(0)}초 · 커밋 ${b.hash.slice(0, 8)} (build_next/BUILD_COMMIT.txt) · worktree 치움 ${b.cleaned ? '✅' : '🔴 실패 — 끝나고 사람이 볼 것'}`);
   log(`   새 번들 ${newMain} (지금 운영 ${oldMain})`);
 
   // 2~4. 멈춤 · 보관 · 바꿔 끼우기 · 시작
@@ -185,7 +289,7 @@ function prune(yes) {
   // 5. 확인
   log('5. 확인');
   const bad = served === newMain && localSame.every(x => x.ok) ? await verify(newMain) : [`127.0.0.1:3000 이 새 build 를 안 내준다(${served})`];
-  if (!bad.length) { log(`✅ 반영 완료 — ${newMain} · 되돌릴 곳 build_prev_${STAMP}`); process.exit(0); }
+  if (!bad.length) { log(`✅ 반영 완료 — ${newMain} · 커밋 ${b.hash.slice(0, 8)} · 되돌릴 곳 build_prev_${STAMP}${b.cleaned ? "" : " · 🔴 worktree 남음: " + b.wt}`); process.exit(0); }
 
   // 6. 되돌리기
   bad.forEach(x => log('🔴 ' + x));
