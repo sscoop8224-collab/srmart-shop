@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useTheme } from '../ThemeContext';
 
 const SEGMENTS = [
@@ -7,26 +6,10 @@ const SEGMENTS = [
   { id: 'dark',  label: '다크',  icon: '🌙' },
 ];
 
-function getActiveSegment() {
-  return localStorage.getItem('srmart_dark_manual') === 'true'
-    ? (localStorage.getItem('srmart_dark_mode') === 'true' ? 'dark' : 'light')
-    : 'auto';
-}
 
 export default function DarkModeToggle() {
-  const { darkMode, setDarkMode, resetToSystem } = useTheme();
-  const [active, setActive] = useState(getActiveSegment);
-
-  const handleSelect = (id) => {
-    if (id === 'auto') {
-      resetToSystem();
-    } else if (id === 'light') {
-      setDarkMode(false);
-    } else {
-      setDarkMode(true);
-    }
-    setActive(id);
-  };
+  // 고른 모드는 ThemeContext 한 곳이 든다(옛 저장 키를 여기서 따로 읽지 않는다 — 묶음 1)
+  const { darkMode, themeMode: active, setThemeMode: handleSelect } = useTheme();
 
   const containerStyle = {
     display: 'inline-flex',

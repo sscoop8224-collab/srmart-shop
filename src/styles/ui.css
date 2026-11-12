@@ -1,0 +1,95 @@
+/* ════════════════════════════════════════════════════════════════════════
+   공용 부품 — 목업 정본 v1(2026-11-12)의 같은 이름 규칙을 옮긴 것(묶음 1).
+   원본 위치: C:\srmart\srmart-shop-mockup\index.html  .ic · .homebar · .store-chip · .icon-btn · .tabbar · .tab · .bdg
+             · .overlay · .alert · .toast · .seg · .btn · .empty · .sk · .spin
+   목업과 다른 점(일부러):
+   - 목업은 폰 틀 안이라 position:absolute, 앱은 창 기준이라 position:fixed.
+   - 목업의 --safe-top/--safe-bottom(47/34px 고정값)은 기기 그림용이다. 앱은 env(safe-area-inset-*) 를 쓴다.
+   - 앱에 이미 있는 이름(.btn · .empty)과 겹치는 것은 ui- 를 붙였다.
+   🔴 색은 tokens.css 이름만 쓴다(#색 금지 — scripts/check-ui-rules.cjs).
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* 부품 안 단추는 브라우저 기본 모양을 지운다(목업의 button { font: inherit … } 초기화와 같은 효과).
+   :where() 로 감싸 우선순위를 0 으로 둔다 — 아래 .tab · .store-chip 같은 부품 규칙이 이겨야 한다
+   (처음엔 .app-nav button 이 .store-chip 을 이겨 매장 칩 바탕이 사라지고 탭 글자색이 흰색이 됐다). */
+:where(.app-nav, .tabbar, .alert, .seg, .toast) button, :where(.ui-btn, .icon-btn, .store-chip) {
+  font: inherit; letter-spacing: inherit; background: none; border: 0; color: inherit; cursor: pointer; padding: 0;
+}
+:where(.app-nav, .tabbar, .alert, .toast, .ui-empty, .page-skeleton) { letter-spacing: normal; line-height: var(--lh); }
+
+/* 아이콘 */
+.ic { width: var(--icon); height: var(--icon); stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.ic.sm { width: var(--icon-sm); height: var(--icon-sm); }
+.ic.lg { width: var(--icon-lg); height: var(--icon-lg); }
+.ic.fill { fill: currentColor; }
+
+/* 홈 헤더(P05) — 로고 이미지 · 매장 · AI 상담 · 종 · 로그인 */
+.app-nav { position: sticky; top: 0; z-index: 20; padding-top: env(safe-area-inset-top); background: var(--nav-bg); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); }
+.homebar { display: flex; align-items: center; gap: var(--sp-2); height: var(--nav-h); padding: 0 var(--page-x); max-width: 1180px; margin: 0 auto; }
+.homebar img { height: 28px; cursor: pointer; }   /* SRM 로고 이미지 — 외부 글꼴 손글씨 대신(F7) */
+.homebar .sp { flex: 1; }
+.store-chip { display: inline-flex; align-items: center; gap: 2px; font-size: var(--fs-sub); font-weight: var(--fw-semibold); color: var(--text); padding: var(--sp-1) var(--sp-2); border-radius: var(--r-full); background: var(--fill); max-width: 40vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.icon-btn { width: var(--hit); height: var(--hit); display: inline-flex; align-items: center; justify-content: center; color: var(--text); border-radius: var(--r-full); position: relative; }
+.icon-btn .dot { position: absolute; top: 10px; right: 11px; width: 7px; height: 7px; border-radius: var(--r-full); background: var(--danger); }
+
+/* 탭바 — 홈·검색·장바구니·주문내역·마이(결정 6). 폰·태블릿·PC 모두 같은 탭바(F9) */
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-bottom-nav); padding-bottom: env(safe-area-inset-bottom); background: var(--bar-bg); border-top: var(--hairline) solid var(--sep); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); }
+.tabbar .in { height: var(--tab-h); display: flex; max-width: 600px; margin: 0 auto; }
+.tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: var(--fs-cap2); font-weight: var(--fw-medium); color: var(--text-3); position: relative; }
+.tab.on { color: var(--brand); }
+.tab.on span { color: var(--brand-strong); }   /* 아이콘은 브랜드 초록, 작은 글자는 읽히는 초록 */
+.tab .bdg { position: absolute; top: 3px; left: calc(50% + 6px); }
+.bdg { min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--r-full); background: var(--danger); color: var(--on-brand); font-size: var(--fs-cap2); font-weight: var(--fw-bold); display: inline-flex; align-items: center; justify-content: center; }
+
+/* 확인창(S34) — window.confirm/alert 대신 이 창 하나. 취소는 왼쪽, 위험 동작은 빨강 */
+.overlay { position: fixed; inset: 0; z-index: 9999; background: var(--overlay); display: flex; flex-direction: column; justify-content: flex-end; }
+.overlay.center { justify-content: center; align-items: center; padding: var(--sp-8); }
+.alert { --bg: var(--bg-elevated); --card: var(--card-elevated); --card-2: var(--card-2-elevated); }
+.alert { width: 100%; max-width: 300px; background: var(--card); color: var(--text); border-radius: var(--r-md); overflow: hidden; text-align: center; box-shadow: var(--shadow-2); }
+.alert .ab { padding: var(--sp-5) var(--sp-4) var(--sp-4); }
+.alert .ab .ic { color: var(--brand); margin-bottom: var(--sp-2); }
+.alert .ab .ic.warn { color: var(--danger); }
+.alert b { display: block; font-size: var(--fs-headline); font-weight: var(--fw-semibold); }
+.alert p { font-size: var(--fs-sub); color: var(--text-2); margin-top: var(--sp-1); white-space: pre-line; }
+.alert .af { display: flex; border-top: var(--hairline) solid var(--sep); }
+.alert .af button { flex: 1; height: 48px; font-size: var(--fs-body); color: var(--brand-strong); }
+.alert .af button + button { border-left: var(--hairline) solid var(--sep); }
+.alert .af button.b { font-weight: var(--fw-semibold); }
+.alert .af button.danger { color: var(--danger); font-weight: var(--fw-semibold); }
+
+/* 토스트(S35) — 탭바 바로 위 */
+.toast { position: fixed; left: var(--page-x); right: var(--page-x); bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--sp-3)); z-index: 9998; background: var(--toast-bg); color: var(--toast-text); border-radius: var(--r-md); padding: var(--sp-3) var(--sp-4); font-size: var(--fs-sub); display: flex; gap: var(--sp-2); align-items: center; box-shadow: var(--shadow-2); max-width: 420px; margin: 0 auto; }
+.toast .ic { color: var(--brand); }
+
+/* 세그먼트(화면 모드 등) */
+.seg { display: flex; background: var(--fill); border-radius: var(--r-sm); padding: 2px; gap: 2px; }
+.seg button { flex: 1; height: 32px; border-radius: 8px; font-size: var(--fs-foot); font-weight: var(--fw-medium); color: var(--text); display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-1); white-space: nowrap; }
+.seg button.on { background: var(--card); font-weight: var(--fw-semibold); box-shadow: var(--seg-on-shadow); }
+.sec-h { padding: 0 var(--sp-4) var(--sp-2); font-size: var(--fs-foot); color: var(--text-2); font-weight: var(--fw-medium); }
+.sec-f { padding: var(--sp-2) var(--sp-4) 0; font-size: var(--fs-foot); color: var(--text-2); }
+
+/* 단추 — 흰 글자는 --brand-fill 위에만(D01) */
+.ui-btn { height: 50px; border-radius: var(--r-md); padding: 0 var(--sp-5); display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); font-size: var(--fs-body); font-weight: var(--fw-semibold); white-space: nowrap; }
+.ui-btn.full { width: 100%; }
+.ui-btn.pri { background: var(--brand-fill); color: var(--on-brand-fill); }
+.ui-btn.sec { background: var(--brand-soft); color: var(--brand-strong); }
+.ui-btn.gray { background: var(--fill); color: var(--text); }
+.ui-btn.dis { background: var(--fill); color: var(--text-3); cursor: default; }
+.ui-btn.sm { height: 34px; font-size: var(--fs-sub); padding: 0 var(--sp-3); border-radius: var(--r-sm); }
+
+/* 빈 화면·오프라인(S36) */
+.ui-empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: var(--sp-10) var(--sp-8); gap: var(--sp-2); }
+.ui-empty .big { width: 72px; height: 72px; border-radius: var(--r-full); background: var(--fill); display: flex; align-items: center; justify-content: center; color: var(--text-2); margin-bottom: var(--sp-2); }
+.ui-empty .big.g { background: var(--brand-soft); color: var(--brand-strong); }
+.ui-empty .big.r { background: var(--danger-soft); color: var(--danger); }
+.ui-empty .big .ic { width: 34px; height: 34px; }
+.ui-empty h3 { font-size: var(--fs-title3); font-weight: var(--fw-bold); color: var(--text); }
+.ui-empty p { font-size: var(--fs-sub); color: var(--text-2); }
+.ui-empty .ui-btn { margin-top: var(--sp-3); }
+
+/* 불러오는 중(S43) — 뼈대. 다크에서도 바탕색 그대로(예전엔 진한 초록 전체 화면이 번쩍였다) */
+.sk { background: var(--skeleton); border-radius: var(--r-sm); }
+.spin { width: 28px; height: 28px; border-radius: var(--r-full); border: 3px solid var(--fill-2); border-top-color: var(--brand); animation: ui-spin .8s linear infinite; display: inline-block; }
+@keyframes ui-spin { to { transform: rotate(360deg); } }
+.page-skeleton { min-height: 100vh; background: var(--bg-plain); }
+.page-skeleton .pad { padding: var(--sp-4) var(--page-x); max-width: 760px; margin: 0 auto; }

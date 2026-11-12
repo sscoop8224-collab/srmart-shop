@@ -1,8 +1,10 @@
 import { createContext, useCallback, useContext, useRef, useState } from 'react';
+import Icon from './components/ui/Icon';
 
 // window.confirm()/alert() 대체 전용 커스텀 다이얼로그 — POS UI-GUIDE 5절 패턴을 웹으로 옮김:
 // 중앙 부양 카드 + dim 오버레이, 취소는 항상 좌측(안전한 기본), 위험 액션만 확인 버튼이 danger(빨강).
 // confirm()은 Promise<boolean>, notify()는 확인 버튼 하나뿐인 안내(alert 대체)로 Promise<void>.
+// 모양은 목업 S34 의 .alert(styles/ui.css) — 제목이 없으면 문구를 굵게 한 줄로 쓴다. opts.icon 으로 위 아이콘(목업 ICON 이름) — 묶음 1.
 const DialogContext = createContext(null);
 
 function normalize(opts) {
@@ -32,19 +34,24 @@ export function DialogProvider({ children }) {
       {children}
       {dialog && (
         <div
-          style={overlayStyle}
+          className="overlay center"
+          role="alertdialog"
+          aria-modal="true"
           onClick={(e) => { if (e.target === e.currentTarget && dialog.showCancel) settle(false); }}
         >
-          <div style={modalStyle}>
-            {dialog.title && <div style={titleStyle}>{dialog.title}</div>}
-            <p style={messageStyle}>{dialog.message}</p>
-            <div style={{ display: 'flex', gap: 8 }}>
+          <div className="alert">
+            <div className="ab">
+              {dialog.icon && <Icon name={dialog.icon} size={'lg' + (dialog.danger ? ' warn' : '')} />}
+              <b>{dialog.title || dialog.message}</b>
+              {dialog.title && dialog.message && <p>{dialog.message}</p>}
+            </div>
+            <div className="af">
               {dialog.showCancel && (
-                <button onClick={() => settle(false)} style={cancelButtonStyle}>
+                <button type="button" className={dialog.danger ? 'b' : ''} onClick={() => settle(false)}>
                   {dialog.cancelLabel || '취소'}
                 </button>
               )}
-              <button onClick={() => settle(true)} style={dialog.danger ? dangerButtonStyle : confirmButtonStyle}>
+              <button type="button" className={dialog.danger ? 'danger' : 'b'} onClick={() => settle(true)}>
                 {dialog.okLabel || '확인'}
               </button>
             </div>
@@ -61,40 +68,3 @@ export function useDialog() {
   return ctx;
 }
 
-const overlayStyle = {
-  position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-  background: 'rgba(0,0,0,0.5)',
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-  zIndex: 9999, padding: 20,
-};
-const modalStyle = {
-  background: 'var(--card)', padding: '28px 24px', borderRadius: 16,
-  width: '100%', maxWidth: 320,
-  boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
-  boxSizing: 'border-box',
-};
-const titleStyle = {
-  margin: '0 0 8px', fontSize: 16, fontWeight: 800, textAlign: 'center', color: 'var(--text)',
-};
-const messageStyle = {
-  margin: '0 0 22px', fontSize: 15, fontWeight: 700, textAlign: 'center', color: 'var(--text)', lineHeight: 1.5,
-  whiteSpace: 'pre-wrap',
-};
-const cancelButtonStyle = {
-  flex: 1, padding: '13px', borderRadius: 12,
-  border: '1.5px solid var(--sep)', background: 'var(--bg)',
-  color: 'var(--text2)', fontSize: 14, fontWeight: 700,
-  cursor: 'pointer', fontFamily: 'inherit',
-};
-const confirmButtonStyle = {
-  flex: 1, padding: '13px', borderRadius: 12, border: 'none',
-  background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
-  color: '#fff', fontSize: 14, fontWeight: 700,
-  cursor: 'pointer', boxShadow: '0 6px 16px rgba(0,196,113,0.28)',
-  fontFamily: 'inherit',
-};
-const dangerButtonStyle = {
-  ...confirmButtonStyle,
-  background: 'var(--danger)',
-  boxShadow: '0 6px 16px rgba(255,71,87,0.28)',
-};

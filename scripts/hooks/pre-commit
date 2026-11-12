@@ -2,10 +2,17 @@
 # 쇼핑앱 디자인 재정비 — 진행표 「완료」 줄은 비교 사진이 있어야 커밋된다.
 # 설치: npm install 때 자동(package.json "prepare" → scripts/hooks/install.cjs 가 core.hooksPath=scripts/hooks)
 # 검사기: scripts/check-progress.js (npm run check:progress 와 같다)
+#         scripts/check-ui-rules.cjs (npm run check:ui — 브라우저 기본 창 0건 · 색 직접 쓰기가 늘지 않게, 묶음 1)
 node scripts/check-progress.js
 status=$?
 if [ $status -ne 0 ]; then
   echo "🔴 커밋을 멈췄다 — 위 항목을 고치거나, 그 줄의 상태를 「완료」에서 내린 뒤 다시 커밋하세요."
+  exit 1
+fi
+node scripts/check-ui-rules.cjs
+status=$?
+if [ $status -ne 0 ]; then
+  echo "🔴 커밋을 멈췄다 — 화면 규칙(위 목록)을 고친 뒤 다시 커밋하세요."
   exit 1
 fi
 exit 0

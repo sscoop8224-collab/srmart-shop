@@ -32,10 +32,8 @@
   --gray-800: #343a40;
   --gray-900: #212529;
 
-  --danger: #ff4757;
   --success: #00c471;
-  --warning: #ffa502;
-  --info: #1e90ff;
+  /* --danger·--warning·--info 는 styles/tokens.css(목업 값)로 옮겼다 — 묶음 1(2026-11-12) */
 
   --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
   --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
@@ -50,9 +48,9 @@
   --radius-xl: 28px;
   --radius-full: 9999px;
 
-  --font-main: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  /* --font-main 은 styles/tokens.css 에서 목업 글꼴(--font)을 가리킨다 — 묶음 1 */
 
-  --bottom-nav-height: 68px;
+  --bottom-nav-height: var(--tab-h);   /* 목업 탭바 높이(50px) — 묶음 1. 예전 68px */
   --header-height: 58px;
   --max-width: 100%;
 
@@ -65,26 +63,14 @@
   /* 화면별 하단 고정 액션바 실측 높이(usePublishBottomBarHeight가 갱신) — AI 상담 버튼이 구독 */
   --bottom-bar-extra: 0px;
 
-  /* ===========================
-     시맨틱 토큰 (POS UI-GUIDE 네이밍: bg/card/text/text2/sep/accent)
-     — 값 자체는 위 --white, --gray-1~900, --primary를 그대로 가리키는 별칭이다.
-     ThemeContext.applyDarkVars()가 다크모드 전환 시 --white/--gray-*만 바꿔치기하므로,
-     이 별칭들도 자동으로 같이 바뀐다 — ThemeContext/DarkModeToggle 코드는 그대로 두고
-     화면 쪽 인라인 style만 이 토큰을 참조하도록 옮기면 된다. accent는 다크모드에서도
-     브랜드 그린 고정(요청 사항) — --primary가 애초에 다크모드에서 안 바뀌므로 자동 충족.
-  =========================== */
-  --bg: var(--gray-100);
-  --card: var(--white);
-  --text: var(--gray-900);
-  --text2: var(--gray-600);
-  --sep: var(--gray-200);
-  --accent: var(--primary);
+  /* 시맨틱 토큰(--bg·--card·--text·--text-2·--sep …)과 옛 별칭(--text2·--accent)은 styles/tokens.css 로 옮겼다.
+     다크 전환도 이제 JS 가 아니라 <html data-theme> 로 한다 — 묶음 1(2026-11-12). */
 }
 
 body {
   font-family: var(--font-main);
-  background: var(--gray-100);
-  color: var(--gray-900);
+  background: var(--bg);
+  color: var(--text);
   line-height: 1.6;
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
@@ -99,7 +85,7 @@ body {
   min-height: 100vh;
   position: relative;
   box-shadow: var(--shadow-lg);
-  padding-top: env(safe-area-inset-top);
+  /* 상태바 자리(safe-area)는 헤더(.app-nav)가 한 번만 더한다 — 토큰 문서 4절 1(묶음 1) */
 }
 
 .App.admin-mode {
@@ -901,7 +887,7 @@ body {
     gap: 6px;
   }
   .bottom-nav { display: none; }
-  .main-content { padding-bottom: 24px; } /* 하단바 자리 예약 해제(@supports 이후라 우선 적용) */
+  /* 태블릿·PC 도 하단 탭바를 쓴다(F9 · 묶음 1) — 본문 아래 탭바 자리 예약을 풀지 않는다 */
 }
 
 /* ===========================

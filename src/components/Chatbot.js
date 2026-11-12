@@ -3,47 +3,24 @@ import API from '../api';
 import { useStore } from '../StoreContext';
 
 // AI 키는 서버(연동 관리)에만 보관 — 클라이언트 하드코딩 제거. 챗봇은 백엔드 /api/chatbot 경유.
-const Chatbot = () => {
+// 여는 곳은 홈 헤더의 AI 상담 아이콘이다(떠 있는 단추 없앰 — 토큰 문서 4절 7, 묶음 1 · 2026-11-12).
+// 창 모양 자체는 6번 묶음(S38 AI 상담)에서 목업대로 바꾼다.
+const Chatbot = ({ open = false, onClose }) => {
   const store = useStore();
   const currentStoreId = store?.currentStoreId || null;   // 고객이 선택한 점포 → 챗봇 컨텍스트 스코프
-  const [isOpen, setIsOpen] = useState(false);
+  const isOpen = !!open;
   const [messages, setMessages] = useState([
     { role: 'model', content: '안녕하세요! SR마트 AI 상담사입니다 😊 (사람이 아닌 AI 도우미예요)\n상품·배송·주문 문의를 도와드려요. 무엇이든 물어보세요!' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // 스크롤 중인지 — 이 동안 AI 상담 버튼이 작아져 아래 조작 버튼을 안 가린다.
-  // 0.6초 동안 스크롤이 없으면 원래 크기로 돌아온다(멈추자마자 커지면 손가락 밑에서
-  // 튀어나와 오히려 방해가 된다).
-  const [scrolling, setScrolling] = useState(false);
-  useEffect(() => {
-    let timer = null;
-    const onScroll = () => {
-      setScrolling(true);
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => setScrolling(false), 600);
-    };
-    // capture:true — 목록이 내부 스크롤 컨테이너를 쓰더라도 잡는다(창 스크롤만 보면 놓친다).
-    window.addEventListener('scroll', onScroll, { passive: true, capture: true });
-    return () => {
-      if (timer) clearTimeout(timer);
-      window.removeEventListener('scroll', onScroll, { capture: true });
-    };
-  }, []);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // 좁은 화면 대응: 스크롤 내리면 라벨 접고 아이콘만(위로 올리면 다시 확장)
-  const [collapsed, setCollapsed] = useState(false);
-  useEffect(() => {
-    const onScroll = () => setCollapsed((window.scrollY || 0) > 120);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
@@ -77,49 +54,12 @@ const Chatbot = () => {
 
   return (
     <>
-      {/* 상담 진입 — 원형 말풍선 버튼 + 아래 라벨(하단 탭 아이콘+글자 구조). 스크롤 시 라벨만 접힘.
-          bottom은 탭바 높이(68px)+safe-area 기본 여백에, 화면별 하단 액션바가 떠 있으면
-          usePublishBottomBarHeight가 갱신하는 --bottom-bar-extra만큼 추가로 끌어올려 겹치지 않게 한다. */}
-      {/* 🔴 스크롤 중에는 **작아지고 흐려진다** (2026-09-29).
-          하단 결제 칸 위로 띄우는 것(--bottom-bar-extra)만으로는 부족했다 — 버튼이 오른쪽에
-          고정돼 있어서 **상품 줄의 +·삭제 버튼과 가로로 겹쳤다.** 세로로 아무리 올려도
-          목록을 스크롤하는 동안에는 어느 줄이든 그 자리에 온다.
-          그래서 스크롤 중엔 절반 크기로 줄고 반투명해져 **아래 버튼이 비쳐 보이고 눌린다**
-          (pointerEvents: 'none'). 멈추면 0.6초 뒤 원래대로 돌아온다. */}
-      <div style={{
-        position: 'fixed',
-        bottom: 'calc(76px + env(safe-area-inset-bottom) + var(--bottom-bar-extra, 0px))',
-        right: '16px', zIndex: 1001,
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px',
-        transform: scrolling ? 'scale(0.45)' : 'scale(1)',
-        transformOrigin: 'bottom right',
-        opacity: scrolling ? 0.35 : 1,
-        pointerEvents: scrolling ? 'none' : 'auto',
-        transition: 'transform .18s ease, opacity .18s ease',
-      }}>
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label="AI 상담"
-          style={{
-            width: '52px', height: '52px', borderRadius: '50%',
-            backgroundColor: 'var(--primary)', border: 'none', cursor: 'pointer',
-            color: 'white', fontSize: '22px',
-            boxShadow: '0 4px 14px rgba(0,196,113,0.45)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-        >
-          {isOpen ? '✕' : '💬'}
-        </button>
-        {!isOpen && !collapsed && (
-          <span style={{ fontSize: '10px', fontWeight: 700, color: 'white', background: 'var(--primary)', padding: '2px 8px', borderRadius: '8px', boxShadow: '0 2px 6px rgba(0,0,0,0.28)', whiteSpace: 'nowrap', letterSpacing: '-0.2px' }}>AI 상담</span>
-        )}
-      </div>
 
       {/* 챗봇 창 */}
       {isOpen && (
         <div style={{
           position: 'fixed',
-          bottom: 'calc(136px + env(safe-area-inset-bottom) + var(--bottom-bar-extra, 0px))',
+          bottom: 'calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--sp-3) + var(--bottom-bar-extra, 0px))',
           right: '16px',
           width: 'min(320px, calc(100vw - 32px))',
           height: 'min(460px, calc(100vh - 180px))',
@@ -145,6 +85,7 @@ const Chatbot = () => {
           }}>
             <span>🛒 SR Mart 쇼핑 도우미</span>
             <span style={{ fontSize: '11px', fontWeight: 700, background: 'rgba(255,255,255,0.25)', padding: '2px 8px', borderRadius: '10px', marginLeft: 'auto' }}>AI 상담</span>
+            <button type="button" aria-label="닫기" onClick={onClose} style={{ background: 'none', border: 0, color: 'inherit', fontSize: 18, lineHeight: 1, cursor: 'pointer', padding: '0 2px', fontFamily: 'inherit' }}>✕</button>
           </div>
 
           {/* 메시지 목록 */}

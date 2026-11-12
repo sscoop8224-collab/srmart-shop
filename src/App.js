@@ -13,7 +13,13 @@ import InstallPrompt from './components/InstallPrompt';
 import SplashAd from './components/SplashAd';
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import './App.css';
-import srmLogo from './srm_logo.png';
+import './styles/tokens.css';   // 목업 정본 v1 토큰 — App.css 뒤에 와야 같은 이름에서 이긴다(묶음 1)
+import './styles/ui.css';
+import TabBar from './components/ui/TabBar';
+import AppHeader from './components/ui/AppHeader';
+import Icon from './components/ui/Icon';
+// 오프라인 화면은 따로 떼어 받지 않는다 — 인터넷이 끊긴 순간에 그 조각을 받으러 가면 못 받는다(묶음 1 비교 사진에서 발견)
+import Offline from './pages/Offline';
 import { ThemeProvider, useTheme } from './ThemeContext';
 import { DialogProvider, useDialog } from './DialogContext';
 
@@ -36,8 +42,19 @@ const Notice = lazy(() => import('./pages/Notice'));
 const Receipt = lazy(() => import('./pages/Receipt'));
 const MyPage = lazy(() => import('./pages/MyPage'));
 const NotificationSettings = lazy(() => import('./pages/NotificationSettings'));   // 마이 → 알림 설정(S50, 2026-11-12)
-const Offline = lazy(() => import('./pages/Offline'));
-const PageFallback = () => <div style={{ minHeight: '100vh', background: '#077D3C' }} />;   // 청크 로드 중 다크그린(흰 화면 방지)
+// 청크 로드 중 — 화면 뼈대(S43). 예전엔 진한 초록 전체 화면이 번쩍였다. 다크에서도 바탕색 그대로(묶음 1)
+const PageFallback = () => (
+  <div className="page-skeleton" aria-busy="true" aria-label="불러오는 중">
+    <div className="pad">
+      <div className="sk" style={{ height: 34, width: '50%' }} />
+      <div className="sk" style={{ height: 220, marginTop: 'var(--sp-4)', borderRadius: 'var(--r-lg)' }} />
+      <div className="sk" style={{ height: 18, marginTop: 'var(--sp-4)', width: '80%' }} />
+      <div className="sk" style={{ height: 18, marginTop: 'var(--sp-2)', width: '60%' }} />
+      <div className="sk" style={{ height: 64, marginTop: 'var(--sp-5)' }} />
+      <div className="sk" style={{ height: 64, marginTop: 'var(--sp-2)' }} />
+    </div>
+  </div>
+);
 
 const getCategoryImage = (large) => {
   switch(large) {
@@ -229,6 +246,7 @@ function AppContent() {
   const [filterSmall, setFilterSmall] = useState('전체');
   const [sortOrder, setSortOrder] = useState('default');
   const [toast, setToast] = useState('');
+  const [chatOpen, setChatOpen] = useState(false);   // AI 상담 — 헤더 아이콘으로 연다(떠 있는 단추 없앰, 묶음 1)
   const [bannerIndex, setBannerIndex] = useState(0);
   const [bannerTransition, setBannerTransition] = useState(true);
   const [lastOrder, setLastOrder] = useState(null);
@@ -450,7 +468,8 @@ function AppContent() {
     notify(messages.logout);
   };
 
-  const requireLogin = () => { notify('로그인이 필요해요! 😊'); setPage('login'); };
+  // 로그인 안내(S34 「안내」) — 창을 먼저 보여 주고, 확인을 누르면 로그인 화면으로 간다(목업처럼 지금 화면 위에 뜬다 · 묶음 1)
+  const requireLogin = (what) => notify({ icon: 'user', title: '로그인이 필요해요', message: `${what || '이 기능은'} 로그인 후 쓸 수 있어요.` }).then(() => setPage('login'));
 
   const addToCart = (product) => {
     if (!user) { requireLogin(); return; }
@@ -661,62 +680,16 @@ function AppContent() {
           onCancel={() => setShowLogoutConfirm(false)}
         />
       )}
-      {/* 헤더 */}
-      <header className="header">
-        <div className="header-logo" onClick={() => goToPage('home')}>
-          <img src={srmLogo} alt="SR Mart" style={{ height: '34px', objectFit: 'contain', flexShrink: 0 }} />
-          <span className="header-logo-text" style={{ fontFamily: "'Nanum Pen Script', cursive", fontSize: 'clamp(16px, 5vw, 26px)', color: '#1b5e20', fontWeight: '700', lineHeight: '1', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>에스알마트</span>
-        </div>
-        {user && currentStore && !isOwner && (
-          <span style={{ fontSize: 12, color: '#178a2d', fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 100 }}>
-            🏪 {currentStore.name}
-          </span>
-        )}
-        {/* 오너 매장 선택은 헤더가 아니라 아래 미리보기 배너 쪽으로 옮김(2026-09-03) — 로고·배지·
-            드롭다운·아이콘 4개가 좁은 화면 한 줄에 다 안 들어가 로고 텍스트를 가리는 문제가 있었음.
-            배너는 풀폭이라 여유가 있고, 원래도 매장 미리보기 고지 목적으로 있던 자리라 합치는 게
-            자연스럽다. 선택 상태(ownerViewStoreId)는 그대로 StoreContext/sessionStorage 유지. */}
-        {/* 데스크탑 상단 메뉴 (모바일에서는 CSS로 숨김, 하단 탭바 사용) */}
-        <nav className="header-nav">
-          <button className={'header-nav-item' + (page === 'home' ? ' active' : '')} onClick={() => goToPage('home')}>홈</button>
-          <button className={'header-nav-item' + (page === 'cart' ? ' active' : '')} onClick={() => user ? goToPage('cart') : requireLogin()}>
-            장바구니{cart.length > 0 && <span className="header-nav-count">{cart.length}</span>}
-          </button>
-          <button className={'header-nav-item' + (page === 'wishlist' ? ' active' : '')} onClick={() => user ? goToPage('wishlist') : requireLogin()}>찜</button>
-          <button className={'header-nav-item' + (page === 'mypage' ? ' active' : '')} onClick={() => user ? goToPage('mypage') : requireLogin()}>마이</button>
-        </nav>
-        <div className="header-actions">
-          {user && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', padding: '4px 8px' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#adb5bd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-              </svg>
-              <span title={currentUser?.username ? `@${currentUser.username}` : undefined} style={{ fontSize: '10px', fontWeight: '600', color: '#adb5bd', maxWidth: '44px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentUser?.name}</span>
-            </div>
-          )}
-          <button className="header-icon-btn" onClick={() => user ? goToPage('notice') : requireLogin()} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', padding: '4px 8px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#adb5bd', flexShrink: 0 }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
-            <span style={{ fontSize: '10px', fontWeight: '600', whiteSpace: 'nowrap' }}>공지</span>
-          </button>
-          {user ? (
-            <button onClick={handleLogout} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px', flexShrink: 0 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e53935" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>
-              </svg>
-              <span style={{ fontSize: '10px', fontWeight: '600', color: '#adb5bd', whiteSpace: 'nowrap' }}>로그아웃</span>
-            </button>
-          ) : (
-            <button onClick={() => setPage('login')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 8px', flexShrink: 0 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
-              </svg>
-              <span style={{ fontSize: '10px', fontWeight: '600', color: 'var(--primary)', whiteSpace: 'nowrap' }}>로그인</span>
-            </button>
-          )}
-        </div>
-      </header>
+      {/* 헤더(P05) — 로고 이미지 · 매장 · AI 상담 · 종 · 로그인. 로그아웃은 마이 맨 아래(결정 11) — 묶음 1 */}
+      <AppHeader
+        storeName={currentStore ? String(currentStore.name || '').replace(/^에스알마트s*/, '') : ''}
+        onStoreClick={!user && !isOwner ? () => setShowStoreModal(true) : null}
+        onHome={() => goToPage('home')}
+        onAi={() => setChatOpen((v) => !v)}
+        onBell={() => (user ? goToPage('notice') : requireLogin())}
+        loggedIn={!!user}
+        onLogin={() => setPage('login')}
+      />
 
       {/* 오너 매장 미리보기 배너 — 헤더의 작은 드롭다운만으로는 놓치기 쉬워서(실제로 이걸로 인해
           "로그인하면 상품 이미지가 사라진다"는 혼란이 있었음 — 재고 0인 매장을 미리보기 중이라
@@ -907,7 +880,8 @@ function AppContent() {
           </>
         )}
 
-        <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: 'var(--primary-dark)', fontSize: 13 }}>불러오는 중…</div>}>
+        {/* 화면 조각을 받는 동안 — 「불러오는 중…」 글자 대신 화면 뼈대(S43, 묶음 1) */}
+        <Suspense fallback={<PageFallback />}>
         {page === 'notice'          && <Notice notices={notices} setNotices={setNotices} isAdmin={isAdmin} goBack={goBack} goToHome={() => goToPage('home')} darkMode={darkMode} />}
         {page === 'wishlist'        && <Wishlist wishlist={wishlist} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWishlist={toggleWishlist} goBack={goBack} goToHome={() => goToPage('home')} darkMode={darkMode} />}
         {page === 'search'          && <Search products={products} categories={categories} goBack={goBack} storeId={currentStoreId} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} />}
@@ -933,47 +907,18 @@ function AppContent() {
         )}
       </div>
 
-      {/* 하단 탭 */}
-      {(
-        <nav className="bottom-nav">
-          <button className={'bottom-nav-item' + (page === 'home' ? ' active' : '')} onClick={() => goToPage('home')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'home' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            <span>홈</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'cart' ? ' active' : '')} onClick={() => user ? goToPage('cart') : requireLogin()}>
-            <div style={{ position: 'relative' }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'cart' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-              {cart.length > 0 && <span className="badge">{cart.length}</span>}
-            </div>
-            <span>장바구니</span>
-          </button>
-          <button onClick={() => goToPage('search')}
-            style={{ flex: 1, height: '100%', border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px', position: 'relative' }}>
-            <div style={{ width: '48px', height: '48px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,196,113,0.4)', marginTop: '-20px' }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-            </div>
-            <span style={{ fontSize: '10px', fontWeight: '600', color: 'var(--primary)' }}>검색</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'wishlist' ? ' active' : '')} onClick={() => user ? goToPage('wishlist') : requireLogin()}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill={page === 'wishlist' ? '#00c471' : 'none'} stroke={page === 'wishlist' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            <span>찜</span>
-          </button>
-          <button className={'bottom-nav-item' + (page === 'mypage' ? ' active' : '')} onClick={() => user ? goToPage('mypage') : requireLogin()}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={page === 'mypage' ? '#00c471' : '#adb5bd'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <span>마이</span>
-          </button>
-        </nav>
-      )}
+      {/* 하단 탭 — 홈·검색·장바구니·주문내역·마이(결정 6). 폰·태블릿 모두 — 묶음 1 */}
+      <TabBar page={page} cartCount={cart.length} loggedIn={!!user} onGo={goToPage} onNeedLogin={(key) => requireLogin({ cart: '장바구니는', orders: '주문내역은', mypage: '마이 화면은' }[key])} />
 
+      {/* 토스트(S35) — 탭바 바로 위. 담김은 확인 표시, 막힘은 경고 표시 — 묶음 1 */}
       {toast && (
-        <div style={{ position: 'fixed', bottom: '90px', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.75)', color: 'white', padding: '12px 24px', borderRadius: '24px', fontSize: '14px', fontWeight: '600', zIndex: 9999, whiteSpace: 'nowrap', boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}>
-          {toast}
+        <div className="toast" role="status">
+          <Icon name={/담겼|담았/.test(toast) ? 'check' : 'alert'} />
+          <span>{toast}</span>
         </div>
       )}
 
-      <Chatbot />
+      <Chatbot open={chatOpen} onClose={() => setChatOpen(false)} />
       <footer style={{ textAlign: 'center', padding: '16px', fontSize: '12px', color: 'var(--gray-400)', borderTop: '1px solid var(--gray-200)' }}>
         © 2026 Dongsin Market. All rights reserved.
       </footer>

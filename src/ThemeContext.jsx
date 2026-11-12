@@ -1,91 +1,77 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const ThemeContext = createContext(null);
 
-// 정적 <meta name=theme-color media=...> 두 개는 OS 다크모드 기준 폴백일 뿐 — 앱 내 수동
-// 라이트/다크 토글(darkMode 수동 오버라이드)은 media query로 못 잡으므로, 실제 적용된 헤더
-// 배경색(--white 토큰)과 항상 일치하도록 여기서 직접 갱신한다. media 속성이 있는 태그는 그대로
-// 두고(OS 미리보기용), media 없는 순수 fallback 태그 하나만 갱신 대상으로 쓴다.
-function syncThemeColorMeta(dark) {
-  const meta = document.querySelector('meta[name="theme-color"]:not([media])');
-  if (meta) meta.setAttribute('content', dark ? '#1a1a1a' : '#ffffff');
+// 화면 모드는 셋이다 — 자동(휴대폰 설정을 따른다) · 밝게 · 어둡게 (목업 P02 「화면 모드」, 묶음 1 · 2026-11-12).
+// 색은 전부 styles/tokens.css 가 <html data-theme="light|dark"> 하나를 보고 바꾼다.
+// 예전엔 여기서 --white·--gray-* 를 JS 로 하나씩 바꿔 끼웠다 — 그 값도 tokens.css 로 옮겼다.
+const MODE_KEY = 'srmart_theme_mode';           // 'auto' | 'light' | 'dark'
+const MODES = ['auto', 'light', 'dark'];
+
+// 옛 저장값(srmart_dark_manual · srmart_dark_mode)을 읽어 새 값으로 옮긴다 — 수동으로 골라 둔 손님의 선택을 잃지 않게.
+function readMode() {
+  try {
+    const m = localStorage.getItem(MODE_KEY);
+    if (MODES.includes(m)) return m;
+    if (localStorage.getItem('srmart_dark_manual') === 'true') {
+      return localStorage.getItem('srmart_dark_mode') === 'true' ? 'dark' : 'light';
+    }
+  } catch { /* 저장소를 못 쓰는 브라우저(사생활 보호 모드) — 자동으로 */ }
+  return 'auto';
 }
 
-function applyDarkVars(dark) {
-  const el = document.documentElement;
+const systemDark = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
+const resolve = (mode) => (mode === 'auto' ? systemDark() : mode === 'dark');
+
+// 정적 <meta name=theme-color media=...> 두 개는 OS 다크모드 기준 폴백일 뿐 — 앱 안에서 고른 모드는
+// media query 로 못 잡으므로, media 없는 fallback 태그 하나를 실제 화면 바탕(--bg)과 맞춘다.
+function apply(dark) {
+  const root = document.documentElement;
+  root.setAttribute('data-theme', dark ? 'dark' : 'light');
   document.body.classList.toggle('dark', dark);
-  syncThemeColorMeta(dark);
-  if (dark) {
-    el.style.setProperty('--white', '#1a1a1a');
-    el.style.setProperty('--gray-50', '#1e1e1e');
-    el.style.setProperty('--gray-100', '#242424');
-    el.style.setProperty('--gray-200', '#2e2e2e');
-    el.style.setProperty('--gray-300', '#3a3a3a');
-    el.style.setProperty('--gray-400', '#4a4a4a');
-    el.style.setProperty('--gray-500', '#6e6e6e');
-    el.style.setProperty('--gray-600', '#9e9e9e');
-    el.style.setProperty('--gray-700', '#c0c0c0');
-    el.style.setProperty('--gray-800', '#d4d4d4');
-    el.style.setProperty('--gray-900', '#f0f0f0');
-  } else {
-    el.style.setProperty('--white', '#ffffff');
-    el.style.setProperty('--gray-50', '#f8f9fa');
-    el.style.setProperty('--gray-100', '#f1f3f5');
-    el.style.setProperty('--gray-200', '#e9ecef');
-    el.style.setProperty('--gray-300', '#dee2e6');
-    el.style.setProperty('--gray-400', '#ced4da');
-    el.style.setProperty('--gray-500', '#adb5bd');
-    el.style.setProperty('--gray-600', '#868e96');
-    el.style.setProperty('--gray-700', '#495057');
-    el.style.setProperty('--gray-800', '#343a40');
-    el.style.setProperty('--gray-900', '#212529');
-  }
+  const meta = document.querySelector('meta[name="theme-color"]:not([media])');
+  const bg = getComputedStyle(root).getPropertyValue('--bg').trim();   // 색 값은 tokens.css 한 곳에만
+  if (meta && bg) meta.setAttribute('content', bg);
 }
+
+// 첫 그림 전에 붙인다 — React 가 뜨기 전에 밝은 바탕이 한 번 번쩍이지 않게.
+if (typeof document !== 'undefined') apply(resolve(readMode()));
 
 export function ThemeProvider({ children }) {
-  const [darkMode, setDarkModeState] = useState(() => {
-    const isManual = localStorage.getItem('srmart_dark_manual') === 'true';
-    if (isManual) {
-      return localStorage.getItem('srmart_dark_mode') === 'true';
-    }
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
+  const [themeMode, setThemeModeState] = useState(readMode);
+  const [darkMode, setResolved] = useState(() => resolve(readMode()));
 
-  // 시스템 모드 변경 자동 감지
+  // 자동일 때만 휴대폰 설정 바뀜을 따른다
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = (e) => {
-      if (localStorage.getItem('srmart_dark_manual') !== 'true') {
-        setDarkModeState(e.matches);
-      }
-    };
+    const handler = (e) => { if (themeMode === 'auto') setResolved(e.matches); };
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
+  }, [themeMode]);
+
+  useEffect(() => { apply(darkMode); }, [darkMode]);
+
+  const setThemeMode = useCallback((mode) => {
+    if (!MODES.includes(mode)) return;
+    setThemeModeState(mode);
+    setResolved(resolve(mode));
+    try {
+      localStorage.setItem(MODE_KEY, mode);
+      localStorage.removeItem('srmart_dark_manual');
+      localStorage.removeItem('srmart_dark_mode');
+    } catch { /* 저장 못 해도 이번 화면에는 적용된다 */ }
   }, []);
 
-  // CSS 변수 + localStorage 동기화
-  useEffect(() => {
-    localStorage.setItem('srmart_dark_mode', darkMode);
-    applyDarkVars(darkMode);
-  }, [darkMode]);
-
-  // 수동 토글 (manual 플래그 + 값 저장)
-  const setDarkMode = (val) => {
+  // 옛 화면(관리 화면 등)이 쓰는 켜고 끄기 — 밝게/어둡게 중 하나로 고정한다
+  const setDarkMode = useCallback((val) => {
     const next = typeof val === 'function' ? val(darkMode) : val;
-    setDarkModeState(next);
-    localStorage.setItem('srmart_dark_mode', String(next));
-    localStorage.setItem('srmart_dark_manual', 'true');
-  };
+    setThemeMode(next ? 'dark' : 'light');
+  }, [darkMode, setThemeMode]);
 
-  // 시스템 설정 복원
-  const resetToSystem = () => {
-    localStorage.removeItem('srmart_dark_manual');
-    localStorage.removeItem('srmart_dark_mode');
-    setDarkModeState(window.matchMedia('(prefers-color-scheme: dark)').matches);
-  };
+  const resetToSystem = useCallback(() => setThemeMode('auto'), [setThemeMode]);
 
   return (
-    <ThemeContext.Provider value={{ darkMode, setDarkMode, resetToSystem }}>
+    <ThemeContext.Provider value={{ themeMode, setThemeMode, darkMode, setDarkMode, resetToSystem }}>
       {children}
     </ThemeContext.Provider>
   );
