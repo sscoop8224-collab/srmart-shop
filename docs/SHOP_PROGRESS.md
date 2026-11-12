@@ -22,6 +22,7 @@
 (로컬 git pre-commit 관문 — `npm install` 때 `prepare` 가 자동 설치: `core.hooksPath=scripts/hooks`).
 
 1. `docs/shots/compare/<ID>_light.png` 와 `<ID>_dark.png` — **목업과 앱을 나란히 놓은** 비교 사진
+   + `docs/shots/compare/<ID>_tland_light.png`·`_tland_dark.png` — **태블릿 가로(1180×820)** 비교 사진(2026-11-12 블록 B)
 2. `docs/shots/app/<ID>_light.png` 와 `<ID>_dark.png` — 고친 뒤 앱 사진
 3. 그 앱 사진이 `docs/shots/before/<ID>_light.png`·`_dark.png`(고치기 전 사진)와 **바이트가 달라야** 한다
    (sha256 비교) — 옛 사진을 그대로 복사해 「완료」로 적는 것을 막는다.
@@ -97,7 +98,7 @@
 | 당일 배송 문구 (지시 2) | P05 홈 · S04 상세 · S08 장바구니 · S40 「빠른 배송」 | `src/pages/HomePage.jsx:26` `'주문 후 당일 배송! …'` (고정 문구) | 고정 문구를 지우고 **설정값에서 만든 문구**(`GET /api/stores/:id/delivery-promise`) — `docs/SHOP_SAMEDAY_DELIVERY.md` |
 | 신규회원 쿠폰 문구 (지시 4) | P05 홈 · S40 · S34 · P04 가입 완료 | `src/pages/HomePage.jsx:185` `'🎁 신규회원 10% 할인 쿠폰 증정'` (고정 문구) | 고정 문구를 지우고 **설정이 켜져 있을 때만** `GET /api/signup-coupon` 의 문구 — `docs/SHOP_SIGNUP_COUPON.md` |
 | 상단 칩 네 개 (지시 6) | S40 칩 → S44·S45·공지·S46 | `src/pages/HomePage.jsx:23·56~62` (`onClick` 없음) | 매장안내 S44 · 이벤트 S45 · 공지사항 · 고객센터 S46 으로 잇는다 |
-| AI 상담 단추 (지시 7) | P05 · S02 · S37 | 떠 있는 AI 상담 단추 | **왼쪽 아래**로 · 스크롤하는 동안 숨고 멈추면 0.25초 뒤 다시 나타난다 · 목록 끝 여백 |
+| AI 상담 단추 (지시 7 → **블록 B-1 로 바뀜**) | P05 · S02 · S37 · S46 | 떠 있는 AI 상담 단추 | 🔴 **떠 있는 단추를 없앤다** — 홈 헤더 **종 옆 AI 상담 아이콘** + 고객센터(S46) 「AI 상담」 줄. 「왼쪽 아래·스크롤 중 숨김」(지시 7)은 쓰지 않는다 |
 
 
 ## 앱 반영 때 바꿔 끼울 서버 자료 (2026-11-12 블록 A — 서버 쪽은 준비됨 · 마이그레이션 적용 전)

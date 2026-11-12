@@ -6,6 +6,9 @@
  *   ① SHOP_SCREENS.md 의 화면ID(S01~)가 진행표에 전부 있는가(화면이 사라지지 않게)
  *   ② 「상태」가 완료 인 줄은
  *      - docs/shots/compare/<ID>_light.png · <ID>_dark.png (목업|앱 비교 사진) 이 있는가
+ *      - docs/shots/compare/<ID>_tland_light.png · <ID>_tland_dark.png (**태블릿 가로** 비교 사진, 2026-11-12 블록 B)
+ *        — 태블릿 가로(1180×820)는 격자 5~6열·상세 좌우 배치·가운데 대화창으로 모양이 가장 많이 바뀌는 크기라
+ *        폰 사진만으로 「완료」를 말할 수 없다
  *      - docs/shots/app/<ID>_light.png · <ID>_dark.png (고친 뒤 앱 사진) 이 있는가
  *      - 그 앱 사진이 docs/shots/before/ 의 같은 이름 사진과 sha256 이 **다른가**
  * 하나라도 어기면 종료코드 1 — 로컬 pre-commit 관문(scripts/hooks/pre-commit)이 커밋을 막는다.
@@ -58,6 +61,7 @@ function check(root) {
       const app = path.join(root, 'docs/shots/app', `${r.id}_${t}.png`);
       const before = path.join(root, 'docs/shots/before', `${r.id}_${t}.png`);
       if (!fs.existsSync(cmp)) problems.push(`${r.id} 「완료」인데 비교 사진이 없다: docs/shots/compare/${r.id}_${t}.png`);
+      if (!fs.existsSync(path.join(root, 'docs/shots/compare', `${r.id}_tland_${t}.png`))) problems.push(`${r.id} 「완료」인데 태블릿 가로 비교 사진이 없다: docs/shots/compare/${r.id}_tland_${t}.png`);
       if (!fs.existsSync(app)) { problems.push(`${r.id} 「완료」인데 앱 사진이 없다: docs/shots/app/${r.id}_${t}.png`); continue; }
       if (fs.existsSync(before) && sha(app) === sha(before)) problems.push(`${r.id} 앱 사진(${t})이 고치기 전 사진과 똑같다 — 옛 사진이다`);
     }
@@ -85,7 +89,11 @@ function selfTest() {
   w('docs/shots/app/S01_light.png', 'OLD-L'); w('docs/shots/app/S01_dark.png', 'NEW-D');
   run('앱 사진이 before 와 같음 → 실패', true, '고치기 전 사진과 똑같다');
   w('docs/shots/app/S01_light.png', 'NEW-L');
-  run('비교·앱 사진 있고 바뀜 → 통과', false);
+  run('태블릿 가로 비교 사진 없음 → 실패', true, '태블릿 가로 비교 사진이 없다');
+  w('docs/shots/compare/S01_tland_light.png', 'TL');
+  run('태블릿 가로 밝게만 있고 어둡게 없음 → 실패', true, 'S01_tland_dark.png');
+  w('docs/shots/compare/S01_tland_dark.png', 'TD');
+  run('비교(폰·태블릿 가로)·앱 사진 있고 바뀜 → 통과', false);
   w('docs/SHOP_PROGRESS.md', prog('**완료**', '완료', '목업'));
   run('굵게 쓴 완료도 완료로 본다 / 사진 없는 S02 → 실패', true, 'S02 「완료」인데');
 
