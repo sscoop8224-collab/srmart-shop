@@ -2021,7 +2021,7 @@
   "size": "tland",
   "label": "태블릿 가로",
   "part": false,
-  "pct": 26,
+  "pct": 26.1,
   "mockFile": "docs/shots/compare/bundle5/S40_tland_dark_mock.png",
   "appFile": "docs/shots/compare/bundle5/S40_tland_dark_app.png",
   "diffFile": "docs/shots/compare/bundle5/S40_tland_dark_diff.png",

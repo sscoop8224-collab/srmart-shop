@@ -8,9 +8,10 @@
 const P = (f) => `products/${f}`;
 
 const stores = [
-  { id: 11, name: '에스알마트 왕길점', address: '인천 서구 왕길동' },
-  { id: 1, name: '에스알마트 검암점', address: '인천 서구 검암동' },
-  { id: 12, name: '에스알마트 신흥점', address: '인천 중구 신흥동' },
+  // 전화·영업시간·표시 이름은 손님용 매장 API(audience=customer)의 칸 — 묶음 6 매장안내(S44)·고객센터(S46) · 값은 목업 STORES 그대로
+  { id: 11, name: '에스알마트 왕길점', display_name: '에스알마트 왕길점', address: '인천 서구 왕길동', phone: '032-566-9949', operating_hours: '09:00~22:00' },
+  { id: 1, name: '에스알마트 검암점', display_name: '에스알마트 검암점', address: '인천 서구 검암동', phone: '032-562-5241', operating_hours: '08:00~22:00' },
+  { id: 12, name: '에스알마트 신흥점', display_name: '에스알마트 신흥점', address: '인천 중구 신흥동', phone: '032-765-5566', operating_hours: '08:00~22:00' },
 ];
 
 const catRows = [
@@ -113,7 +114,15 @@ const bizInfo = { company_name: '동신마켓', ceo_name: '—', address: '—',
 function route(pathname, method, search, opts = {}) {
   const user = opts.user || customer;
   const j = (b, s = 200) => ({ status: s, body: b });
-  if (pathname === '/stores') return j(stores);
+  if (pathname === '/stores') return opts.storesFail ? j({ error: '서버 오류' }, 500) : j(stores);
+  // 자주 묻는 질문(묶음 6 S46) — 목업 예시 문구 그대로
+  if (pathname === '/shop/faqs') return j([
+    { id: 1, category: '배송', question: '당일 배송은 몇 시까지 주문해야 하나요?', answer: '매장마다 달라요. 홈·장바구니의 배송 안내 한 줄에 그 매장의 마감 시각이 나와요.' },
+    { id: 2, category: '배송', question: '배송 휴무일·당일배송이 안 되는 날은요?', answer: '홈·장바구니의 배송 안내 줄에 그날 배송이 어떻게 되는지 나와요.' },
+    { id: 3, category: '주문', question: '주문을 취소하고 싶어요', answer: '배송 준비 전이면 주문내역에서 바로 취소할 수 있어요.' },
+    { id: 4, category: '주문', question: '환불·교환은 어떻게 하나요?', answer: '주문내역 → 주문 카드의 「환불 요청 / 교환 요청」.' },
+    { id: 5, category: '혜택', question: '포인트·쿠폰은 어디서 보나요?', answer: '마이 → 요약 칸의 포인트·쿠폰.' },
+  ]);
   if (/^\/stores\/\d+\/delivery-promise$/.test(pathname)) return j(DELIV[opts.deliv || 'today']);
   if (pathname === '/signup-coupon') return j(opts.noCoupon ? { enabled: false } : { enabled: true, label: '신규회원 10% 할인 쿠폰', sub: '2만 원 이상 주문 · 가입 후 30일' });
   if (pathname === '/shop/business-info') return j(bizInfo);

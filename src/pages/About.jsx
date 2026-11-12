@@ -15,7 +15,7 @@ const promiseText = (p) => {
   return p.mode === 'tomorrow' ? `${p.label} · ${p.sub}` : `${p.sub} · ${p.label}`;
 };
 
-export default function About({ user, storeId, storeShort, goBack, onShop, onNotice, onSignup }) {
+export default function About({ user, storeId, storeShort, goBack, onShop, onNotice, onStores, onHelp, onSignup }) {
   const promise = useDeliveryPromise(storeId);
   const [coupon, setCoupon] = useState(null);
   const [info, setInfo] = useState(null);
@@ -49,7 +49,10 @@ export default function About({ user, storeId, storeShort, goBack, onShop, onNot
         <button type="button" className="go" onClick={onShop}>쇼핑하기<Icon name="chevR" size="sm" /></button>
       </div>
       <div className="chips about-chips">
+        {/* 목업 순서: 매장안내 · 이벤트 · 공지사항 · 고객센터 — 이벤트(S45)는 아직 없다 */}
+        <button type="button" className="chip sm" onClick={onStores}>매장안내</button>
         <button type="button" className="chip sm" onClick={onNotice}>공지사항</button>
+        <button type="button" className="chip sm" onClick={onHelp}>고객센터</button>
       </div>
 
       <section className="sec">

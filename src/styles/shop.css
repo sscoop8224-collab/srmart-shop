@@ -479,3 +479,18 @@
 .v2 .mr-meta { display: flex; gap: var(--sp-2); align-items: center; margin-top: 2px; }
 .v2 .mr-meta small { font-size: var(--fs-cap); color: var(--text-2); }
 .v2 .mr-del { font-size: var(--fs-sub); flex-shrink: 0; }
+
+/* 묶음 6 — S44 매장안내 · S46 고객센터 */
+.v2 a.row, .v2 a.ui-btn { color: inherit; text-decoration: none; }
+.v2 a.ui-btn.sec { color: var(--brand-strong); }
+.v2.storeinfo-v2, .v2.cs-v2 { padding-bottom: var(--sp-6); }
+.v2 .store-card .row.sc-top { padding-bottom: var(--sp-2); }
+.v2 .store-card .row.sc-facts { padding-top: 0; }
+.v2 .store-card .row.sc-facts small .ic { vertical-align: -4px; }
+.v2 .store-card .acts { display: flex; gap: var(--sp-2); padding: 0 var(--sp-4) var(--sp-4); }
+.v2 .store-card .acts .ui-btn { flex: 1; gap: 4px; }
+.v2 .sc-foot { padding: var(--sp-3) var(--page-x); }
+.v2 .faq-item + .faq-item .faq-row::before { content: ''; position: absolute; top: 0; right: 0; left: var(--sp-4); border-top: var(--hairline) solid var(--sep); }
+.v2 .faq-item.on + .faq-item .faq-row::before { display: none; }   /* 목업: 펼친 답 아래에는 선이 없다 */
+.v2 .faq-row .chev { color: var(--text); }
+.v2 .faq .a { padding: 0 var(--sp-4) var(--sp-4); font-size: var(--fs-sub); color: var(--text-2); line-height: var(--lh); white-space: pre-line; }

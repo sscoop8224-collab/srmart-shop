@@ -63,6 +63,8 @@ const cartOf = async p => { await login(p); await p.locator('.pgrid .add').nth(0
 const ordersOf = async (p, t) => { await login(p); await tab(p, '주문내역').click(); await wait(p, 1200); if (t) { await p.getByRole('tab', { name: t }).click(); await wait(p, 500); } };
 // 마이(P02) — (로그인 →) 탭바 「마이」 · 줄 하나 누르기
 const myOf = async (p, { guest = false, row = '' } = {}) => { if (!guest) await login(p); await tab(p, '마이').click(); await wait(p, 900); if (row) { await p.locator('.my-v2 button.row', { has: p.locator(`.lbl:text-is("${row}")`) }).first().click(); await wait(p, 700); } };
+// 회사 소개(S40) 의 칩(매장안내·고객센터) — 손님으로 마이 → 회사 소개 → 칩
+const aboutChip = async (p, chip) => { await myOf(p, { guest: true, row: '회사 소개·사업자 정보' }); await p.locator('.about-chips .chip', { hasText: chip }).click(); await wait(p, 900); };
 const orderOf = async p => { await cartOf(p); await p.getByRole('button', { name: '주문하기', exact: true }).click(); await wait(p, 1200); };
 const tab = (p, label) => p.locator('.tabbar .tab', { hasText: label }).first();
 // 로그인 화면(S27) — 홈 헤더 「로그인」 · 회원가입(P04) — 거기서 「회원가입」
@@ -209,6 +211,12 @@ const BUNDLES = {
     { id: 'S41E', mock: 'S41', name: '최근 본 상품 — 비어 있음', state: '비어 있음', opts: { noRecent: true }, go: async p => { await myOf(p, { row: '최근 본 상품' }); }, part: ['.empty', '.v2 .ui-empty'] },
     { id: 'S42', name: '내 리뷰 — 목록', state: '목록', go: async p => { await myOf(p, { row: '내 리뷰' }); }, part: ['.review', '.v2 .review'] },
     { id: 'S42E', mock: 'S42', name: '내 리뷰 — 비어 있음', state: '비어 있음', opts: { noReviews: true }, go: async p => { await myOf(p, { row: '내 리뷰' }); }, part: ['.empty', '.v2 .ui-empty'] },
+    // 매장안내(S44)·고객센터(S46) — 마이 → 회사 소개 → 칩
+    { id: 'S44', name: '매장안내 — 목록', state: '목록', go: async p => { await aboutChip(p, '매장안내'); }, part: ['.store-card', '.v2 .store-card'] },
+    { id: 'S44C', mock: 'S44', name: '매장안내 — 매장 바꾸기 확인', state: '매장 바꾸기 확인', go: async p => { await aboutChip(p, '매장안내'); await p.getByRole('button', { name: '이 매장으로' }).last().click(); await wait(p, 400); }, part: ['.alert', '.alert'] },
+    { id: 'S44X', mock: 'S44', name: '매장안내 — 불러오지 못함', state: '불러오지 못함', opts: { storesFail: true }, go: async p => { await aboutChip(p, '매장안내'); }, part: ['.empty', '.v2 .ui-empty'] },
+    { id: 'S46', name: '고객센터 — 기본', state: '기본', go: async p => { await aboutChip(p, '고객센터'); }, part: ['.group', '.v2 .group'] },
+    { id: 'S46O', mock: 'S46', name: '고객센터 — 질문 펼침', state: '질문 펼침', go: async p => { await aboutChip(p, '고객센터'); await p.locator('.faq-row').first().click(); await wait(p, 300); }, part: ['.faq .group', '.v2 .faq .group'] },
     { id: 'S42D', mock: 'S42', name: '내 리뷰 — 삭제 확인', state: '삭제 확인', go: async p => { await myOf(p, { row: '내 리뷰' }); await p.locator('.mr-del').first().click(); await wait(p, 400); }, part: ['.alert', '.alert'] },
   ],
 };
