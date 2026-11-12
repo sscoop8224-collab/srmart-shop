@@ -1,8 +1,14 @@
+// 앱 설치 안내 (목업 정본 v1 의 S38, 묶음 6 · 2026-11-13 새벽)
+// 언제: 설치 안 한 웹 손님에게 3초 뒤 한 번 · 닫으면 7일 숨김 · 홈페이지 「앱 다운로드」(/shop/?install=1)로 오면 바로(숨김 무시) — 예전 그대로.
+// 모양(목업):
+//   · 안드로이드 = 탭바 위 카드 — 아이콘 · 「에스알마트 앱 설치」 · 「설치」(브라우저 설치 창) · 닫기
+//   · 아이폰 = 아래 시트 「홈 화면에 추가하기」 — Safari 「공유 → 홈 화면에 추가」 안내 · 「나중에」
 import { useState, useEffect } from 'react';
-import { useTheme } from '../ThemeContext';
+import Icon from './ui/Icon';
 
 const DISMISSED_KEY = 'srmart_pwa_dismissed_at';
 const DISMISS_DAYS  = 7;
+const ICON = `${process.env.PUBLIC_URL}/icons/icon-144.png`;
 
 function isIOS() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
@@ -14,7 +20,6 @@ function isInStandaloneMode() {
 }
 
 export default function InstallPrompt() {
-  const { darkMode } = useTheme();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [show, setShow]                     = useState(false);
   const [showIOS, setShowIOS]               = useState(false);
@@ -69,64 +74,37 @@ export default function InstallPrompt() {
     setShow(false);
   };
 
-  const cardStyle = {
-    position: 'fixed',
-    bottom: 80,
-    left: '50%',
-    transform: 'translateX(-50%)',
-    width: 'calc(100% - 32px)',
-    maxWidth: 440,
-    background: darkMode ? '#1e1e1e' : '#ffffff',
-    border: `1.5px solid ${darkMode ? '#2e2e2e' : '#d4f5e9'}`,
-    borderRadius: 20,
-    padding: '16px 18px',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-    zIndex: 9999,
-    display: 'flex',
-    gap: 14,
-    alignItems: 'flex-start',
-    animation: 'slideUp 0.3s ease',
-  };
-
-  if (!show && !showIOS) return null;
-
-  return (
-    <>
-      <style>{`@keyframes slideUp { from { opacity:0; transform:translateX(-50%) translateY(20px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }`}</style>
-      <div style={cardStyle}>
-        <div style={{ width: 44, height: 44, borderRadius: 12, overflow: 'hidden', flexShrink: 0 }}>
-          <img src={`${process.env.PUBLIC_URL}/icons/icon-72.png`} alt="SR마트" style={{ width: 44, height: 44, display: 'block' }} />
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: darkMode ? '#f0f0f0' : '#1a1a1a', marginBottom: 3 }}>
-            {showIOS ? '홈 화면에 추가하기' : 'SR마트 앱 설치'}
+  if (showIOS) {
+    return (
+      <div className="overlay sheet-over" role="dialog" aria-modal="true" aria-labelledby="install-ios-title" onClick={(e) => { if (e.target === e.currentTarget) dismiss(); }}>
+        <div className="sheet v2 plain">
+          <div className="grabber" />
+          <div className="sheet-h">
+            <div className="nav-side" />
+            <div className="nav-title" id="install-ios-title">홈 화면에 추가하기</div>
+            <div className="nav-side r"><button type="button" className="nav-btn b" onClick={dismiss}>나중에</button></div>
           </div>
-          <div style={{ fontSize: 12, color: darkMode ? '#aaa' : '#666', lineHeight: 1.5, marginBottom: 10 }}>
-            {showIOS
-              ? <>Safari 하단 <strong>공유</strong> 버튼을 누른 뒤 <strong>"홈 화면에 추가"</strong>를 선택하세요</>
-              : '홈 화면에 추가하면 앱처럼 빠르게 실행할 수 있어요'}
-          </div>
-          {!showIOS && (
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={install} style={{
-                background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
-                color: 'white', border: 'none', borderRadius: 10,
-                padding: '8px 16px', fontSize: 13, fontWeight: 700,
-                cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,196,113,0.3)',
-              }}>설치</button>
-              <button onClick={dismiss} style={{
-                background: 'transparent', color: darkMode ? '#888' : '#999',
-                border: `1px solid ${darkMode ? '#444' : '#ddd'}`,
-                borderRadius: 10, padding: '8px 12px', fontSize: 12, cursor: 'pointer',
-              }}>나중에</button>
+          <div className="sheet-b">
+            <div className="pad install-ios">
+              <img src={ICON} alt="" />
+              <p>Safari 아래쪽 <b>공유</b> <Icon name="share" size="sm" /> 버튼을 누른 뒤<br /><b>「홈 화면에 추가」</b>를 골라 주세요.</p>
+              <p className="f-hint">홈 화면에 추가하면 앱처럼 빠르게 열려요</p>
             </div>
-          )}
+          </div>
         </div>
-        <button onClick={dismiss} style={{
-          background: 'none', border: 'none', cursor: 'pointer',
-          color: darkMode ? '#666' : '#bbb', fontSize: 18, lineHeight: 1, padding: 2,
-        }}>✕</button>
       </div>
-    </>
+    );
+  }
+
+  if (!show) return null;
+  return (
+    <div className="v2 install-v2">
+      <div className="toast install-card" role="dialog" aria-label="에스알마트 앱 설치">
+        <img src={ICON} alt="" />
+        <div className="install-txt"><b>에스알마트 앱 설치</b><div className="f-hint">홈 화면에서 앱처럼 빠르게 열려요</div></div>
+        <button type="button" className="ui-btn sm pri" onClick={install}>설치</button>
+        <button type="button" className="nav-btn plain" aria-label="닫기" onClick={dismiss}><Icon name="x" size="sm" /></button>
+      </div>
+    </div>
   );
 }

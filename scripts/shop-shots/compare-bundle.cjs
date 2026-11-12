@@ -67,6 +67,15 @@ const myOf = async (p, { guest = false, row = '' } = {}) => { if (!guest) await 
 const aboutChip = async (p, chip) => { await myOf(p, { guest: true, row: '회사 소개·사업자 정보' }); await p.locator('.about-chips .chip', { hasText: chip }).click(); await wait(p, 900); };
 // AI 상담(S37) — 홈 헤더 아이콘으로 열고 목업과 같은 말을 보낸다
 const chatSay = async (p) => { await p.getByRole('button', { name: 'AI 상담' }).first().click(); await wait(p, 500); await p.getByLabel('메시지').fill('콜라 있어요?'); await p.getByRole('button', { name: '보내기' }).click(); await wait(p, 900); };
+// 앱 설치 안내(S38) — 안드로이드는 브라우저 설치 이벤트를 흉내, 아이폰은 사용자 에이전트를 바꿔 다시 읽는다
+const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+const installOf = async (p, ios) => {
+  if (ios) await p.addInitScript((ua) => { Object.defineProperty(navigator, 'userAgent', { get: () => ua }); }, IPHONE_UA);
+  const u = new URL(p.url()); u.searchParams.set('install', '1');
+  await p.goto(u.toString()); await wait(p, 1500);
+  if (!ios) await p.evaluate(() => { const e = new Event('beforeinstallprompt'); e.prompt = () => {}; e.userChoice = Promise.resolve({ outcome: 'dismissed' }); window.dispatchEvent(e); });
+  await wait(p, 700);
+};
 const orderOf = async p => { await cartOf(p); await p.getByRole('button', { name: '주문하기', exact: true }).click(); await wait(p, 1200); };
 const tab = (p, label) => p.locator('.tabbar .tab', { hasText: label }).first();
 // 로그인 화면(S27) — 홈 헤더 「로그인」 · 회원가입(P04) — 거기서 「회원가입」
@@ -220,6 +229,9 @@ const BUNDLES = {
     // AI 상담(S37) — 홈 헤더의 AI 아이콘 → 한 마디 보내기(가짜 응답)
     { id: 'S37', name: 'AI 상담 — 대화', state: '대화', go: async p => { await chatSay(p); }, part: ['.sheet', '.sheet.chat-sheet'] },
     { id: 'S37X', mock: 'S37', name: 'AI 상담 — 오류', state: '오류', opts: { chatFail: true }, go: async p => { await chatSay(p); }, part: ['.sheet', '.sheet.chat-sheet'] },
+    // 앱 설치 안내(S38) — 사진 도구는 안내를 숨겨 두므로 ?install=1(숨김 무시)로 다시 연다
+    { id: 'S38', name: '앱 설치 안내 — 안드로이드', state: '안드로이드', go: async p => { await installOf(p, false); }, part: ['.toast', '.toast.install-card'] },
+    { id: 'S38I', mock: 'S38', name: '앱 설치 안내 — 아이폰', state: '아이폰', go: async p => { await installOf(p, true); }, part: ['.sheet', '.sheet'] },
     // 이벤트(S45) — 마이 → 회사 소개 → 「이벤트」
     { id: 'S45', name: '이벤트 — 목록', state: '목록', go: async p => { await aboutChip(p, '이벤트'); }, part: ['.ev-card', '.v2 .ev-card'] },
     { id: 'S45D', mock: 'S45', name: '이벤트 — 상세·행사 상품', state: '이벤트 상세 · 행사 상품', go: async p => { await aboutChip(p, '이벤트'); await p.locator('.ev-go').first().click(); await wait(p, 900); }, part: ['.banner', '.v2 .ev-banner'] },

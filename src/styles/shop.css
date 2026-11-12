@@ -526,3 +526,14 @@
 .v2 .composer .field { flex: 1; height: 40px; border-radius: var(--r-full); }
 .v2 .send { width: 36px; height: 36px; border-radius: var(--r-full); background: var(--brand); color: var(--on-brand); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .v2 .send:disabled { opacity: .45; }
+
+/* 묶음 6 — S38 앱 설치 안내(안드로이드 = 탭바 위 카드 · 아이폰 = 시트) */
+.v2 .toast.install-card { background: var(--card); color: var(--text); padding: var(--sp-3); }
+.v2 .install-card img { width: 44px; height: 44px; border-radius: var(--r-sm); flex-shrink: 0; }
+.v2 .install-card .install-txt { flex: 1; min-width: 0; }
+.v2 .install-card .install-txt .f-hint { margin: 0; }
+.v2 .install-ios { padding-top: 0; text-align: center; }
+.v2 .install-ios img { width: 72px; border-radius: var(--r-md); }
+.v2 .install-ios p { margin-top: var(--sp-3); font-size: var(--fs-callout); }
+.v2 .install-ios p .ic { vertical-align: -3px; }
+.v2 .install-ios p.f-hint { font-size: var(--fs-foot); }

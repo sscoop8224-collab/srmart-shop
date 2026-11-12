@@ -1,14 +1,13 @@
 {
   "note": "색 직접 쓰기 남은 개수(파일별) — 늘면 scripts/check-ui-rules.cjs 가 막는다. 줄였을 때만 --update 로 낮춘다.",
   "updated": "2026-11-12",
-  "total": 1567,
+  "total": 1550,
   "files": {
     "src/App.css": 35,
     "src/App.js": 3,
     "src/Unauthorized.jsx": 4,
     "src/components/Code128.jsx": 4,
     "src/components/DarkModeToggle.jsx": 8,
-    "src/components/InstallPrompt.js": 17,
     "src/components/SplashAd.js": 1,
     "src/components/admin/Dashboard.jsx": 35,
     "src/components/admin/OrderManagement.jsx": 43,
