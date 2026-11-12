@@ -1,0 +1,85 @@
+// 손님에게 보이는 매장 이름 목록 — 개인정보 제공 동의 문구에 쓴다 (2026-11-12 대표님 지시 1).
+//
+// ── 왜 손으로 적지 않나 ──────────────────────────────────────────────────
+//
+// 동의 문구에 「검암점·왕길점·신흥점·고촌점·승학점」 이 **손으로** 적혀 있었다. 그런데
+// 승학점은 물류 창고라 손님에게 보이지 않게 정해졌고(stores.customer_visible), 그러면
+// 손님이 **알지도 못하는 매장에 정보를 넘기는 데** 동의하라는 문장이 된다.
+// 매장 노출을 바꿀 때마다 문구를 따로 고쳐야 한다면 또 어긋난다 — 그래서 문구를
+// `GET /api/stores?audience=customer` 결과로 만든다. 서버가 보이는 매장을 바꾸면 문구도 따라 바뀐다.
+//
+// ── 못 불러오면 ──────────────────────────────────────────────────────────
+//
+// 🔴 **빈 목록·옛 목록으로 떨어지지 않는다.** 목록 없이 「에스알마트 각 지점」 이라고만 쓴다.
+//    옛 목록을 적어 두면 그게 다시 틀린 약속이 되고, 빈 괄호는 문장이 깨져 보인다.
+import { useEffect, useState } from 'react';
+import { getStores } from '../api';
+
+// 매장 이름 앞머리(상호) — 「에스알마트 검암점」 → 「검암점」, 「아람마트 고촌점」 → 「고촌점」.
+const BRAND_PREFIX = /^(에스알마트|아람마트|SR\s*마트|에스알|동신마켓)\s*/i;
+
+/** 매장 한 곳의 지점 이름 — 표시 이름(display_name)이 있으면 그것, 앞머리 상호는 뗀다. */
+export function branchName(store) {
+  const raw = String(store?.display_name || store?.name || '').trim();
+  if (!raw) return '';
+  let n = raw.replace(BRAND_PREFIX, '').trim();
+  // 다른 상호가 붙어 와도 「○○점」 만 남긴다(마지막 낱말이 「점」 으로 끝날 때만).
+  const parts = n.split(/\s+/);
+  if (parts.length > 1 && /점$/.test(parts[parts.length - 1])) n = parts[parts.length - 1];
+  return n || raw;
+}
+
+/** 매장 목록 → 「검암점·왕길점·신흥점·고촌점」. 이름이 하나도 없으면 ''. */
+export function branchList(stores) {
+  if (!Array.isArray(stores)) return '';
+  const seen = new Set();
+  const names = [];
+  for (const s of stores) {
+    const n = branchName(s);
+    if (n && !seen.has(n)) { seen.add(n); names.push(n); }
+  }
+  return names.join('·');
+}
+
+/** 받침이 있으면 '은', 없으면 '는' — 마지막 글자가 한글이 아니면 '은(는)'. */
+export function topicJosa(word) {
+  const ch = String(word || '').slice(-1);
+  const code = ch.charCodeAt(0) - 0xac00;
+  if (!(code >= 0 && code <= 11171)) return '은(는)';
+  return code % 28 ? '은' : '는';
+}
+
+// 한 번 받은 목록은 세션 동안 다시 쓴다(동의 창과 가입 화면이 같이 부른다).
+// 실패는 저장하지 않는다 — 다음에 열 때 다시 시도한다.
+let cached = null;
+let pending = null;
+
+export function loadCustomerStores() {
+  if (cached) return Promise.resolve(cached);
+  if (!pending) {
+    pending = getStores()
+      .then((res) => {
+        const rows = Array.isArray(res.data) ? res.data : [];
+        if (rows.length) cached = rows;
+        return rows;
+      })
+      .finally(() => { pending = null; });
+  }
+  return pending;
+}
+
+/**
+ * 손님에게 보이는 지점 이름 문자열 — 「검암점·왕길점·신흥점·고촌점」.
+ * 불러오는 중이거나 실패하면 '' (부르는 쪽은 목록 없는 문장으로 쓴다).
+ */
+export function useCustomerBranchList() {
+  const [list, setList] = useState(() => (cached ? branchList(cached) : ''));
+  useEffect(() => {
+    let alive = true;
+    loadCustomerStores()
+      .then((rows) => { if (alive) setList(branchList(rows)); })
+      .catch(() => { if (alive) setList(''); });
+    return () => { alive = false; };
+  }, []);
+  return list;
+}

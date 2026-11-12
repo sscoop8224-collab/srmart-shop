@@ -17,8 +17,10 @@
 // 아무것도 보내지 않는다 — 다음 로그인 때 다시 뜬다. 답(동의/거절)을 해야만 끝난다.
 import { useState } from 'react';
 import API from '../api';
+import { useCustomerBranchList, topicJosa } from '../utils/customerStores';
 
 export default function ThirdPartyConsentModal({ onDone }) {
+  const branches = useCustomerBranchList();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -42,7 +44,11 @@ export default function ThirdPartyConsentModal({ onDone }) {
         <div id="tpc-title" style={title}>매장 이용도 함께 하시겠어요?</div>
 
         <p style={body}>
-          에스알마트 <b>검암점·왕길점·신흥점·고촌점·승학점</b>은 각각 다른 사업자예요.
+          {/* 지점 이름은 손님에게 보이는 매장 목록(GET /api/stores?audience=customer)으로 만든다 —
+              utils/customerStores.js 머리말. 못 불러오면 목록 없이 「각 지점」. */}
+          {branches
+            ? <>에스알마트 <b>{branches}</b>{topicJosa(branches)} 각각 다른 사업자예요.</>
+            : <>에스알마트 각 지점은 각각 다른 사업자예요.</>}
           매장에서 포인트를 쌓고 쓰시고 <b>매장에서 사신 영수증을 앱에서 보시려면</b>,
           이름·연락처·회원번호·포인트 내역과 매장 구매 내역을 각 지점에 제공하는 데
           동의가 필요해요.

@@ -4,6 +4,8 @@ import srmLogo from '../srm-logo-transparent.png';
 import { getStores, register, getCoverage } from '../api';
 import { useDialog } from '../DialogContext';
 import { todayYmd } from '../utils/localDate';
+// 동의 문구의 지점 목록 — 아래 `stores`(GET /api/stores?audience=customer)로 만든다. 못 불러오면 목록 없이 「각 지점」.
+import { branchList } from '../utils/customerStores';
 
 // ── 나이 계산 함수 ──────────────────────────────────────────
 // 동의 한 줄 — 체크박스 + 제목 + 설명.
@@ -645,7 +647,7 @@ function Login({ onLogin, onGuest }) {
                   checked={thirdPartyConsent}
                   onChange={setThirdPartyConsent}
                   label="지점 통합 회원·포인트·구매 내역 이용 동의"
-                  detail="에스알마트 각 지점(승학·검암·왕길·신흥·고촌)은 서로 다른 사업자입니다. 동의하시면 모든 지점에서 포인트를 함께 쌓고 쓰시고, 매장 구매 영수증도 앱에서 보실 수 있어요. 제공 항목은 이름·연락처·회원번호·포인트 내역·매장 구매 내역입니다. 동의하지 않으셔도 가입과 온라인 주문은 그대로 가능하며, 이 경우 매장 포인트 적립·사용과 매장 구매 내역 표시만 제한됩니다."
+                  detail={`에스알마트 각 지점${branchList(stores) ? `(${branchList(stores)})` : ''}은 서로 다른 사업자입니다. 동의하시면 모든 지점에서 포인트를 함께 쌓고 쓰시고, 매장 구매 영수증도 앱에서 보실 수 있어요. 제공 항목은 이름·연락처·회원번호·포인트 내역·매장 구매 내역입니다. 동의하지 않으셔도 가입과 온라인 주문은 그대로 가능하며, 이 경우 매장 포인트 적립·사용과 매장 구매 내역 표시만 제한됩니다.`}
                 />
                 <div style={{ marginTop: 12, fontSize: 12 }}>
                   <a href="https://dongsinmarket.co.kr/privacy.html" target="_blank" rel="noreferrer"
