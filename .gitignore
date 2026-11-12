@@ -20,3 +20,6 @@ yarn-error.log*
 .DS_Store
 # 안쪽에 잘못 들어온 중복 폴더(안드로이드 빌드 중간 파일, cc753006) — 경로가 길어 윈도 체크아웃이 깨진다. 추적 안 함(디스크 파일은 둠)
 /srmart-shop/
+
+# 운영 반영 보관 폴더(build_prev_<시각> · build_next · build_failed_<시각>) — 커밋하지 않는다
+/build_*/

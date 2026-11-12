@@ -2,7 +2,8 @@
 /**
  * 정적 미리보기 서버 — 쇼핑앱 build/ 또는 목업 폴더를 **127.0.0.1 에만** 띄운다.
  *
- *   node -r <listen-guard.cjs> scripts/shop-shots/serve-static.cjs <폴더> <포트> [--uploads D:/srmart_uploads]
+ *   node -r <listen-guard.cjs> scripts/shop-shots/serve-static.cjs <폴더> <포트> [--uploads D:/srmart_uploads] [--prefix /shop]
+ *   --prefix: 운영처럼 /shop/ 아래에 띄운다(서비스워커 범위가 운영과 같아진다 — check-sw.cjs 용)
  *
  * 왜 따로 두나: 운영 pm2(:3000 serve)는 건드리지 않고 사진만 찍으려는 것이다.
  * - /api 는 **응답하지 않는다(404).** 사진 도구가 Playwright 에서 가짜 응답으로 막는다 —
@@ -18,6 +19,8 @@ const root = path.resolve(process.argv[2] || '.');
 const port = Number(process.argv[3] || 5311);
 const upIdx = process.argv.indexOf('--uploads');
 const uploads = upIdx > 0 ? path.resolve(process.argv[upIdx + 1]) : null;
+const pxIdx = process.argv.indexOf('--prefix');
+const prefix = pxIdx > 0 ? process.argv[pxIdx + 1].replace(/\/+$/, '') : '';
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
@@ -48,7 +51,9 @@ http.createServer((req, res) => {
     const f = inside(uploads, url.slice('/uploads'.length));
     return f ? send(res, f) : (res.writeHead(403), res.end());
   }
-  const f = inside(root, url);
+  if (prefix && (url === prefix)) { res.writeHead(301, { Location: prefix + '/' }); res.end(); return; }
+  if (prefix && !url.startsWith(prefix + '/')) { res.writeHead(404); res.end('outside prefix'); return; }
+  const f = inside(root, prefix ? url.slice(prefix.length) : url);
   if (!f) { res.writeHead(403); res.end(); return; }
   fs.stat(f, (err, st) => {
     if (!err && st.isFile()) return send(res, f);
