@@ -125,7 +125,7 @@ const SCREENS = [
   { id: 'S36', name: '오프라인', go: async (p, c) => { await c.setOffline(true); await wait(p, 700); } },
   { id: 'S37', name: 'AI 상담', go: async p => {
     await p.getByRole('button', { name: 'AI 상담' }).click(); await wait(p, 500);
-    const box = p.getByPlaceholder('메시지를 입력하세요...').filter({ visible: true }).first(); await box.fill('콜라 있어요?'); await box.press('Enter'); await wait(p, 1200);
+    const box = p.getByPlaceholder('메시지를 입력하세요').filter({ visible: true }).first(); await box.fill('콜라 있어요?'); await box.press('Enter'); await wait(p, 1200);
   } },
   { id: 'S38', name: '앱 설치 안내(아이폰)', ctx: { iphone: true, query: '?install=1' }, go: async p => { await wait(p, 1200); } },
   { id: 'S39', name: '스플래시 광고', skip: '네이티브 앱(Capacitor) 첫 실행에서만 뜬다 — 웹 빌드로는 재현 불가' },

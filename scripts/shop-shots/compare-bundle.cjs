@@ -65,6 +65,8 @@ const ordersOf = async (p, t) => { await login(p); await tab(p, '주문내역').
 const myOf = async (p, { guest = false, row = '' } = {}) => { if (!guest) await login(p); await tab(p, '마이').click(); await wait(p, 900); if (row) { await p.locator('.my-v2 button.row', { has: p.locator(`.lbl:text-is("${row}")`) }).first().click(); await wait(p, 700); } };
 // 회사 소개(S40) 의 칩(매장안내·고객센터) — 손님으로 마이 → 회사 소개 → 칩
 const aboutChip = async (p, chip) => { await myOf(p, { guest: true, row: '회사 소개·사업자 정보' }); await p.locator('.about-chips .chip', { hasText: chip }).click(); await wait(p, 900); };
+// AI 상담(S37) — 홈 헤더 아이콘으로 열고 목업과 같은 말을 보낸다
+const chatSay = async (p) => { await p.getByRole('button', { name: 'AI 상담' }).first().click(); await wait(p, 500); await p.getByLabel('메시지').fill('콜라 있어요?'); await p.getByRole('button', { name: '보내기' }).click(); await wait(p, 900); };
 const orderOf = async p => { await cartOf(p); await p.getByRole('button', { name: '주문하기', exact: true }).click(); await wait(p, 1200); };
 const tab = (p, label) => p.locator('.tabbar .tab', { hasText: label }).first();
 // 로그인 화면(S27) — 홈 헤더 「로그인」 · 회원가입(P04) — 거기서 「회원가입」
@@ -215,6 +217,9 @@ const BUNDLES = {
     { id: 'S44', name: '매장안내 — 목록', state: '목록', go: async p => { await aboutChip(p, '매장안내'); }, part: ['.store-card', '.v2 .store-card'] },
     { id: 'S44C', mock: 'S44', name: '매장안내 — 매장 바꾸기 확인', state: '매장 바꾸기 확인', go: async p => { await aboutChip(p, '매장안내'); await p.getByRole('button', { name: '이 매장으로' }).last().click(); await wait(p, 400); }, part: ['.alert', '.alert'] },
     { id: 'S44X', mock: 'S44', name: '매장안내 — 불러오지 못함', state: '불러오지 못함', opts: { storesFail: true }, go: async p => { await aboutChip(p, '매장안내'); }, part: ['.empty', '.v2 .ui-empty'] },
+    // AI 상담(S37) — 홈 헤더의 AI 아이콘 → 한 마디 보내기(가짜 응답)
+    { id: 'S37', name: 'AI 상담 — 대화', state: '대화', go: async p => { await chatSay(p); }, part: ['.sheet', '.sheet.chat-sheet'] },
+    { id: 'S37X', mock: 'S37', name: 'AI 상담 — 오류', state: '오류', opts: { chatFail: true }, go: async p => { await chatSay(p); }, part: ['.sheet', '.sheet.chat-sheet'] },
     // 이벤트(S45) — 마이 → 회사 소개 → 「이벤트」
     { id: 'S45', name: '이벤트 — 목록', state: '목록', go: async p => { await aboutChip(p, '이벤트'); }, part: ['.ev-card', '.v2 .ev-card'] },
     { id: 'S45D', mock: 'S45', name: '이벤트 — 상세·행사 상품', state: '이벤트 상세 · 행사 상품', go: async p => { await aboutChip(p, '이벤트'); await p.locator('.ev-go').first().click(); await wait(p, 900); }, part: ['.banner', '.v2 .ev-banner'] },

@@ -204,6 +204,7 @@ function route(pathname, method, search, opts = {}) {
   if (pathname === '/store/match-zipcode') return j({ matched: true, zone: { zone_name: '왕길동 배송구역', free_delivery_min: 30000 }, delivery_fee: 3000 });
   if (pathname === '/store/coverage') return j({ stores: [{ store_id: 11, store_name: '에스알마트 왕길점' }], recommended: { store_id: 11, store_name: '에스알마트 왕길점' } });
   if (pathname === '/orders') return j({ ok: true });
+  if (pathname === '/chatbot' && opts.chatFail) return j({ error: '서버 오류' }, 500);
   if (pathname === '/chatbot') return j({ reply: '네! 코카콜라 1.5L 는 왕길점에 24개 있어요. 장바구니에 담아 드릴까요?' });
   if (pathname === '/users/third-party-consent') return j({ ok: true });
   return j({}, 200);

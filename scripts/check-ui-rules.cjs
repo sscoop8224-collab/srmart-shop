@@ -55,6 +55,7 @@ const STRICT = [
   'src/pages/StoreInfo.jsx',     // 묶음 6 — S44
   'src/pages/CustomerCenter.jsx', // 묶음 6 — S46
   'src/pages/Events.jsx',        // 묶음 6 — S45
+  'src/components/Chatbot.js',   // 묶음 6 — S37
   'src/components/ForcePasswordChangeModal.jsx', // 묶음 5 — S31
   'src/components/ThirdPartyConsentModal.jsx',   // 묶음 5 — S32
 ];

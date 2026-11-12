@@ -510,3 +510,19 @@
 .v2 .ev-card .ev-go { width: 100%; gap: 2px; }
 .v2 .banner.ev-banner { min-height: 150px; flex: none; margin: var(--sp-4) var(--page-x) 0; }
 .v2 .banner.ev-banner .emo .ic { width: 64px; height: 64px; }
+
+/* 묶음 6 — S37 AI 상담(목업 .chat · .bub · .composer) */
+.sheet.chat-sheet { min-height: 0; }   /* 목업: 내용 높이 — 길어지면 시트 최대 높이 안에서 대화만 스크롤 */
+.sheet.chat-sheet .sheet-b { flex: 1; min-height: 0; }
+.v2 .chat-note { margin-top: 0; }
+.v2 .nav-btn.plain { color: var(--text); }
+.v2 .chat { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-3) var(--page-x); }
+.v2 .bub { max-width: 80%; padding: var(--sp-2) var(--sp-3); border-radius: var(--r-lg); font-size: var(--fs-callout); line-height: var(--lh); white-space: pre-wrap; word-break: break-word; }
+.v2 .bub.me { align-self: flex-end; background: var(--brand-fill); color: var(--on-brand-fill); border-bottom-right-radius: var(--r-xs); }
+.v2 .bub.ai { align-self: flex-start; background: var(--card); border-bottom-left-radius: var(--r-xs); box-shadow: var(--shadow-1); }
+.v2 .bub.ai.wait { color: var(--text-3); }
+.v2 .bub.ai.err { color: var(--danger); }
+.v2 .composer { display: flex; gap: var(--sp-2); align-items: center; padding: var(--sp-2) var(--page-x); border-top: var(--hairline) solid var(--sep); background: var(--bar-bg); flex-shrink: 0; }
+.v2 .composer .field { flex: 1; height: 40px; border-radius: var(--r-full); }
+.v2 .send { width: 36px; height: 36px; border-radius: var(--r-full); background: var(--brand); color: var(--on-brand); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.v2 .send:disabled { opacity: .45; }

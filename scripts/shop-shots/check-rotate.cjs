@@ -48,12 +48,12 @@ const BREAKERS = [
   { name: '회전할 때 열린 창이 닫히면', expect: '열린 창이 닫혔다',
     js: () => { window.addEventListener('resize', () => {
       if (!window.__rotMark) return;
-      const st = document.createElement('style'); st.textContent = '[placeholder="메시지를 입력하세요..."]{display:none !important}'; document.head.appendChild(st);
+      const st = document.createElement('style'); st.textContent = '[placeholder="메시지를 입력하세요"]{display:none !important}'; document.head.appendChild(st);
     }); } },
   { name: '회전할 때 쓰던 글이 지워지면', expect: '쓰던 글이 사라졌다',
     js: () => { window.addEventListener('resize', () => {
       if (!window.__rotMark) return;
-      document.querySelectorAll('input, textarea').forEach(el => { if (el.placeholder === '메시지를 입력하세요...') el.value = ''; });
+      document.querySelectorAll('input, textarea').forEach(el => { if (el.placeholder === '메시지를 입력하세요') el.value = ''; });
     }); } },
   { name: '회전할 때 스크롤이 맨 위로 튀면', expect: '스크롤이 맨 위로 튀었다',
     js: () => { window.addEventListener('resize', () => { if (window.__rotMark) setTimeout(() => window.scrollTo(0, 0), 50); }); } },
@@ -102,12 +102,12 @@ async function run({ breaker = null, quiet = false } = {}) {
   });
   // ③ AI 상담 창 + 쓰다 만 글
   await p.getByRole('button', { name: 'AI 상담' }).filter({ visible: true }).first().click(); await wait(500);
-  const box = p.getByPlaceholder('메시지를 입력하세요...').filter({ visible: true }).first();
+  const box = p.getByPlaceholder('메시지를 입력하세요').filter({ visible: true }).first();
   await box.fill(TYPED);
 
   const read = () => p.evaluate((typed) => {
     const cnt = [...document.querySelectorAll('.tabbar .bdg')].find(el => el.offsetParent !== null);
-    const inp = [...document.querySelectorAll('input, textarea')].find(el => el.placeholder === '메시지를 입력하세요...' && el.offsetParent !== null);
+    const inp = [...document.querySelectorAll('input, textarea')].find(el => el.placeholder === '메시지를 입력하세요' && el.offsetParent !== null);
     const anchor = document.querySelector('[data-rot-anchor]');
     return {
       mark: window.__rotMark || null,
