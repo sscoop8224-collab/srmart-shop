@@ -649,7 +649,7 @@ function AppContent() {
 
   if (page === 'login') {
     return (
-      <div className="App">
+      <div className="App app-v2">
         <Suspense fallback={<PageFallback />}>
           <Login onLogin={handleLogin} onGuest={handleGuest} initialMode={loginMode} />
         </Suspense>

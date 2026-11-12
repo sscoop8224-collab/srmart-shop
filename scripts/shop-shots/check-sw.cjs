@@ -66,7 +66,7 @@ const SECRETS = ['guest_demo', 'demo@example.com', '010-1234-5678', 'mock.token.
 
   await step('로그인', async () => {
     await p.locator('.app-nav button', { hasText: '로그인' }).click({ timeout: 4000 }); await p.waitForTimeout(500);
-    await p.getByPlaceholder('아이디를 입력해주세요').fill('guest_demo'); await p.getByPlaceholder('비밀번호를 입력해주세요').fill('x');
+    await p.getByPlaceholder(/아이디를 입력해 ?주세요/).fill('guest_demo'); await p.getByPlaceholder(/비밀번호를 입력해 ?주세요/).fill('x');
     await p.getByRole('button', { name: '로그인', exact: true }).filter({ visible: true }).first().click(); await p.waitForTimeout(1500);
   });
   const tabs = ['장바구니', '검색', '주문내역', '마이', '홈'];   // 5칸 탭바(묶음 1) — 찜은 마이 안으로 갔다

@@ -87,8 +87,8 @@ async function run({ breaker = null, quiet = false } = {}) {
   await p.goto(BASE.replace(/\/+$/, '') + '/', { waitUntil: 'domcontentloaded' }); await wait(1800);
   // ① 로그인 → 담기
   await vis('.app-nav button', '로그인').click();
-  await p.getByPlaceholder('아이디를 입력해주세요').fill('guest_demo');
-  await p.getByPlaceholder('비밀번호를 입력해주세요').fill('x');
+  await p.getByPlaceholder(/아이디를 입력해 ?주세요/).fill('guest_demo');
+  await p.getByPlaceholder(/비밀번호를 입력해 ?주세요/).fill('x');
   await p.getByRole('button', { name: '로그인', exact: true }).filter({ visible: true }).first().click(); await wait(900);
   const plus = p.locator('.pgrid .add');
   await plus.nth(0).click(); await wait(200); await plus.nth(1).click(); await wait(1700);

@@ -1,33 +1,26 @@
-// 아이디/비밀번호 찾기.
-// Part 1(현재): 서버 인증(SMS/알림톡) 연동 전까지 "준비 중" 안내만 표시.
-//   - 기존 가짜 목업 제거: 클라 임시비번 생성/화면 노출/alert, localStorage(users) 검색.
-//   - 임시비번을 실제 계정에 적용하지도 않던(먹통) 동작이라 노출·오해 소지가 컸음.
-// Part 2에서 서버 send-code/verify-code → reset-password 흐름으로 실제 연결.
-//   설계: srmart-backend/SMS_AUTH_DESIGN.md
+// 아이디/비밀번호 찾기 (목업 정본 v1 의 S29 자리, 묶음 5 · 2026-11-12 밤).
+// 목업은 「휴대폰 본인확인(S48)으로 찾는다」 — 그런데 본인확인이 운영에 아직 꺼져 있다(서버 /api/auth/find-id 가
+// IDENTITY_OFF 로 돌려준다). 그래서 지금은 **「준비 중」 안내만** 목업 모양(가운데 빈 화면)으로 보여 준다.
+//   - 예전 가짜 목업(클라 임시비번 생성/화면 노출/alert, localStorage 검색)은 이미 지웠다 — 실제 계정에
+//     적용되지도 않던(먹통) 동작이라 노출·오해 소지가 컸다.
+//   - 본인확인이 켜지면 목업 S29 그대로(아이디 찾기 · 비밀번호 재설정 두 칸) 바꾼다. 설계: docs/SHOP_IDENTITY_VERIFY.md
+import Icon from '../components/ui/Icon';
+
 function FindAccount({ onBack }) {
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'white' }}>
-
-      {/* 상단 그린 영역 */}
-      <div style={{ background: 'linear-gradient(160deg, var(--primary) 0%, var(--primary-dark) 100%)', padding: '40px 32px 60px', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '180px', height: '180px', background: 'rgba(255,255,255,0.08)', borderRadius: '50%' }} />
-        <span style={{ fontSize: '48px', marginBottom: '8px', position: 'relative', zIndex: 1 }}>🔍</span>
-        <span style={{ fontFamily: "'Nanum Pen Script', cursive", fontSize: '28px', color: 'white', fontWeight: '700', position: 'relative', zIndex: 1 }}>아이디/비밀번호 찾기</span>
-      </div>
-
-      {/* 준비 중 안내 */}
-      <div style={{ flex: 1, background: 'white', borderRadius: '28px 28px 0 0', marginTop: '-24px', padding: '32px 24px', position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <div style={{ background: '#f1f3f5', borderRadius: '16px', padding: '28px 20px', textAlign: 'center' }}>
-          <div style={{ fontSize: '40px', marginBottom: '12px' }}>🛠️</div>
-          <p style={{ fontSize: '17px', fontWeight: '800', color: '#343a40', margin: '0 0 10px' }}>준비 중인 기능이에요</p>
-          <p style={{ fontSize: '14px', color: '#868e96', margin: 0, lineHeight: 1.6 }}>
-            아이디·비밀번호 찾기는 문자(SMS)/카카오 알림톡<br />본인 인증 연동 후 제공될 예정이에요.<br />
-            <span style={{ fontWeight: '700', color: '#495057' }}>그 전까지는 가까운 매장으로 문의해주세요.</span>
-          </p>
+    <div className="v2 plain auth-v2">
+      <header className="app-nav line">
+        <div className="nav-row">
+          <div className="nav-side"><button type="button" className="nav-btn" onClick={onBack}><Icon name="chevL" />로그인</button></div>
+          <div className="nav-title">아이디·비밀번호 찾기</div>
+          <div className="nav-side r" />
         </div>
-        <button onClick={onBack} style={{ padding: '16px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '14px', fontSize: '16px', cursor: 'pointer', fontWeight: '800', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
-          로그인으로 돌아가기
-        </button>
+      </header>
+      <div className="ui-empty">
+        <div className="big g"><Icon name="shield" /></div>
+        <h3>준비 중인 기능이에요</h3>
+        <p>아이디·비밀번호 찾기는 휴대폰 본인확인이 열리면 바로 쓰실 수 있어요.<br />그 전까지는 가까운 매장으로 문의해 주세요.</p>
+        <button type="button" className="ui-btn pri" onClick={onBack}>로그인으로 돌아가기</button>
       </div>
     </div>
   );

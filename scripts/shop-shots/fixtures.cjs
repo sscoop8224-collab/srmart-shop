@@ -130,8 +130,11 @@ function route(pathname, method, search, opts = {}) {
   if (pathname === '/events/active') return j(events);
   if (pathname === '/login') {
     if (opts.loginFail) return j({ error: '아이디 또는 비밀번호가 틀려요!' }, 401);
-    return j({ token: 'mock.token.value', user });
+    // mustChange — 임시 비밀번호로 로그인(목업 S31) · needsConsent — 매장 이용 동의를 아직 안 물은 회원(목업 S32)
+    return j({ token: 'mock.token.value', user: { ...user, ...(opts.mustChange ? { must_change_password: 1 } : {}), ...(opts.needsConsent ? { needsThirdPartyConsent: true } : {}) } });
   }
+  // 가입(묶음 5 P04) — 서버 index.js 와 같은 모양. 쿠폰은 서버가 「지급했다」 할 때만 granted(noCoupon 이면 꺼짐)
+  if (pathname === '/register') return j({ message: '회원가입 성공! 🎉', signup_coupon: opts.noCoupon ? { granted: false } : { granted: true, user_coupon_id: 9, coupon_id: 3, name: '신규회원 10% 할인', label: '신규회원 10% 할인 쿠폰', sub: '2만 원 이상 주문 · 가입 후 30일' } });
   if (pathname === '/orders/my') return j(opts.noOrders ? [] : myOrders);   // noOrders — 주문내역 비어 있음(목업 P01)
   // 서버 찜 줄은 `w.*` + 상품 몇 칸 — id 는 **찜 줄 번호**, 상품 번호는 product_id, 가격은 없다(묶음 5 — 진짜 모양으로)
   if (pathname === '/users/me/wishlist') return j(opts.emptyWish ? [] : [products[0], products[3]].map((p, i) => ({ id: 501 + i, user_id: 9001, product_id: p.id, created_at: '2026-11-10T10:00:00', name: p.name, large: p.large, spec: p.spec, image: p.image })));

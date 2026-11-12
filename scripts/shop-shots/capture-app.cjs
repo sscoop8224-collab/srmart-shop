@@ -41,8 +41,8 @@ const nav = (p, text) => p.locator('.tabbar .tab', { hasText: text }).filter({ v
 
 async function login(p) {
   await p.locator('.app-nav button', { hasText: '로그인' }).click();
-  await p.getByPlaceholder('아이디를 입력해주세요').fill('guest_demo');
-  await p.getByPlaceholder('비밀번호를 입력해주세요').fill('x');
+  await p.getByPlaceholder(/아이디를 입력해 ?주세요/).fill('guest_demo');
+  await p.getByPlaceholder(/비밀번호를 입력해 ?주세요/).fill('x');
   await btn(p, '로그인').click();
   await wait(p, 900);
 }

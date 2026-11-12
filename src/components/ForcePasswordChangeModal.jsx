@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import API from '../api';
 import { useDialog } from '../DialogContext';
+import Icon from './ui/Icon';
 
-// Y5 강제 비밀번호 변경(임시비번, must_change_password=1) — shop 앱 전용 신설 화면.
-// srmart-admin 의 Login.js '강제 비밀번호 변경 모달'과 동일한 흐름을 그대로 미러링한다:
+// Y5 강제 비밀번호 변경(임시비번, must_change_password=1) — 목업 정본 v1 의 S31(묶음 5 · 2026-11-12 밤).
+// 닫을 수 없는 창: 새 비밀번호 · 확인 · 「비밀번호 표시」 · 비밀번호 변경. 흐름은 그대로다:
 //   - 이 화면이 뜬 시점엔 mcp 토큰만 localStorage(srmart_token) 에 저장돼 있고
 //     정식 로그인(setUser/authLogin)은 보류된 상태(App.js handleLogin 참조)
 //   - POST /api/auth/admin-change-password 는 role 무관 범용 엔드포인트(인증만 요구,
@@ -17,87 +18,59 @@ export default function ForcePasswordChangeModal({ onDone }) {
   const [newPw2, setNewPw2] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState({ at: '', msg: '' });   // at: 'pw' | 'confirm' — 그 칸 아래에 쓴다
 
   const handleSubmit = async () => {
-    setError('');
+    setError({ at: '', msg: '' });
     if (newPw.length < 6) {
-      setError('새 비밀번호는 6자 이상(소문자·숫자·특수문자 중 2종 이상)이어야 해요.');
+      setError({ at: 'pw', msg: '새 비밀번호는 6자 이상(소문자·숫자·특수문자 중 2종 이상)이어야 해요.' });
       return;
     }
     if (newPw !== newPw2) {
-      setError('새 비밀번호가 일치하지 않아요.');
+      setError({ at: 'confirm', msg: '새 비밀번호가 일치하지 않아요.' });
       return;
     }
     setLoading(true);
     try {
       await API.post('/auth/admin-change-password', { newPassword: newPw });
-      await notify('비밀번호가 변경됐어요! 새 비밀번호로 다시 로그인해주세요.');
+      await notify({ icon: 'check', title: '비밀번호를 바꿨어요', message: '새 비밀번호로 다시 로그인해 주세요.' });
       onDone();
     } catch (err) {
-      setError(err.response?.data?.error || '변경에 실패했어요. 잠시 후 다시 시도해주세요.');
+      setError({ at: 'pw', msg: err.response?.data?.error || '변경에 실패했어요. 잠시 후 다시 시도해주세요.' });
       setLoading(false);
     }
   };
 
+  const err = (at) => (error.at === at && error.msg
+    ? <div className="f-err"><Icon name="alert" size="sm" />{error.msg}</div> : null);
+
   return (
-    <div style={overlayStyle}>
-      <div style={modalStyle}>
-        <div style={{ fontSize: 32, textAlign: 'center', marginBottom: 8 }}>🔒</div>
-        <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800, textAlign: 'center', color: '#14110F' }}>
-          새 비밀번호 설정
-        </h3>
-        <p style={{ color: '#6B6259', fontSize: 13, margin: '0 0 20px', textAlign: 'center', lineHeight: 1.5 }}>
-          임시 비밀번호로 로그인하셨어요. 보안을 위해 새 비밀번호를 설정해주세요.
-        </p>
-        <input
-          type={showPw ? 'text' : 'password'}
-          placeholder="새 비밀번호"
-          value={newPw}
-          onChange={(e) => setNewPw(e.target.value)}
-          style={inputStyle}
-        />
-        <input
-          type={showPw ? 'text' : 'password'}
-          placeholder="새 비밀번호 확인"
-          value={newPw2}
-          onChange={(e) => setNewPw2(e.target.value)}
-          style={inputStyle}
-        />
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#6B6259', marginBottom: 12, cursor: 'pointer' }}>
-          <input type="checkbox" checked={showPw} onChange={(e) => setShowPw(e.target.checked)} />
-          비밀번호 표시
-        </label>
-        {error && <p style={{ color: '#E5484D', fontSize: 13, margin: '0 0 12px' }}>{error}</p>}
-        <button onClick={handleSubmit} disabled={loading} style={{ ...buttonStyle, opacity: loading ? 0.7 : 1 }}>
-          {loading ? '변경 중...' : '비밀번호 변경'}
-        </button>
+    <div className="overlay center" role="dialog" aria-modal="true" aria-labelledby="mcp-title">
+      <div className="alert v2 mcp-alert">
+        <div className="ab">
+          <Icon name="lock" size="lg" />
+          <b id="mcp-title">새 비밀번호 설정</b>
+          <p>임시 비밀번호로 로그인하셨어요. 보안을 위해 새 비밀번호를 설정해 주세요.</p>
+          <div className={`field${error.at === 'pw' ? ' err' : ''}`}>
+            <input id="mcp-pw" aria-label="새 비밀번호" type={showPw ? 'text' : 'password'} autoComplete="new-password" placeholder="새 비밀번호"
+              value={newPw} onChange={(e) => setNewPw(e.target.value)} />
+          </div>
+          {err('pw')}
+          <div style={{ height: 'var(--sp-2)' }} />
+          <div className={`field${error.at === 'confirm' ? ' err' : ''}`}>
+            <input id="mcp-pw2" aria-label="새 비밀번호 확인" type={showPw ? 'text' : 'password'} autoComplete="new-password" placeholder="새 비밀번호 확인"
+              value={newPw2} onChange={(e) => setNewPw2(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }} />
+          </div>
+          {err('confirm')}
+          <label className="f-hint chk">
+            <input type="checkbox" checked={showPw} onChange={(e) => setShowPw(e.target.checked)} />
+            <span className={`check sq${showPw ? ' on' : ''}`}>{showPw && <Icon name="check" size="sm" />}</span>비밀번호 표시
+          </label>
+          <button type="button" className={`ui-btn full ${loading ? 'dis' : 'pri'}`} disabled={loading} onClick={handleSubmit}>
+            {loading ? '변경 중…' : '비밀번호 변경'}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
-
-const overlayStyle = {
-  position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-  background: 'rgba(0,0,0,0.6)',
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-  zIndex: 9999, padding: 20,
-};
-const modalStyle = {
-  background: '#fff', padding: '28px 24px', borderRadius: 16,
-  width: '100%', maxWidth: 360,
-  boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
-  boxSizing: 'border-box',
-};
-const inputStyle = {
-  width: '100%', padding: '12px 14px', borderRadius: 12,
-  border: '1.5px solid rgba(31,169,56,0.18)', fontSize: 14,
-  marginBottom: 10, outline: 'none', background: '#F2FBF4',
-  color: '#14110F', fontFamily: 'inherit', boxSizing: 'border-box',
-};
-const buttonStyle = {
-  width: '100%', padding: '14px', borderRadius: 12, border: 'none',
-  background: 'linear-gradient(180deg, #2BC047 0%, #178A2D 100%)',
-  color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer',
-  boxShadow: '0 6px 16px rgba(23,138,45,0.28)', fontFamily: 'inherit',
-};

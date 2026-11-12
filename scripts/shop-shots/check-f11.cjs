@@ -43,7 +43,7 @@ const DEVICES = [
       await p.goto(BASE + '/'); await p.waitForTimeout(1800);
       // 로그인(가짜 응답) — 바로 주문은 로그인한 손님만 넘어간다
       await p.locator('.app-nav button', { hasText: '로그인' }).click(); await p.waitForTimeout(500);
-      await p.getByPlaceholder('아이디를 입력해주세요').fill('guest_demo'); await p.getByPlaceholder('비밀번호를 입력해주세요').fill('x');
+      await p.getByPlaceholder(/아이디를 입력해 ?주세요/).fill('guest_demo'); await p.getByPlaceholder(/비밀번호를 입력해 ?주세요/).fill('x');
       await p.getByRole('button', { name: '로그인', exact: true }).filter({ visible: true }).first().click(); await p.waitForTimeout(1500);
       await p.locator('.pgrid img[alt="농심 메론킥"]').click(); await p.waitForTimeout(1000);
       const probe = await p.evaluate(() => {

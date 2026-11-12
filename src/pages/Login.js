@@ -1,43 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
+// 로그인(목업 정본 v1 의 S27) · 회원가입 3단계(P04) · 가입 완료 — 묶음 5 · 2026-11-12 밤
+//
+// 로그인 — 로고 · 인사 · 아이디/비밀번호(보기) · 자동 로그인 · 찾기 · 로그인 · 회원가입 · 둘러보기. 오류는 칸 아래에 바로 쓴다.
+// 회원가입 — 한 화면에 칸이 11개라 길었다(S28). 「배송할 곳 → 계정 → 동의」 세 단계로 나눈다.
+//   항목·문구·동의 방식·보내는 값은 예전 한 화면 그대로다(register 에 싣는 값이 같다).
+//   🔸 목업 2단계의 「휴대폰 본인확인」 은 아직 없다 — 본인확인(S48)이 운영에 꺼져 있다. 그 전까지는 손으로 넣는 칸.
+//   🔸 목업 3단계의 [필수] 만 14세 · 이용약관 줄은 넣지 않았다 — 서버가 받아 남기지 않는 동의를 화면에만 두면
+//      「받았다」 는 증거가 없다. 서버에 칸이 생기면 함께 넣는다.
+import { useState, useEffect, useRef } from 'react';
 import FindAccount from './FindAccount';
-import srmLogo from '../srm-logo-transparent.png';
+import logo from '../assets/brand/logo_h_ko.png';
 import { getStores, register, getCoverage } from '../api';
 import { useDialog } from '../DialogContext';
 import { todayYmd } from '../utils/localDate';
+import Icon from '../components/ui/Icon';
 // 동의 문구의 지점 목록 — 아래 `stores`(GET /api/stores?audience=customer)로 만든다. 못 불러오면 목록 없이 「각 지점」.
 import { branchList } from '../utils/customerStores';
-
-// ── 나이 계산 함수 ──────────────────────────────────────────
-// 동의 한 줄 — 체크박스 + 제목 + 설명.
-//
-// 설명을 접어두지 않고 **항상 펼쳐서** 보여준다. 접어두면 대부분 안 펴보고 체크하는데,
-// 그건 동의를 받았다고 하기 어렵다. 특히 선택 항목은 "동의 안 해도 된다" 는 사실이
-// 보여야 의미가 있다.
-//
-// label 전체를 누를 수 있게 <label> 로 감싼다 — 휴대폰에서 체크박스만 겨냥하기 어렵다.
-function ConsentRow({ checked, onChange, label, detail, required = false }) {
-  return (
-    <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', cursor: 'pointer' }}>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={e => onChange(e.target.checked)}
-        style={{ width: 20, height: 20, marginTop: 1, accentColor: COLORS.greenDark, flexShrink: 0 }}
-      />
-      <span>
-        <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.ink900 }}>
-          <span style={{ color: required ? COLORS.danger : COLORS.ink500, marginRight: 4 }}>
-            [{required ? '필수' : '선택'}]
-          </span>
-          {label}
-        </span>
-        <span style={{ display: 'block', marginTop: 4, fontSize: 12, lineHeight: 1.55, color: COLORS.ink500 }}>
-          {detail}
-        </span>
-      </span>
-    </label>
-  );
-}
 
 // 만 나이 — **생년월일**에서 계산한다.
 //
@@ -57,185 +34,87 @@ function calcAgeFromBirth(birth) {
   return age;
 }
 
-// ── Brand tokens ────────────────────────────────────────────
-const COLORS = {
-  green:       '#1FA938',
-  greenDark:   '#178A2D',
-  greenLite:   '#3DD25C',
-  greenTint:   '#F2FBF4',
-  greenBorder: 'rgba(31,169,56,0.18)',
-  yellow:      '#F5C518',
-  ink900:      '#14110F',
-  ink700:      '#3A332E',
-  ink500:      '#6B6259',
-  ink300:      '#B6ADA4',
-  danger:      '#E5484D',
+// 가입 비밀번호 — 서버 validatePassword(index.js)와 같은 규칙. 화면은 안내만 하고 판정은 서버가 한다
+// (아이디·이메일 포함 · 쉬운 단어는 서버가 막고, 그 말을 2단계 칸 아래에 그대로 쓴다).
+const PW_KINDS = [['소문자', /[a-z]/], ['숫자', /[0-9]/], ['특수문자', /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/]];
+const pwProblem = (p) => {
+  if (!p || p.length < 6) return '비밀번호는 6자 이상이어야 해요!';
+  if (PW_KINDS.filter(([, re]) => re.test(p)).length < 2) return '비밀번호는 소문자·숫자·특수문자 중 2종 이상을 포함해야 해요!';
+  return '';
 };
 
-// ── 아이콘 ──────────────────────────────────────────────────
-const EyeIcon = ({ open }) => open ? (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.6"/>
-  </svg>
-) : (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-    <path d="M3 3l18 18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-    <path d="M10.6 6.2A10.7 10.7 0 0 1 12 6c6.5 0 10 6 10 6a16 16 0 0 1-3.3 3.9M6.5 7.6C3.7 9.5 2 12 2 12s3.5 6 10 6c1.6 0 3-.3 4.3-.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M9.9 10a3 3 0 0 0 4.2 4.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-  </svg>
-);
-
-const CheckBox = ({ on }) => (
-  <span style={{
-    width: 18, height: 18, borderRadius: 4,
-    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-    border: on ? `1.5px solid ${COLORS.green}` : '1.5px solid #C9C2BA',
-    background: on ? COLORS.green : '#fff',
-    transition: 'all 0.15s ease', flexShrink: 0,
-  }}>
-    {on && (
-      <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-        <path d="M2.5 6.5L4.8 8.8L9.5 3.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    )}
-  </span>
-);
-
-// ── Field 컴포넌트 ──────────────────────────────────────────
-function Field({ label, placeholder, type, value, onChange, error, trailing, disabled, inputRef, autoComplete }) {
-  const [focused, setFocused] = useState(false);
-  const borderColor = error ? COLORS.danger : focused ? COLORS.green : COLORS.greenBorder;
-
+// 칸 하나 — 목업 field(라벨 · 칸 · 아래 오류)
+function Field({ label, error, trail, children }) {
   return (
-    <div>
-      <label style={{
-        display: 'block', fontSize: 13, fontWeight: 700,
-        color: COLORS.greenDark, marginBottom: 6, letterSpacing: '-0.01em',
-      }}>
-        {label}
-      </label>
-      <div style={{
-        position: 'relative', display: 'flex', alignItems: 'center',
-        height: 52, borderRadius: 14,
-        background: disabled ? '#f1f3f5' : focused ? '#fff' : COLORS.greenTint,
-        border: `1.5px solid ${borderColor}`,
-        transition: 'border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease',
-        boxShadow: focused && !error ? `0 0 0 4px rgba(31,169,56,0.10)` : 'none',
-        paddingRight: trailing ? 6 : 0,
-      }}>
-        <input
-          ref={inputRef}
-          type={type}
-          value={value}
-          onChange={onChange}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          placeholder={placeholder}
-          disabled={disabled}
-          spellCheck={false}
-          autoComplete={autoComplete}
-          autoCapitalize="none"
-          autoCorrect="off"
-          style={{
-            flex: 1, height: '100%', border: 'none', outline: 'none',
-            background: 'transparent', padding: '0 16px',
-            fontSize: 15, fontWeight: 500, color: COLORS.ink900,
-            letterSpacing: '-0.01em',
-          }}
-        />
-        {trailing}
-      </div>
-      {error && (
-        <div style={{
-          marginTop: 6, fontSize: 12.5, color: COLORS.danger, fontWeight: 500,
-          display: 'flex', alignItems: 'center', gap: 6,
-        }}>
-          <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-            <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.4"/>
-            <path d="M8 4.5v4M8 11v.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-          </svg>
-          {error}
-        </div>
-      )}
-    </div>
+    <>
+      {label && <label className="f-lbl">{label}</label>}
+      <div className={`field${error ? ' err' : ''}`}>{children}{trail}</div>
+      {error && <div className="f-err"><Icon name="alert" size="sm" />{error}</div>}
+    </>
   );
 }
 
-// ── Green Hero 헤더 ─────────────────────────────────────────
-// compact=true(회원가입) — 폼이 길어 히어로가 화면을 너무 많이 차지하면 아래로 밀려나므로
-// 로고/문구/여백을 줄인 축소판. 그린 히어로+흰 카드(웨이브 전환) 시그니처는 그대로 유지.
-function GreenHero({ compact = false }) {
-  const logoWidth = compact ? 150 : 240;
+// 네모 체크 — 진짜 체크박스는 숨겨 두고(키보드·읽어 주기) 모양만 목업대로
+const SqCheck = ({ on }) => <span className={`check sq${on ? ' on' : ''}`}>{on && <Icon name="check" size="sm" />}</span>;
+
+// 동의 한 줄 — 설명을 접어두지 않고 **항상 펼쳐서** 보여준다. 접어두면 대부분 안 펴보고 체크하는데,
+// 그건 동의를 받았다고 하기 어렵다. 특히 선택 항목은 "동의 안 해도 된다" 는 사실이 보여야 의미가 있다.
+// 줄 전체가 <label> — 휴대폰에서 체크만 겨냥하기 어렵다.
+function ConsentRow({ checked, onChange, label, detail, required = false, big = false }) {
   return (
-    <div style={{
-      position: 'relative',
-      background: `linear-gradient(165deg, ${COLORS.greenLite} 0%, ${COLORS.green} 55%, ${COLORS.greenDark} 100%)`,
-      padding: compact ? '28px 28px 48px' : '60px 28px 80px',
-      color: '#fff', textAlign: 'center', overflow: 'hidden',
-      transition: 'padding 0.2s',
-    }}>
-      <div style={{ position: 'absolute', top: -40, left: -60, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.10)' }} />
-      <div style={{ position: 'absolute', top: 30, right: -50, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-      {!compact && <div style={{ position: 'absolute', top: 140, left: 30, width: 90, height: 90, borderRadius: '50%', background: 'rgba(245,197,24,0.16)' }} />}
-      <div style={{ position: 'absolute', bottom: compact ? 60 : 90, right: 40, width: 50, height: 50, borderRadius: '50%', background: 'rgba(255,255,255,0.12)' }} />
-
-      <div style={{ position: 'relative', zIndex: 1 }}>
-        <div style={{
-          width: logoWidth + 40, margin: '0 auto',
-        }}>
-          <img src={srmLogo} alt="SR Mart" style={{ width: `${logoWidth}px`, display: 'block', transform: 'translateX(30px)', marginLeft: '-5px' }} />
-        </div>
-        {!compact && (
-          <div style={{ marginTop: 2, fontSize: 24, fontWeight: 600, color: 'rgba(255,255,255,0.92)', letterSpacing: '-0.01em' }}>
-            신선하고 다양한 상품을 만나보세요
-          </div>
-        )}
-      </div>
-
-      <svg viewBox="0 0 440 60" preserveAspectRatio="none"
-        style={{ position: 'absolute', bottom: -1, left: 0, width: '100%', height: 60, display: 'block' }}>
-        <path d="M0,60 L0,30 Q110,0 220,28 T440,30 L440,60 Z" fill="#fff" />
-      </svg>
-    </div>
+    <label className={`consent${big ? ' all' : ''}`}>
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <SqCheck on={checked} />
+      <span className="ct">
+        <b>{!big && <span className={required ? 'req' : 'opt-t'}>{required ? '[필수]' : '[선택]'}</span>}{!big && ' '}{label}</b>
+        {detail && <p>{detail}</p>}
+      </span>
+    </label>
   );
 }
 
-// ── 메인 컴포넌트 ───────────────────────────────────────────
+// 비밀번호 보기 단추 — 누를 때 칸의 초점을 뺏지 않는다(키보드가 내려가지 않게) · 커서는 끝에.
+function EyeBtn({ show, setShow, inputRef }) {
+  return (
+    <button type="button" className="trail" aria-label={show ? '비밀번호 가리기' : '비밀번호 보기'}
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={() => {
+        setShow((s) => !s);
+        requestAnimationFrame(() => {
+          const el = inputRef.current;
+          if (el) { el.focus(); const n = el.value.length; try { el.setSelectionRange(n, n); } catch {} }
+        });
+      }}>
+      <Icon name="eye" size="sm" />
+    </button>
+  );
+}
+
+const EMPTY_FORM = { name: '', username: '', email: '', password: '', phone: '', address: '', addressDetail: '', birth: '' };
+
+// ── 메인 ───────────────────────────────────────────────────
 function Login({ onLogin, onGuest, initialMode }) {
   const { notify } = useDialog();
   const [mode, setMode] = useState(initialMode === 'signup' ? 'signup' : 'login');   // 홈 가입 쿠폰 띠 「가입하기」 → 바로 가입(묶음 2)
   const [isFindAccount, setIsFindAccount] = useState(false);
 
-  // 로그인 상태
+  // 로그인
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [showPw, setShowPw] = useState(false);
   const [showPw2, setShowPw2] = useState(false);   // 회원가입 비밀번호 표시
   const pwRef = useRef(null);
   const pw2Ref = useRef(null);
-  // 비밀번호 표시/숨김 토글 — 포커스 유실(키보드 내려감) 방지 + 커서 끝 보존.
-  const pwToggle = (setShow, ref) => ({
-    onMouseDown: (e) => e.preventDefault(),        // 버튼 탭 시 입력란 포커스 유지 → 키보드 안 내려감
-    onClick: () => {
-      setShow((s) => !s);
-      requestAnimationFrame(() => {
-        const el = ref.current;
-        if (el) { el.focus(); const n = el.value.length; try { el.setSelectionRange(n, n); } catch {} }
-      });
-    },
-  });
   const [remember, setRemember] = useState(false);
   const [loginErrors, setLoginErrors] = useState({});
   const [loginLoading, setLoginLoading] = useState(false);
 
-  // 회원가입 상태
-  const [form, setForm] = useState({
-    name: '', username: '', email: '', password: '', phone: '',
-    address: '', addressDetail: '', birth: '',
-  });
-  // 전화 인증은 SMS/알림톡 연동(Part 2) 전까지 비활성 — 인증 없이 가입 허용.
-  // (가짜 클라이언트 인증 목업 제거됨. 서버 인증 설계: srmart-backend/SMS_AUTH_DESIGN.md)
+  // 회원가입 — step: 1 배송할 곳 · 2 계정 · 3 동의 · 'done' 가입 완료
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [errs, setErrs] = useState({});
   const [signupLoading, setSignupLoading] = useState(false);
+  const [done, setDone] = useState(null);                   // 가입 완료 — { name, storeName, isAdult, marketing, coupon }
+  const [startLoading, setStartLoading] = useState(false);
   const [stores, setStores] = useState([]);
   const [selectedStoreId, setSelectedStoreId] = useState('');
   const [storesLoading, setStoresLoading] = useState(false);
@@ -266,13 +145,7 @@ function Login({ onLogin, onGuest, initialMode }) {
   const [marketingPush, setMarketingPush] = useState(false);
   const allConsent = privacyConsent && thirdPartyConsent && marketingPush;
   const setAllConsent = (v) => { setPrivacyConsent(v); setThirdPartyConsent(v); setMarketingPush(v); };
-
   const resetConsents = () => { setPrivacyConsent(false); setThirdPartyConsent(false); setMarketingPush(false); };
-
-  const emptyForm = {
-    name: '', username: '', email: '', password: '', phone: '',
-    address: '', addressDetail: '', birth: '',
-  };
 
   useEffect(() => {
     if (mode === 'signup') {
@@ -285,9 +158,9 @@ function Login({ onLogin, onGuest, initialMode }) {
         })
         .finally(() => setStoresLoading(false));
     }
-  }, [mode]);
+  }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 배송지 주소(동 이름 우선) → 커버리지(배송 가능 매장) 조회. 매장선택 단계 안내용.
+  // 배송지 주소(동 이름 우선) → 커버리지(배송 가능 매장) 조회.
   useEffect(() => {
     if (mode !== 'signup') return;
     const zip = (signupZipcode || '').replace(/\D/g, '');
@@ -300,15 +173,23 @@ function Login({ onLogin, onGuest, initialMode }) {
       .catch(() => { if (!cancelled) setCoverage(null); })
       .finally(() => { if (!cancelled) setCoverageLoading(false); });
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signupZipcode, signupDong, mode]);
+
+  // 목업 1단계: 「○○점이 배송해요 · 가입 매장으로 정할게요」 — 이 주소를 배송하는 매장을 가입 매장으로 정한다.
+  // 손님이 이미 그 주소를 배송하는 매장 중 하나를 골랐으면 건드리지 않는다.
+  useEffect(() => {
+    if (!coverage || !coverage.stores || coverage.stores.length === 0) return;
+    if (coverage.stores.some((s) => String(s.store_id) === String(selectedStoreId))) return;
+    const pick = coverage.recommended || coverage.stores[0];
+    setSelectedStoreId(String(pick.store_id));
+  }, [coverage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const saved = localStorage.getItem('srmart_auto_login');
     if (saved) {
       try {
         const { username } = JSON.parse(saved);
-        if (username) setLoginForm(prev => ({ ...prev, username }));
+        if (username) { setLoginForm(prev => ({ ...prev, username })); setRemember(true); }
       } catch (e) {}
     }
   }, []);
@@ -335,30 +216,51 @@ function Login({ onLogin, onGuest, initialMode }) {
     }
   };
 
-  const handleSignup = async () => {
-    if (!form.name || !form.username || !form.email || !form.password || !form.phone) {
-      notify('이름, 아이디, 이메일, 비밀번호, 전화번호는 필수예요!'); return;
-    }
-    if (!selectedStoreId) { notify('가입점포를 선택해주세요!'); return; }
-    if (!form.birth || calcAgeFromBirth(form.birth) === null) {
-      notify('생년월일을 올바르게 입력해주세요!'); return;
-    }
+  const setF = (k) => (e) => { const v = e.target.value; setForm((p) => ({ ...p, [k]: v })); if (errs[k]) setErrs((x) => ({ ...x, [k]: null })); };
+  // 목업처럼 「왕길점」 — 앞의 「에스알마트」 는 뗀다(모든 매장 이름 앞에 붙어 있어 한 줄을 넘긴다)
+  const shortName = (n) => String(n || '').replace(/^에스알마트\s*/, '');
+  const storeName = (id) => (stores.find((s) => String(s.id) === String(id)) || {}).name
+    || (((coverage && coverage.stores) || []).find((s) => String(s.store_id) === String(id)) || {}).store_name || '';
 
+  // 단계마다 그 단계 칸만 본다 — 다음 단계로 넘어가기 전에 칸 아래에 바로 알려 준다.
+  const check1 = () => {
+    const e = {};
+    if (!form.name.trim()) e.name = '이름을 입력해 주세요.';
     // (B1) 우편번호 필수 — 주소 찾기로 입력해야 저장·배송권역 매칭 가능. (서버도 400으로 이중 검증)
-    if (!signupZipcode || !signupZipcode.trim()) {
-      notify('우편번호가 필요해요. 주소 찾기로 주소를 입력해주세요.'); return;
-    }
+    if (!signupZipcode || !signupZipcode.trim()) e.address = '우편번호가 필요해요. 주소 찾기로 주소를 입력해주세요.';
+    else if (!selectedStoreId) e.store = '가입 매장을 골라 주세요.';
+    return e;
+  };
+  const check2 = () => {
+    const e = {};
+    if (!form.username.trim()) e.username = '아이디를 입력해 주세요.';
+    if (!form.password) e.password = '비밀번호를 입력해 주세요.';
+    else if (pwProblem(form.password)) e.password = pwProblem(form.password);
+    if (!form.email.trim()) e.email = '이메일을 입력해 주세요.';
+    if (!form.phone.trim()) e.phone = '전화번호를 입력해 주세요.';
+    if (!form.birth || calcAgeFromBirth(form.birth) === null) e.birth = '생년월일을 올바르게 입력해주세요!';
+    return e;
+  };
+  const next = () => {
+    const e = step === 1 ? check1() : check2();
+    setErrs(e);
+    if (Object.keys(e).length) return;
+    setStep(step + 1);
+    window.scrollTo(0, 0);
+  };
 
-    if (!privacyConsent) {
-      notify('개인정보 수집·이용에 동의해주세요.'); return;
-    }
+  const handleSignup = async () => {
+    // 앞 단계 값이 비어 있으면(뒤로 가서 지웠을 때) 그 단계로 돌려보낸다
+    const e1 = check1(); if (Object.keys(e1).length) { setErrs(e1); setStep(1); return; }
+    const e2 = check2(); if (Object.keys(e2).length) { setErrs(e2); setStep(2); return; }
+    if (!privacyConsent) { setErrs({ consent: '개인정보 수집·이용에 동의해주세요.' }); return; }
 
     const age = calcAgeFromBirth(form.birth);
     const isAdult = age !== null && age >= 19;
 
     try {
       setSignupLoading(true);
-      await register({
+      const res = await register({
         name: form.name,
         username: form.username,
         email: form.email,
@@ -376,348 +278,286 @@ function Login({ onLogin, onGuest, initialMode }) {
         zipcode: signupZipcode || null,
         dong_name: signupDong || null,   // Daum 동 이름 → 체크아웃 배송권역 매칭용 저장
       });
-      // 혜택 알림에 동의했으면 처리 결과(날짜)를 같이 알린다 — 정보통신망법상 수신 동의 결과 안내.
-      const marketingNote = marketingPush ? `\n${todayYmd().replace(/-/g, '.')} 혜택 알림 수신에 동의하셨어요.` : '';
-      notify(form.name + '님 가입을 환영해요! 🎉' + (isAdult ? '' : '\n미성년자로 확인됐어요. 성인 상품 구매가 제한됩니다.') + marketingNote);
-      resetConsents();
-      setMode('login');
-      setForm({ ...emptyForm });
+      const sc = res && res.data && res.data.signup_coupon;
+      setDone({
+        name: form.name, storeName: shortName(storeName(selectedStoreId)), isAdult,
+        // 혜택 알림에 동의했으면 처리 결과(날짜)를 같이 알린다 — 정보통신망법상 수신 동의 결과 안내.
+        marketing: marketingPush ? `${todayYmd().replace(/-/g, '.')} 혜택 알림 수신에 동의하셨어요.` : '',
+        coupon: sc && sc.granted ? sc : null,   // 서버가 「지급했다」 고 할 때만 쿠폰 칸을 그린다
+      });
+      setStep('done');
+      window.scrollTo(0, 0);
     } catch (err) {
-      notify(err.response?.data?.error || err.message || '회원가입 중 오류가 발생했어요.');
+      const msg = err.response?.data?.error || err.message || '회원가입 중 오류가 발생했어요.';
+      // 서버가 막은 칸이 있는 단계로 돌려보내 그 칸 아래에 쓴다(3단계에서 창만 뜨면 어느 칸인지 모른다)
+      if (/아이디/.test(msg)) { setErrs({ username: msg }); setStep(2); }
+      else if (/비밀번호/.test(msg)) { setErrs({ password: msg }); setStep(2); }
+      else if (/이메일/.test(msg)) { setErrs({ email: msg }); setStep(2); }
+      else if (/우편번호/.test(msg)) { setErrs({ address: msg }); setStep(1); }
+      else if (/점포/.test(msg)) { setErrs({ store: msg }); setStep(1); }
+      else notify(msg);
     } finally {
       setSignupLoading(false);
     }
   };
 
   const resetSignup = () => {
-    setForm({ ...emptyForm });
+    setForm({ ...EMPTY_FORM });
     setSelectedStoreId('');
     setSignupZipcode('');
+    setSignupDong('');
+    setErrs({});
+    setStep(1);
+    resetConsents();
+  };
+  const toLogin = () => { resetSignup(); setDone(null); setMode('login'); };
+
+  // 가입 완료 → 「쇼핑 시작하기」 — 방금 만든 아이디로 바로 로그인한다. 안 되면 로그인 화면(아이디 채움).
+  const startShopping = async () => {
+    const { username, password } = form;
+    try {
+      setStartLoading(true);
+      await onLogin({ username, password });
+    } catch (err) {
+      setStartLoading(false);
+      toLogin();
+      setLoginForm({ username, password: '' });
+      notify(err.response?.data?.error || '로그인하지 못했어요. 다시 로그인해 주세요.');
+    }
   };
 
-  const inputStyle = {
-    width: '100%', padding: '14px 16px', borderRadius: '14px',
-    border: `1.5px solid ${COLORS.greenBorder}`, fontSize: '14px', outline: 'none',
-    boxSizing: 'border-box', fontFamily: 'inherit', background: COLORS.greenTint,
-    transition: 'all 0.2s', color: COLORS.ink900,
+  const findAddress = () => {
+    if (!window.daum || !window.daum.Postcode) { notify('주소 찾기를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'); return; }
+    new window.daum.Postcode({
+      oncomplete: (data) => {
+        setForm(p => ({ ...p, address: data.roadAddress || data.jibunAddress, addressDetail: '' }));
+        setSignupZipcode(data.zonecode || '');
+        setSignupDong(data.bname || '');
+        setErrs((x) => ({ ...x, address: null, store: null }));
+      },
+    }).open();
   };
-  const inputFocus = (e) => { e.target.style.borderColor = COLORS.green; e.target.style.background = 'white'; e.target.style.boxShadow = '0 0 0 4px rgba(31,169,56,0.10)'; };
-  const inputBlur = (e) => { e.target.style.borderColor = COLORS.greenBorder; e.target.style.background = COLORS.greenTint; e.target.style.boxShadow = 'none'; };
-  const labelStyle = { fontSize: 13, fontWeight: 700, color: COLORS.greenDark, display: 'block', marginBottom: 6, letterSpacing: '-0.01em' };
 
   if (isFindAccount) {
     return <FindAccount onBack={() => setIsFindAccount(false)} />;
   }
 
-  return (
-    <>
-      <link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap" rel="stylesheet" />
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', color: COLORS.ink900 }}>
-
-        <GreenHero compact={mode === 'signup'} />
-
-        <div style={{ flex: 1, padding: '12px 26px 0', marginTop: -8, position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', background: '#fff' }}>
-
-          {/* 로그인 모드 */}
-          {mode === 'login' && (
-            <>
-              <div style={{ marginBottom: 14 }}>
-                <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: COLORS.ink900, letterSpacing: '-0.03em', lineHeight: 1.2 }}>
-                  즐거운 쇼핑을 시작하세요
-                </h1>
-                <p style={{ margin: '8px 0 0', fontSize: 13.5, color: COLORS.ink500, letterSpacing: '-0.01em' }}>
-                  오늘도 SR Mart에서 좋은 하루 되세요
-                </p>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <Field
-                  label="아이디"
-                  placeholder="아이디를 입력해주세요"
-                  type="text"
-                  value={loginForm.username}
-                  onChange={(e) => { setLoginForm({ ...loginForm, username: e.target.value }); if (loginErrors.username) setLoginErrors({ ...loginErrors, username: null }); }}
-                  error={loginErrors.username}
-                />
-                <Field
-                  label="비밀번호"
-                  placeholder="비밀번호를 입력해주세요"
-                  type={showPw ? 'text' : 'password'}
-                  value={loginForm.password}
-                  inputRef={pwRef}
-                  autoComplete="current-password"
-                  onChange={(e) => { setLoginForm({ ...loginForm, password: e.target.value }); if (loginErrors.password) setLoginErrors({ ...loginErrors, password: null }); }}
-                  error={loginErrors.password}
-                  trailing={
-                    <button type="button" {...pwToggle(setShowPw, pwRef)}
-                      style={{ width: 40, height: 40, borderRadius: 10, border: 'none', background: 'transparent', cursor: 'pointer', color: showPw ? COLORS.greenDark : COLORS.ink300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <EyeIcon open={showPw} />
-                    </button>
-                  }
-                />
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
-                <button type="button" onClick={() => setRemember(r => !r)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', fontSize: 13, fontWeight: 500, color: COLORS.ink700 }}>
-                  <CheckBox on={remember} />
-                  자동 로그인
-                </button>
-                <button type="button" onClick={() => setIsFindAccount(true)}
-                  style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', fontSize: 13, fontWeight: 700, color: COLORS.greenDark }}>
-                  아이디/비밀번호 찾기
-                </button>
-              </div>
-
-              <button onClick={handleLogin} disabled={loginLoading}
-                style={{
-                  marginTop: 14, height: 52, borderRadius: 14, border: 'none',
-                  background: loginLoading ? COLORS.ink300 : `linear-gradient(180deg, #2BC047 0%, ${COLORS.greenDark} 100%)`,
-                  color: '#fff', fontSize: 16, fontWeight: 700,
-                  cursor: loginLoading ? 'default' : 'pointer',
-                  boxShadow: loginLoading ? 'none' : '0 10px 24px rgba(23,138,45,0.32)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                {loginLoading ? '로그인 중...' : '로그인'}
-              </button>
-
-              <div style={{ marginTop: 12, textAlign: 'center', fontSize: 13, color: COLORS.ink500 }}>
-                계정이 없으신가요?{' '}
-                <button type="button" onClick={() => { setMode('signup'); resetSignup(); }}
-                  style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', fontSize: 13, fontWeight: 700, color: COLORS.greenDark, borderBottom: `2px solid ${COLORS.yellow}`, paddingBottom: 1 }}>
-                  회원가입
-                </button>
-              </div>
-
-              {onGuest && (
-                <button type="button" onClick={onGuest}
-                  style={{ marginTop: 10, alignSelf: 'center', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 12.5, color: COLORS.ink500, textDecoration: 'underline', textUnderlineOffset: 3 }}>
-                  로그인 없이 둘러보기
-                </button>
-              )}
-            </>
-          )}
-
-          {/* 회원가입 모드 */}
-          {mode === 'signup' && (
-            <>
-              <div style={{ marginBottom: 14 }}>
-                <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: COLORS.ink900, letterSpacing: '-0.03em' }}>회원가입</h1>
-                <p style={{ margin: '8px 0 0', fontSize: 13.5, color: COLORS.ink500 }}>정보를 입력하고 쇼핑을 시작해보세요!</p>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-
-                <div>
-                  <label style={labelStyle}>이름 *</label>
-                  <input name="name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-                    placeholder="이름을 입력해주세요" style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
-                </div>
-
-                <div>
-                  <label style={labelStyle}>가입점포 *</label>
-                  {storesLoading ? (
-                    <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', color: COLORS.ink300, cursor: 'default', userSelect: 'none' }}>
-                      불러오는 중...
-                    </div>
-                  ) : stores.length === 0 ? (
-                    <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', color: COLORS.danger, fontSize: 13, cursor: 'default' }}>
-                      현재 가입 가능한 점포가 없어요
-                    </div>
-                  ) : (
-                    <select
-                      value={selectedStoreId}
-                      onChange={e => setSelectedStoreId(e.target.value)}
-                      style={{ ...inputStyle, cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B6259' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', paddingRight: 40 }}
-                      onFocus={inputFocus}
-                      onBlur={inputBlur}
-                    >
-                      <option value="">가입점포를 선택해주세요</option>
-                      {stores.map(s => (
-                        <option key={s.id} value={s.id}>{s.name}</option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-
-                {/* 배송지 주소 + 배송권역 커버리지 안내 (매장선택 단계) */}
-                <div>
-                  <label style={labelStyle}>배송지 주소 *</label>
-                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                    <input name="address" value={form.address} readOnly
-                      placeholder="주소 찾기 버튼을 눌러주세요"
-                      style={{ ...inputStyle, flex: 1 }} />
-                    <button type="button" onClick={() => {
-                      new window.daum.Postcode({
-                        oncomplete: (data) => { setForm(p => ({ ...p, address: data.roadAddress || data.jibunAddress, addressDetail: '' })); setSignupZipcode(data.zonecode || ''); setSignupDong(data.bname || ''); }
-                      }).open();
-                    }} style={{ padding: '0 14px', height: 52, background: `linear-gradient(135deg, ${COLORS.green}, ${COLORS.greenDark})`, color: 'white', border: 'none', borderRadius: 14, fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                      주소 찾기
-                    </button>
-                  </div>
-                  <input name="addressDetail" value={form.addressDetail} onChange={e => setForm({ ...form, addressDetail: e.target.value })}
-                    placeholder="상세 주소 (동/호수 등)" style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
-                  {signupZipcode && (
-                    <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <input value={signupZipcode} readOnly
-                        placeholder="우편번호"
-                        style={{ ...inputStyle, width: 120, flexShrink: 0, background: '#f1f3f5', color: COLORS.ink500, cursor: 'default' }} />
-                      <span style={{ fontSize: 12, color: COLORS.ink500 }}>우편번호 (자동 입력)</span>
-                    </div>
-                  )}
-                  {/* 배송권역 커버리지 안내: 선택 매장 커버 ✓ / 추천 매장 안내+변경 / 불가 안내 */}
-                  {(signupDong || (signupZipcode && signupZipcode.replace(/\D/g, '').length >= 3)) && (() => {
-                    let bg = '#f1f3f5', fg = COLORS.ink500, bd = COLORS.greenBorder, content = null;
-                    if (coverageLoading) content = '배송 가능 매장 확인 중…';
-                    else if (coverage) {
-                      const sel = coverage.stores.find(s => String(s.store_id) === String(selectedStoreId));
-                      if (sel) { bg = '#eafaf1'; fg = '#009a58'; bd = '#a3e4c6'; content = <span>✓ 이 주소는 <b>{sel.store_name}</b>에서 배송 가능해요</span>; }
-                      else if (coverage.recommended) {
-                        bg = '#fff7e6'; fg = '#9a6a00'; bd = '#ffe08a';
-                        content = <span>이 주소는 <b>{coverage.recommended.store_name}</b>이(가) 배송 가능해요.
-                          <button type="button" onClick={() => setSelectedStoreId(String(coverage.recommended.store_id))}
-                            style={{ marginLeft: 6, padding: '3px 10px', background: '#9a6a00', color: '#fff', border: 'none', borderRadius: 8, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>이 매장으로 변경</button>
-                        </span>;
-                      } else { bg = 'var(--accent-light)'; fg = COLORS.danger; bd = '#ffc9cf'; content = <span>이 주소는 배송 가능한 매장이 없어요. 방문 또는 고객센터로 문의해주세요.</span>; }
-                    }
-                    if (content == null) return null;
-                    return <div style={{ marginTop: 8, padding: '10px 12px', borderRadius: 12, fontSize: 12.5, lineHeight: 1.5, background: bg, color: fg, border: `1px solid ${bd}` }}>{content}</div>;
-                  })()}
-                </div>
-
-                <div>
-                  <label style={labelStyle}>아이디 *</label>
-                  <input name="username" value={form.username} onChange={e => setForm({ ...form, username: e.target.value })}
-                    placeholder="아이디를 입력해주세요" style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
-                </div>
-
-                <div>
-                  <label style={labelStyle}>이메일 *</label>
-                  <input name="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
-                    placeholder="이메일을 입력해주세요" style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
-                </div>
-
-                <div>
-                  <label style={labelStyle}>비밀번호 *</label>
-                  <div style={{ position: 'relative' }}>
-                    <input ref={pw2Ref} name="password" type={showPw2 ? 'text' : 'password'} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })}
-                      placeholder="비밀번호를 입력해주세요" autoComplete="new-password" autoCapitalize="none" autoCorrect="off"
-                      style={{ ...inputStyle, paddingRight: 44 }} onFocus={inputFocus} onBlur={inputBlur} />
-                    <button type="button" {...pwToggle(setShowPw2, pw2Ref)}
-                      style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', width: 36, height: 36, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', color: showPw2 ? COLORS.greenDark : COLORS.ink300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <EyeIcon open={showPw2} />
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label style={labelStyle}>전화번호 *</label>
-                  <input name="phone" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
-                    placeholder="010-0000-0000" type="tel"
-                    style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
-                </div>
-
-                <div>
-                  {/* 예전엔 주민등록번호 앞 6자리 + 성별자리를 받았다. 그 값은 서버에 평문으로
-                      저장됐지만 읽는 코드가 한 곳도 없었고, 성인 확인은 여기서 나온 만 나이만으로
-                      끝난다. 주민등록번호는 법령 근거 없이는 수집 자체가 금지라(개인정보보호법
-                      제24조의2) 생년월일로 바꿨다 — 목적은 그대로 이루면서 받는 정보는 줄어든다. */}
-                  <label style={labelStyle}>생년월일 (성인 확인용) *</label>
-                  <input name="birth" value={form.birth} type="date"
-                    /* 🔴 **한국 시간으로** (판단 ③) — UTC 상한이면 오전 9시 전엔 오늘 날짜를 못 고른다. */
-                    max={todayYmd()}
-                    onChange={e => setForm(p => ({ ...p, birth: e.target.value }))}
-                    style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
-                  <div style={{ fontSize: 11, color: COLORS.ink300, marginTop: 6 }}>
-                    성인 여부 확인·생일 혜택에만 쓰고, 주민등록번호는 받지 않아요
-                  </div>
-                  {form.birth && (() => {
-                    const age = calcAgeFromBirth(form.birth);
-                    if (age === null) return <div style={{ fontSize: 12, color: COLORS.danger, marginTop: 4 }}>올바른 생년월일을 입력해주세요</div>;
-                    return (
-                      <div style={{ fontSize: 12, marginTop: 6, color: age >= 19 ? '#009a58' : COLORS.danger, fontWeight: 600 }}>
-                        {age >= 19 ? `✅ 성인 확인됐어요! (만 ${age}세)` : `⚠️ 미성년자예요 (만 ${age}세) - 성인 상품 구매가 제한됩니다`}
-                      </div>
-                    );
-                  })()}
-                </div>
-
-              </div>
-
-              {/* 동의 항목 — 필수·선택을 나눠서 받는다(위 상태 주석 참고). */}
-              <div style={{ marginTop: 18, padding: 14, borderRadius: 12, background: COLORS.greenTint, border: `1px solid ${COLORS.greenBorder}` }}>
-                <label style={{ display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer', paddingBottom: 12, marginBottom: 12, borderBottom: `1px solid ${COLORS.greenBorder}` }}>
-                  <input
-                    type="checkbox"
-                    checked={allConsent}
-                    onChange={e => setAllConsent(e.target.checked)}
-                    style={{ width: 20, height: 20, accentColor: COLORS.greenDark, flexShrink: 0 }}
-                  />
-                  <span style={{ fontSize: 15, fontWeight: 800, color: COLORS.ink900 }}>
-                    전체 동의 <span style={{ fontSize: 12, fontWeight: 500, color: COLORS.ink500 }}>(선택 항목 포함)</span>
-                  </span>
-                </label>
-                <ConsentRow
-                  checked={privacyConsent}
-                  onChange={setPrivacyConsent}
-                  required
-                  label="개인정보 수집·이용 동의"
-                  detail="이름, 아이디, 이메일, 휴대전화번호, 생년월일, 주소를 회원 관리와 주문·배송에 이용합니다."
-                />
-                <div style={{ height: 10 }} />
-                <ConsentRow
-                  checked={thirdPartyConsent}
-                  onChange={setThirdPartyConsent}
-                  label="지점 통합 회원·포인트·구매 내역 이용 동의"
-                  detail={`에스알마트 각 지점${branchList(stores) ? `(${branchList(stores)})` : ''}은 서로 다른 사업자입니다. 동의하시면 모든 지점에서 포인트를 함께 쌓고 쓰시고, 매장 구매 영수증도 앱에서 보실 수 있어요. 제공 항목은 이름·연락처·회원번호·포인트 내역·매장 구매 내역입니다. 동의하지 않으셔도 가입과 온라인 주문은 그대로 가능하며, 이 경우 매장 포인트 적립·사용과 매장 구매 내역 표시만 제한됩니다.`}
-                />
-                <div style={{ height: 10 }} />
-                <ConsentRow
-                  checked={marketingPush}
-                  onChange={setMarketingPush}
-                  label="혜택 알림(행사·쿠폰) 받기"
-                  detail="행사·쿠폰 소식을 앱 푸시·문자로 보내 드려요. 동의하지 않으셔도 가입·주문과 주문·배송 알림은 그대로예요. 마이 → 알림 설정에서 언제든 끌 수 있어요."
-                />
-                <div style={{ marginTop: 12, fontSize: 12 }}>
-                  <a href="https://dongsinmarket.co.kr/privacy.html" target="_blank" rel="noreferrer"
-                    style={{ color: COLORS.greenDark, fontWeight: 600 }}>
-                    개인정보처리방침 전문 보기
-                  </a>
-                </div>
-              </div>
-
-              <button onClick={handleSignup} disabled={signupLoading || stores.length === 0}
-                style={{
-                  marginTop: 20, height: 52, borderRadius: 14, border: 'none',
-                  background: (signupLoading || stores.length === 0) ? COLORS.ink300 : `linear-gradient(180deg, #2BC047 0%, ${COLORS.greenDark} 100%)`,
-                  color: '#fff', fontSize: 16, fontWeight: 700,
-                  cursor: (signupLoading || stores.length === 0) ? 'default' : 'pointer',
-                  boxShadow: (signupLoading || stores.length === 0) ? 'none' : '0 10px 24px rgba(23,138,45,0.32)',
-                }}>
-                {signupLoading ? '가입 중...' : '회원가입'}
-              </button>
-
-              <button onClick={() => { setMode('login'); resetSignup(); resetConsents(); }}
-                style={{ marginTop: 10, height: 48, borderRadius: 14, border: `1.5px solid ${COLORS.greenBorder}`, background: COLORS.greenTint, color: COLORS.greenDark, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
-                취소
-              </button>
-
-              <div style={{ textAlign: 'center', marginTop: 12, fontSize: 13, color: COLORS.ink500 }}>
-                이미 계정이 있으신가요?{' '}
-                <button type="button" onClick={() => { setMode('login'); resetSignup(); resetConsents(); }}
-                  style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', fontSize: 13, fontWeight: 700, color: COLORS.greenDark, borderBottom: `2px solid ${COLORS.yellow}`, paddingBottom: 1 }}>
-                  로그인하러 가기
-                </button>
-              </div>
-            </>
-          )}
-
-          <div style={{ marginTop: 'auto', padding: '14px 0 12px', textAlign: 'center', fontSize: 10.5, color: COLORS.ink300 }}>
-            © 2026 Dongsin Market. All rights reserved.
+  // ── 로그인(S27) ──
+  if (mode === 'login') {
+    return (
+      <div className="v2 plain auth-v2">
+        <div className="auth-wrap">
+          <div className="auth-top">
+            <img src={logo} alt="에스알마트" />
+            <h1>즐거운 쇼핑을 시작하세요</h1>
+            <p>오늘도 에스알마트에서 좋은 하루 되세요</p>
+          </div>
+          <div className="auth">
+            <Field label="아이디" error={loginErrors.username}>
+              <input value={loginForm.username} placeholder="아이디를 입력해 주세요" autoComplete="username"
+                autoCapitalize="none" autoCorrect="off" spellCheck={false}
+                onChange={(e) => { setLoginForm({ ...loginForm, username: e.target.value }); if (loginErrors.username) setLoginErrors({ ...loginErrors, username: null }); }} />
+            </Field>
+            <Field label="비밀번호" error={loginErrors.password} trail={<EyeBtn show={showPw} setShow={setShowPw} inputRef={pwRef} />}>
+              <input ref={pwRef} type={showPw ? 'text' : 'password'} value={loginForm.password} placeholder="비밀번호를 입력해 주세요"
+                autoComplete="current-password" autoCapitalize="none" autoCorrect="off" spellCheck={false}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(); }}
+                onChange={(e) => { setLoginForm({ ...loginForm, password: e.target.value }); if (loginErrors.password) setLoginErrors({ ...loginErrors, password: null }); }} />
+            </Field>
+            <div className="or">
+              <label className="chk">
+                <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+                <SqCheck on={remember} />자동 로그인
+              </label>
+              <button type="button" className="link" onClick={() => setIsFindAccount(true)}>아이디/비밀번호 찾기</button>
+            </div>
+            <button type="button" className={`ui-btn full ${loginLoading ? 'dis' : 'pri'}`} disabled={loginLoading} onClick={handleLogin}>
+              {loginLoading ? '로그인 중…' : '로그인'}
+            </button>
+            <div style={{ height: 'var(--sp-2)' }} />
+            <button type="button" className="ui-btn full sec" onClick={() => { resetSignup(); setMode('signup'); }}>회원가입</button>
+            {onGuest && (
+              <div className="guest-go"><button type="button" onClick={onGuest}>로그인 없이 둘러보기<Icon name="chevR" size="sm" /></button></div>
+            )}
+            <div className="foot">© 2026 Dongsin Market. All rights reserved.</div>
           </div>
         </div>
       </div>
-    </>
+    );
+  }
+
+  // ── 가입 완료 ──
+  if (step === 'done' && done) {
+    return (
+      <div className="v2 plain auth-v2">
+        <div className="auth-wrap auth-done">
+          <div className="auth">
+            <span className="ricon done-ic"><Icon name="check" size="lg" /></span>
+            <h2 className="step-h">가입을 환영해요, {done.name}님!</h2>
+            {done.storeName && <p className="f-hint">가입 매장은 <b>{done.storeName}</b>이에요.</p>}
+            {!done.isAdult && <p className="f-hint">미성년자로 확인됐어요. 성인 상품 구매가 제한돼요.</p>}
+            {done.marketing && <p className="f-hint">{done.marketing}</p>}
+            {done.coupon && (
+              <div className="done-cpn">
+                <div className="cpn">
+                  <Icon name="gift" />
+                  <div style={{ flex: 1 }}><b>{done.coupon.label || done.coupon.name}</b>{done.coupon.sub && <div className="f-hint">{done.coupon.sub}</div>}</div>
+                </div>
+                <div className="f-hint">마이 → 내 쿠폰에 들어 있어요</div>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="pad-bar" />
+        <div className="bar"><div className="in">
+          <button type="button" className={`ui-btn ${startLoading ? 'dis' : 'pri'}`} style={{ flex: 1 }} disabled={startLoading} onClick={startShopping}>
+            {startLoading ? '들어가는 중…' : '쇼핑 시작하기'}
+          </button>
+        </div></div>
+      </div>
+    );
+  }
+
+  // ── 회원가입 3단계(P04) ──
+  const cov = (() => {
+    if (!(signupDong || (signupZipcode && signupZipcode.replace(/\D/g, '').length >= 3))) return null;
+    if (coverageLoading) return <div className="notice b"><Icon name="info" /><div>배송 가능 매장 확인 중…</div></div>;
+    if (!coverage) return null;
+    const sel = (coverage.stores || []).find(s => String(s.store_id) === String(selectedStoreId));
+    if (sel) return <div className="notice g"><Icon name="check" /><div><b>{shortName(sel.store_name)}</b>이 배송해요 · 가입 매장으로 정할게요</div></div>;
+    return <div className="notice r"><Icon name="x" /><div>이 주소는 배송 가능한 매장이 없어요. 방문하시거나 고객센터로 문의해 주세요.</div></div>;
+  })();
+  // 가입 매장을 손으로 고르는 칸 — 배송 매장이 없거나(방문 손님) 여러 곳일 때만. 하나로 정해지면 위 안내로 끝난다.
+  const covStores = (coverage && coverage.stores) || [];
+  const showStorePick = !!signupZipcode && !coverageLoading && covStores.length !== 1;
+  const age = calcAgeFromBirth(form.birth);
+
+  return (
+    <div className="v2 plain auth-v2">
+      <header className="app-nav line">
+        <div className="nav-row">
+          <div className="nav-side">
+            <button type="button" className="nav-btn" aria-label="뒤로" onClick={() => { if (step === 1) toLogin(); else { setErrs({}); setStep(step - 1); } }}><Icon name="chevL" /></button>
+          </div>
+          <div className="nav-title">회원가입</div>
+          <div className="nav-side r"><span className="f-hint step-n">{step} / 3</span></div>
+        </div>
+      </header>
+      <div className="progress"><i className="on" /><i className={step >= 2 ? 'on' : ''} /><i className={step >= 3 ? 'on' : ''} /></div>
+
+      <div className="auth-wrap">
+        {step === 1 && (
+          <div className="auth">
+            <h2 className="step-h">어디로 배송할까요?</h2>
+            <p className="f-hint">주소를 넣으면 배송하는 매장을 찾아 드려요.</p>
+            <Field label="이름" error={errs.name}>
+              <input value={form.name} onChange={setF('name')} placeholder="이름을 입력해 주세요" autoComplete="name" />
+            </Field>
+            <label className="f-lbl">배송지 주소</label>
+            <div className="addr-row">
+              <div className={`field${errs.address ? ' err' : ''}`} style={{ flex: 1 }} onClick={findAddress}>
+                {form.address ? <span className="v">{form.address}</span> : <span className="ph">주소 찾기를 눌러 주세요</span>}
+              </div>
+              <button type="button" className="ui-btn sec" onClick={findAddress}>주소 찾기</button>
+            </div>
+            {errs.address && <div className="f-err"><Icon name="alert" size="sm" />{errs.address}</div>}
+            <div style={{ height: 'var(--sp-2)' }} />
+            <div className="field"><input value={form.addressDetail} onChange={setF('addressDetail')} placeholder="상세 주소 (동·호수)" /></div>
+            {signupZipcode && <div className="f-hint">우편번호 {signupZipcode} (자동 입력)</div>}
+            {cov && <div style={{ marginTop: 'var(--sp-3)' }}>{cov}</div>}
+            {showStorePick && (
+              <Field label="가입 매장" error={errs.store}>
+                {storesLoading ? <span className="ph">불러오는 중…</span>
+                  : stores.length === 0 ? <span className="ph">지금 가입할 수 있는 매장이 없어요</span>
+                  : (
+                    <select value={selectedStoreId} onChange={(e) => { setSelectedStoreId(e.target.value); setErrs((x) => ({ ...x, store: null })); }}>
+                      <option value="">가입 매장을 골라 주세요</option>
+                      {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                  )}
+              </Field>
+            )}
+            <div className="auth-alt">이미 계정이 있으신가요? <button type="button" className="link" onClick={toLogin}>로그인하러 가기</button></div>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="auth">
+            <h2 className="step-h">계정 만들기</h2>
+            <p className="f-hint">로그인할 아이디와 연락처를 넣어 주세요.</p>
+            <Field label="아이디" error={errs.username}>
+              <input value={form.username} onChange={setF('username')} placeholder="아이디를 입력해 주세요" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
+            </Field>
+            <Field label="비밀번호" error={errs.password} trail={<EyeBtn show={showPw2} setShow={setShowPw2} inputRef={pw2Ref} />}>
+              <input ref={pw2Ref} type={showPw2 ? 'text' : 'password'} value={form.password} onChange={setF('password')} placeholder="비밀번호를 입력해 주세요"
+                autoComplete="new-password" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
+            </Field>
+            {!errs.password && (
+              <div className="pw-pills">
+                <span className={`pill${form.password.length >= 6 ? ' g' : ''}`}>{form.password.length >= 6 ? '✓' : '○'} 6자 이상</span>
+                {PW_KINDS.map(([l, re]) => <span key={l} className={`pill${re.test(form.password) ? ' g' : ''}`}>{re.test(form.password) ? '✓' : '○'} {l}</span>)}
+                <span className="f-hint" style={{ margin: 0 }}>· 소문자·숫자·특수문자 중 2가지</span>
+              </div>
+            )}
+            <Field label="이메일" error={errs.email}>
+              <input type="email" value={form.email} onChange={setF('email')} placeholder="이메일을 입력해 주세요" autoComplete="email" autoCapitalize="none" />
+            </Field>
+            <Field label="전화번호" error={errs.phone}>
+              <input type="tel" value={form.phone} onChange={setF('phone')} placeholder="010-0000-0000" autoComplete="tel" />
+            </Field>
+            {/* 예전엔 주민등록번호 앞 6자리 + 성별자리를 받았다(위 calcAgeFromBirth 주석). 생년월일만 받는다. */}
+            <Field label="생년월일 (성인 확인용)" error={errs.birth}>
+              {/* 🔴 **한국 시간으로** (판단 ③) — UTC 상한이면 오전 9시 전엔 오늘 날짜를 못 고른다. */}
+              <input type="date" value={form.birth} max={todayYmd()} onChange={setF('birth')} />
+            </Field>
+            {!errs.birth && <div className="f-hint">성인 여부 확인·생일 혜택에만 쓰고, 주민등록번호는 받지 않아요</div>}
+            {!errs.birth && form.birth && (age === null
+              ? <div className="f-err"><Icon name="alert" size="sm" />올바른 생년월일을 입력해 주세요</div>
+              : age >= 19
+                ? <div className="f-ok"><Icon name="check" size="sm" />성인 확인됐어요 (만 {age}세)</div>
+                : <div className="f-err"><Icon name="alert" size="sm" />미성년자예요 (만 {age}세) · 성인 상품 구매가 제한돼요</div>)}
+          </div>
+        )}
+
+        {step === 3 && (
+          <>
+            <div className="auth">
+              <h2 className="step-h">동의</h2>
+              <p className="f-hint">[필수]에 동의해야 가입할 수 있어요.</p>
+            </div>
+            <section className="sec">
+              <div className="group consents">
+                <ConsentRow big checked={allConsent} onChange={setAllConsent} label="전체 동의" detail="선택 항목 포함" />
+                <ConsentRow checked={privacyConsent} onChange={(v) => { setPrivacyConsent(v); setErrs({}); }} required
+                  label="개인정보 수집·이용 동의"
+                  detail="이름, 아이디, 이메일, 휴대전화번호, 생년월일, 주소를 회원 관리와 주문·배송에 이용합니다." />
+                <ConsentRow checked={thirdPartyConsent} onChange={setThirdPartyConsent}
+                  label="지점 통합 회원·포인트·구매 내역 이용 동의"
+                  detail={`에스알마트 각 지점${branchList(stores) ? `(${branchList(stores)})` : ''}은 서로 다른 사업자입니다. 동의하시면 모든 지점에서 포인트를 함께 쌓고 쓰시고, 매장 구매 영수증도 앱에서 보실 수 있어요. 제공 항목은 이름·연락처·회원번호·포인트 내역·매장 구매 내역입니다. 동의하지 않으셔도 가입과 온라인 주문은 그대로 가능하며, 이 경우 매장 포인트 적립·사용과 매장 구매 내역 표시만 제한됩니다.`} />
+                <ConsentRow checked={marketingPush} onChange={setMarketingPush}
+                  label="혜택 알림(행사·쿠폰) 받기"
+                  detail="행사·쿠폰 소식을 앱 푸시·문자로 보내 드려요. 동의하지 않으셔도 가입·주문과 주문·배송 알림은 그대로예요. 마이 → 알림 설정에서 언제든 끌 수 있어요." />
+              </div>
+              {errs.consent && <div className="f-err" style={{ padding: '0 var(--sp-4)' }}><Icon name="alert" size="sm" />{errs.consent}</div>}
+              <div className="sec-f"><a className="link" href="https://dongsinmarket.co.kr/privacy.html" target="_blank" rel="noreferrer">개인정보처리방침 전문 보기</a></div>
+            </section>
+          </>
+        )}
+      </div>
+
+      <div className="pad-bar" />
+      <div className="bar"><div className="in">
+        {step > 1 && <button type="button" className="ui-btn line" style={{ flex: 1 }} onClick={() => { setErrs({}); setStep(step - 1); }}>이전</button>}
+        {step === 3 ? (
+          <button type="button" className={`ui-btn ${signupLoading || stores.length === 0 ? 'dis' : 'pri'}`} style={{ flex: 2 }}
+            disabled={signupLoading || stores.length === 0} onClick={handleSignup}>
+            {signupLoading ? '가입 중…' : '가입하기'}
+          </button>
+        ) : (
+          <button type="button" className="ui-btn pri" style={{ flex: step > 1 ? 2 : 1 }} onClick={next}>다음</button>
+        )}
+      </div></div>
+    </div>
   );
 }
 

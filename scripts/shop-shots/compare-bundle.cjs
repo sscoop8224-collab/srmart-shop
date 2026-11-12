@@ -51,8 +51,8 @@ const wait = (p, ms) => p.waitForTimeout(ms);
 
 async function login(p) {
   await p.locator('.app-nav button', { hasText: '로그인' }).click();
-  await p.getByPlaceholder('아이디를 입력해주세요').fill('guest_demo');
-  await p.getByPlaceholder('비밀번호를 입력해주세요').fill('x');
+  await p.getByPlaceholder(/아이디를 입력해 ?주세요/).fill('guest_demo');
+  await p.getByPlaceholder(/비밀번호를 입력해 ?주세요/).fill('x');
   await p.getByRole('button', { name: '로그인', exact: true }).filter({ visible: true }).first().click();
   await wait(p, 900);
 }
@@ -65,6 +65,30 @@ const ordersOf = async (p, t) => { await login(p); await tab(p, '주문내역').
 const myOf = async (p, { guest = false, row = '' } = {}) => { if (!guest) await login(p); await tab(p, '마이').click(); await wait(p, 900); if (row) { await p.locator('.my-v2 button.row', { has: p.locator(`.lbl:text-is("${row}")`) }).first().click(); await wait(p, 700); } };
 const orderOf = async p => { await cartOf(p); await p.getByRole('button', { name: '주문하기', exact: true }).click(); await wait(p, 1200); };
 const tab = (p, label) => p.locator('.tabbar .tab', { hasText: label }).first();
+// 로그인 화면(S27) — 홈 헤더 「로그인」 · 회원가입(P04) — 거기서 「회원가입」
+const loginPage = async p => { await p.locator('.app-nav button', { hasText: '로그인' }).click(); await wait(p, 700); };
+const fillLogin = async (p, pw = 'password') => { await p.getByPlaceholder(/아이디를 입력해 ?주세요/).fill('guest_demo'); await p.getByPlaceholder(/비밀번호를 입력해 ?주세요/).fill(pw); };
+// 주소 찾기(다음 우편번호 창)는 바깥 스크립트라 사진에서는 막혀 있다 — 같은 모양의 답을 바로 돌려주는 가짜로 바꾼다
+const fakePostcode = p => p.evaluate(() => { window.daum = { Postcode: function Postcode(o) { this.open = () => o.oncomplete({ roadAddress: '인천 서구 왕길로 123', zonecode: '22689', bname: '왕길동' }); } }; });
+const signupStep = async (p, n) => {
+  await loginPage(p); await p.getByRole('button', { name: '회원가입', exact: true }).click(); await wait(p, 700);
+  await fakePostcode(p);
+  await p.getByPlaceholder('이름을 입력해 주세요').fill('김손님');
+  await p.getByRole('button', { name: '주소 찾기', exact: true }).click(); await wait(p, 600);
+  await p.getByPlaceholder('상세 주소 (동·호수)').fill('101동 1001호');
+  if (n < 2) return;
+  await p.getByRole('button', { name: '다음', exact: true }).click(); await wait(p, 500);
+  await p.getByPlaceholder('아이디를 입력해 주세요').fill('kimson');
+  await p.getByPlaceholder('비밀번호를 입력해 주세요').fill('abcd1234');
+  await p.getByPlaceholder('이메일을 입력해 주세요').fill('kim@example.com');
+  await p.getByPlaceholder('010-0000-0000').fill('010-1234-5678');
+  await p.locator('input[type=date]').fill('1990-05-12');
+  if (n < 3) return;
+  await p.getByRole('button', { name: '다음', exact: true }).click(); await wait(p, 500);
+  if (n === 3) { await p.locator('.consent.all').click(); await wait(p, 300); return; }
+  if (n === 31) { await p.locator('.consent', { hasText: '개인정보 수집·이용' }).click(); await wait(p, 300); return; }   // 필수만
+  await p.locator('.consent.all').click(); await p.getByRole('button', { name: '가입하기', exact: true }).click(); await wait(p, 900);
+};
 
 /**
  * 묶음별 화면. state = 목업 상태 이름, go = 앱에서 그 화면까지 손님처럼 누르기,
@@ -162,6 +186,18 @@ const BUNDLES = {
     { id: 'S33', name: '로그아웃 확인', state: '확인', go: async p => { await myOf(p, { row: '로그아웃' }); }, part: ['.alert', '.alert'] },
     { id: 'S33D', mock: 'S33', name: '로그아웃 완료 안내', state: '완료 안내', go: async p => { await myOf(p, { row: '로그아웃' }); await p.locator('.alert .af button', { hasText: '로그아웃' }).click(); await wait(p, 900); }, part: ['.alert', '.alert'] },
     { id: 'S40', name: '회사 소개·사업자 정보', state: '쿠폰 켬 · 오늘 도착', go: async p => { await myOf(p, { guest: true, row: '회사 소개·사업자 정보' }); } },
+    // 묶음 5 뒷부분 — 로그인(S27) · 회원가입 3단계(P04) · 찾기(S29) · 첫 로그인 비밀번호(S31) · 매장 이용 동의(S32)
+    { id: 'S27', name: '로그인', state: '기본', go: async p => { await loginPage(p); await fillLogin(p); await p.getByPlaceholder(/비밀번호를 입력해 ?주세요/).focus(); await wait(p, 300); }, part: ['.auth', '.v2 .auth'] },
+    { id: 'S27E', mock: 'S27', name: '로그인 — 오류', state: '오류', opts: { loginFail: true }, go: async p => { await loginPage(p); await fillLogin(p); await p.getByRole('button', { name: '로그인', exact: true }).filter({ visible: true }).first().click(); await wait(p, 700); await p.locator('body').click({ position: { x: 5, y: 5 } }); }, part: ['.auth', '.v2 .auth'] },
+    { id: 'P04', name: '회원가입 1단계 — 어디로 배송할까요', state: '1단계', go: async p => { await signupStep(p, 1); }, part: ['.auth', '.v2 .auth'] },
+    { id: 'P04B', mock: 'P04', name: '회원가입 2단계 — 계정 만들기', state: '2단계 · 본인확인 전', go: async p => { await signupStep(p, 2); } },
+    { id: 'P04C', mock: 'P04', name: '회원가입 3단계 — 동의', state: '3단계 · 동의', go: async p => { await signupStep(p, 3); }, part: ['.group', '.v2 .group.consents'] },
+    { id: 'P04N', mock: 'P04', name: '회원가입 3단계 — 필수만', state: '3단계 · 선택 안 함', go: async p => { await signupStep(p, 31); }, part: ['.group', '.v2 .group.consents'] },
+    { id: 'P04D', mock: 'P04', name: '가입 완료 — 쿠폰 켬', state: '가입 완료 · 쿠폰 켬', go: async p => { await signupStep(p, 4); } },
+    { id: 'P04X', mock: 'P04', name: '가입 완료 — 쿠폰 꺼짐', state: '가입 완료 · 쿠폰 꺼짐', opts: { noCoupon: true }, go: async p => { await signupStep(p, 4); } },
+    { id: 'S29', name: '아이디·비밀번호 찾기(준비 중)', state: '아이디 찾기', go: async p => { await loginPage(p); await p.getByRole('button', { name: '아이디/비밀번호 찾기' }).click(); await wait(p, 600); } },
+    { id: 'S31', name: '첫 로그인 비밀번호 바꾸기', opts: { mustChange: true }, go: async p => { await login(p); await p.locator('#mcp-pw').fill('Newpass1'); await wait(p, 300); }, part: ['.alert', '.alert'] },
+    { id: 'S32', name: '매장 이용 동의', opts: { needsConsent: true }, go: async p => { await login(p); await wait(p, 600); }, part: ['.sheet', '.sheet.v2'] },
   ],
 };
 

@@ -406,3 +406,58 @@
 .v2.about-v2 .banner .go { border: 0; display: inline-flex; align-items: center; gap: 2px; }
 .v2.about-v2 .banner { width: auto; display: flex; }   /* 옛 App.css .banner(width 100% · 동그라미 장식)를 끈다 */
 .v2.about-v2 .banner::before, .v2.about-v2 .banner::after { display: none; }
+
+/* ── 묶음 5 뒤 — 로그인(S27) · 회원가입 3단계(P04) · 가입 완료. 목업 .auth-top .auth .or .consent .progress .check.sq ── */
+.v2.auth-v2 { min-height: 100vh; }
+.v2 .auth-wrap { max-width: 440px; margin: 0 auto; }
+.v2 .auth-top { padding: calc(env(safe-area-inset-top) + var(--sp-8)) var(--sp-6) var(--sp-4); text-align: center; }
+.v2 .auth-top img { width: 220px; max-width: 70%; display: inline-block; }
+.v2 .auth-top h1 { font-size: var(--fs-title1); font-weight: var(--fw-bold); letter-spacing: var(--ls-title); margin: var(--sp-5) 0 0; color: var(--text); }
+.v2 .auth-top p { font-size: var(--fs-sub); color: var(--text-2); margin: var(--sp-1) 0 0; }
+.v2 .auth { padding: 0 var(--sp-6); }
+.v2 .or { display: flex; justify-content: space-between; align-items: center; margin: var(--sp-3) 0 var(--sp-4); font-size: var(--fs-sub); }
+.v2 .or .chk { display: flex; gap: var(--sp-2); align-items: center; color: var(--text); cursor: pointer; }
+.v2 .or input, .v2 .consent input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.v2 .check.sq { border-radius: var(--r-xs); }
+.v2 .check .ic { width: var(--icon-sm); height: var(--icon-sm); }
+.v2 .guest-go { text-align: center; margin-top: var(--sp-5); }
+.v2 .guest-go button { font-size: var(--fs-sub); color: var(--text-2); display: inline-flex; align-items: center; gap: 2px; }
+.v2 .progress { display: flex; gap: var(--sp-1); padding: var(--sp-3) var(--page-x) 0; }
+.v2 .progress i { flex: 1; height: 4px; border-radius: var(--r-full); background: var(--fill-2); }
+.v2 .progress i.on { background: var(--brand); }
+.v2 .step-n { margin: 0 var(--sp-3) 0 0; }
+.v2 .step-h { font-size: var(--fs-title1); font-weight: var(--fw-bold); margin: var(--sp-5) 0 0; color: var(--text); }
+.v2 .auth-alt { text-align: center; margin-top: var(--sp-5); font-size: var(--fs-sub); color: var(--text-2); }
+.v2 .field select { flex: 1; min-width: 0; height: 100%; border: 0; background: none; color: inherit; font: inherit; outline: none; }
+.v2 .consent { display: flex; gap: var(--sp-3); align-items: flex-start; padding: var(--sp-3) var(--sp-4); cursor: pointer; position: relative; }
+.v2 .consent + .consent { border-top: var(--hairline) solid var(--sep); }
+.v2 .consent .ct { flex: 1; min-width: 0; }
+.v2 .consent b { font-size: var(--fs-callout); font-weight: var(--fw-semibold); }
+.v2 .consent p { font-size: var(--fs-cap); color: var(--text-2); margin: var(--sp-1) 0 0; line-height: var(--lh); }
+.v2 .consent.all { align-items: center; }
+.v2 .consent.all b { font-size: var(--fs-headline); }
+.v2 .req { color: var(--danger); font-weight: var(--fw-semibold); }
+.v2 .opt-t { color: var(--text-2); font-weight: var(--fw-semibold); }
+.notice.b { background: var(--info-soft); } .notice.b > .ic { color: var(--info); flex: none; }
+.v2 .auth-done { padding-top: 18vh; text-align: center; }
+.v2 .ricon.done-ic { width: 72px; height: 72px; border-radius: var(--r-full); }
+.v2 .ricon.done-ic .ic { width: var(--icon-lg); height: var(--icon-lg); }
+.v2 .done-cpn { margin-top: var(--sp-5); text-align: left; }
+.v2 .done-cpn > .f-hint { text-align: center; margin-top: var(--sp-2); }
+/* S31 첫 로그인 비밀번호 창 · S32 매장 이용 동의 시트 — 마이 밖(홈·로그인 위)에서도 뜨므로 창 자신이 .v2 다 */
+.alert.v2 { background: var(--card); min-height: 0; }
+.alert.mcp-alert { max-width: 340px; text-align: left; }
+.alert.mcp-alert .ab > b { margin-top: var(--sp-1); }
+.alert.mcp-alert .ab > p { margin-bottom: var(--sp-3); }
+.alert.mcp-alert .chk { display: flex; gap: var(--sp-2); align-items: center; margin: var(--sp-2) 0 var(--sp-3); cursor: pointer; position: relative; }
+.alert.mcp-alert .chk input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.sheet.plain { background: var(--bg-plain-elevated); }
+.overlay.tpc-over { z-index: 10000; }
+.v2 .tpc { padding-top: 0; }
+.v2 .tpc h2 { font-size: var(--fs-title2); font-weight: var(--fw-bold); margin: 0; color: var(--text); }
+.v2 .tpc > p:not(.f-hint) { font-size: var(--fs-callout); color: var(--text-2); margin: var(--sp-2) 0 0; line-height: var(--lh); }
+.v2 .tpc > p b { color: var(--text); }
+.v2 .tpc .notice { margin-top: var(--sp-4); }
+.v2 .tpc .f-hint { margin: var(--sp-3) 0 var(--sp-4); }
+.v2 .tpc .ui-btn + .ui-btn { margin-top: var(--sp-2); }
+.v2 .tpc .later { display: block; margin: var(--sp-3) auto 0; font-size: var(--fs-sub); color: var(--text-2); }

@@ -47,6 +47,10 @@ const STRICT = [
   'src/pages/MyPage.js',         // 묶음 5
   'src/pages/Wishlist.js',       // 묶음 5
   'src/pages/About.jsx',         // 묶음 5
+  'src/pages/Login.js',          // 묶음 5 — 로그인·가입 3단계
+  'src/pages/FindAccount.js',    // 묶음 5
+  'src/components/ForcePasswordChangeModal.jsx', // 묶음 5 — S31
+  'src/components/ThirdPartyConsentModal.jsx',   // 묶음 5 — S32
 ];
 
 // 주석을 지운다 — 설명 글에 쓴 「window.alert 금지」·「#00c471」 같은 글자를 세지 않게(줄 수는 지킨다)

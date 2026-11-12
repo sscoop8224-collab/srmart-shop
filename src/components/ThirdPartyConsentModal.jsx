@@ -1,4 +1,6 @@
 // 제3자 제공 동의 — 기존 회원에게 **딱 한 번** 묻는 팝업 (2026-09-11).
+// 모양은 목업 정본 v1 의 S32(묶음 5 · 2026-11-12 밤): 제목 없는 시트 · 「동의하지 않으셔도 괜찮아요」를 먼저 크게 ·
+// 세 갈래(동의하고 매장 이용 · 동의 안 함 · 나중에 할게요).
 //
 // ── 왜 팝업인가 ──────────────────────────────────────────────────────────
 //
@@ -17,6 +19,7 @@
 // 아무것도 보내지 않는다 — 다음 로그인 때 다시 뜬다. 답(동의/거절)을 해야만 끝난다.
 import { useState } from 'react';
 import API from '../api';
+import Icon from './ui/Icon';
 import { useCustomerBranchList, topicJosa } from '../utils/customerStores';
 
 export default function ThirdPartyConsentModal({ onDone }) {
@@ -39,79 +42,37 @@ export default function ThirdPartyConsentModal({ onDone }) {
   };
 
   return (
-    <div style={overlay} role="dialog" aria-modal="true" aria-labelledby="tpc-title">
-      <div style={sheet}>
-        <div id="tpc-title" style={title}>매장 이용도 함께 하시겠어요?</div>
-
-        <p style={body}>
-          {/* 지점 이름은 손님에게 보이는 매장 목록(GET /api/stores?audience=customer)으로 만든다 —
-              utils/customerStores.js 머리말. 못 불러오면 목록 없이 「각 지점」. */}
-          {branches
-            ? <>에스알마트 <b>{branches}</b>{topicJosa(branches)} 각각 다른 사업자예요.</>
-            : <>에스알마트 각 지점은 각각 다른 사업자예요.</>}
-          매장에서 포인트를 쌓고 쓰시고 <b>매장에서 사신 영수증을 앱에서 보시려면</b>,
-          이름·연락처·회원번호·포인트 내역과 매장 구매 내역을 각 지점에 제공하는 데
-          동의가 필요해요.
-        </p>
-
-        <div style={noteBox}>
-          <div style={noteTitle}>동의하지 않으셔도 괜찮아요</div>
-          <div style={noteBody}>
-            온라인 주문과 온라인 포인트는 그대로 쓰실 수 있어요. 매장 적립과 매장
-            영수증 보기만 빠져요.
+    <div className="overlay sheet-over tpc-over" role="dialog" aria-modal="true" aria-labelledby="tpc-title">
+      <div className="sheet v2 plain">
+        <div className="grabber" />
+        <div className="sheet-h" />
+        <div className="sheet-b">
+          <div className="pad tpc">
+            <h2 id="tpc-title">매장 이용도 함께 하시겠어요?</h2>
+            <p>
+              {/* 지점 이름은 손님에게 보이는 매장 목록(GET /api/stores?audience=customer)으로 만든다 —
+                  utils/customerStores.js 머리말. 못 불러오면 목록 없이 「각 지점」. */}
+              {branches
+                ? <>에스알마트 <b>{branches}</b>{topicJosa(branches)} 각각 다른 사업자예요.</>
+                : <>에스알마트 각 지점은 각각 다른 사업자예요.</>}
+              {' '}매장에서 포인트를 쌓고 쓰시고 <b>매장에서 사신 영수증을 앱에서 보시려면</b>,
+              이름·연락처·회원번호·포인트 내역과 매장 구매 내역을 각 지점에 제공하는 데 동의가 필요해요.
+            </p>
+            <div className="notice g">
+              <Icon name="info" />
+              <div><b>동의하지 않으셔도 괜찮아요</b><br />온라인 주문과 온라인 포인트는 그대로 쓰실 수 있어요. 매장 적립과 매장 영수증 보기만 빠져요.</div>
+            </div>
+            <p className="f-hint">제공 항목 이름·연락처·회원번호·포인트 내역·매장 구매 내역 · 목적 지점 통합 회원·포인트 운영·구매 내역 표시 · 보유 기간 회원 탈퇴 시까지. 자세한 내용은 개인정보처리방침에서 보실 수 있어요.</p>
+            {!!error && <div className="f-err"><Icon name="alert" size="sm" />{error}</div>}
+            <button type="button" className={`ui-btn full ${saving ? 'dis' : 'pri'}`} disabled={saving} onClick={() => answer(true)}>
+              {saving ? '저장 중…' : '동의하고 매장 이용'}
+            </button>
+            <button type="button" className="ui-btn full gray" disabled={saving} onClick={() => answer(false)}>동의 안 함</button>
+            {/* 보류 — 서버에 아무것도 보내지 않는다(위 주석 참고). */}
+            <button type="button" className="later" disabled={saving} onClick={() => onDone(null)}>나중에 할게요</button>
           </div>
         </div>
-
-        <p style={fine}>
-          제공 항목 이름·연락처·회원번호·포인트 내역·매장 구매 내역 · 목적 지점 통합 회원·
-          포인트 운영·구매 내역 표시 · 보유 기간 회원 탈퇴 시까지. 자세한 내용은
-          개인정보처리방침에서 보실 수 있어요.
-        </p>
-
-        {!!error && <div style={errorText}>{error}</div>}
-
-        <div style={btnRow}>
-          <button type="button" style={{ ...btn, ...btnGhost }} disabled={saving} onClick={() => answer(false)}>
-            동의 안 함
-          </button>
-          <button type="button" style={{ ...btn, ...btnPrimary, opacity: saving ? 0.6 : 1 }} disabled={saving} onClick={() => answer(true)}>
-            {saving ? '저장 중...' : '동의하고 매장 이용'}
-          </button>
-        </div>
-
-        {/* 보류 — 서버에 아무것도 보내지 않는다(위 주석 참고). */}
-        <button type="button" style={laterBtn} disabled={saving} onClick={() => onDone(null)}>
-          나중에 할게요
-        </button>
       </div>
     </div>
   );
 }
-
-const overlay = {
-  position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 10000,
-  display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: 0,
-};
-const sheet = {
-  background: 'var(--bg-card, #fff)', color: 'var(--text-primary, #111)',
-  width: '100%', maxWidth: 480, borderRadius: '20px 20px 0 0', padding: '24px 20px 20px',
-  boxShadow: '0 -8px 32px rgba(0,0,0,0.18)', display: 'flex', flexDirection: 'column', gap: 12,
-};
-const title = { fontSize: 18, fontWeight: 800, lineHeight: 1.4 };
-const body = { fontSize: 14, lineHeight: 1.7, margin: 0, color: 'var(--text-secondary, #444)' };
-const noteBox = { background: 'var(--gray-100, #f4f6f5)', borderRadius: 12, padding: '12px 14px' };
-const noteTitle = { fontSize: 13, fontWeight: 700, marginBottom: 4 };
-const noteBody = { fontSize: 13, lineHeight: 1.6, color: 'var(--text-secondary, #555)' };
-const fine = { fontSize: 11, lineHeight: 1.7, color: 'var(--gray-400, #888)', margin: 0 };
-const errorText = { fontSize: 13, color: '#d92d20' };
-const btnRow = { display: 'flex', gap: 8, marginTop: 4 };
-const btn = {
-  flex: 1, padding: '14px 12px', borderRadius: 12, fontSize: 15, fontWeight: 700,
-  border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-};
-const btnGhost = { background: 'var(--gray-100, #eef0ef)', color: 'var(--text-secondary, #555)' };
-const btnPrimary = { background: 'linear-gradient(180deg, #2BC047 0%, #178a2d 100%)', color: '#fff' };
-const laterBtn = {
-  background: 'none', border: 'none', color: 'var(--gray-400, #999)', fontSize: 13,
-  padding: '6px 0 0', cursor: 'pointer', fontFamily: 'inherit',
-};
