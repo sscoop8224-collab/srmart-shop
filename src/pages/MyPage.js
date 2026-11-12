@@ -1,3 +1,12 @@
+// 마이 (목업 정본 v1 의 P02 · S21 · S22 · S23 · S24 · S25 · S47, 묶음 5 · 2026-11-12 밤)
+//
+// 결정 9·11(2026-11-12): 예전 마이(S20)를 P02 가 대신한다.
+//   · 위 — 프로필 한 줄(누르면 회원정보 수정 S21) + 요약 4칸(주문 · 찜 · 포인트 · 쿠폰). 예전의 통계 3칸 + 카드 3칸(같은 숫자 두 번)을 하나로.
+//   · 쇼핑 — 「주문내역」 한 줄(예전 「구매 내역」·「주문내역」 두 줄이 같은 화면으로 갔다 — P01) · 「찜」 한 줄(예전 「찜한 상품」·「찜 목록」) · 「내 쿠폰」.
+//   · 계정·정보 — 알림 설정 · 비밀번호 변경(S22) · 로그인 이력(S24) · 공지사항.
+//   · 오른쪽(태블릿) — 화면 모드 · 회사 소개·사업자 정보(S40) · 로그아웃(맨 아래 — 확인창 S33) · 회원탈퇴(S25).
+//   · 🔴 로그인 안 한 손님(S47)도 마이를 연다 — 로그인·회원가입 단추 + 공지 · 회사 소개 · 화면 모드(예전엔 마이 탭을 누르면 로그인 창뿐이었다).
+// 🔴 쿠폰은 **창 하나**(S23) — 예전엔 창이 둘이었고, 그중 통계 칸이 부르던 `/coupons/my` 는 서버에 없는 주소라 늘 0장이었다.
 import { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { useTheme } from '../ThemeContext';
@@ -5,148 +14,185 @@ import { useAuth } from '../AuthContext';
 import { getMyPoints, getMyActiveCoupons, deleteAccount, SITE } from '../api';
 import API from '../api';
 import { useDialog } from '../DialogContext';
+import Icon from '../components/ui/Icon';
 
-function PwStrengthBar({ password, subTextColor }) {
-  if (!password) return null;
-  const checks = [
-    { ok: password.length >= 8 },
-    { ok: /[A-Z]/.test(password) },
-    { ok: /[a-z]/.test(password) },
-    { ok: /[0-9]/.test(password) },
-    { ok: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) },
-  ];
-  const labels = ['8자+', '대문자', '소문자', '숫자', '특수문자'];
-  const passed = checks.filter(c => c.ok).length;
-  const color = passed <= 2 ? '#ff4757' : passed <= 3 ? '#ffa502' : 'var(--primary)';
-  const strength = passed <= 2 ? '약함' : passed <= 3 ? '보통' : passed <= 4 ? '강함' : '매우 강함';
+const won = (n) => `${Number(n || 0).toLocaleString('ko-KR')}원`;
+const pad2 = (x) => String(x).padStart(2, '0');
+// DATE 컬럼은 UTC ISO 로 와서 앞 10자를 자르면 하루 이르다 — 로컬 연·월·일로 읽는다(CLAUDE.md 「DATE 컬럼」)
+const ymd = (v) => {
+  if (!v) return '';
+  const s = String(v);
+  if (!s.includes('T')) return s.slice(0, 10);
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? s.slice(0, 10) : `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+};
+const md = (v) => { const d = new Date(v); return Number.isNaN(d.getTime()) ? String(v || '') : `${pad2(d.getMonth() + 1)}.${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
+// 로그인 이력의 IP 는 가려서 보인다(목업 S24) — 앞 두 마디만. IPv6 는 앞 두 묶음만
+const maskIp = (ip) => {
+  if (!ip) return '-';
+  const s = String(ip).replace(/^::ffff:/, '');
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(s)) return s.split('.').slice(0, 2).join('.') + '.*.*';
+  if (s.includes(':')) return s.split(':').slice(0, 2).join(':') + ':*';
+  return s;
+};
+const couponDiscount = (c) => (c.discount_type === 'percent' ? `${Number(c.discount)}%` : won(c.discount));
+const couponGone = (c) => !!c.used_at || (c.valid_until && ymd(c.valid_until) < ymd(new Date().toISOString()));
+
+const PW_CHECKS = [
+  ['8자+', (p) => p.length >= 8],
+  ['대문자', (p) => /[A-Z]/.test(p)],
+  ['소문자', (p) => /[a-z]/.test(p)],
+  ['숫자', (p) => /[0-9]/.test(p)],
+  ['특수문자', (p) => /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(p)],
+];
+
+function Row({ icon, tone = '', label, sub, val, danger, chev = true, onClick, children }) {
   return (
-    <div style={{ marginTop: 6 }}>
-      <div style={{ display: 'flex', gap: 3, marginBottom: 4 }}>
-        {[1,2,3,4,5].map(i => (
-          <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= passed ? color : '#ddd', transition: 'background 0.2s' }} />
-        ))}
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 10, color, fontWeight: 600 }}>{strength}</span>
-        <span style={{ fontSize: 10, color: subTextColor }}>{checks.filter(c=>c.ok).length}/5</span>
-      </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 8px', marginTop: 4 }}>
-        {checks.map((ch, i) => (
-          <span key={i} style={{ fontSize: 10, color: ch.ok ? 'var(--primary)' : subTextColor }}>{ch.ok ? '✓' : '○'} {labels[i]}</span>
-        ))}
+    <button type="button" className={`row tap${icon ? ' ind' : ''}${danger ? ' danger' : ''}`} onClick={onClick}>
+      {icon && <span className={`ricon ${tone}`}><Icon name={icon} /></span>}
+      <span className="lbl">{label}{sub && <small>{sub}</small>}</span>
+      {val != null && val !== '' && <span className="val">{val}</span>}
+      {children}
+      {chev && <span className="chev"><Icon name="chevR" size="sm" /></span>}
+    </button>
+  );
+}
+
+function Group({ h, f, children }) {
+  return (
+    <section className="sec">
+      {h && <div className="sec-h">{h}</div>}
+      <div className="group">{children}</div>
+      {f && <div className="sec-f">{f}</div>}
+    </section>
+  );
+}
+
+// 시트 — 목업 sheet(): 손잡이 · 위쪽 「취소 · 제목 · 오른쪽 단추」 · 본문
+function Sheet({ title, onClose, left = '취소', right, children, id }) {
+  return (
+    <div className="overlay sheet-over" role="dialog" aria-modal="true" aria-labelledby={id} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="sheet v2">
+        <div className="grabber" />
+        <div className="sheet-h">
+          <div className="nav-side">{left && <button type="button" className="nav-btn" onClick={onClose}>{left}</button>}</div>
+          <div className="nav-title" id={id}>{title}</div>
+          <div className="nav-side r">{right}</div>
+        </div>
+        <div className="sheet-b">{children}</div>
       </div>
     </div>
   );
 }
 
-function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, isAdmin }) {
-  const { darkMode, themeMode, setThemeMode } = useTheme();
+function FieldErr({ msg }) {
+  if (!msg) return null;
+  return <div className="f-err"><Icon name="alert" size="sm" />{msg}</div>;
+}
+
+// ── 내 쿠폰(S23) — 쿠폰표 모양. 사용 가능 / 사용 완료(기간이 지난 것도 여기) ──
+function CouponSheet({ coupons, loading, onClose }) {
+  const [tab, setTab] = useState(0);
+  const live = coupons.filter((c) => !couponGone(c));
+  const gone = coupons.filter(couponGone);
+  const list = tab === 0 ? live : gone;
+  return (
+    <Sheet id="coupon-sheet-title" title="내 쿠폰" left="" right={<button type="button" className="nav-btn b" onClick={onClose}>닫기</button>} onClose={onClose}>
+      {loading ? (
+        <div className="ui-empty"><span className="spin" /></div>
+      ) : coupons.length === 0 ? (
+        <div className="ui-empty"><div className="big"><Icon name="tag" /></div><h3>보유 쿠폰이 없어요</h3></div>
+      ) : (
+        <div className="pad" style={{ paddingTop: 0 }}>
+          <div className="seg" role="tablist" aria-label="쿠폰">
+            {[`사용 가능 ${live.length}`, `사용 완료 ${gone.length}`].map((l, i) => (
+              <button key={l} type="button" role="tab" aria-selected={tab === i} className={tab === i ? 'on' : ''} onClick={() => setTab(i)}>{l}</button>
+            ))}
+          </div>
+          {list.length === 0 ? (
+            <div className="f-hint" style={{ textAlign: 'center', padding: 'var(--sp-6) 0' }}>{tab === 0 ? '쓸 수 있는 쿠폰이 없어요' : '사용한 쿠폰이 없어요'}</div>
+          ) : list.map((c) => {
+            const gonePill = c.used_at ? '사용완료' : '기간 만료';
+            return (
+              <div key={c.id} className={`group cticket${tab === 1 ? ' used' : ''}`}>
+                <div className="cd">{couponDiscount(c)}</div>
+                <div className="pad ci">
+                  <b>{c.coupon_name}</b>
+                  <div className="f-hint">{Number(c.min_purchase_amount) > 0 ? `${won(c.min_purchase_amount)} 이상 구매 시` : '조건 없음'}</div>
+                  <div className="f-hint">{c.valid_until ? `~${ymd(c.valid_until)}` : '기간 없음'}{c.code ? ` · 코드 ${c.code}` : ''}</div>
+                </div>
+                {tab === 1 && <span className="pill">{gonePill}</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Sheet>
+  );
+}
+
+// ── 로그인 이력(S24) ──
+function LoginHistorySheet({ rows, loading, failed, onClose }) {
+  return (
+    <Sheet id="login-history-title" title="로그인 이력" left="" right={<button type="button" className="nav-btn b" onClick={onClose}>닫기</button>} onClose={onClose}>
+      {loading ? (
+        <div className="ui-empty"><span className="spin" /></div>
+      ) : failed ? (
+        <div className="ui-empty"><div className="big r"><Icon name="alert" /></div><h3>불러오지 못했어요</h3><p>잠시 후 다시 열어 주세요.</p></div>
+      ) : rows.length === 0 ? (
+        <div className="ui-empty"><div className="big"><Icon name="clock" /></div><h3>로그인 이력이 없어요</h3></div>
+      ) : (
+        <Group f="내가 아닌 로그인이 보이면 비밀번호를 바꿔 주세요.">
+          {rows.map((r, i) => (
+            <div className="row" key={i}>
+              <span className="lbl">{md(r.created_at)}<small>{maskIp(r.ip)}</small></span>
+              <span className={`pill ${r.success ? 'g' : 'r'}`}>{r.success ? '성공' : '실패'}</span>
+            </div>
+          ))}
+        </Group>
+      )}
+    </Sheet>
+  );
+}
+
+function MyPage({ user, orders = [], wishlist = [], goToPage, onLogout, users, setUsers, isAdmin, onLogin, onSignup }) {
+  const { themeMode, setThemeMode } = useTheme();
   const { login: setAuthUser } = useAuth();   // 저장 성공 후 로그인 사용자 정보 갱신(재로그인 없이 반영)
   const { notify } = useDialog();
   const [myPoints, setMyPoints] = useState(null); // { points, expiring_soon }
-  const [myUserCoupons, setMyUserCoupons] = useState([]);
-  const [showCouponList, setShowCouponList] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showPwModal, setShowPwModal] = useState(false);
-  const [form, setForm] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
-    address: user?.address || '',
-    addressDetail: user?.addressDetail || '',
-    zipcode: user?.zipcode || '',
-    dong_name: user?.dong_name || '',   // Daum bname(법정동) — 배송권역 매칭의 주 기준. 빈 값일 수 있음(아래 참고)
-  });
+  const [coupons, setCoupons] = useState([]);
+  const [couponsLoading, setCouponsLoading] = useState(false);
+  const [sheet, setSheet] = useState(null);       // 'coupons' | 'history' | 'edit' | 'pw' | 'delete'
+  const [form, setForm] = useState({ name: '', email: '', phone: '', address: '', addressDetail: '', zipcode: '', dong_name: '' });
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
-  const [pwError, setPwError] = useState('');
+  const [pwShow, setPwShow] = useState(false);
+  const [pwError, setPwError] = useState(null);   // { at: 'current'|'next'|'confirm', msg }
   const [pwLoading, setPwLoading] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
   const [saveErr, setSaveErr] = useState(false);      // 저장 실패 여부(성공/실패 색 구분)
   const [saveLoading, setSaveLoading] = useState(false);
-  const [myCoupons, setMyCoupons] = useState([]);
-  const [showCoupons, setShowCoupons] = useState(false);
-  const [couponsLoading, setCouponsLoading] = useState(false);
   const [loginHistory, setLoginHistory] = useState([]);
-  const [showLoginHistory, setShowLoginHistory] = useState(false);
-  const [loginHistoryLoading, setLoginHistoryLoading] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyFailed, setHistoryFailed] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const bg = darkMode ? '#1a1a1a' : 'var(--primary-light)';
-  const cardBg = darkMode ? '#242424' : 'white';
-  const borderColor = darkMode ? '#2e2e2e' : 'var(--primary-light)';
-  const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
-  const subTextColor = darkMode ? '#9e9e9e' : '#adb5bd';
-  const inputBg = darkMode ? '#2e2e2e' : 'var(--primary-light)';
-  const inputBorder = darkMode ? '#3a3a3a' : 'var(--primary-light)';
-  const modalBg = darkMode ? '#242424' : 'white';
-  const modalTextColor = darkMode ? '#f0f0f0' : '#1a1a1a';
-
   useEffect(() => {
-    if (user) {
-      getMyPoints().then(r => setMyPoints(r.data)).catch(() => {});
-      getMyActiveCoupons().then(r => setMyUserCoupons(r.data || [])).catch(() => {});
-    }
+    if (!user) return;
+    getMyPoints().then((r) => setMyPoints(r.data)).catch(() => {});
+    setCouponsLoading(true);
+    getMyActiveCoupons().then((r) => setCoupons(r.data || [])).catch(() => {}).finally(() => setCouponsLoading(false));
   }, [user]);
 
-  const currentUser = users?.find(u => u.email === user?.email) || user;
-
-  const menuItems = [
-    { label: '찜한 상품', sub: '', page: 'wishlist',
-      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> },
-    { label: '최근 본 상품', sub: '', page: 'recent',
-      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
-    { label: '내 리뷰', sub: '', page: 'my-reviews',
-      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> },
-    // 구매 내역 = 온라인 주문 + 매장 구매(전자영수증). 아래 "주문내역" 은 온라인 전용으로
-    // 그대로 둔다 — 배송 조회·교환/반품 요청이 거기 붙어 있다.
-    { label: '구매 내역', sub: '매장 영수증 포함', page: 'purchases',
-      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="13" x2="14" y2="13"/></svg> },
-    { label: '주문내역', sub: orders.length + '건', page: 'orders',
-      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> },
-    { label: '찜 목록', sub: wishlist.length + '개', page: 'wishlist',
-      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> },
-    { label: '공지사항', sub: '', page: 'notice',
-      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> },
-    // 알림 설정(2026-11-12 지시 5 · 목업 S50) — 주문·배송 / 혜택 알림(광고성) 따로 켜고 끈다.
-    { label: '알림 설정', sub: '', page: 'notificationSettings',
-      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> },
-    { label: '로그인 이력', sub: '', page: '__login_history__',
-      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> },
-  ];
-
-  const inputStyle = {
-    width: '100%', padding: '12px 14px', border: `1.5px solid ${inputBorder}`,
-    borderRadius: '12px', fontSize: '14px', outline: 'none',
-    boxSizing: 'border-box', background: inputBg, fontFamily: 'inherit',
-    color: textColor
-  };
-
-  const fetchMyCoupons = async () => {
-    setCouponsLoading(true);
-    try {
-      const API = (await import('../api')).default;
-      const res = await API.get('/coupons/my');
-      setMyCoupons(res.data);
-    } catch (err) {
-      console.error('쿠폰 불러오기 실패', err);
-    } finally {
-      setCouponsLoading(false);
-    }
-  };
-
-  const handleShowCoupons = () => {
-    setShowCoupons(true);
-    fetchMyCoupons();
-  };
+  const currentUser = users?.find((u) => u.email === user?.email) || user;
+  const liveCoupons = coupons.filter((c) => !couponGone(c)).length;
 
   // 서버(PUT /api/users/:id)에 실제로 저장한 뒤에만 성공 표시한다.
   // ※ 이 엔드포인트는 부분 수정이 아니라 전체 UPDATE 라, 화면에서 안 고치는 username·is_adult 도
   //   현재 값 그대로 함께 보내야 한다(안 보내면 해당 컬럼이 비워진다).
   const saveProfile = async () => {
-    if (!form.name.trim()) return notify('이름을 입력해주세요');
+    if (!form.name.trim()) { setSaveErr(true); setSaveMsg('이름을 입력해 주세요'); return; }
     const uid = currentUser?.id || user?.id;
     if (!uid) return notify('로그인 정보를 확인할 수 없어요. 다시 로그인해주세요.');
     setSaveLoading(true); setSaveErr(false); setSaveMsg('');
@@ -171,13 +217,13 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
       };
       setAuthUser(updated);
       if (setUsers) {
-        setUsers(prev => prev.map(u => (u.id ? u.id === uid : u.email === user?.email) ? { ...u, ...updated } : u));
+        setUsers((prev) => prev.map((u) => ((u.id ? u.id === uid : u.email === user?.email) ? { ...u, ...updated } : u)));
       }
-      setSaveMsg('저장됐어요! ✅');
-      setTimeout(() => { setSaveMsg(''); setShowEditModal(false); }, 1200);
+      setSaveMsg('저장했어요');
+      setTimeout(() => { setSaveMsg(''); setSheet(null); }, 1200);
     } catch (e) {
       setSaveErr(true);
-      setSaveMsg(e.response?.data?.error || '저장에 실패했어요. 잠시 후 다시 시도해주세요.');
+      setSaveMsg(e.response?.data?.error || '저장하지 못했어요. 잠시 후 다시 시도해 주세요.');
     } finally {
       setSaveLoading(false);
     }
@@ -190,7 +236,7 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
   const openAddressSearch = () => {
     if (!window.daum) { notify('주소 검색 서비스를 불러오는 중이에요!'); return; }
     new window.daum.Postcode({
-      oncomplete: (data) => setForm(p => ({
+      oncomplete: (data) => setForm((p) => ({
         ...p,
         address: data.roadAddress || data.jibunAddress,
         zipcode: data.zonecode || '',
@@ -201,7 +247,7 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
 
   const handleDeleteAccount = async () => {
     setDeleteError('');
-    if (!deletePassword) { setDeleteError('비밀번호를 입력해주세요'); return; }
+    if (!deletePassword) { setDeleteError('비밀번호를 입력해 주세요'); return; }
     setDeleteLoading(true);
     try {
       await deleteAccount(deletePassword);
@@ -210,425 +256,230 @@ function MyPage({ user, orders, wishlist, goToPage, onLogout, users, setUsers, i
       await notify('회원탈퇴가 완료되었어요. 그동안 이용해주셔서 감사합니다.');
       window.location.href = '/';
     } catch (err) {
-      setDeleteError(err.response?.data?.error || '탈퇴에 실패했어요');
+      setDeleteError(err.response?.data?.error || '탈퇴하지 못했어요');
     } finally {
       setDeleteLoading(false);
     }
   };
 
   const savePassword = async () => {
-    setPwError('');
-    if (!pwForm.current) { setPwError('현재 비밀번호를 입력해주세요'); return; }
-    if (pwForm.next.length < 8) { setPwError('새 비밀번호는 8자 이상이어야 해요'); return; }
-    if (pwForm.next !== pwForm.confirm) { setPwError('새 비밀번호가 일치하지 않아요'); return; }
+    setPwError(null);
+    if (!pwForm.current) { setPwError({ at: 'current', msg: '현재 비밀번호를 입력해 주세요' }); return; }
+    if (pwForm.next.length < 8) { setPwError({ at: 'next', msg: '새 비밀번호는 8자 이상이어야 해요' }); return; }
+    if (pwForm.next !== pwForm.confirm) { setPwError({ at: 'confirm', msg: '새 비밀번호가 서로 달라요' }); return; }
     setPwLoading(true);
     try {
       await API.put('/users/me/password', { currentPassword: pwForm.current, newPassword: pwForm.next });
-      await notify('비밀번호가 변경됐어요! 다시 로그인해주세요 😊');
+      await notify({ icon: 'check', title: '비밀번호를 바꿨어요', message: '새 비밀번호로 다시 로그인해 주세요.' });
       setPwForm({ current: '', next: '', confirm: '' });
-      setShowPwModal(false);
-      if (onLogout) onLogout();
+      setSheet(null);
+      if (onLogout) onLogout(true);
     } catch (err) {
-      setPwError(err.response?.data?.error || '비밀번호 변경에 실패했어요');
+      // 서버가 거절하는 것은 대부분 현재 비밀번호 — 그 칸 아래에 쓴다(목업 S22 「오류」)
+      setPwError({ at: 'current', msg: err.response?.data?.error || '비밀번호를 바꾸지 못했어요' });
     } finally {
       setPwLoading(false);
     }
   };
 
-  const loadLoginHistory = async () => {
-    setLoginHistoryLoading(true);
+  const openHistory = async () => {
+    setSheet('history'); setHistoryLoading(true); setHistoryFailed(false);
     try {
       const res = await API.get('/users/me/login-history');
       setLoginHistory(res.data || []);
-      setShowLoginHistory(true);
     } catch (e) {
-      console.error(e);
+      setHistoryFailed(true);
     } finally {
-      setLoginHistoryLoading(false);
+      setHistoryLoading(false);
     }
   };
 
+  const openEdit = () => {
+    setForm({ name: currentUser?.name || '', email: currentUser?.email || '', phone: currentUser?.phone || '', address: currentUser?.address || '', addressDetail: currentUser?.addressDetail || '', zipcode: currentUser?.zipcode || '', dong_name: currentUser?.dong_name || '' });
+    setSaveMsg(''); setSaveErr(false);
+    setSheet('edit');
+  };
+
+  const openAdmin = () => {
+    if (Capacitor.isNativePlatform()) window.open(`${SITE}/admin`, '_system');
+    else window.open('/admin', '_blank', 'noopener,noreferrer');
+  };
+
+  const login = !!user;
+  const name = currentUser?.name || '';
+  const pts = myPoints != null ? `${Number(myPoints.points || 0).toLocaleString('ko-KR')}P` : '-';
+  const pwOk = PW_CHECKS.map(([l, f]) => [l, f(pwForm.next)]);
+
   return (
-    <div className="mypage-root" style={{ background: bg, minHeight: '100vh', paddingBottom: '80px' }}>
-
-      {/* 프로필 헤더 */}
-      <div style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', padding: '40px 20px 64px', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '180px', height: '180px', background: 'rgba(255,255,255,0.08)', borderRadius: '50%' }} />
-        <div style={{ position: 'absolute', bottom: '-60px', left: '-30px', width: '200px', height: '200px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%' }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', position: 'relative', zIndex: 1 }}>
-          <div style={{ width: '64px', height: '64px', background: 'rgba(255,255,255,0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid rgba(255,255,255,0.4)' }}>
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-            </svg>
-          </div>
-          <div>
-            <p style={{ fontSize: '20px', fontWeight: '800', color: 'white', margin: '0 0 4px' }}>{currentUser?.name}님</p>
-            {currentUser?.username && <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.9)', margin: '0 0 3px', fontWeight: '600' }}>@{currentUser.username}</p>}
-            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', margin: 0 }}>{currentUser?.email}</p>
-          </div>
+    <div className="v2 my-v2">
+      <header className="app-nav">
+        <div className="nav-row">
+          <div className="nav-side" /><div className="nav-title" />
+          <div className="nav-side r"><button type="button" className="icon-btn" aria-label="공지사항" onClick={() => goToPage('notice')}><Icon name="bell" /></button></div>
         </div>
-      </div>
+        <div className="large"><h1>마이</h1></div>
+      </header>
 
-      {/* 통계 카드 */}
-      <div style={{ margin: '-28px 16px 0', background: cardBg, borderRadius: '20px', padding: '4px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', position: 'relative', zIndex: 2, border: `1px solid ${borderColor}` }}>
-        <div style={{ textAlign: 'center', padding: '20px 16px', cursor: 'pointer', borderRadius: '16px' }} onClick={() => goToPage('orders')}>
-          <p style={{ fontSize: '28px', fontWeight: '900', color: 'var(--primary)', margin: '0 0 4px' }}>{orders.length}</p>
-          <p style={{ fontSize: '12px', color: subTextColor, margin: 0, fontWeight: '600' }}>주문내역</p>
-        </div>
-        <div style={{ textAlign: 'center', padding: '20px 16px', cursor: 'pointer', borderLeft: `1px solid ${borderColor}`, borderRadius: '16px' }} onClick={() => goToPage('wishlist')}>
-          <p style={{ fontSize: '28px', fontWeight: '900', color: '#ff4757', margin: '0 0 4px' }}>{wishlist.length}</p>
-          <p style={{ fontSize: '12px', color: subTextColor, margin: 0, fontWeight: '600' }}>찜 목록</p>
-        </div>
-        <div style={{ textAlign: 'center', padding: '20px 16px', cursor: 'pointer', borderLeft: `1px solid ${borderColor}`, borderRadius: '16px' }} onClick={handleShowCoupons}>
-          <p style={{ fontSize: '28px', fontWeight: '900', color: '#f0a500', margin: '0 0 4px' }}>{myCoupons.length}</p>
-          <p style={{ fontSize: '12px', color: subTextColor, margin: 0, fontWeight: '600' }}>내 쿠폰</p>
-        </div>
-      </div>
-
-      {/* 회원정보 수정 버튼 */}
-      <div style={{ margin: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-        <button onClick={() => {
-          setForm({ name: currentUser?.name || '', email: currentUser?.email || '', phone: currentUser?.phone || '', address: currentUser?.address || '', addressDetail: currentUser?.addressDetail || '', zipcode: currentUser?.zipcode || '', dong_name: currentUser?.dong_name || '' });
-          setShowEditModal(true);
-        }} style={{ background: cardBg, border: '1.5px solid var(--primary)', borderRadius: '14px', padding: '14px 0', fontSize: '14px', fontWeight: '600', color: 'var(--primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 2px 8px rgba(0,196,113,0.1)' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-          </svg>
-          회원정보 수정
-        </button>
-        <button onClick={() => { setPwForm({ current: '', next: '', confirm: '' }); setPwError(''); setShowPwModal(true); }}
-          style={{ background: cardBg, border: `1.5px solid ${borderColor}`, borderRadius: '14px', padding: '14px 0', fontSize: '14px', fontWeight: '600', color: textColor, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={textColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          </svg>
-          비밀번호 변경
-        </button>
-      </div>
-
-      {/* 등급 + 포인트 + 쿠폰 카드 */}
-      <div style={{ margin: '0 16px 14px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-        {/* 등급 카드 */}
-        <div style={{ background: cardBg, borderRadius: 16, padding: '14px 16px', border: `1px solid ${borderColor}` }}>
-          <div style={{ fontSize: 11, color: subTextColor, marginBottom: 6, fontWeight: 600 }}>내 등급</div>
-          {currentUser?.membership_tier ? (
-            <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--primary-dark)' }}>{currentUser.membership_tier}</div>
+      <div className="split">
+        <div>
+          {login ? (
+            <section className="sec" style={{ marginTop: 'var(--sp-2)' }}>
+              <div className="group">
+                <button type="button" className="row tap prof" onClick={openEdit} aria-label="내 정보 수정">
+                  <span className="ricon avatar">{name ? name.slice(0, 1) : <Icon name="user" />}</span>
+                  <span className="lbl">
+                    <b>{name}</b>{currentUser?.membership_tier && <> <span className="pill g">{currentUser.membership_tier}</span></>}
+                    <small>{currentUser?.username ? `@${currentUser.username} · ` : ''}내 정보 수정</small>
+                  </span>
+                  <span className="chev"><Icon name="chevR" size="sm" /></span>
+                </button>
+                <div className="row sum4">
+                  <button type="button" onClick={() => goToPage('orders')}><b>{orders.length}</b><span>주문</span></button>
+                  <button type="button" onClick={() => goToPage('wishlist')}><b>{wishlist.length}</b><span>찜</span></button>
+                  <div><b>{pts}</b><span>포인트</span></div>
+                  <button type="button" onClick={() => setSheet('coupons')}><b>{liveCoupons}장</b><span>쿠폰</span></button>
+                </div>
+              </div>
+              {myPoints?.expiring_soon > 0 && <div className="sec-f">30일 안에 {Number(myPoints.expiring_soon).toLocaleString('ko-KR')}P가 사라져요</div>}
+            </section>
           ) : (
-            <div style={{ fontSize: 14, color: subTextColor }}>등급 없음</div>
+            <section className="sec" style={{ marginTop: 'var(--sp-2)' }}>
+              <div className="group pad guest">
+                <span className="ricon t-gray avatar"><Icon name="user" /></span>
+                <b>로그인하고 더 편하게 장 보세요</b>
+                <div className="f-hint">주문내역·찜·포인트·쿠폰을 한 곳에서 볼 수 있어요</div>
+                <div className="btn-row">
+                  <button type="button" className="ui-btn md pri" onClick={onLogin}>로그인</button>
+                  <button type="button" className="ui-btn md sec" onClick={onSignup}>회원가입</button>
+                </div>
+              </div>
+            </section>
           )}
-          <div style={{ fontSize: 11, color: subTextColor, marginTop: 4 }}>누적 구매 기반 등급</div>
-        </div>
-        {/* 포인트 카드 */}
-        <div style={{ background: cardBg, borderRadius: 16, padding: '14px 16px', border: `1px solid ${borderColor}` }}>
-          <div style={{ fontSize: 11, color: subTextColor, marginBottom: 6, fontWeight: 600 }}>내 포인트</div>
-          <div style={{ fontSize: 17, fontWeight: 800, color: '#1a73e8' }}>
-            {myPoints != null ? Number(myPoints.points).toLocaleString() : '-'}<span style={{ fontSize: 12, marginLeft: 2 }}>P</span>
-          </div>
-          {myPoints?.expiring_soon > 0 && (
-            <div style={{ fontSize: 10, color: '#e65100', marginTop: 4 }}>30일 내 {Number(myPoints.expiring_soon).toLocaleString()}P 만료</div>
+
+          {login && (
+            <Group h="쇼핑">
+              <Row icon="receipt" label="주문내역" sub="온라인 주문 · 매장 영수증" onClick={() => goToPage('orders')} />
+              <Row icon="heart" tone="t-red" label="찜" val={`${wishlist.length}개`} onClick={() => goToPage('wishlist')} />
+              <Row icon="tag" tone="t-orange" label="내 쿠폰" val={`${liveCoupons}장`} onClick={() => setSheet('coupons')} />
+            </Group>
+          )}
+
+          <Group h={login ? '계정·정보' : '정보'}>
+            {login && <>
+              <Row icon="bell" tone="t-blue" label="알림 설정" sub="주문·배송 알림 · 혜택 알림" onClick={() => goToPage('notificationSettings')} />
+              <Row icon="lock" tone="t-gray" label="비밀번호 변경" onClick={() => { setPwForm({ current: '', next: '', confirm: '' }); setPwError(null); setPwShow(false); setSheet('pw'); }} />
+              <Row icon="clock" tone="t-gray" label="로그인 이력" onClick={openHistory} />
+            </>}
+            <Row icon="bell" tone="t-orange" label="공지사항" onClick={() => goToPage('notice')} />
+          </Group>
+
+          {login && isAdmin && (
+            <Group h="관리자">
+              <Row icon="external" label="관리자 페이지로 이동" sub="동신마켓 관리자(/admin) 새 창" onClick={openAdmin} />
+            </Group>
           )}
         </div>
-        {/* 쿠폰 카드 */}
-        <div onClick={() => setShowCouponList(true)} style={{ background: cardBg, borderRadius: 16, padding: '14px 16px', border: `1px solid ${borderColor}`, cursor: 'pointer' }}>
-          <div style={{ fontSize: 11, color: subTextColor, marginBottom: 6, fontWeight: 600 }}>내 쿠폰</div>
-          <div style={{ fontSize: 17, fontWeight: 800, color: '#e65100' }}>
-            {myUserCoupons.filter(c => !c.used_at).length}<span style={{ fontSize: 12, marginLeft: 2 }}>장</span>
-          </div>
-          <div style={{ fontSize: 10, color: subTextColor, marginTop: 4 }}>미사용 쿠폰</div>
+
+        <div>
+          {/* 화면 모드 — 자동 · 밝게 · 어둡게(묶음 1) */}
+          <section className="sec">
+            <div className="sec-h">화면 모드</div>
+            <div className="seg" role="radiogroup" aria-label="화면 모드">
+              {[['auto', '자동'], ['light', '밝게'], ['dark', '어둡게']].map(([k, l]) => (
+                <button key={k} type="button" role="radio" aria-checked={themeMode === k} className={themeMode === k ? 'on' : ''} onClick={() => setThemeMode(k)}>{l}</button>
+              ))}
+            </div>
+            <div className="sec-f">자동은 휴대폰 설정을 따라요</div>
+          </section>
+          <Group>
+            <Row icon="info" tone="t-gray" label="회사 소개·사업자 정보" onClick={() => goToPage('about')} />
+          </Group>
+          {login && <>
+            <Group>
+              <Row icon="logout" tone="t-red" label="로그아웃" danger chev={false} onClick={() => onLogout()} />
+            </Group>
+            <div className="quit">
+              <button type="button" onClick={() => { setDeletePassword(''); setDeleteError(''); setSheet('delete'); }}>회원탈퇴</button>
+            </div>
+          </>}
+          <div className="foot">© 2026 Dongsin Market. All rights reserved.</div>
         </div>
       </div>
 
-      {/* 내 쿠폰 목록 */}
-      {showCouponList && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }}
-          onClick={e => { if (e.target === e.currentTarget) setShowCouponList(false); }}>
-          <div style={{ background: cardBg, borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: 480, maxHeight: '70vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <div style={{ fontSize: 17, fontWeight: 800, color: textColor }}>내 쿠폰</div>
-              <button onClick={() => setShowCouponList(false)} style={{ background: 'none', border: 'none', fontSize: 20, color: subTextColor, cursor: 'pointer' }}>✕</button>
-            </div>
-            {myUserCoupons.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 40, color: subTextColor }}>보유 쿠폰이 없어요</div>
-            ) : myUserCoupons.map(uc => (
-              <div key={uc.id} style={{ background: uc.used_at ? (darkMode ? '#2a2a2a' : '#f5f5f5') : (darkMode ? '#1e2a2e' : 'var(--primary-light)'), borderRadius: 12, padding: '14px 16px', marginBottom: 10, opacity: uc.used_at ? 0.6 : 1, border: `1px solid ${borderColor}` }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: textColor }}>{uc.coupon_name}</div>
-                    <div style={{ fontSize: 12, color: 'var(--primary-dark)', fontWeight: 700, marginTop: 3 }}>
-                      {uc.discount_type === 'percent' ? `${uc.discount}% 할인` : `₩${Number(uc.discount).toLocaleString()} 할인`}
-                      {uc.min_purchase_amount > 0 && <span style={{ color: subTextColor, fontWeight: 400 }}> | ₩{Number(uc.min_purchase_amount).toLocaleString()} 이상</span>}
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, fontWeight: 600, background: uc.used_at ? '#eee' : '#e6f9f1', color: uc.used_at ? '#aaa' : '#009a58' }}>
-                    {uc.used_at ? '사용완료' : '사용가능'}
-                  </div>
-                </div>
-                <div style={{ fontSize: 10, color: subTextColor, marginTop: 6 }}>
-                  {uc.valid_until ? `~${uc.valid_until.split('T')[0]}` : '기간 없음'} · 코드: {uc.code}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {sheet === 'coupons' && <CouponSheet coupons={coupons} loading={couponsLoading} onClose={() => setSheet(null)} />}
+      {sheet === 'history' && <LoginHistorySheet rows={loginHistory} loading={historyLoading} failed={historyFailed} onClose={() => setSheet(null)} />}
 
-      {/* 메뉴 */}
-      <div className="mypage-menu" style={{ margin: '0 16px 12px', background: cardBg, borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: `1px solid ${borderColor}` }}>
-        {menuItems.map((menu, index) => (
-          <div key={menu.label} onClick={() => menu.page === '__login_history__' ? loadLoginHistory() : goToPage(menu.page)}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: index < menuItems.length - 1 ? `1px solid ${borderColor}` : 'none', cursor: 'pointer' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <div style={{ width: '40px', height: '40px', background: darkMode ? '#2e2e2e' : 'var(--primary-light)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {menu.icon}
-              </div>
-              <span style={{ fontSize: '15px', fontWeight: '600', color: textColor }}>{menu.label}</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {menu.sub && <span style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: '700' }}>{menu.sub}</span>}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={subTextColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="9 18 15 12 9 6"/>
-              </svg>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* 관리자 링크 */}
-      {isAdmin && (
-        <div style={{ margin: '0 16px 12px' }}>
-          <div role="button" tabIndex={0}
-            onClick={() => {
-              if (Capacitor.isNativePlatform()) {
-                window.open(`${SITE}/admin`, '_system');
-              } else {
-                window.open('/admin', '_blank', 'noopener,noreferrer');
-              }
-            }}
-            onKeyDown={e => e.key === 'Enter' && e.currentTarget.click()}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: darkMode ? '#1a2e1a' : '#e6f9f1', borderRadius: '20px', border: '1.5px solid var(--primary)', textDecoration: 'none', cursor: 'pointer' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <div style={{ width: '40px', height: '40px', background: darkMode ? '#1e3a2a' : '#c8f5e0', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>
-                🔧
-              </div>
-              <span style={{ fontSize: '15px', fontWeight: '700', color: 'var(--primary-dark)' }}>관리자 페이지로 이동</span>
-            </div>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00a85e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
-          </div>
-        </div>
-      )}
-
-      {/* 화면 모드 — 자동 · 밝게 · 어둡게(목업 P02 오른쪽 칸, 묶음 1 · 2026-11-12). 마이 화면 전체는 5번 묶음에서 옮긴다 */}
-      <section style={{ margin: '0 16px 12px' }}>
-        <div className="sec-h">화면 모드</div>
-        <div className="seg" role="radiogroup" aria-label="화면 모드">
-          {[['auto', '자동'], ['light', '밝게'], ['dark', '어둡게']].map(([k, l]) => (
-            <button key={k} type="button" role="radio" aria-checked={themeMode === k} className={themeMode === k ? 'on' : ''} onClick={() => setThemeMode(k)}>{l}</button>
-          ))}
-        </div>
-        <div className="sec-f">자동은 휴대폰 설정을 따라요</div>
-      </section>
-
-      {/* 로그아웃 */}
-      <div style={{ margin: '0 16px', background: cardBg, borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: `1px solid ${borderColor}` }}>
-        <div onClick={onLogout} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px 20px', cursor: 'pointer' }}>
-          <div style={{ width: '40px', height: '40px', background: 'var(--accent-light)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff4757" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-          </div>
-          <span style={{ fontSize: '15px', fontWeight: '600', color: '#ff4757' }}>로그아웃</span>
-        </div>
-      </div>
-
-      {/* 회원탈퇴 */}
-      <div style={{ textAlign: 'center', marginTop: 18 }}>
-        <button onClick={() => { setDeletePassword(''); setDeleteError(''); setShowDeleteModal(true); }}
-          style={{ background: 'none', border: 'none', color: subTextColor, fontSize: 12, textDecoration: 'underline', cursor: 'pointer', fontFamily: 'inherit' }}>
-          회원탈퇴
-        </button>
-      </div>
-
-      <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '11px', color: subTextColor }}>© 2026 Dongsin Market. All rights reserved.</p>
-
-      {/* 내 쿠폰 모달 */}
-      {showCoupons && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setShowCoupons(false)}>
-          <div style={{ background: modalBg, borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: '480px', maxHeight: '80vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <span style={{ fontSize: '17px', fontWeight: '700', color: modalTextColor }}>🎫 내 쿠폰함</span>
-              <button style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: subTextColor }} onClick={() => setShowCoupons(false)}>✕</button>
-            </div>
-            {couponsLoading ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: subTextColor }}>로딩 중...</div>
-            ) : myCoupons.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px' }}>
-                <div style={{ fontSize: '48px', marginBottom: '12px' }}>🎫</div>
-                <p style={{ color: subTextColor, fontSize: '14px' }}>보유한 쿠폰이 없어요</p>
-              </div>
-            ) : myCoupons.map(coupon => {
-              const isExpired = coupon.expires_at && new Date(coupon.expires_at) < new Date();
-              return (
-                <div key={coupon.id} style={{ background: darkMode ? '#2e2e2e' : 'var(--primary-light)', borderRadius: '16px', padding: '16px', marginBottom: '10px', border: `1.5px solid ${coupon.is_used || isExpired ? borderColor : 'var(--primary)'}`, opacity: coupon.is_used || isExpired ? 0.6 : 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <p style={{ fontSize: '16px', fontWeight: '800', color: coupon.is_used || isExpired ? subTextColor : 'var(--primary)', margin: '0 0 4px' }}>
-                        {coupon.type === 'percent' ? `${coupon.discount}% 할인` : `₩${Number(coupon.discount).toLocaleString()} 할인`}
-                      </p>
-                      <p style={{ fontSize: '13px', fontWeight: '700', color: modalTextColor, margin: '0 0 4px', fontFamily: 'monospace' }}>{coupon.code}</p>
-                      {coupon.description && <p style={{ fontSize: '12px', color: subTextColor, margin: '0 0 4px' }}>{coupon.description}</p>}
-                      {coupon.min_order_amount > 0 && <p style={{ fontSize: '11px', color: subTextColor, margin: 0 }}>최소 ₩{Number(coupon.min_order_amount).toLocaleString()} 이상 주문 시</p>}
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '20px', fontWeight: '700',
-                        background: coupon.is_used ? '#f0f0f0' : isExpired ? 'var(--accent-light)' : '#e6f9f1',
-                        color: coupon.is_used ? '#aaa' : isExpired ? '#ff4757' : '#009a58' }}>
-                        {coupon.is_used ? '사용완료' : isExpired ? '만료됨' : '사용가능'}
-                      </span>
-                      {coupon.expires_at && !coupon.is_used && (
-                        <p style={{ fontSize: '11px', color: subTextColor, margin: '6px 0 0' }}>
-                          {isExpired ? '만료됨' : `${new Date(coupon.expires_at).toLocaleDateString('ko-KR')} 까지`}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* 회원정보 수정 모달 */}
-      {showEditModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setShowEditModal(false)}>
-          <div style={{ background: modalBg, borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <span style={{ fontSize: '17px', fontWeight: '700', color: modalTextColor }}>회원정보 수정</span>
-              <button style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: subTextColor }} onClick={() => setShowEditModal(false)}>✕</button>
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <div style={{ fontSize: '12px', color: subTextColor, marginBottom: '6px', fontWeight: '600' }}>아이디 (변경 불가)</div>
-              <div style={{ padding: '12px 14px', background: inputBg, borderRadius: '12px', fontSize: '14px', color: subTextColor, border: `1.5px solid ${borderColor}` }}>
-                {currentUser?.username ? `@${currentUser.username}` : '(미설정)'}
-              </div>
-            </div>
-            {[{ key: 'name', label: '이름 *', placeholder: '이름 입력' }, { key: 'email', label: '이메일 (선택사항)', placeholder: 'example@email.com' }, { key: 'phone', label: '연락처', placeholder: '010-0000-0000' }, { key: 'zipcode', label: '우편번호', placeholder: '주소 검색 시 자동 입력' }, { key: 'address', label: '주소', placeholder: '주소 찾기 버튼을 눌러주세요' }, { key: 'addressDetail', label: '상세주소', placeholder: '예: 101동 1001호' }].map(f => (
-              <div key={f.key} style={{ marginBottom: '14px' }}>
-                <div style={{ fontSize: '12px', color: 'var(--primary-dark)', marginBottom: '6px', fontWeight: '700' }}>{f.label}</div>
-                {f.key === 'address' ? (
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input style={{ ...inputStyle, flex: 1 }} placeholder={f.placeholder} value={form[f.key]} readOnly onClick={openAddressSearch} />
-                    <button type="button" onClick={openAddressSearch} style={{ padding: '12px 14px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '12px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                      주소 찾기
-                    </button>
-                  </div>
-                ) : f.key === 'zipcode' ? (
-                  <input style={{ ...inputStyle, background: inputBg, color: subTextColor }} placeholder={f.placeholder} value={form[f.key] || ''} readOnly />
-                ) : (
-                  <input style={inputStyle} placeholder={f.placeholder} value={form[f.key] || ''} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
-                )}
-              </div>
-            ))}
+      {/* 회원정보 수정(S21) */}
+      {sheet === 'edit' && (
+        <Sheet id="edit-sheet-title" title="회원정보 수정" onClose={() => setSheet(null)}
+          right={<button type="button" className="nav-btn b" disabled={saveLoading} onClick={saveProfile}>{saveLoading ? '저장 중' : '저장'}</button>}>
+          <div className="pad" style={{ paddingTop: 0 }}>
             {saveMsg && (
-              <div style={{ background: saveErr ? (darkMode ? '#3a1f22' : 'var(--accent-light)') : (darkMode ? '#2e2e2e' : 'var(--primary-light)'), border: `1px solid ${saveErr ? '#ff4757' : 'var(--primary)'}`, borderRadius: '12px', padding: '10px 14px', fontSize: '13px', color: saveErr ? '#ff4757' : 'var(--primary-dark)', fontWeight: '600', marginBottom: '14px', textAlign: 'center' }}>
-                {saveMsg}
-              </div>
+              <div className={`notice ${saveErr ? 'r' : 'g'}`}><Icon name={saveErr ? 'alert' : 'check'} /><div>{saveMsg}</div></div>
             )}
-            <button onClick={saveProfile} disabled={saveLoading} style={{ width: '100%', padding: '14px', background: saveLoading ? '#adb5bd' : 'linear-gradient(135deg, var(--primary), var(--primary-dark))', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: '700', color: 'white', cursor: saveLoading ? 'default' : 'pointer', boxShadow: saveLoading ? 'none' : '0 4px 16px rgba(0,196,113,0.3)' }}>
-              {saveLoading ? '저장 중…' : '저장하기'}
-            </button>
+            <label className="f-lbl">아이디</label>
+            <div className="field ro"><span className="v">{currentUser?.username || '(없음)'}</span><span className="ro-tag">변경 불가</span></div>
+            <label className="f-lbl" htmlFor="my-name">이름</label>
+            <div className="field"><input id="my-name" value={form.name} placeholder="이름" onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></div>
+            <label className="f-lbl" htmlFor="my-email">이메일 (선택)</label>
+            <div className="field"><input id="my-email" type="email" value={form.email || ''} placeholder="example@email.com" onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} /></div>
+            <label className="f-lbl" htmlFor="my-phone">휴대폰 번호</label>
+            <div className="field"><input id="my-phone" inputMode="tel" value={form.phone || ''} placeholder="010-0000-0000" onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} /></div>
+            <label className="f-lbl">주소</label>
+            <div className="addr-row">
+              <div className="field ro zip"><span className="v">{form.zipcode || '우편번호'}</span></div>
+              <button type="button" className="ui-btn md sec" onClick={openAddressSearch}>주소 찾기</button>
+            </div>
+            <div className="f-hint">우편번호·주소는 주소 찾기로 채워져요</div>
+            <div className="field ro" style={{ marginTop: 'var(--sp-2)' }} onClick={openAddressSearch} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && openAddressSearch()}>
+              <span className={form.address ? 'v' : 'ph'}>{form.address || '주소 찾기를 눌러 주세요'}</span>
+            </div>
+            <div className="field" style={{ marginTop: 'var(--sp-2)' }}>
+              <input aria-label="상세 주소" value={form.addressDetail || ''} placeholder="상세 주소" onChange={(e) => setForm((p) => ({ ...p, addressDetail: e.target.value }))} />
+            </div>
           </div>
-        </div>
+        </Sheet>
       )}
 
-      {/* 비밀번호 변경 모달 */}
-      {showPwModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setShowPwModal(false)}>
-          <div style={{ background: modalBg, borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: '480px' }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <span style={{ fontSize: '17px', fontWeight: '700', color: modalTextColor }}>비밀번호 변경</span>
-              <button style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: subTextColor }} onClick={() => setShowPwModal(false)}>✕</button>
+      {/* 비밀번호 변경(S22) */}
+      {sheet === 'pw' && (
+        <Sheet id="pw-sheet-title" title="비밀번호 변경" onClose={() => setSheet(null)}
+          right={<button type="button" className="nav-btn b" disabled={pwLoading} onClick={savePassword}>{pwLoading ? '변경 중' : '변경'}</button>}>
+          <div className="pad" style={{ paddingTop: 0 }}>
+            <label className="f-lbl" htmlFor="pw-cur">현재 비밀번호</label>
+            <div className={`field${pwError?.at === 'current' ? ' err' : ''}`}><input id="pw-cur" type="password" autoComplete="current-password" value={pwForm.current} placeholder="현재 비밀번호" onChange={(e) => setPwForm((p) => ({ ...p, current: e.target.value }))} /></div>
+            <FieldErr msg={pwError?.at === 'current' && pwError.msg} />
+            <label className="f-lbl" htmlFor="pw-new">새 비밀번호</label>
+            <div className={`field${pwError?.at === 'next' ? ' err' : ''}`}>
+              <input id="pw-new" type={pwShow ? 'text' : 'password'} autoComplete="new-password" value={pwForm.next} placeholder="8자 이상, 3종 이상" onChange={(e) => setPwForm((p) => ({ ...p, next: e.target.value }))} />
+              <button type="button" className="trail" aria-label={pwShow ? '비밀번호 가리기' : '비밀번호 보기'} onClick={() => setPwShow((v) => !v)}><Icon name="eye" size="sm" /></button>
             </div>
-            <div style={{ marginBottom: '14px' }}>
-              <div style={{ fontSize: '12px', color: 'var(--primary-dark)', marginBottom: '6px', fontWeight: '700' }}>현재 비밀번호</div>
-              <input type="password" style={inputStyle} placeholder="현재 비밀번호" value={pwForm.current} onChange={e => setPwForm(p => ({ ...p, current: e.target.value }))} />
+            <FieldErr msg={pwError?.at === 'next' && pwError.msg} />
+            <div className="pw-pills">
+              {pwOk.map(([l, ok]) => <span key={l} className={`pill${ok ? ' g' : ''}`}>{ok ? '✓' : '○'} {l}</span>)}
             </div>
-            <div style={{ marginBottom: '14px' }}>
-              <div style={{ fontSize: '12px', color: 'var(--primary-dark)', marginBottom: '6px', fontWeight: '700' }}>새 비밀번호</div>
-              <input type="password" style={inputStyle} placeholder="8자 이상, 대/소/숫자/특수문자 3종 이상" value={pwForm.next} onChange={e => setPwForm(p => ({ ...p, next: e.target.value }))} />
-              <PwStrengthBar password={pwForm.next} subTextColor={subTextColor} />
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <div style={{ fontSize: '12px', color: 'var(--primary-dark)', marginBottom: '6px', fontWeight: '700' }}>새 비밀번호 확인</div>
-              <input type="password" style={inputStyle} placeholder="새 비밀번호 다시 입력" value={pwForm.confirm} onChange={e => setPwForm(p => ({ ...p, confirm: e.target.value }))} />
-            </div>
-            {pwError && (
-              <div style={{ background: 'var(--accent-light)', border: '1px solid #ff4757', borderRadius: '12px', padding: '10px 14px', fontSize: '13px', color: '#ff4757', marginBottom: '14px' }}>
-                ⚠️ {pwError}
-              </div>
+            <label className="f-lbl" htmlFor="pw-cf">새 비밀번호 확인</label>
+            <div className={`field${pwError?.at === 'confirm' ? ' err' : ''}`}><input id="pw-cf" type="password" autoComplete="new-password" value={pwForm.confirm} placeholder="새 비밀번호 다시 입력" onChange={(e) => setPwForm((p) => ({ ...p, confirm: e.target.value }))} /></div>
+            <FieldErr msg={pwError?.at === 'confirm' && pwError.msg} />
+            {pwForm.confirm && pwForm.confirm === pwForm.next && pwError?.at !== 'confirm' && (
+              <div className="f-ok"><Icon name="check" size="sm" /> 두 비밀번호가 같아요</div>
             )}
-            <button onClick={savePassword} disabled={pwLoading} style={{ width: '100%', padding: '14px', background: pwLoading ? '#ccc' : 'linear-gradient(135deg, var(--primary), var(--primary-dark))', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: '700', color: 'white', cursor: pwLoading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
-              {pwLoading ? '변경 중...' : '비밀번호 변경'}
-            </button>
           </div>
-        </div>
+        </Sheet>
       )}
 
-      {/* 로그인 이력 모달 */}
-      {showLoginHistory && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setShowLoginHistory(false)}>
-          <div style={{ background: modalBg, borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: '480px', maxHeight: '70vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <span style={{ fontSize: '17px', fontWeight: '700', color: modalTextColor }}>로그인 이력</span>
-              <button style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: subTextColor }} onClick={() => setShowLoginHistory(false)}>✕</button>
-            </div>
-            {loginHistoryLoading ? (
-              <div style={{ textAlign: 'center', padding: 40, color: subTextColor }}>로딩 중...</div>
-            ) : loginHistory.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 40, color: subTextColor }}>로그인 이력이 없어요</div>
-            ) : loginHistory.map((r, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: `1px solid ${borderColor}` }}>
-                <div>
-                  <div style={{ fontSize: 13, color: modalTextColor, fontWeight: 600 }}>
-                    {new Date(r.created_at).toLocaleString('ko-KR')}
-                  </div>
-                  <div style={{ fontSize: 11, color: subTextColor, marginTop: 2, fontFamily: 'monospace' }}>{r.ip || '-'}</div>
-                </div>
-                <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, fontWeight: 700, background: r.success ? '#e6f9f1' : 'var(--accent-light)', color: r.success ? '#009a58' : '#ff4757' }}>
-                  {r.success ? '성공' : '실패'}
-                </span>
-              </div>
-            ))}
+      {/* 회원탈퇴(S25) */}
+      {sheet === 'delete' && (
+        <Sheet id="del-sheet-title" title="회원탈퇴" onClose={() => setSheet(null)}>
+          <div className="pad" style={{ paddingTop: 0 }}>
+            <div className="notice r"><Icon name="alert" /><div>탈퇴하면 이름·연락처·주소 등 개인정보가 삭제되고 <b>되돌릴 수 없어요.</b><br />주문·거래 내역은 전자상거래법에 따라 보관 기간 동안 <b>익명 처리되어</b> 남습니다.</div></div>
+            <label className="f-lbl" htmlFor="del-pw">비밀번호 확인</label>
+            <div className={`field${deleteError ? ' err' : ''}`}><input id="del-pw" type="password" autoComplete="current-password" value={deletePassword} placeholder="현재 비밀번호" onChange={(e) => setDeletePassword(e.target.value)} /></div>
+            <FieldErr msg={deleteError} />
+            <div style={{ height: 'var(--sp-4)' }} />
+            <button type="button" className="ui-btn full danger" disabled={deleteLoading} onClick={handleDeleteAccount}>{deleteLoading ? '처리 중…' : '탈퇴하기'}</button>
           </div>
-        </div>
-      )}
-
-      {/* 회원탈퇴 모달 */}
-      {showDeleteModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setShowDeleteModal(false)}>
-          <div style={{ background: modalBg, borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: '480px' }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <span style={{ fontSize: '17px', fontWeight: '700', color: '#ff4757' }}>회원탈퇴</span>
-              <button style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: subTextColor }} onClick={() => setShowDeleteModal(false)}>×</button>
-            </div>
-            <div style={{ background: darkMode ? '#2a1a1a' : '#fff5f5', border: '1px solid #ffd5d5', borderRadius: '12px', padding: '14px', fontSize: '13px', color: darkMode ? '#ffb4b4' : '#c0392b', lineHeight: 1.6, marginBottom: '16px' }}>
-              탈퇴하면 이름·연락처·주소 등 개인정보가 삭제되고 <b>되돌릴 수 없어요.</b><br/>
-              주문·거래 내역은 전자상거래법에 따라 보관 기간 동안 <b>익명 처리되어</b> 남습니다.
-            </div>
-            <div style={{ marginBottom: '14px' }}>
-              <div style={{ fontSize: '12px', color: 'var(--primary-dark)', marginBottom: '6px', fontWeight: '700' }}>비밀번호 확인</div>
-              <input type="password" style={inputStyle} placeholder="현재 비밀번호" value={deletePassword} onChange={e => setDeletePassword(e.target.value)} />
-            </div>
-            {deleteError && (
-              <div style={{ background: 'var(--accent-light)', border: '1px solid #ff4757', borderRadius: '12px', padding: '10px 14px', fontSize: '13px', color: '#ff4757', marginBottom: '14px' }}>⚠️ {deleteError}</div>
-            )}
-            <button onClick={handleDeleteAccount} disabled={deleteLoading}
-              style={{ width: '100%', padding: '14px', background: deleteLoading ? '#ccc' : '#ff4757', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: '700', color: 'white', cursor: deleteLoading ? 'not-allowed' : 'pointer' }}>
-              {deleteLoading ? '처리 중...' : '탈퇴하기'}
-            </button>
-          </div>
-        </div>
+        </Sheet>
       )}
     </div>
   );

@@ -360,3 +360,49 @@
 .v2 .timeline span.on i { background: var(--brand); }
 .v2 .row .link { display: inline-flex; align-items: center; gap: 2px; }
 .v2 a.link { text-decoration: none; display: inline-flex; align-items: center; gap: 2px; }
+
+/* ── 묶음 5 — 마이(P02 · S47) · 찜(S19) · 쿠폰(S23) · 로그인 이력(S24) · 정보 수정(S21) · 비밀번호(S22) · 탈퇴(S25) · 회사 소개(S40) ── */
+.v2.my-v2, .v2.wish-v2, .v2.about-v2 { padding-bottom: var(--sp-6); }
+.v2 .ricon.t-red { background: var(--danger); }
+.v2 .row.danger .lbl { color: var(--danger); }
+.v2 .ricon.avatar { width: 56px; height: 56px; border-radius: var(--r-full); font-size: var(--fs-title2); font-weight: var(--fw-bold); }
+.v2 .ricon.avatar .ic { width: var(--icon); height: var(--icon); }
+.v2 .row.prof { padding: var(--sp-4); }
+.v2 .row.prof .lbl b { font-size: var(--fs-title3); }
+.v2 .row.sum4 { padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; }
+.v2 .row.sum4 > * { padding: var(--sp-3) 0; color: var(--text); }
+.v2 .row.sum4 > * + * { border-left: var(--hairline) solid var(--sep); }
+.v2 .row.sum4 b { display: block; font-size: var(--fs-headline); color: var(--brand-strong); font-variant-numeric: tabular-nums; }
+.v2 .row.sum4 span { display: block; font-size: var(--fs-cap); color: var(--text-2); }
+.v2 .group.guest { text-align: center; }
+.v2 .group.guest .avatar { margin: 0 auto; }
+.v2 .group.guest > b { display: block; font-size: var(--fs-title3); margin-top: var(--sp-3); }
+.v2 .group.guest .f-hint { margin: var(--sp-1) 0 var(--sp-4); }
+.v2 .quit { text-align: center; margin-top: var(--sp-4); }
+.v2 .quit button { font-size: var(--fs-cap); color: var(--text-3); text-decoration: underline; }
+.v2 .field.err { border-color: var(--danger); }
+.v2 .field .ph { color: var(--text-3); flex: 1; }
+.v2 .field .v { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v2 .field .ro-tag { margin-left: auto; font-size: var(--fs-cap); color: var(--text-3); white-space: nowrap; }
+.v2 .field .trail { display: inline-flex; color: var(--text-3); padding: var(--sp-1); }
+.v2 .f-err { font-size: var(--fs-cap); color: var(--danger); margin-top: var(--sp-1); display: flex; gap: var(--sp-1); align-items: center; }
+.v2 .f-ok { font-size: var(--fs-cap); color: var(--brand-strong); margin-top: var(--sp-1); display: flex; gap: var(--sp-1); align-items: center; }
+.v2 .addr-row { display: flex; gap: var(--sp-2); }
+.v2 .addr-row .zip { flex: 0 0 110px; }
+.v2 .pw-pills { display: flex; gap: var(--sp-1); flex-wrap: wrap; margin-top: var(--sp-2); }
+.v2 .cticket { display: flex; align-items: center; margin-top: var(--sp-2); }
+.v2 .cticket .cd { width: 96px; align-self: stretch; background: var(--brand-soft); display: flex; align-items: center; justify-content: center; font-size: var(--fs-title2); font-weight: var(--fw-bold); color: var(--brand-strong); border-right: 1px dashed var(--sep-strong); flex-shrink: 0; }
+.v2 .cticket .ci { flex: 1; min-width: 0; }
+.v2 .cticket .ci b { font-size: var(--fs-callout); }
+.v2 .cticket .pill { margin: var(--sp-3); }
+.v2 .cticket.used { opacity: .5; }
+.v2 .cticket.used .cd { background: var(--fill); color: var(--text-2); }
+.v2 .seg + .cticket { margin-top: var(--sp-3); }
+.v2 .large .nav-btn { margin-left: auto; }
+.v2 .about-v2 .banner, .v2.about-v2 .banner { margin: var(--sp-3) var(--page-x) 0; min-height: 170px; background: linear-gradient(135deg, var(--brand-fill), var(--brand-fill-pressed)); }
+.v2 .about-chips { margin-top: var(--sp-4); }
+.v2.about-v2 .row .val { white-space: normal; text-align: right; max-width: 65%; }
+.v2 .row .val.none { color: var(--text-3); }
+.v2.about-v2 .banner .go { border: 0; display: inline-flex; align-items: center; gap: 2px; }
+.v2.about-v2 .banner { width: auto; display: flex; }   /* 옛 App.css .banner(width 100% · 동그라미 장식)를 끈다 */
+.v2.about-v2 .banner::before, .v2.about-v2 .banner::after { display: none; }

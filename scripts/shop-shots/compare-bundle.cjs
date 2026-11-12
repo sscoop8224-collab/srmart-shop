@@ -61,6 +61,8 @@ const cartOf = async p => { await login(p); await p.locator('.pgrid .add').nth(0
 // P03 — 장바구니의 「주문하기」 → 주문서(배송지·할인·결제 금액은 여기)
 // 주문내역(P01) — 로그인 → 탭바 「주문내역」 → 맨 위 탭
 const ordersOf = async (p, t) => { await login(p); await tab(p, '주문내역').click(); await wait(p, 1200); if (t) { await p.getByRole('tab', { name: t }).click(); await wait(p, 500); } };
+// 마이(P02) — (로그인 →) 탭바 「마이」 · 줄 하나 누르기
+const myOf = async (p, { guest = false, row = '' } = {}) => { if (!guest) await login(p); await tab(p, '마이').click(); await wait(p, 900); if (row) { await p.locator('.my-v2 button.row', { has: p.locator(`.lbl:text-is("${row}")`) }).first().click(); await wait(p, 700); } };
 const orderOf = async p => { await cartOf(p); await p.getByRole('button', { name: '주문하기', exact: true }).click(); await wait(p, 1200); };
 const tab = (p, label) => p.locator('.tabbar .tab', { hasText: label }).first();
 
@@ -143,6 +145,23 @@ const BUNDLES = {
     { id: 'S17', name: '매장 영수증 — 정상', state: '정상', go: async p => { await ordersOf(p, '매장'); await p.getByRole('button', { name: '영수증 보기' }).first().click(); await wait(p, 900); }, part: ['.receipt', '.v2 .receipt'] },
     { id: 'S17V', mock: 'S17', name: '매장 영수증 — 취소된 거래', state: '취소된 거래', opts: { voidedReceipt: true }, go: async p => { await ordersOf(p, '매장'); await p.getByRole('button', { name: '영수증 보기' }).first().click(); await wait(p, 900); }, part: ['.receipt', '.v2 .receipt'] },
     { id: 'S18', name: '온라인 주문 상세', go: async p => { await ordersOf(p, '온라인'); await p.locator('.ocard .oh').first().click(); await wait(p, 900); }, part: ['.timeline', '.v2 .timeline'] },
+  ],
+  // 5 — 마이(P02 · S47) · 찜(S19) · 쿠폰(S23) · 로그인 이력(S24) · 정보 수정(S21) · 비밀번호(S22) · 탈퇴(S25) · 로그아웃(S33) · 회사 소개(S40)
+  5: [
+    { id: 'P02', name: '마이 — 로그인함', state: '로그인함', go: async p => { await myOf(p); }, part: ['.group', '.v2 .group'] },
+    { id: 'S47', mock: 'P02', name: '마이 — 로그인 안 함', state: '로그인 안 함', go: async p => { await myOf(p, { guest: true }); }, part: ['.group', '.v2 .group'] },
+    { id: 'P02A', mock: 'P02', name: '마이 — 관리자', state: '관리자', opts: { user: { ...customer, role: 'owner', username: 'owner_demo' } }, go: async p => { await myOf(p); } },
+    { id: 'S19', name: '찜 — 목록', state: '목록', go: async p => { await myOf(p, { row: '찜' }); }, part: ['.grid .pc', '.pgrid .pc'] },
+    { id: 'S19E', mock: 'S19', name: '찜 — 비어 있음', state: '비어 있음', opts: { emptyWish: true }, go: async p => { await myOf(p, { row: '찜' }); }, part: ['.empty', '.v2 .ui-empty'] },
+    { id: 'S23', name: '내 쿠폰 — 사용 가능', state: '사용 가능', go: async p => { await myOf(p, { row: '내 쿠폰' }); }, part: ['.sheet', '.sheet.v2'] },
+    { id: 'S23U', mock: 'S23', name: '내 쿠폰 — 사용 완료', state: '사용 완료', go: async p => { await myOf(p, { row: '내 쿠폰' }); await p.getByRole('tab', { name: /사용 완료/ }).click(); await wait(p, 400); }, part: ['.sheet', '.sheet.v2'] },
+    { id: 'S24', name: '로그인 이력', go: async p => { await myOf(p, { row: '로그인 이력' }); }, part: ['.sheet', '.sheet.v2'] },
+    { id: 'S21', name: '회원정보 수정', state: '기본', go: async p => { await myOf(p); await p.locator('.my-v2 .row.prof').click(); await wait(p, 700); }, part: ['.sheet', '.sheet.v2'] },
+    { id: 'S22', name: '비밀번호 변경', state: '입력 중', go: async p => { await myOf(p, { row: '비밀번호 변경' }); await p.locator('#pw-cur').fill('oldpass1'); await p.locator('#pw-new').fill('Newpass1'); await p.locator('#pw-cf').fill('Newpass1'); await wait(p, 300); }, part: ['.sheet', '.sheet.v2'] },
+    { id: 'S25', name: '회원탈퇴', state: '입력', go: async p => { await myOf(p); await p.getByRole('button', { name: '회원탈퇴' }).click(); await wait(p, 700); }, part: ['.sheet', '.sheet.v2'] },
+    { id: 'S33', name: '로그아웃 확인', state: '확인', go: async p => { await myOf(p, { row: '로그아웃' }); }, part: ['.alert', '.alert'] },
+    { id: 'S33D', mock: 'S33', name: '로그아웃 완료 안내', state: '완료 안내', go: async p => { await myOf(p, { row: '로그아웃' }); await p.locator('.alert .af button', { hasText: '로그아웃' }).click(); await wait(p, 900); }, part: ['.alert', '.alert'] },
+    { id: 'S40', name: '회사 소개·사업자 정보', state: '쿠폰 켬 · 오늘 도착', go: async p => { await myOf(p, { guest: true, row: '회사 소개·사업자 정보' }); } },
   ],
 };
 

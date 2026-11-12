@@ -92,9 +92,10 @@ const reviews = {
 };
 
 const loginHistory = [
-  { created_at: '2026-11-11T09:12:00+09:00', ip: '211.234.*.*', success: 1, user_agent: 'Android' },
-  { created_at: '2026-11-10T21:03:00+09:00', ip: '211.234.*.*', success: 1, user_agent: 'Android' },
-  { created_at: '2026-11-09T08:44:00+09:00', ip: '118.235.*.*', success: 0, user_agent: 'iPhone' },
+  // 서버(GET /users/me/login-history)는 ip · success · created_at 만 준다 — IP 는 통째로 온다(가리는 것은 화면 몫 · 묶음 5)
+  { created_at: '2026-11-11T09:12:00+09:00', ip: '211.234.51.7', success: 1 },
+  { created_at: '2026-11-10T21:03:00+09:00', ip: '211.234.51.7', success: 1 },
+  { created_at: '2026-11-09T08:44:00+09:00', ip: '::ffff:118.235.10.99', success: 0 },
 ];
 
 // 묶음 2 — 홈 배송 한 줄(GET /stores/:id/delivery-promise). 서버 computePromise 의 모양 그대로(목업 DELIV 와 같은 날)
@@ -132,7 +133,8 @@ function route(pathname, method, search, opts = {}) {
     return j({ token: 'mock.token.value', user });
   }
   if (pathname === '/orders/my') return j(opts.noOrders ? [] : myOrders);   // noOrders — 주문내역 비어 있음(목업 P01)
-  if (pathname === '/users/me/wishlist') return j(opts.emptyWish ? [] : [products[0], products[3]]);
+  // 서버 찜 줄은 `w.*` + 상품 몇 칸 — id 는 **찜 줄 번호**, 상품 번호는 product_id, 가격은 없다(묶음 5 — 진짜 모양으로)
+  if (pathname === '/users/me/wishlist') return j(opts.emptyWish ? [] : [products[0], products[3]].map((p, i) => ({ id: 501 + i, user_id: 9001, product_id: p.id, created_at: '2026-11-10T10:00:00', name: p.name, large: p.large, spec: p.spec, image: p.image })));
   if (pathname === '/wishlist') return j({ wishlisted: true, message: '찜 목록에 담았어요!' });
   if (opts.benefitsFail && (pathname === '/me/points' || pathname === '/users/me/coupons')) return { abort: true };   // 보유 쿠폰·포인트를 못 불러옴(목업 S10)
   if (pathname === '/me/points') return j({ points: 3820, expiring_soon: 500 });

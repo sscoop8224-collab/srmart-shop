@@ -1,5 +1,9 @@
-import { imgUrl } from '../api';
+// 찜 (목업 정본 v1 의 S19, 묶음 5 · 2026-11-12 밤)
+// 결정 6: 찜은 탭에서 빠지고 마이 → 「찜」 으로 들어온다(뒤로 = 마이). 「전체 담기」 · 카드를 누르면 상세 · 담기 · 하트로 찜 빼기.
+// 카드는 홈과 같은 상품 카드(ProductCard) — 주류 잠금·품절·행사 딱지를 홈과 같은 규칙으로 보인다.
 import { useDialog } from '../DialogContext';
+import Icon from '../components/ui/Icon';
+import { ProductCard } from './Home';
 
 const getCategoryImage = (large) => {
   switch(large) {
@@ -12,89 +16,43 @@ const getCategoryImage = (large) => {
   }
 };
 
-function Wishlist({ wishlist, onProductClick, onAddToCart, onToggleWishlist, goBack, goToHome, darkMode }) {
+function Wishlist({ wishlist, onProductClick, onAddToCart, onToggleWishlist, goBack, goToHome, adultOk }) {
   const { notify } = useDialog();
-  const bg = darkMode ? '#1a1a1a' : 'var(--primary-light)';
-  const cardBg = darkMode ? '#242424' : 'white';
-  const headerBg = darkMode ? '#1a1a1a' : 'white';
-  const borderColor = darkMode ? '#2e2e2e' : 'var(--primary-light)';
-  const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
-  const subTextColor = darkMode ? '#9e9e9e' : '#adb5bd';
 
+  // 품절·주류 잠금은 담을 수 없다 — 담을 수 있는 것만 담고, 빠진 것은 말한다(조용히 빠지면 다 담긴 줄 안다)
   const handleAddAll = () => {
-    if (wishlist.length === 0) return;
-    wishlist.forEach((product) => onAddToCart(product));
-    notify('찜 목록의 모든 상품을 장바구니에 담았어요! 🛒');
+    const ok = wishlist.filter((p) => !p.isSoldOut && !(p.isAdult && !adultOk));
+    if (ok.length === 0) { notify('담을 수 있는 상품이 없어요'); return; }
+    ok.forEach((product) => onAddToCart(product));
+    const skipped = wishlist.length - ok.length;
+    notify(skipped ? `${ok.length}개를 장바구니에 담았어요. 품절·본인확인 필요 ${skipped}개는 빼고 담았어요.` : `${ok.length}개를 모두 장바구니에 담았어요`);
   };
 
   return (
-    <div style={{ background: bg, minHeight: '100vh', paddingBottom: '80px' }}>
-
-      {/* 헤더 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: headerBg, borderBottom: `1px solid ${borderColor}`, position: 'sticky', top: 0, zIndex: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <button onClick={goBack} style={{ width: '38px', height: '38px', background: darkMode ? '#2e2e2e' : 'var(--primary-light)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#f0f0f0' : '#1a1a1a'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6"/>
-            </svg>
-          </button>
-          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: textColor }}>찜 목록</h2>
+    <div className="v2 wish-v2">
+      <header className="app-nav">
+        <div className="nav-row">
+          <div className="nav-side"><button type="button" className="nav-btn" onClick={goBack}><Icon name="chevL" />마이</button></div>
+          <div className="nav-title" />
+          <div className="nav-side r">{wishlist.length > 0 && <button type="button" className="nav-btn b" onClick={handleAddAll}>전체 담기</button>}</div>
         </div>
-        {wishlist.length > 0 && (
-          <button onClick={handleAddAll} style={{ padding: '8px 16px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '20px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,196,113,0.3)' }}>
-            전체 담기
-          </button>
-        )}
-      </div>
+        <div className="large"><h1>찜</h1>{wishlist.length > 0 && <span className="sub">{wishlist.length}개</span>}</div>
+      </header>
 
       {wishlist.length === 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', gap: '12px' }}>
-          <div style={{ width: '80px', height: '80px', background: darkMode ? '#2e2e2e' : 'var(--accent-light)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ff4757" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
-          </div>
-          <p style={{ fontSize: '16px', fontWeight: '700', color: textColor, margin: 0 }}>찜한 상품이 없어요!</p>
-          <p style={{ fontSize: '13px', color: subTextColor, margin: 0 }}>마음에 드는 상품을 찜해보세요</p>
-          <button onClick={goToHome} style={{ marginTop: '8px', padding: '14px 32px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '20px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
-            쇼핑 계속하기
-          </button>
+        <div className="ui-empty">
+          <div className="big"><Icon name="heart" /></div>
+          <h3>찜한 상품이 없어요</h3>
+          <p>마음에 드는 상품의 하트를 눌러 보세요.</p>
+          <button type="button" className="ui-btn md pri" onClick={goToHome}>홈으로</button>
         </div>
       ) : (
-        <>
-          <div style={{ padding: '12px 20px', background: headerBg, borderBottom: `1px solid ${borderColor}` }}>
-            <p style={{ fontSize: '13px', color: subTextColor, margin: 0, fontWeight: '600' }}>
-              총 <span style={{ color: 'var(--primary)', fontWeight: '800' }}>{wishlist.length}개</span> 상품
-            </p>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', padding: '16px' }}>
-            {wishlist.map((product) => (
-              <div key={product.id}
-                style={{ background: cardBg, borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', cursor: 'pointer', border: `1px solid ${borderColor}` }}
-                onClick={() => onProductClick(product)}>
-                <div style={{ width: '100%', aspectRatio: '1', position: 'relative', overflow: 'hidden', background: '#f6f7f8' }}>
-                  <img src={product.image ? imgUrl(product.image) : getCategoryImage(product.large)} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
-                  {!product.image && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,196,113,0.06)' }} />}
-                  <button onClick={(e) => { e.stopPropagation(); onToggleWishlist(product); }}
-                    style={{ position: 'absolute', top: '4px', right: '4px', width: '44px', height: '44px', borderRadius: '50%', background: 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#ff4757" stroke="#ff4757" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                    </svg>
-                  </button>
-                </div>
-                <div style={{ padding: '10px 11px 12px' }}>
-                  <p style={{ fontSize: '10px', color: 'var(--primary)', margin: '0 0 3px', fontWeight: '700' }}>{product.large}</p>
-                  <p style={{ fontSize: '13px', fontWeight: '700', color: textColor, margin: '0 0 6px', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.name}</p>
-                  <p style={{ fontSize: '14px', fontWeight: '800', color: textColor, margin: '0 0 10px' }}>₩{product.price.toLocaleString()}</p>
-                  <button onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
-                    style={{ width: '100%', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '12px', padding: '9px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,196,113,0.3)' }}>
-                    장바구니 담기
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
+        <div className="pgrid" style={{ marginTop: 'var(--sp-3)' }}>
+          {wishlist.map((product) => (
+            <ProductCard key={product.id} product={product} wished adultOk={adultOk} fallbackImage={getCategoryImage}
+              onOpen={onProductClick} onAdd={onAddToCart} onWish={onToggleWishlist} />
+          ))}
+        </div>
       )}
     </div>
   );

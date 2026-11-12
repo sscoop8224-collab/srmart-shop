@@ -44,6 +44,9 @@ const STRICT = [
   'src/components/checkout/CheckoutParts.jsx',
   'src/pages/Receipt.js',
   'src/pages/OrderHistory.jsx',   // 묶음 4
+  'src/pages/MyPage.js',         // 묶음 5
+  'src/pages/Wishlist.js',       // 묶음 5
+  'src/pages/About.jsx',         // 묶음 5
 ];
 
 // 주석을 지운다 — 설명 글에 쓴 「window.alert 금지」·「#00c471」 같은 글자를 세지 않게(줄 수는 지킨다)

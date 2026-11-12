@@ -151,7 +151,7 @@ function Banners({ banners, onFilter }) {
   );
 }
 
-const BIZ = [
+export const BIZ = [
   ['company_name', '상호'], ['ceo_name', '대표자'], ['address', '주소'], ['phone', '대표 전화'],
   ['business_number', '사업자등록번호'], ['mail_order_number', '통신판매업 신고번호'], ['privacy_officer', '개인정보 보호책임자'],
 ];

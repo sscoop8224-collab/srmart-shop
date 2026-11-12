@@ -36,6 +36,10 @@ const PATHS = {
   trash: "<path d=\"M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13\"/>",
   lock: "<rect x=\"4\" y=\"10.5\" width=\"16\" height=\"10.5\" rx=\"2\"/><path d=\"M8 10.5V7a4 4 0 0 1 8 0v3.5\"/>",
   gift: "<rect x=\"3\" y=\"8\" width=\"18\" height=\"4.5\" rx=\"1\"/><path d=\"M5 12.5V21h14v-8.5M12 8v13M12 8S10.5 3 8 4s.5 4 4 4 6.5-3 4-4-4 4-4 4\"/>",
+  // 묶음 5 — 마이(P02)
+  clock: "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/>",
+  shield: "<path d=\"M12 21.5s8-3.8 8-10V5l-8-3-8 3v6.5c0 6.2 8 10 8 10z\"/>",
+  external: "<path d=\"M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5\"/>",
 };
 
 export default function Icon({ name, size = '', fill = false, className = '' }) {

@@ -8,7 +8,6 @@ import Chatbot from './components/Chatbot';
 import StoreSelectionModal from './components/StoreSelectionModal';
 import ForcePasswordChangeModal from './components/ForcePasswordChangeModal';
 import ThirdPartyConsentModal from './components/ThirdPartyConsentModal';
-import ConfirmModal from './components/ConfirmModal';
 import InstallPrompt from './components/InstallPrompt';
 import SplashAd from './components/SplashAd';
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
@@ -43,6 +42,7 @@ const Wishlist = lazy(() => import('./pages/Wishlist'));
 const Notice = lazy(() => import('./pages/Notice'));
 const Receipt = lazy(() => import('./pages/Receipt'));
 const MyPage = lazy(() => import('./pages/MyPage'));
+const About = lazy(() => import('./pages/About'));
 const NotificationSettings = lazy(() => import('./pages/NotificationSettings'));   // 마이 → 알림 설정(S50, 2026-11-12)
 // 청크 로드 중 — 화면 뼈대(S43). 예전엔 진한 초록 전체 화면이 번쩍였다. 다크에서도 바탕색 그대로(묶음 1)
 const PageFallback = () => (
@@ -94,14 +94,13 @@ function AppContent() {
   const { darkMode, setDarkMode } = useTheme();
   const handleSetDark = (val) => setDarkMode(val);
   const { guestStoreId, currentStoreId, currentStore, isGuest, setGuestStoreId, stores, isOwner, ownerViewStoreId, setOwnerViewStoreId } = useStore();
-  const { notify } = useDialog();
+  const { notify, confirm } = useDialog();
 
   // 웹은 내장 랜딩(homepage)을 건너뛰고 게스트로 바로 쇼핑앱 진입, 네이티브 앱은 로그인 우선
   // (회사 정적 홈페이지가 이미 랜딩 역할을 하므로 웹에서 HomePage.jsx는 표시하지 않음)
   const [page, setPage] = useState('home');   // 웹·앱 공통: 홈(게스트 둘러보기)부터. 로그인은 계정 필요 시점에.
   const [pageHistory, setPageHistory] = useState([]);
   const [showStoreModal, setShowStoreModal] = useState(false);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [mcpUser, setMcpUser] = useState(null);   // Y5 강제비번변경 대상(must_change_password=1) — 로그인 응답의 dbUser
   // 제3자 제공 동의를 아직 물어본 적 없는 기존 회원인가(로그인 응답의 needsThirdPartyConsent).
   // 동의 항목이 2026-09-11 에 생겨서, 그 전 가입자는 답한 적이 없다 — 로그인 직후 한 번 묻는다.
@@ -269,7 +268,9 @@ function AppContent() {
   const loadWishlist = async () => {
     try {
       const res = await getWishlist();
-      setWishlist(res.data || []);
+      // 🔴 서버 찜 줄은 `w.*` 라 id 가 **찜 줄 번호**다(상품 번호는 product_id). 그대로 두면 하트 표시가 어긋나고
+      //    찜 빼기가 엉뚱한 상품 번호로 간다 — 상품 번호를 id 로 쓴다(묶음 5 · 2026-11-12 밤)
+      setWishlist((res.data || []).map((r) => (r.product_id != null ? { ...r, wishlist_id: r.id, id: r.product_id } : r)));
     } catch (e) {
       // 찜 목록 로드 실패 시 빈 상태 유지 (비로그인·네트워크 오류 등)
     }
@@ -445,16 +446,22 @@ function AppContent() {
     setPage('home');
   };
 
-  const handleLogout = () => setShowLogoutConfirm(true);
+  // 로그아웃 확인(S33) — 다른 확인창과 같은 모양(공용 확인창), 「로그아웃」은 빨강. 비밀번호를 바꾼 뒤에는 묻지 않는다(skipAsk)
+  const handleLogout = async (skipAsk) => {
+    if (skipAsk !== true) {
+      const ok = await confirm({ title: '로그아웃할까요?', message: '정말 로그아웃 하시겠어요?', okLabel: '로그아웃', danger: true });
+      if (!ok) return;
+    }
+    confirmLogout(skipAsk === true);
+  };
 
-  const confirmLogout = () => {
+  const confirmLogout = (quiet) => {
     setNeedsConsent(false);
-    setShowLogoutConfirm(false);
     localStorage.removeItem('srmart_auto_login');
     localStorage.removeItem('srmart_token');
     authLogout();
     setUser(null); setCart([]); setOrders([]); setProducts([]); setPageHistory([]); handleGuest();   // 로그아웃 후 게스트 홈
-    notify(messages.logout);
+    if (!quiet) notify({ icon: 'check', title: '로그아웃 되었어요', message: '이용해 주셔서 감사합니다.' });
   };
 
   // 로그인 안내(S34 「안내」) — 창을 먼저 보여 주고, 확인을 누르면 로그인 화면으로 간다(목업처럼 지금 화면 위에 뜬다 · 묶음 1)
@@ -657,7 +664,7 @@ function AppContent() {
   }
 
   // 목업대로 옮긴 화면 — 바탕을 목업의 --bg 로(옛 화면은 --white 그대로). 묶음이 늘 때마다 여기에 더한다
-  const v2Page = ['home', 'search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt', 'orders', 'purchases'].includes(page);
+  const v2Page = ['home', 'search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt', 'orders', 'purchases', 'mypage', 'wishlist', 'about'].includes(page);
   // 아래 고정 바가 있는 화면은 탭바를 안 그린다(목업 S04·S08·S12·P03 — 바가 탭바를 덮던 것). 빈 장바구니(S09)는 탭바 — 묶음 3
   const noTab = ['productDetail', 'quickOrder', 'orderSheet', 'receipt'].includes(page) || (page === 'cart' && cart.length > 0) || (ordersDetail && (page === 'orders' || page === 'purchases'));
 
@@ -667,16 +674,9 @@ function AppContent() {
       <InstallPrompt />
       {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
       {mcpUser && <ForcePasswordChangeModal onDone={handleForcePasswordChangeDone} />}
-      {showLogoutConfirm && (
-        <ConfirmModal
-          message="정말 로그아웃 하시겠어요?"
-          onConfirm={confirmLogout}
-          onCancel={() => setShowLogoutConfirm(false)}
-        />
-      )}
       {/* 헤더(P05) — 로고 이미지 · 매장 · AI 상담 · 종 · 로그인. 로그아웃은 마이 맨 아래(결정 11) — 묶음 1 */}
       {/* 검색 화면은 검색창이 헤더다(목업 S06) — 묶음 2 */}
-      {!['search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt', 'orders', 'purchases'].includes(page) && <AppHeader
+      {!['search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt', 'orders', 'purchases', 'mypage', 'wishlist', 'about'].includes(page) && <AppHeader
         storeName={storeShort}
         onStoreClick={!user && !isOwner ? () => setShowStoreModal(true) : null}
         onHome={() => goToPage('home')}
@@ -727,7 +727,8 @@ function AppContent() {
         {/* 화면 조각을 받는 동안 — 「불러오는 중…」 글자 대신 화면 뼈대(S43, 묶음 1) */}
         <Suspense fallback={<PageFallback />}>
         {page === 'notice'          && <Notice notices={notices} setNotices={setNotices} isAdmin={isAdmin} goBack={goBack} goToHome={() => goToPage('home')} darkMode={darkMode} />}
-        {page === 'wishlist'        && <Wishlist wishlist={wishlist} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWishlist={toggleWishlist} goBack={goBack} goToHome={() => goToPage('home')} darkMode={darkMode} />}
+        {/* 찜(S19) — 카드는 지금 매장 상품 목록의 값(가격·품절·행사)으로. 이 매장에 없는 상품은 품절로 보인다(담을 수 없다) — 묶음 5 */}
+        {page === 'wishlist'        && <Wishlist wishlist={wishlist.map((w) => products.find((p) => p.id === w.id) || { ...w, isSoldOut: true })} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWishlist={toggleWishlist} goBack={goBack} goToHome={() => goToPage('home')} adultOk={!!(currentUser && currentUser.isAdult)} />}
         {page === 'search'          && <Search products={products} goBack={goBack} storeId={currentStoreId} user={currentUser} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} />}
         {page === 'productDetail'   && <ProductDetail product={selectedProduct} onBack={goBack} onAddToCart={addToCart} onBuyNow={(item) => { if (!user) { requireLogin(); return; } setQuickOrderItem(item); goToPage('quickOrder'); }} user={currentUser} storeId={currentStoreId} storeShort={storeShort} adultOk={!!(currentUser && currentUser.isAdult)} wished={!!(selectedProduct && wishlist.some((w) => w.id === selectedProduct.id))} wishlist={wishlist} onToggleWish={toggleWishlist} onNeedLogin={requireLogin} onOpenProduct={(p) => setSelectedProduct(products.find((x) => x.id === p.id) || p)} />}
         {/* 주문서 한 장(P03) — 바로 주문(1건)과 장바구니의 「주문하기」(전부)가 같은 화면 · 결제 함수는 예전 그대로 둘 — 묶음 3 */}
@@ -737,7 +738,9 @@ function AppContent() {
         {(page === 'orders' || page === 'purchases') && <OrderHistory orders={orders} onReloadOrders={loadMyOrders} onOpenConsent={() => setNeedsConsent(true)} openSaleId={pushSaleId} onOpened={() => setPushSaleId(null)} onShop={() => goToPage('home')} onDetail={setOrdersDetail} />}
         {page === 'receipt'         && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
         {page === 'notificationSettings' && <NotificationSettings goBack={goBack} />}
-        {page === 'mypage'          && <MyPage user={currentUser} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} users={users} setUsers={setUsers} isAdmin={isAdmin} />}
+        {/* 마이(P02) — 로그인 안 한 손님도 연다(S47 — 로그인·회원가입 단추) · 묶음 5 */}
+        {page === 'mypage'          && <MyPage user={user ? currentUser : null} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} users={users} setUsers={setUsers} isAdmin={isAdmin} onLogin={() => setPage('login')} onSignup={() => { setLoginMode('signup'); setPage('login'); }} />}
+        {page === 'about'           && <About user={user} storeId={currentStoreId} storeShort={storeShort} goBack={goBack} onShop={() => goToPage('home')} onNotice={() => goToPage('notice')} onSignup={() => { setLoginMode('signup'); setPage('login'); }} />}
         </Suspense>
 
         {/* 제3자 제공 동의 팝업 — 로그인 직후 자동으로 뜨는 것 말고, 구매 내역에서
