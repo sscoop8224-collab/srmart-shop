@@ -49,6 +49,22 @@ export function topicJosa(word) {
   return code % 28 ? '은' : '는';
 }
 
+// 숫자·단위는 읽는 소리로 받침을 정한다 — 상품 이름 뒤에 규격(60g · 1.5L · 500ml)이 붙기 때문이다.
+// 숫자: 영·일·삼·육·칠·팔 = 받침 있음 / 이·사·오·구 = 없음. 단위: g·kg(그램) = 있음 / L·ml(리터)·m(미터) = 없음.
+const DIGIT_BATCHIM = { 0: true, 1: true, 2: false, 3: true, 4: false, 5: false, 6: true, 7: true, 8: true, 9: false };
+const UNIT_BATCHIM = [[/(mg|kg|g)$/i, true], [/(ml|l|cm|mm|m)$/i, false]];
+
+/** 받침이 있으면 '을', 없으면 '를' — 숫자·흔한 단위도 읽는 소리로 판단, 그 밖이면 '을(를)'. */
+export function objectJosa(word) {
+  const w = String(word || '').trim();
+  const ch = w.slice(-1);
+  const code = ch.charCodeAt(0) - 0xac00;
+  if (code >= 0 && code <= 11171) return code % 28 ? '을' : '를';
+  if (/\d/.test(ch)) return DIGIT_BATCHIM[ch] ? '을' : '를';
+  for (const [re, has] of UNIT_BATCHIM) if (re.test(w)) return has ? '을' : '를';
+  return '을(를)';
+}
+
 // 한 번 받은 목록은 세션 동안 다시 쓴다(동의 창과 가입 화면이 같이 부른다).
 // 실패는 저장하지 않는다 — 다음에 열 때 다시 시도한다.
 let cached = null;

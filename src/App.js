@@ -28,6 +28,7 @@ import { kakaoPayReady } from './pages/KakaoPay';
 import { useAuth } from './AuthContext';
 import { useStore } from './StoreContext';
 import { initPush } from './pushSetup';
+import { objectJosa } from './utils/customerStores';
 
 // 코드 스플리팅: 홈(App 내 inline) 외 페이지는 지연 로드 → 초기 번들 축소(파싱 단축).
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -473,11 +474,11 @@ function AppContent() {
 
   const addToCart = (product) => {
     if (!user) { requireLogin(); return; }
-    if (product.isSoldOut) { showToast('품절된 상품이에요! 😢'); return; }
-    if (product.stock !== '' && Number(product.stock) <= 0) { showToast('재고가 없어요! 😢'); return; }
+    if (product.isSoldOut) { showToast('품절된 상품이에요'); return; }
+    if (product.stock !== '' && Number(product.stock) <= 0) { showToast('재고가 없어요'); return; }
     if (product.isAdult) {
       const latestUser = users.find(u => u.email === user.email) || user;
-      if (!latestUser.isAdult) { showToast('🔞 성인 상품은 19세 이상만 구매할 수 있어요!'); return; }
+      if (!latestUser.isAdult) { showToast('성인 상품은 19세 이상만 구매할 수 있어요'); return; }
     }
     // 함수형 업데이터 필수: ProductDetail 이 수량>1 을 같은 클릭 핸들러 안에서 addToCart 를
     // 여러 번 반복 호출한다(단품 수량 루프·박스 수량 루프). setCart(cart...) 처럼 클로저의
@@ -493,8 +494,10 @@ function AppContent() {
       }
       return [...prev, { ...product, quantity: 1 }];
     });
-    if (stockExceeded) { showToast('재고 수량을 초과했어요! 😢'); return; }
-    showToast(product.name + '이(가) 장바구니에 담겼어요! 🛒');
+    if (stockExceeded) { showToast('재고 수량을 초과했어요'); return; }
+    // 목업 S35 — 「농심 메론킥 60g을 장바구니에 담았어요」(규격까지 · 그림 글자 없이 · 아이콘이 확인 표시)
+    const label = [product.name, product.spec].filter(Boolean).join(' ');
+    showToast(`${label}${objectJosa(label)} 장바구니에 담았어요`);
   };
 
   const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
