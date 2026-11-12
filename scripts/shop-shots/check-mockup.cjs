@@ -11,12 +11,18 @@
  *   ① 스크립트 오류 ② 가로 넘침(가로로 미는 칩·상품 줄·바코드는 뺀다) ③ 외부 요청
  *   ④ 떠 있는 단추(.fab)가 **없어야** 한다 — 2026-11-12 B-1 로 없앴다(되살아나면 담기·찜을 다시 가린다)
  *   ⑤ 헤더 단추끼리 겹치지 않는다(로고·매장·AI 상담·종·로그인) — 폰 세로가 가장 좁다
- *   ⑥ 폰 세로 홈(P05 모든 상태)에서 **첫 상품 줄이 통째로** 탭바 위에 보인다(B-4)
+ *   ⑥ 홈(P05 모든 상태)의 **첫 상품 줄** — 폰 세로·태블릿 세로·태블릿 가로·PC 는 첫 카드가 **통째로** 탭바 위에(B-4 · 2026-11-12 지시 1).
+ *      폰 가로(높이 390)는 카드 한 장이 화면 높이를 넘으므로 「통째로」는 불가능 — 대신 첫 줄이 **첫 화면에서 시작**해
+ *      탭바 위로 사진이 FIRST_PEEK(80px) 이상 보여야 한다(배너·매장 미리보기 띠를 숨겨 얻은 자리 · 숨김이 풀리면 여기서 걸린다)
  *   ⑦ 열린 창(시트·알림창)이 화면 밖으로 나가지 않는다 — 폰 가로(높이 390)에서 잘리기 쉽다
  *   ⑧ 태블릿 가로·PC 의 상품 격자는 5~6열(B-9)
+ *   ⑨ 하단 고정 바(.bar · .tabbar)가 본문 단추를 가리지 않는다(2026-11-12 지시 1) — 본문을 끝까지 내렸을 때
+ *      어떤 단추·입력 칸도 고정 바 아래에 깔리면 안 된다(리뷰 쓰기 S05 의 「리뷰 등록」 같은 자리). 열린 창 뒤는 보지 않는다
+ *   ⑩ PC 는 폰 시계(9:41)·홈 막대를 그리지 않는다(기기 장식은 목업 액자일 뿐 — 지시 1)
  *
  * --self-test: 일부러 망가뜨린 목업(떠 있는 단추를 되살림 · 헤더 단추를 겹침 · 배너를 키워 첫 줄을 밀어냄 ·
- *              격자를 4열로)을 만들어 위 검사가 잡는지 본다. 못 잡으면 검사기가 없는 것과 같다.
+ *              격자를 4열로 · 폰 가로에서 배너를 되살림 · 바 위 여백을 없앰 · PC 에 시계를 되살림)을 만들어 위 검사가 잡는지 본다.
+ *              못 잡으면 검사기가 없는 것과 같다.
  */
 const fs = require('fs');
 const os = require('os');
@@ -33,17 +39,18 @@ const SIZES = {
   tland: { k: '태블릿 가로', vp: { width: 1180, height: 820 }, dsf: 1 },
   pc: { k: 'PC', vp: { width: 1440, height: 900 }, dsf: 1 },
 };
+const FIRST_PEEK = 80;   // 폰 가로: 첫 상품 사진이 탭바 위로 이만큼은 보여야 한다(px)
 const PICK = (arg('--sizes', '') || Object.keys(SIZES).join(',')).split(',').filter(k => SIZES[k]);
 
-async function run(mockFile, { quiet = false } = {}) {
+async function run(mockFile, { quiet = false, sizes = PICK, ids = null } = {}) {
   const url = pathToFileURL(mockFile).href;
   const b = await chromium.launch();
   const probe = await b.newPage(); await probe.goto(url);
   const all = await probe.evaluate(() => window.__SCREENS); await probe.close();
-  const found = { error: 0, over: 0, external: 0, fab: 0, header: 0, firstRow: 0, overlay: 0, cols: 0 };
+  const found = { error: 0, over: 0, external: 0, fab: 0, header: 0, firstRow: 0, overlay: 0, cols: 0, bottom: 0, chrome: 0 };
   let runs = 0;
   const log = m => { if (!quiet) console.log(m); };
-  for (const key of PICK) {
+  for (const key of sizes) {
     const d = SIZES[key];
     for (const theme of ['light', 'dark']) {
       const ctx = await b.newContext({ viewport: d.vp, deviceScaleFactor: d.dsf, colorScheme: theme, locale: 'ko-KR' });
@@ -53,7 +60,7 @@ async function run(mockFile, { quiet = false } = {}) {
       });
       const p = await ctx.newPage(); const errs = [];
       p.on('pageerror', e => errs.push(e.message.slice(0, 120)));
-      for (const s of all) for (const st of (s.states.length ? s.states : [''])) {
+      for (const s of all.filter(x => !ids || ids.includes(x.id))) for (const st of (s.states.length ? s.states : [''])) {
         errs.length = 0; runs++;
         await p.goto(`${url}?solo=${s.id}&theme=${theme}${st ? '&state=' + encodeURIComponent(st) : ''}`);
         await p.waitForTimeout(60);
@@ -75,7 +82,7 @@ async function run(mockFile, { quiet = false } = {}) {
           // ⑥ 첫 상품 줄 — 첫 카드의 아래 끝(가격 줄까지)이 탭바 위에 있나
           let first = null;
           const pc = scr.querySelector('.grid .pc'), tb = scr.querySelector('.tabbar');
-          if (pc && tb) first = { bottom: Math.round(pc.getBoundingClientRect().bottom), tab: Math.round(tb.getBoundingClientRect().top) };
+          if (pc && tb) { const q = pc.getBoundingClientRect(); first = { top: Math.round(q.top), bottom: Math.round(q.bottom), tab: Math.round(tb.getBoundingClientRect().top) }; }
           // ⑦ 열린 창이 화면 안에
           const ov = [];
           for (const el of scr.querySelectorAll('.overlay .sheet, .overlay .alert')) {
@@ -84,7 +91,28 @@ async function run(mockFile, { quiet = false } = {}) {
           }
           // ⑧ 격자 열 수
           const g = scr.querySelector('.grid'); const cols = g ? getComputedStyle(g).gridTemplateColumns.split(' ').length : 0;
-          return { over: [...new Set(over)].slice(0, 3), fab: scr.querySelectorAll('.fab').length, hdr, first, ov, cols };
+          // ⑩ 기기 장식(시계·홈 막대)이 보이나
+          const shown = el => el && getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().height > 0;
+          const chrome = shown(scr.querySelector('.status')) || shown(scr.querySelector('.home-ind'));
+          // ⑨ 본문을 끝까지 내린 뒤, 고정 바 아래에 깔린 단추·입력 칸(맨 마지막에 잰다 — 스크롤을 바꾸므로)
+          const under = [];
+          const fixed = [...scr.querySelectorAll(':scope > .bar, :scope > .tabbar')].map(x => x.getBoundingClientRect()).filter(q => q.height);
+          const sc = scr.querySelector(':scope > .scroll');
+          if (fixed.length && sc && !scr.querySelector(':scope > .overlay')) {
+            const barTop = Math.min(...fixed.map(q => q.top));
+            const nm = el => (el.getAttribute('aria-label') || el.textContent.trim() || el.className).slice(0, 14);
+            const parts = () => [...sc.querySelectorAll('button, .btn, .field, .area, .switch')].filter(el => !el.closest('.chips, .hscroll') && getComputedStyle(el).visibility !== 'hidden').map(el => ({ el, q: el.getBoundingClientRect() })).filter(x => x.q.width && x.q.height);
+            // ㉠ 첫 화면: 화면의 **주 행동 단추**(빈 화면·오류 화면의 단추 .empty · 칸 아래 「취소/등록」 줄 .btn-row) 또는 스크롤되지 않는 화면의 단추가
+            //    바에 **반쯤 걸쳐** 잘려 보이면 — 누르려다 바를 누른다(S05 리뷰 쓰기에서 실제로 그랬다). 긴 목록(상품 격자·장바구니 줄)이
+            //    첫 화면 끝에서 잘리는 것은 정상이라 보지 않는다
+            const still = sc.scrollHeight <= sc.clientHeight + 1;
+            for (const { el, q } of parts()) if (q.top < barTop - 0.5 && q.bottom > barTop + 0.5 && el.matches('button, .btn') && (still || (el.closest('.empty, .btn-row') && !el.closest('.ocard, .grid, .review')))) under.push('첫 화면 ' + nm(el) + `(${Math.round(q.bottom - barTop)}px 걸침)`);
+            // ㉡ 끝까지 내렸을 때: 어떤 단추·칸도 바 밑에 남으면 안 된다(끝 여백이 모자람)
+            sc.scrollTop = sc.scrollHeight;
+            for (const { el, q } of parts()) if (q.bottom > barTop + 0.5 && q.top < SR.bottom) under.push('끝 ' + nm(el) + `(${Math.round(q.bottom - barTop)}px)`);
+            sc.scrollTop = 0;
+          }
+          return { over: [...new Set(over)].slice(0, 3), fab: scr.querySelectorAll('.fab').length, hdr, first, ov, cols, under: [...new Set(under)].slice(0, 4), chrome };
         });
         const tag = `${s.id}${st ? '[' + st + ']' : ''} ${d.k}·${theme === 'light' ? '밝게' : '어둡게'}`;
         if (r.none) { found.error++; log(`🔴 ${tag} 화면 없음`); continue; }
@@ -92,7 +120,12 @@ async function run(mockFile, { quiet = false } = {}) {
         if (r.over.length) { found.over++; log(`🔴 ${tag} 가로 넘침: ${r.over.join(',')}`); }
         if (r.fab) { found.fab++; log(`🔴 ${tag} 떠 있는 단추(.fab)가 있다 — 헤더 아이콘으로 옮겼는데 되살아났다`); }
         if (r.hdr.length) { found.header++; log(`🔴 ${tag} 헤더 겹침: ${r.hdr.join(', ')}`); }
-        if (key === 'phone' && s.id === 'P05' && r.first && r.first.bottom > r.first.tab) { found.firstRow++; log(`🔴 ${tag} 첫 상품 줄이 첫 화면에 다 안 보인다 — 카드 아래 ${r.first.bottom} > 탭바 ${r.first.tab}`); }
+        if (s.id === 'P05' && r.first) {
+          if (key === 'pland') { if (r.first.tab - r.first.top < FIRST_PEEK) { found.firstRow++; log(`🔴 ${tag} 첫 상품 줄이 첫 화면에서 시작하지 않는다 — 카드 위 ${r.first.top} · 탭바 ${r.first.tab}(${FIRST_PEEK}px 이상 보여야)`); } }
+          else if (r.first.bottom > r.first.tab) { found.firstRow++; log(`🔴 ${tag} 첫 상품 줄이 첫 화면에 다 안 보인다 — 카드 아래 ${r.first.bottom} > 탭바 ${r.first.tab}`); }
+        }
+        if (r.under.length) { found.bottom++; log(`🔴 ${tag} 하단 고정 바가 단추를 가린다: ${r.under.join(', ')}`); }
+        if (key === 'pc' && r.chrome) { found.chrome++; log(`🔴 ${tag} PC 에 폰 시계·홈 막대가 그려진다 — 기기 장식은 목업 액자일 뿐`); }
         if (r.ov.length) { found.overlay++; log(`🔴 ${tag} 창이 화면 밖으로 나간다: ${r.ov.join(',')}`); }
         if ((key === 'tland' || key === 'pc') && r.cols && (r.cols < 5 || r.cols > 6)) { found.cols++; log(`🔴 ${tag} 상품 격자 ${r.cols}열 — 5~6열이어야 한다`); }
       }
@@ -106,13 +139,17 @@ async function run(mockFile, { quiet = false } = {}) {
 async function selfTest() {
   const src = fs.readFileSync(MOCK, 'utf8');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'check-mockup-'));
-  // 자가 시험은 폰 세로·태블릿 가로 둘만 — 시간을 줄인다
-  PICK.length = 0; PICK.push('phone', 'tland');
+  // 자가 시험은 경우마다 그 크기·그 화면만 — 시간을 줄인다
   const cases = [
-    { name: '떠 있는 단추를 되살리면', expect: 'fab', mut: t => t.replace('${bar}${tab ? tabbar(tab, cart) : \'\'}', '<button class="fab">AI 상담</button>${bar}${tab ? tabbar(tab, cart) : \'\'}') },
-    { name: '헤더 단추를 겹치면', expect: 'header', mut: t => t.replace('.homebar img { height: 28px; }', '.homebar img { height: 28px; } .homebar .icon-btn { margin-left: -40px; }') },
-    { name: '홈 배너를 키워 첫 줄을 밀어내면', expect: 'firstRow', mut: t => t.replace('.banner.home { min-height: 112px;', '.banner.home { min-height: 420px;') },
-    { name: '태블릿 가로 격자를 4열로 두면', expect: 'cols', mut: t => t.replace('@container (min-width: 1000px) { .grid { grid-template-columns: repeat(5, 1fr); }', '@container (min-width: 1000px) { .grid { grid-template-columns: repeat(4, 1fr); }').replace('@container (min-width: 1150px) { .grid { grid-template-columns: repeat(6, 1fr); } }', '') },
+    { name: '떠 있는 단추를 되살리면', expect: 'fab', sizes: ['phone'], ids: ['P05'], mut: t => t.replace('${bar}${tab ? tabbar(tab, cart) : \'\'}', '<button class="fab">AI 상담</button>${bar}${tab ? tabbar(tab, cart) : \'\'}') },
+    { name: '헤더 단추를 겹치면', expect: 'header', sizes: ['phone'], ids: ['P05'], mut: t => t.replace('.homebar img { height: 28px; }', '.homebar img { height: 28px; } .homebar .icon-btn { margin-left: -40px; }') },
+    { name: '홈 배너를 키워 첫 줄을 밀어내면', expect: 'firstRow', sizes: ['phone'], ids: ['P05'], mut: t => t.replace('.banner.home { min-height: 112px;', '.banner.home { min-height: 420px;') },
+    { name: '태블릿 가로 격자를 4열로 두면', expect: 'cols', sizes: ['tland'], ids: ['P05'], mut: t => t.replace('@container (min-width: 1000px) { .grid { grid-template-columns: repeat(5, 1fr); }', '@container (min-width: 1000px) { .grid { grid-template-columns: repeat(4, 1fr); }').replace('@container (min-width: 1150px) { .grid { grid-template-columns: repeat(6, 1fr); } }', '') },
+    { name: '태블릿 가로에서 배송 줄·쿠폰 띠를 다시 두 줄로 두면', expect: 'firstRow', sizes: ['tland'], ids: ['P05'], mut: t => t.replace('@container (min-width: 1000px) { .grid { grid-template-columns: repeat(5, 1fr); } .dl-row { flex-direction: row; }', '@container (min-width: 1000px) { .grid { grid-template-columns: repeat(5, 1fr); } .dl-row { flex-direction: column; } .banner.home { min-height: 150px; }') },
+    { name: '폰 가로에서 행사 배너를 되살리면', expect: 'firstRow', sizes: ['pland'], ids: ['P05'], mut: t => t.replace('@container dev (max-height: 520px) { .banner.home, .owner { display: none; }', '@container dev (max-height: 520px) { .owner { display: none; }') },
+    { name: '바 위 여백(.pad-bar)을 없애면', expect: 'bottom', sizes: ['pland'], ids: ['S10', 'S12'], mut: t => t.replace('.pad-bar { height: calc(var(--bar-h) + var(--safe-bottom) + var(--sp-6)); }', '.pad-bar { height: 0; }') },
+    { name: 'S05 리뷰 등록 단추를 본문으로 되돌리면(바 밑에 깔린다)', expect: 'bottom', sizes: ['pland'], ids: ['S05'], mut: t => t.replace('<div class="area" style="margin-top:var(--sp-3)">맛·양·배송은 어땠는지 적어 주세요</div></div></section>', '<div class="area" style="margin-top:var(--sp-3)">맛·양·배송은 어땠는지 적어 주세요</div><div class="btn-row" style="margin-top:var(--sp-3)"><button class="btn md gray">취소</button><button class="btn md pri">리뷰 등록</button></div></div></section>') },
+    { name: 'PC 에 폰 시계·홈 막대를 되살리면', expect: 'chrome', sizes: ['pc'], ids: ['P05'], mut: t => t.replace('.status, .home-ind { display: none; } }', '}') },
   ];
   let bad = 0;
   for (const c of cases) {
@@ -122,7 +159,7 @@ async function selfTest() {
     fs.writeFileSync(f, t);
     // 상대 경로(assets/…)가 맞게 목업 폴더를 가리키는 <base> 를 넣는다
     fs.writeFileSync(f, t.replace('<head>', `<head><base href="${pathToFileURL(path.dirname(MOCK)).href}/">`));
-    const r = await run(f, { quiet: true });
+    const r = await run(f, { quiet: true, sizes: c.sizes, ids: c.ids });
     const ok = r.found[c.expect] > 0;
     if (!ok) bad++;
     console.log(`  ${ok ? '✅' : '🔴'} 자가 시험 「${c.name}」 → ${ok ? '잡았다' : '못 잡았다'} (${c.expect} ${r.found[c.expect]}건)`);
@@ -140,7 +177,7 @@ async function selfTest() {
   const { found, runs, screens } = await run(MOCK);
   const total = Object.values(found).reduce((a, b) => a + b, 0);
   console.log(`── 크기 ${PICK.map(k => SIZES[k].k).join(' · ')} × 밝게·어둡게 — 화면 ${screens}개 · 상태 포함 ${runs}번`);
-  console.log(`   오류 ${found.error} · 가로 넘침 ${found.over} · 외부 요청 ${found.external} · 떠 있는 단추 ${found.fab} · 헤더 겹침 ${found.header} · 첫 상품 줄 ${found.firstRow} · 창 잘림 ${found.overlay} · 격자 열 ${found.cols}`);
+  console.log(`   오류 ${found.error} · 가로 넘침 ${found.over} · 외부 요청 ${found.external} · 떠 있는 단추 ${found.fab} · 헤더 겹침 ${found.header} · 첫 상품 줄 ${found.firstRow} · 창 잘림 ${found.overlay} · 격자 열 ${found.cols} · 하단 바 가림 ${found.bottom} · PC 기기 장식 ${found.chrome}`);
   console.log(total ? `🔴 문제 ${total}건` : '✅ 전부 통과');
   process.exit(total ? 1 : 0);
 })().catch(e => { console.error('🔴', e); process.exit(1); });
