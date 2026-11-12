@@ -99,3 +99,20 @@
 | 상단 칩 네 개 (지시 6) | S40 칩 → S44·S45·공지·S46 | `src/pages/HomePage.jsx:23·56~62` (`onClick` 없음) | 매장안내 S44 · 이벤트 S45 · 공지사항 · 고객센터 S46 으로 잇는다 |
 | AI 상담 단추 (지시 7) | P05 · S02 · S37 | 떠 있는 AI 상담 단추 | **왼쪽 아래**로 · 스크롤하는 동안 숨고 멈추면 0.25초 뒤 다시 나타난다 · 목록 끝 여백 |
 
+
+## 앱 반영 때 바꿔 끼울 서버 자료 (2026-11-12 블록 A — 서버 쪽은 준비됨 · 마이그레이션 적용 전)
+
+🔴 **앱 화면을 고칠 때 이 줄들이 빠지면 화면은 새것인데 내용은 옛 고정 문구로 남는다.**
+
+| 무엇 | 앱 원문 자리 | 바꿔 읽을 API | 비고 |
+|---|---|---|---|
+| **공지사항(S26)** | `src/pages/Notice.js` — 🔴 **글이 코드에 박혀 있다** | `GET /api/shop/notices?store_id=` · 상세 `GET /api/shop/notices/:id` | 어드민 **쇼핑앱 공지**에서 쓴다(점장은 자기 매장 공지). 앱 반영 때 Notice.js 를 이 API 로 바꾼다 |
+| 고객센터 자주 묻는 질문(S46) | (새 화면) | `GET /api/shop/faqs` | 어드민 **자주 묻는 질문**(대표). 매장 전화는 FAQ 에 적지 않고 아래 매장 목록의 `phone` 을 쓴다 |
+| 매장안내(S44)·점포 선택(S30)·가입 매장 고르기 | `src/StoreContext.jsx`·`src/pages/Login.js` (`getStores`) | `GET /api/stores?audience=customer` | **이미 바꿨다**(`src/api.js`). 공개 매장(5곳)만 · `phone`·`operating_hours`·`zipcode`·`display_name` 이 실린다 |
+| 이벤트(S45)·홈 「행사중」 | `src/App.js` 행사 필터 | `GET /api/promotions/active?store_id=[&event_id=]` | **홈 필터는 이미 바꿨다** — 늘 0개이던 결함(`/events/active` 의 `products` 를 읽음). `promo_price` 가 null 이면 문구(`label`)만 |
+| 당일 배송 줄 | `HomePage.jsx:26` 고정 문구 | `GET /api/stores/:id/delivery-promise` → `{ mode, label, sub }` | `mode:'off'` 면 줄을 안 그린다 |
+| 가입 쿠폰 띠 | `HomePage.jsx:185` 고정 문구 | `GET /api/signup-coupon` → `{ enabled, label, sub }` | `enabled:false` 면 띠를 안 그린다 |
+| 사업자 정보(S40·홈 맨 아래) | (고정 문구 없음) | `GET /api/shop/business-info` | 어드민 **사업자 정보**(대표). 빈칸이면 그 줄을 안 그린다 |
+| 상품 재고 표시(S04) | 상세의 재고 숫자 | `/api/products/active` 의 `stock_state`(`soldout`/`low`/`in_stock`) · `stock_left`(1~10일 때만) | 「○개 남음」(≤10) · 「재고 있음」 · 「품절」. 숫자 `stock` 은 장바구니 상한 때문에 아직 같이 나간다 — 앱이 `stock_state` 로 옮긴 뒤 뺀다 |
+
+- 🔴 **행사(events) 표는 지금 새로 만들 수 없다** — 어드민 `/api/events` 등록·수정이 `events` 표에 **없는 컬럼 9개**를 쓴다(2026-11-12 확인, 고치지 않음 — 대표님 판단). 그래서 S45 는 이벤트 없이 `/api/promotions/active` 를 바로 써도 된다. 이벤트↔행사 연결(`event_promotions`)은 표·API 만 준비해 두었다.

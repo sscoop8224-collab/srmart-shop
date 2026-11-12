@@ -1,5 +1,20 @@
 # 당일 배송 시간 설정 — 설계 초안 (2026-11-12)
 
+> 🔴 **구현 반영 (2026-11-12 2차, 대표님 지시 블록 A-2·3) — 아래 본문보다 이 칸이 우선한다.**
+> 코드·마이그레이션 파일은 만들었고(로컬 커밋), **마이그레이션 적용·재시작은 안 했다.**
+>
+> - 마이그레이션: `srmart-backend/migrations/migration_store_delivery_settings_v1.sql`
+>   (`store_delivery_settings` + `orders.delivery_promise`) — 7절 초안을 대신한다.
+> - 문구 계산: `srmart-backend/src/services/deliveryPromise.js` — **KST 고정**(서버 시간대와 무관).
+>   「오늘 쉼」은 **날짜(`closed_on`)** 로 저장하므로 자정이 지나면 아무것도 안 해도 풀린다.
+> - 손님 API: `GET /api/stores/:id/delivery-promise` — **「손님에게 보이기」가 꺼진 매장은 `mode:'off'`**.
+> - 어드민: 점포 관리 › 「배송 설정」 탭 + 점장용 메뉴 `/store-delivery`(같은 화면). 점장은 **자기 매장만** —
+>   서버가 403 으로 막는다(`src/routes/storeDelivery.js`). 모든 변경은 `audit_logs` 에 남는다.
+> - 주문 때 그 순간의 약속(`today`/`tomorrow`/`closed`/`off`)을 `orders.delivery_promise` 에 남긴다 —
+>   나중에 「오늘 온다더니」 를 따질 근거.
+> - 매장 공개 여부: `stores.customer_visible`(`migration_stores_customer_visible_v1.sql`) — 5개 매장 켬,
+>   **동신마켓(15) 끔.** 확인(2026-11-12, 읽기만): 동신마켓 회원 0 · 배송권역 0 · 주문 0.
+
 > 상태: **설계·초안만.** 마이그레이션은 적용하지 않았고 백엔드·어드민 코드는 손대지 않았다.
 > 적용은 대표님 승인 뒤 — CLAUDE.md 「SCHEMA-CHANGE RULE」·「배포 순서 규칙」 그대로(적용 → 곧바로 재시작, 영업시간 외).
 > 조사는 전부 **읽기만** 했다(`SHOW CREATE TABLE`, 코드 읽기). 쓰기 호출은 하나도 없다.

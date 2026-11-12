@@ -1,5 +1,21 @@
 # 가입 쿠폰 — 설계 초안 (2026-11-12)
 
+> 🔴 **구현 반영 (2026-11-12 2차, 대표님 지시 블록 A-4·5·6) — 아래 본문보다 이 칸이 우선한다.**
+> 코드·마이그레이션 파일은 만들었고(로컬 커밋), **마이그레이션 적용·재시작은 안 했다.**
+>
+> | 본문(초안) | 실제 구현 |
+> |---|---|
+> | 설정 표 `signup_coupon_settings` 한 줄 | **`signup_coupon_policies` 두 줄** — `online`(쇼핑앱 가입) · `pos`(매장 가입). 각각 켬/끔·할인·최소 주문·유효기간·**쓸 수 있는 곳**(`coupons.usable_channel` = online/store/both) |
+> | 매장 가입은 범위 밖 | **매장 정책을 따로 둔다.** 기본은 「온라인과 같게」(`follow_online=1`, 꺼짐). 지급 API `POST /api/pos/signup-coupon/grant` — 인계: `srmart-backend/docs/HANDOFF_POS_SIGNUP_COUPON.md` |
+> | 보관 기간 미정 | **탈퇴 후 1년.** 매일 04:05 작업 `signup-key-purge` 가 `phone_key`·`kakao_key` 를 NULL 로 지운다(줄은 남는다 — 지급 기록) |
+> | 가입 즉시 지급 | 🔴 **휴대폰 인증을 마친 가입만** 지급한다. 문자 연동이 꺼져 있어 인증 없이 가입되는 동안은 **아무에게도 주지 않는다**(전화번호가 본인 것인지 모르면 남의 번호로 중복 막기를 피할 수 있다) |
+> | 카카오 가입 | 🔴 **카카오 가입도 휴대폰 인증을 받아야 지급한다**(3절 그대로). 카카오 가입 API 는 아직 없다 — 만들 때 같은 함수(`grantSignupCoupon(... kakaoId)`)를 부른다 |
+> | HMAC 키 | `.env` 의 **`SIGNUP_KEY_SECRET`**(64자리 hex, `check-env.js` 필수 항목). 🔴 **`BACKUP_CREDENTIALS.md` 에도 같이 보관한다** — 잃으면 이미 남긴 열쇠와 새 열쇠가 안 맞아 **중복 막기가 조용히 풀린다**. 값은 문서에 적지 않는다 |
+> | 유효기간 | 지급 시각부터 N일 — `user_coupons.expires_at`. 🔴 **주문 경로가 이 값을 안 보고 있었다** — 이번에 서버에서 거절하게 고쳤다(`src/services/couponRules.js`) |
+>
+> 마이그레이션: `srmart-backend/migrations/migration_signup_coupon_v1.sql` (8절 초안을 대신한다).
+> 개인정보 처리방침 문안: `docs/PRIVACY_SIGNUP_KEY_DRAFT.md`.
+
 > 상태: **설계·초안만.** 마이그레이션은 적용하지 않았고 백엔드·어드민 코드는 손대지 않았다.
 > 조사는 **읽기만** 했다(`SHOW CREATE TABLE`, `SELECT COUNT(*)`, 코드 읽기).
 > 적용은 대표님 승인 뒤 — 스키마와 코드가 같이 바뀌므로 「배포 순서 규칙」(적용 → 곧바로 재시작, 영업시간 외).
