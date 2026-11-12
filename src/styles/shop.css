@@ -470,3 +470,12 @@
 .v2 .nt-body { padding: 0 var(--sp-4) var(--sp-4); font-size: var(--fs-sub); color: var(--text-2); white-space: pre-line; line-height: var(--lh); }
 .v2 .nt-admin { margin-top: var(--sp-2); text-align: right; }
 .v2 .link.danger { color: var(--danger); }
+
+/* 묶음 6 — S41 최근 본 상품 · S42 내 리뷰 */
+.v2.recent-v2, .v2.myrev-v2 { padding-bottom: var(--sp-6); }
+.v2 .rv-miss { padding: var(--sp-3) var(--page-x) 0; }
+.v2 .mr-prod { display: flex; gap: var(--sp-3); align-items: center; flex: 1; min-width: 0; text-align: left; }
+.v2 .mr-prod .pimg { width: var(--thumb); height: var(--thumb); flex-shrink: 0; border-radius: var(--r-sm); color: var(--text-3); }
+.v2 .mr-meta { display: flex; gap: var(--sp-2); align-items: center; margin-top: 2px; }
+.v2 .mr-meta small { font-size: var(--fs-cap); color: var(--text-2); }
+.v2 .mr-del { font-size: var(--fs-sub); flex-shrink: 0; }

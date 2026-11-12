@@ -203,6 +203,14 @@ const BUNDLES = {
     { id: 'S31', name: '첫 로그인 비밀번호 바꾸기', opts: { mustChange: true }, go: async p => { await login(p); await p.locator('#mcp-pw').fill('Newpass1'); await wait(p, 300); }, part: ['.alert', '.alert'] },
     { id: 'S32', name: '매장 이용 동의', opts: { needsConsent: true }, go: async p => { await login(p); await wait(p, 600); }, part: ['.sheet', '.sheet.v2'] },
   ],
+  // 묶음 6 — 새 화면 중 서버가 이미 있는 것부터(2026-11-13 새벽)
+  6: [
+    { id: 'S41', name: '최근 본 상품 — 목록', state: '목록', go: async p => { await myOf(p, { row: '최근 본 상품' }); }, part: ['.grid .pc', '.pgrid .pc'] },
+    { id: 'S41E', mock: 'S41', name: '최근 본 상품 — 비어 있음', state: '비어 있음', opts: { noRecent: true }, go: async p => { await myOf(p, { row: '최근 본 상품' }); }, part: ['.empty', '.v2 .ui-empty'] },
+    { id: 'S42', name: '내 리뷰 — 목록', state: '목록', go: async p => { await myOf(p, { row: '내 리뷰' }); }, part: ['.review', '.v2 .review'] },
+    { id: 'S42E', mock: 'S42', name: '내 리뷰 — 비어 있음', state: '비어 있음', opts: { noReviews: true }, go: async p => { await myOf(p, { row: '내 리뷰' }); }, part: ['.empty', '.v2 .ui-empty'] },
+    { id: 'S42D', mock: 'S42', name: '내 리뷰 — 삭제 확인', state: '삭제 확인', go: async p => { await myOf(p, { row: '내 리뷰' }); await p.locator('.mr-del').first().click(); await wait(p, 400); }, part: ['.alert', '.alert'] },
+  ],
 };
 
 async function shootMock(browser, s, size, theme) {

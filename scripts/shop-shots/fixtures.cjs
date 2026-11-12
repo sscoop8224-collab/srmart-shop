@@ -144,6 +144,16 @@ function route(pathname, method, search, opts = {}) {
   // 서버 찜 줄은 `w.*` + 상품 몇 칸 — id 는 **찜 줄 번호**, 상품 번호는 product_id, 가격은 없다(묶음 5 — 진짜 모양으로)
   if (pathname === '/users/me/wishlist') return j(opts.emptyWish ? [] : [products[0], products[3]].map((p, i) => ({ id: 501 + i, user_id: 9001, product_id: p.id, created_at: '2026-11-10T10:00:00', name: p.name, large: p.large, spec: p.spec, image: p.image })));
   if (pathname === '/wishlist') return j({ wishlisted: true, message: '찜 목록에 담았어요!' });
+  // 최근 본 상품(묶음 6 S41) — 서버처럼 가격 없이 상품 칸만 · 999 는 지금 매장에서 안 파는 상품(앱이 빼고 개수를 말한다)
+  if (pathname === '/users/me/recent-views') return j(opts.noRecent ? [] : [102, 104, 103, 101, 999].map((id, i) => {
+    const p = products.find((x) => x.id === id) || { id, name: '단종 상품', large: '식품' };
+    return { id: 700 + i, user_id: 9001, product_id: id, viewed_at: '2026-11-12T10:00:00', name: p.name, large: p.large, spec: p.spec, image: p.image };
+  }));
+  // 내 리뷰(묶음 6 S42) — 서버처럼 r.* + product_name
+  if (pathname === '/users/me/reviews') return j(opts.noReviews ? [] : [
+    { id: 31, product_id: 101, user_id: 9001, rating: 5, content: '아이들이 정말 좋아해요. 또 살게요!', reply: '감사합니다 :)', is_hidden: 0, created_at: '2026-11-02T01:00:00.000Z', product_name: '농심 메론킥' },
+    { id: 30, product_id: 104, user_id: 9001, rating: 4, content: '달고 아삭해요.', reply: null, is_hidden: 0, created_at: '2026-10-28T01:00:00.000Z', product_name: '부사 사과' },
+  ]);
   if (opts.benefitsFail && (pathname === '/me/points' || pathname === '/users/me/coupons')) return { abort: true };   // 보유 쿠폰·포인트를 못 불러옴(목업 S10)
   if (pathname === '/me/points') return j({ points: 3820, expiring_soon: 500 });
   if (pathname === '/users/me/coupons') return j(userCoupons);

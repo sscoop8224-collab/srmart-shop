@@ -50,6 +50,8 @@ const STRICT = [
   'src/pages/Login.js',          // 묶음 5 — 로그인·가입 3단계
   'src/pages/FindAccount.js',    // 묶음 5
   'src/pages/Notice.js',         // 묶음 5 — S26
+  'src/pages/RecentViews.jsx',   // 묶음 6 — S41
+  'src/pages/MyReviews.jsx',     // 묶음 6 — S42
   'src/components/ForcePasswordChangeModal.jsx', // 묶음 5 — S31
   'src/components/ThirdPartyConsentModal.jsx',   // 묶음 5 — S32
 ];

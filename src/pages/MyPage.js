@@ -360,6 +360,8 @@ function MyPage({ user, orders = [], wishlist = [], goToPage, onLogout, users, s
             <Group h="쇼핑">
               <Row icon="receipt" label="주문내역" sub="온라인 주문 · 매장 영수증" onClick={() => goToPage('orders')} />
               <Row icon="heart" tone="t-red" label="찜" val={`${wishlist.length}개`} onClick={() => goToPage('wishlist')} />
+              <Row icon="clock" tone="t-gray" label="최근 본 상품" onClick={() => goToPage('recentViews')} />
+              <Row icon="msg" tone="t-blue" label="내 리뷰" onClick={() => goToPage('myReviews')} />
               <Row icon="tag" tone="t-orange" label="내 쿠폰" val={`${liveCoupons}장`} onClick={() => setSheet('coupons')} />
             </Group>
           )}
