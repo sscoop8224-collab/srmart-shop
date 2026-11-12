@@ -1,7 +1,7 @@
 {
   "note": "색 직접 쓰기 남은 개수(파일별) — 늘면 scripts/check-ui-rules.cjs 가 막는다. 줄였을 때만 --update 로 낮춘다.",
   "updated": "2026-11-12",
-  "total": 1609,
+  "total": 1579,
   "files": {
     "src/App.css": 35,
     "src/App.js": 3,
@@ -36,7 +36,6 @@
     "src/pages/HomePage.jsx": 50,
     "src/pages/ImageUpload.js": 7,
     "src/pages/Members.js": 52,
-    "src/pages/Notice.js": 30,
     "src/pages/NotificationSettings.jsx": 17,
     "src/pages/Orders.js": 50,
     "src/pages/PrintReceipt.js": 36,

@@ -461,3 +461,12 @@
 .v2 .tpc .f-hint { margin: var(--sp-3) 0 var(--sp-4); }
 .v2 .tpc .ui-btn + .ui-btn { margin-top: var(--sp-2); }
 .v2 .tpc .later { display: block; margin: var(--sp-3) auto 0; font-size: var(--fs-sub); color: var(--text-2); }
+/* S26 공지사항 — 줄을 누르면 펼침(목업: 딱지 · 제목 · 날짜 · 펼친 내용) */
+.v2.notice-v2 { padding-bottom: var(--sp-6); }
+.v2 .nt-item + .nt-item { border-top: var(--hairline) solid var(--sep); }
+.v2 .row.nt-row { width: 100%; text-align: left; }
+.v2 .row.nt-row .pill { vertical-align: 1px; margin-right: 2px; }
+.v2 .chev.up { transform: rotate(180deg); }
+.v2 .nt-body { padding: 0 var(--sp-4) var(--sp-4); font-size: var(--fs-sub); color: var(--text-2); white-space: pre-line; line-height: var(--lh); }
+.v2 .nt-admin { margin-top: var(--sp-2); text-align: right; }
+.v2 .link.danger { color: var(--danger); }

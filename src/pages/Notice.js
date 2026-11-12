@@ -1,126 +1,130 @@
-import { useState } from 'react';
+// 공지사항 (목업 정본 v1 의 S26, 묶음 5 · 2026-11-12 밤)
+// 결정 4 · F2: **서버에 연결한다.** 예전 화면은 공지를 앱 안 메모리에만 들고 있어서
+//   ⑴ 손님에게는 늘 빈 화면이었고 ⑵ 관리자가 「등록」해도 **그 기기 화면에만** 생겼다가 새로고침하면 사라졌다(서버에 안 갔다).
+// 지금: 목록 = `GET /api/shop/notices?store_id=`(전 매장 공지 + 이 매장 공지 · 고정 먼저) · 누르면 펼침.
+//   관리자(대표·점장) 「+ 등록」 = 어드민 「공지 관리」와 같은 `POST /api/admin/shop-notices`
+//   (점장은 서버가 자기 매장 공지로 정한다 · 대표는 전 매장 공지).
+//   「삭제」 = 서버에 지우는 길이 없어 **숨기기**(`PUT /api/admin/shop-notices/:id/visible`) — 기록은 남고 어드민에서 다시 보일 수 있다.
+import { useCallback, useEffect, useState } from 'react';
+import { getShopNotices, createShopNotice, hideShopNotice } from '../api';
 import { useDialog } from '../DialogContext';
+import Icon from '../components/ui/Icon';
 
-function Notice({ notices, setNotices, isAdmin, goBack, goToHome, darkMode }) {
+const ymd = (s) => String(s || '').slice(0, 10).replace(/-/g, '.');   // 서버가 'YYYY-MM-DD HH:mm' 글자로 준다(DATE_FORMAT) — 날짜 밀림 없음
+
+function Notice({ storeId, isAdmin, goBack }) {
   const { notify, confirm } = useDialog();
-  const [form, setForm] = useState({ title: '', content: '' });
-  const [expanded, setExpanded] = useState(null);
+  const [list, setList] = useState(null);       // null = 불러오는 중
+  const [failed, setFailed] = useState(false);
+  const [open, setOpen] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ title: '', body: '' });
+  const [saving, setSaving] = useState(false);
 
-  const bg = darkMode ? '#1a1a1a' : 'var(--primary-light)';
-  const cardBg = darkMode ? '#242424' : 'white';
-  const headerBg = darkMode ? '#1a1a1a' : 'white';
-  const borderColor = darkMode ? '#2e2e2e' : 'var(--primary-light)';
-  const textColor = darkMode ? '#f0f0f0' : '#1a1a1a';
-  const subTextColor = darkMode ? '#9e9e9e' : '#adb5bd';
-  const inputBg = darkMode ? '#2e2e2e' : 'var(--primary-light)';
-  const inputBorder = darkMode ? '#3a3a3a' : 'var(--primary-light)';
+  const load = useCallback(() => {
+    setFailed(false);
+    getShopNotices(storeId)
+      .then((r) => setList(Array.isArray(r.data) ? r.data : []))
+      .catch(() => { setFailed(true); setList([]); });
+  }, [storeId]);
+  useEffect(() => { load(); }, [load]);
 
-  const handleAdd = () => {
-    if (!form.title || !form.content) { notify('제목과 내용을 입력해주세요!'); return; }
-    setNotices([{ id: Date.now(), title: form.title, content: form.content, date: new Date().toLocaleDateString('ko-KR') }, ...notices]);
-    setForm({ title: '', content: '' });
-    setShowForm(false);
-    notify('공지사항이 등록됐어요! 😊');
+  const handleAdd = async () => {
+    if (!form.title.trim() || !form.body.trim()) { notify('제목과 내용을 입력해 주세요.'); return; }
+    try {
+      setSaving(true);
+      await createShopNotice({ title: form.title, body: form.body });
+      setForm({ title: '', body: '' });
+      setShowForm(false);
+      notify({ icon: 'check', title: '공지를 올렸어요' });
+      load();
+    } catch (e) {
+      notify(e.response?.data?.error || '공지를 올리지 못했어요. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = async (id) => {
-    if (await confirm('정말 삭제할까요?')) setNotices(notices.filter((n) => n.id !== id));
+  const handleHide = async (n) => {
+    const ok = await confirm({ title: '이 공지를 숨길까요?', message: '손님 화면에서 사라져요. 어드민 「공지 관리」에서 다시 보이게 할 수 있어요.', okLabel: '숨기기', danger: true });
+    if (!ok) return;
+    try {
+      await hideShopNotice(n.id);
+      load();
+    } catch (e) {
+      notify(e.response?.data?.error || '숨기지 못했어요. 잠시 후 다시 시도해 주세요.');
+    }
   };
-
-  const inputStyle = {
-    padding: '13px 16px', borderRadius: '14px', border: `1.5px solid ${inputBorder}`,
-    fontSize: '14px', outline: 'none', background: inputBg,
-    fontFamily: 'inherit', width: '100%', boxSizing: 'border-box',
-    transition: 'all 0.2s', color: textColor
-  };
-  const onFocus = (e) => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 3px rgba(0,196,113,0.1)'; };
-  const onBlur = (e) => { e.target.style.borderColor = inputBorder; e.target.style.boxShadow = 'none'; };
 
   return (
-    <div style={{ background: bg, minHeight: '100vh', paddingBottom: '80px' }}>
-
-      {/* 헤더 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: headerBg, borderBottom: `1px solid ${borderColor}`, position: 'sticky', top: 0, zIndex: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={goBack} style={{ width: '38px', height: '38px', background: darkMode ? '#2e2e2e' : 'var(--primary-light)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={darkMode ? '#f0f0f0' : '#1a1a1a'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6"/>
-            </svg>
-          </button>
-          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: textColor }}>공지사항</h2>
+    <div className="v2 notice-v2">
+      <header className="app-nav">
+        <div className="nav-row">
+          <div className="nav-side"><button type="button" className="nav-btn" aria-label="뒤로" onClick={goBack}><Icon name="chevL" /></button></div>
+          <div className="nav-title" />
+          <div className="nav-side r">{isAdmin && <button type="button" className="nav-btn b" onClick={() => setShowForm(true)}>+ 등록</button>}</div>
         </div>
-        {isAdmin && (
-          <button onClick={() => setShowForm(!showForm)} style={{ padding: '8px 16px', background: showForm ? (darkMode ? '#2e2e2e' : 'var(--primary-light)') : 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: showForm ? 'var(--primary-dark)' : 'white', border: showForm ? `1.5px solid ${borderColor}` : 'none', borderRadius: '20px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
-            {showForm ? '취소' : '+ 등록'}
-          </button>
+        <div className="large"><h1>공지사항</h1></div>
+      </header>
+
+      <div className="tw">
+        {isAdmin && showForm && (
+          <section className="sec">
+            <div className="group pad">
+              <label className="f-lbl" htmlFor="nt-title">제목</label>
+              <div className="field"><input id="nt-title" value={form.title} maxLength={120} placeholder="제목을 입력해 주세요" onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} /></div>
+              <label className="f-lbl" htmlFor="nt-body">내용</label>
+              <textarea id="nt-body" className="area" value={form.body} placeholder="내용을 입력해 주세요" onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))} />
+              <div className="btn-row" style={{ marginTop: 'var(--sp-3)' }}>
+                <button type="button" className="ui-btn gray" onClick={() => { setShowForm(false); setForm({ title: '', body: '' }); }}>취소</button>
+                <button type="button" className={`ui-btn ${saving ? 'dis' : 'pri'}`} disabled={saving} onClick={handleAdd}>{saving ? '올리는 중…' : '등록'}</button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {list === null ? (
+          <div className="ui-empty"><p>불러오는 중…</p></div>
+        ) : failed ? (
+          <div className="ui-empty">
+            <div className="big"><Icon name="wifiOff" /></div>
+            <h3>공지사항을 불러오지 못했어요</h3>
+            <p>인터넷 연결을 확인하고 다시 시도해 주세요.</p>
+            <button type="button" className="ui-btn pri" onClick={load}>다시 시도</button>
+          </div>
+        ) : list.length === 0 ? (
+          <div className="ui-empty">
+            <div className="big"><Icon name="bell" /></div>
+            <h3>등록된 공지사항이 없어요</h3>
+            <p>새로운 소식을 기다려 주세요.</p>
+          </div>
+        ) : (
+          <section className="sec">
+            <div className="group">
+              {list.map((n) => {
+                const on = open === n.id;
+                return (
+                  <div key={n.id} className="nt-item">
+                    <button type="button" className="row nt-row" aria-expanded={on} onClick={() => setOpen(on ? null : n.id)}>
+                      <span className="lbl">
+                        <span className={`pill${n.is_pinned ? ' g' : ''}`}>{n.is_pinned ? '공지' : '안내'}</span> {n.title}
+                        <small>{ymd(n.created_at)}</small>
+                      </span>
+                      <span className={`chev${on ? ' up' : ''}`}><Icon name="chevD" size="sm" /></span>
+                    </button>
+                    {on && (
+                      <div className="nt-body">
+                        {n.body}
+                        {isAdmin && <div className="nt-admin"><button type="button" className="link danger" onClick={() => handleHide(n)}>숨기기</button></div>}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
         )}
       </div>
-
-      {/* 등록 폼 */}
-      {isAdmin && showForm && (
-        <div style={{ padding: '16px', background: cardBg, borderBottom: `8px solid ${bg}` }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="제목을 입력해주세요" style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
-            <textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })}
-              placeholder="내용을 입력해주세요" rows={4}
-              style={{ ...inputStyle, resize: 'none' }} onFocus={onFocus} onBlur={onBlur} />
-            <button onClick={handleAdd} style={{ padding: '14px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '14px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
-              공지 등록
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 공지 목록 */}
-      {notices.length === 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px' }}>
-          <div style={{ width: '80px', height: '80px', background: darkMode ? '#2e2e2e' : 'var(--primary-light)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#00c471" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
-          </div>
-          <p style={{ fontSize: '16px', fontWeight: '700', color: textColor, margin: '0 0 6px' }}>등록된 공지사항이 없어요!</p>
-          <p style={{ fontSize: '13px', color: subTextColor, margin: '0 0 20px' }}>새로운 소식을 기다려주세요</p>
-          {goToHome && (
-            <button onClick={goToHome} style={{ padding: '14px 32px', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none', borderRadius: '20px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,196,113,0.3)' }}>
-              쇼핑하러 가기
-            </button>
-          )}
-        </div>
-      ) : (
-        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {notices.map((notice) => (
-            <div key={notice.id} style={{ background: cardBg, borderRadius: '18px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: `1px solid ${borderColor}` }}>
-              <div onClick={() => setExpanded(expanded === notice.id ? null : notice.id)}
-                style={{ padding: '16px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                    <span style={{ background: darkMode ? '#2e2e2e' : 'var(--primary-light)', color: 'var(--primary-dark)', fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' }}>공지</span>
-                    <p style={{ fontSize: '15px', fontWeight: '700', color: textColor, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{notice.title}</p>
-                  </div>
-                  <p style={{ fontSize: '12px', color: subTextColor, margin: 0 }}>{notice.date}</p>
-                </div>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={subTextColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '12px', flexShrink: 0, transform: expanded === notice.id ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
-              </div>
-              {expanded === notice.id && (
-                <div style={{ padding: '0 20px 16px', borderTop: `1px solid ${borderColor}` }}>
-                  <p style={{ fontSize: '14px', color: darkMode ? '#c0c0c0' : '#495057', margin: '14px 0', lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>{notice.content}</p>
-                  {isAdmin && (
-                    <button onClick={() => handleDelete(notice.id)} style={{ padding: '7px 16px', background: 'var(--accent-light)', color: '#ff4757', border: '1px solid #ffd0d4', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
-                      삭제
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

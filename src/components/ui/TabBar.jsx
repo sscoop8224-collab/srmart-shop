@@ -9,7 +9,7 @@ const TABS = [
   { key: 'cart', icon: 'cart', label: '장바구니', pages: ['cart'], login: true },
   { key: 'orders', icon: 'receipt', label: '주문내역', pages: ['orders', 'purchases', 'receipt'], login: true },
   // 마이는 로그인 안 해도 연다(S47 — 로그인·회원가입 단추가 있는 마이) · 묶음 5
-  { key: 'mypage', icon: 'user', label: '마이', pages: ['mypage', 'wishlist', 'notificationSettings', 'about'] },
+  { key: 'mypage', icon: 'user', label: '마이', pages: ['mypage', 'wishlist', 'notificationSettings', 'about', 'notice'] },
 ];
 
 export default function TabBar({ page, cartCount = 0, loggedIn, onGo, onNeedLogin }) {

@@ -117,6 +117,11 @@ function route(pathname, method, search, opts = {}) {
   if (/^\/stores\/\d+\/delivery-promise$/.test(pathname)) return j(DELIV[opts.deliv || 'today']);
   if (pathname === '/signup-coupon') return j(opts.noCoupon ? { enabled: false } : { enabled: true, label: '신규회원 10% 할인 쿠폰', sub: '2만 원 이상 주문 · 가입 후 30일' });
   if (pathname === '/shop/business-info') return j(bizInfo);
+  // 공지(묶음 5 S26) — 서버 shopContent.js 와 같은 모양(created_at 은 'YYYY-MM-DD HH:mm' 글자) · noNotices 면 비어 있음
+  if (pathname === '/shop/notices') return j(opts.noNotices ? [] : [
+    { id: 2, store_id: null, title: '추석 연휴 배송 안내', body: '11월 15일은 배송이 하루 늦어질 수 있어요.', is_pinned: 1, is_visible: 1, created_at: '2026-11-01 09:00', updated_at: '2026-11-01 09:00' },
+    { id: 1, store_id: 11, title: '왕길점 영업시간 변경', body: '11월부터 밤 10시까지 영업해요.', is_pinned: 0, is_visible: 1, created_at: '2026-10-20 10:00', updated_at: '2026-10-20 10:00' },
+  ]);
   if (pathname === '/categories') return j(catRows);
   if (pathname === '/banners') return j(opts.noBanners ? [] : opts.bannerTokenBg ? banners.map(({ bg, ...b }) => b) : banners);   // bannerTokenBg — 관리자가 고른 색(bg) 없이: 목업처럼 토큰 초록으로(모양만 비교)
   if (pathname === '/splash-ads') return j([]);

@@ -186,6 +186,10 @@ const BUNDLES = {
     { id: 'S33', name: '로그아웃 확인', state: '확인', go: async p => { await myOf(p, { row: '로그아웃' }); }, part: ['.alert', '.alert'] },
     { id: 'S33D', mock: 'S33', name: '로그아웃 완료 안내', state: '완료 안내', go: async p => { await myOf(p, { row: '로그아웃' }); await p.locator('.alert .af button', { hasText: '로그아웃' }).click(); await wait(p, 900); }, part: ['.alert', '.alert'] },
     { id: 'S40', name: '회사 소개·사업자 정보', state: '쿠폰 켬 · 오늘 도착', go: async p => { await myOf(p, { guest: true, row: '회사 소개·사업자 정보' }); } },
+    // 공지(S26) — 마이 → 공지사항 · 첫 줄을 펼친 모양(목업 「목록」)
+    { id: 'S26', name: '공지사항 — 목록', state: '목록', go: async p => { await myOf(p, { guest: true, row: '공지사항' }); await p.locator('.nt-row').first().click(); await wait(p, 300); }, part: ['.group', '.v2 .group'] },
+    { id: 'S26E', mock: 'S26', name: '공지사항 — 비어 있음', state: '비어 있음', opts: { noNotices: true }, go: async p => { await myOf(p, { guest: true, row: '공지사항' }); }, part: ['.empty', '.v2 .ui-empty'] },
+    { id: 'S26A', mock: 'S26', name: '공지사항 — 관리자 등록', state: '관리자 등록', opts: { user: { ...customer, role: 'owner', username: 'owner_demo' } }, go: async p => { await myOf(p, { row: '공지사항' }); await p.getByRole('button', { name: '+ 등록' }).click(); await p.locator('#nt-title').focus(); await wait(p, 300); } },
     // 묶음 5 뒷부분 — 로그인(S27) · 회원가입 3단계(P04) · 찾기(S29) · 첫 로그인 비밀번호(S31) · 매장 이용 동의(S32)
     { id: 'S27', name: '로그인', state: '기본', go: async p => { await loginPage(p); await fillLogin(p); await p.getByPlaceholder(/비밀번호를 입력해 ?주세요/).focus(); await wait(p, 300); }, part: ['.auth', '.v2 .auth'] },
     { id: 'S27E', mock: 'S27', name: '로그인 — 오류', state: '오류', opts: { loginFail: true }, go: async p => { await loginPage(p); await fillLogin(p); await p.getByRole('button', { name: '로그인', exact: true }).filter({ visible: true }).first().click(); await wait(p, 700); await p.locator('body').click({ position: { x: 5, y: 5 } }); }, part: ['.auth', '.v2 .auth'] },
@@ -308,10 +312,15 @@ async function sheet(browser, rows, theme, ids, suffix, pageLabel) {
 (async () => {
   const list = BUNDLES[BUNDLE];
   if (!list) throw new Error(`묶음 ${BUNDLE} 화면 목록이 없다`);
+  // --only S26,S26A — 그 화면만 다시 찍는다. 숫자(report)·시트는 지난 결과와 **합쳐서** 다시 쓴다(나머지 줄이 사라지지 않게)
+  const ONLY = (arg('--only', '') || '').split(',').map(x => x.trim()).filter(Boolean);
+  const unknown = ONLY.filter(id => !list.some(s => s.id === id));
+  if (unknown.length) throw new Error(`--only 에 묶음 ${BUNDLE} 에 없는 화면: ${unknown.join(',')}`);
+  const shootList = ONLY.length ? list.filter(s => ONLY.includes(s.id)) : list;
   for (const d of [APP_DIR, CMP_DIR, OUT, path.join(OUT, 'parts')]) fs.mkdirSync(d, { recursive: true });
   const browser = await chromium.launch();
   const rows = [];
-  for (const s of list) {
+  for (const s of shootList) {
     for (const size of sizesOf(s)) for (const theme of ['light', 'dark']) {
       const m = await shootMock(browser, s, size, theme);
       let a;
@@ -339,6 +348,14 @@ async function sheet(browser, rows, theme, ids, suffix, pageLabel) {
     console.log(`${s.id} ${s.name} — ${mine.map(r => `${r.label}${r.part ? '·부품' : ''}·${r.theme === 'dark' ? '어둡게' : '밝게'} ${r.pct}%`).join(' | ')}${mine.some(r => r.errors.length) ? ' 🔴 스크립트 오류: ' + [...new Set(mine.flatMap(r => r.errors))].join(' / ') : ''}`);
   }
   const relp = f => path.relative(ROOT, f).split(path.sep).join('/');
+  if (ONLY.length) {
+    let old = [];
+    try { old = JSON.parse(fs.readFileSync(path.join(OUT, 'report.json'), 'utf8')); } catch { /* 지난 결과가 없으면 이번 것만 */ }
+    const kept = old.filter(r => !ONLY.includes(r.id)).map(r => ({ ...r, errors: r.errors || [], mockFile: path.join(ROOT, r.mockFile), appFile: path.join(ROOT, r.appFile), diffFile: path.join(ROOT, r.diffFile) }));
+    const order = id => list.findIndex(x => x.id === id);
+    const all = [...kept, ...rows].sort((a, b) => order(a.id) - order(b.id));
+    rows.length = 0; rows.push(...all);
+  }
   fs.writeFileSync(path.join(OUT, 'report.json'), JSON.stringify(rows.map(r => ({ ...r, mockFile: relp(r.mockFile), appFile: relp(r.appFile), diffFile: relp(r.diffFile) })), null, 1));
   const md = [`# 묶음 ${BUNDLE} 픽셀 차이 (${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC)`, '', '| 화면 | 크기 | 비교 | 밝게 % | 어둡게 % |', '|---|---|---|---|---|'];
   for (const s of list) for (const size of sizesOf(s)) for (const part of [false, true]) {

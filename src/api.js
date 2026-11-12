@@ -58,6 +58,10 @@ export const getSignupCoupon = () => API.get('/signup-coupon');
 export const getDeliveryPromise = (storeId) => API.get(`/stores/${storeId}/delivery-promise`);
 // 홈 맨 아래 사업자 정보(묶음 2) — 어드민 「사업자 정보」(대표만)에서 채운다. 빈 칸은 화면이 안 그린다.
 export const getBusinessInfo = () => API.get('/shop/business-info');
+// 공지사항(묶음 5 S26 · F2) — 손님: 전 매장 공지 + 이 매장 공지. 관리자 등록·숨기기는 어드민 「공지 관리」와 같은 경로
+export const getShopNotices = (storeId) => API.get('/shop/notices', storeId ? { params: { store_id: storeId } } : {});
+export const createShopNotice = (data) => API.post('/admin/shop-notices', data);
+export const hideShopNotice = (id) => API.put(`/admin/shop-notices/${id}/visible`, { visible: false });
 // 진행 중인 행사(프로모션) — 상품마다 `promo_price`(1개만 사도 깎이는 행사) 또는 문구(`label`).
 export const getActivePromotions = (storeId) => API.get('/promotions/active', storeId ? { params: { store_id: storeId } } : {});
 export const getCategories = () => API.get('/categories');
