@@ -1,7 +1,18 @@
 import { useState, useEffect } from 'react';
+import { getSignupCoupon } from '../api';
 
 export default function HomePage({ onShop, onLogin, darkMode }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  // 가입 쿠폰 — 서버가 「지급 가능」 이라고 할 때만 그린다(2026-11-12 지시 1). 실패·꺼짐이면 쿠폰 말을 아예 안 한다.
+  const [signupCoupon, setSignupCoupon] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+    getSignupCoupon()
+      .then(res => { if (alive && res.data && res.data.enabled && res.data.label) setSignupCoupon(res.data); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth < 768);
@@ -176,14 +187,14 @@ export default function HomePage({ onShop, onLogin, darkMode }) {
         padding: 'clamp(48px, 8vw, 80px) clamp(20px, 5vw, 80px)',
         textAlign: 'center',
       }}>
-        {/* 배지 */}
-        <div style={{
+        {/* 배지 — 가입 쿠폰을 실제로 줄 수 있을 때만 */}
+        {signupCoupon && <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
           background: 'rgba(255,255,255,0.22)', borderRadius: 20,
           padding: '5px 16px', marginBottom: 24,
         }}>
-          <span style={{ fontSize: 13, color: 'white', fontWeight: 600 }}>🎁 신규회원 10% 할인 쿠폰 증정</span>
-        </div>
+          <span style={{ fontSize: 13, color: 'white', fontWeight: 600 }}>🎁 {signupCoupon.label} 증정</span>
+        </div>}
 
         <h2 style={{
           fontSize: 'clamp(24px, 4vw, 42px)', fontWeight: 900, color: 'white',
@@ -192,7 +203,9 @@ export default function HomePage({ onShop, onLogin, darkMode }) {
           지금 바로 시작하세요
         </h2>
         <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.85)', margin: '0 0 36px' }}>
-          가입하면 바로 사용 가능한 10% 할인 쿠폰을 드립니다.
+          {signupCoupon
+            ? `가입하면 ${signupCoupon.label}을 드려요.${signupCoupon.sub ? ` (${signupCoupon.sub})` : ''}`
+            : '우리 동네 에스알마트 장보기, 지금 시작해 보세요.'}
         </p>
 
         <button onClick={onShop} style={{

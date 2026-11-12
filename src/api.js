@@ -50,6 +50,9 @@ export const login = (username, password) => API.post('/login', { username, pass
 // 매장만, 공개 항목(전화·영업시간·우편번호·표시 이름)과 함께 준다. 옛 서버는 이 값을 무시하고
 // 전체를 주므로 배포 순서가 어긋나도 깨지지 않는다.
 export const getStores = () => API.get('/stores', { params: { audience: 'customer' } });
+// 가입 쿠폰 문구 — 서버가 「지급 가능」(정책 켬 + 문자 인증 연동 켬)일 때만 { enabled:true, label, sub } 를 준다.
+// 🔴 화면은 이 값에만 따른다. 쿠폰 금액·문구를 화면에 직접 적지 않는다(지킬 수 없는 약속이 된다).
+export const getSignupCoupon = () => API.get('/signup-coupon');
 // 진행 중인 행사(프로모션) — 상품마다 `promo_price`(1개만 사도 깎이는 행사) 또는 문구(`label`).
 export const getActivePromotions = (storeId) => API.get('/promotions/active', storeId ? { params: { store_id: storeId } } : {});
 export const getCategories = () => API.get('/categories');
