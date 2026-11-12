@@ -35,8 +35,20 @@ const banners = [
   { id: 2, label: '신선 코너', title: '청송 사과 특가', sub: '산지 직송으로 더 싱싱하게', bg: 'linear-gradient(135deg,#ff8a3d,#ff5e57)', emoji: '🍎', filter: '농산물' },
 ];
 
+// 홍보 이벤트 — 서버 `events` 표 모양(title · description · start/end · image_url) · 문구는 목업 EVENTS 그대로(묶음 6 S45)
 const events = [
-  { name: '2+1', event_type: '퍼센트할인', discount_value: 30, products: JSON.stringify([{ id: 101 }, { id: 108 }]) },
+  { id: 1, title: '과자 2+1 행사', description: '좋아하는 과자를 셋 사면 하나는 덤으로 드려요.', start_date: '2026-10-31T15:00:00.000Z', end_date: '2026-11-30T14:59:59.000Z', is_active: 1, image_url: null },
+  { id: 2, title: '음료 20% 할인', description: '시원한 음료를 20% 싸게 — 왕길점만.', start_date: '2026-11-09T15:00:00.000Z', end_date: '2026-11-20T14:59:59.000Z', is_active: 1, image_url: null },
+];
+// 공개 행사 — 서버 publicPromotions 모양 · event_ids 로 이벤트와 잇는다(2 의 행사는 연결된 상품이 없다 — opts.noLinked 로 비움)
+const promotions = [
+  { id: 41, name: '과자 2+1', label: '2+1', kind: 'bundle', event_ids: [1], products: [
+    { product_id: 101, name: '농심 메론킥', spec: '60g', price: 1450, promo_price: null },
+    { product_id: 108, name: '허니버터칩', spec: '120g', price: 3300, promo_price: null },
+  ] },
+  { id: 42, name: '음료 20%', label: '20%', kind: 'percent', event_ids: [2], products: [
+    { product_id: 102, name: '코카콜라', spec: '1.5L', price: 3200, promo_price: 2560 },
+  ] },
 ];
 
 const customer = {
@@ -141,7 +153,11 @@ function route(pathname, method, search, opts = {}) {
     if (opts.manyProducts) return j([0, 1, 2, 3].flatMap(k => products.map(p => (k ? { ...p, id: p.id + k * 100 } : p))));   // 32개 — 회전 검사가 스크롤을 잴 수 있게
     return j(opts.noProducts ? [] : products);
   }
-  if (pathname === '/events/active') return j(events);
+  if (pathname === '/events/active') return j(opts.noEvents ? [] : events);
+  if (pathname === '/promotions/active') {
+    const ev = Number(new URLSearchParams(search).get('event_id')) || null;
+    return j(promotions.filter((p) => !ev || (!opts.noLinked && p.event_ids.includes(ev))));
+  }
   if (pathname === '/login') {
     if (opts.loginFail) return j({ error: '아이디 또는 비밀번호가 틀려요!' }, 401);
     // mustChange — 임시 비밀번호로 로그인(목업 S31) · needsConsent — 매장 이용 동의를 아직 안 물은 회원(목업 S32)

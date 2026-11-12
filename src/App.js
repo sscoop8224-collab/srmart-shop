@@ -44,6 +44,7 @@ const RecentViews = lazy(() => import('./pages/RecentViews'));
 const MyReviews = lazy(() => import('./pages/MyReviews'));
 const StoreInfo = lazy(() => import('./pages/StoreInfo'));
 const CustomerCenter = lazy(() => import('./pages/CustomerCenter'));
+const Events = lazy(() => import('./pages/Events'));
 const Receipt = lazy(() => import('./pages/Receipt'));
 const MyPage = lazy(() => import('./pages/MyPage'));
 const About = lazy(() => import('./pages/About'));
@@ -667,7 +668,7 @@ function AppContent() {
   }
 
   // 목업대로 옮긴 화면 — 바탕을 목업의 --bg 로(옛 화면은 --white 그대로). 묶음이 늘 때마다 여기에 더한다
-  const v2Page = ['home', 'search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt', 'orders', 'purchases', 'mypage', 'wishlist', 'about', 'notice', 'recentViews', 'myReviews', 'storeInfo', 'customerCenter'].includes(page);
+  const v2Page = ['home', 'search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt', 'orders', 'purchases', 'mypage', 'wishlist', 'about', 'notice', 'recentViews', 'myReviews', 'storeInfo', 'customerCenter', 'events'].includes(page);
   // 아래 고정 바가 있는 화면은 탭바를 안 그린다(목업 S04·S08·S12·P03 — 바가 탭바를 덮던 것). 빈 장바구니(S09)는 탭바 — 묶음 3
   const noTab = ['productDetail', 'quickOrder', 'orderSheet', 'receipt'].includes(page) || (page === 'cart' && cart.length > 0) || (ordersDetail && (page === 'orders' || page === 'purchases'));
 
@@ -679,7 +680,7 @@ function AppContent() {
       {mcpUser && <ForcePasswordChangeModal onDone={handleForcePasswordChangeDone} />}
       {/* 헤더(P05) — 로고 이미지 · 매장 · AI 상담 · 종 · 로그인. 로그아웃은 마이 맨 아래(결정 11) — 묶음 1 */}
       {/* 검색 화면은 검색창이 헤더다(목업 S06) — 묶음 2 */}
-      {!['search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt', 'orders', 'purchases', 'mypage', 'wishlist', 'about', 'notice', 'recentViews', 'myReviews', 'storeInfo', 'customerCenter'].includes(page) && <AppHeader
+      {!['search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt', 'orders', 'purchases', 'mypage', 'wishlist', 'about', 'notice', 'recentViews', 'myReviews', 'storeInfo', 'customerCenter', 'events'].includes(page) && <AppHeader
         storeName={storeShort}
         onStoreClick={!user && !isOwner ? () => setShowStoreModal(true) : null}
         onHome={() => goToPage('home')}
@@ -734,6 +735,7 @@ function AppContent() {
         {page === 'recentViews'     && <RecentViews products={products} wishlist={wishlist} adultOk={!!(currentUser && currentUser.isAdult)} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWish={toggleWishlist} goBack={goBack} goToHome={() => goToPage('home')} />}
         {/* 묶음 6 — 매장안내(S44)·고객센터(S46) · 매장 바꾸기는 점포 선택과 같은 사람만(손님 · 대표 미리보기) — 회원은 가입 매장 */}
         {page === 'storeInfo'       && <StoreInfo goBack={goBack} onChooseStore={isOwner ? (id) => { setOwnerViewStoreId(id); handleStoreSelected(id); } : !user ? (id) => { setGuestStoreId(id); handleStoreSelected(id); } : null} />}
+        {page === 'events'          && <Events storeId={currentStoreId} products={products} wishlist={wishlist} adultOk={!!(currentUser && currentUser.isAdult)} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWish={toggleWishlist} goBack={goBack} goToHome={() => goToPage('home')} />}
         {page === 'customerCenter'  && <CustomerCenter goBack={goBack} onOpenChat={() => setChatOpen(true)} />}
         {page === 'myReviews'       && <MyReviews products={products} goBack={goBack} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} />}
         {/* 찜(S19) — 카드는 지금 매장 상품 목록의 값(가격·품절·행사)으로. 이 매장에 없는 상품은 품절로 보인다(담을 수 없다) — 묶음 5 */}
@@ -749,7 +751,7 @@ function AppContent() {
         {page === 'notificationSettings' && <NotificationSettings goBack={goBack} />}
         {/* 마이(P02) — 로그인 안 한 손님도 연다(S47 — 로그인·회원가입 단추) · 묶음 5 */}
         {page === 'mypage'          && <MyPage user={user ? currentUser : null} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} users={users} setUsers={setUsers} isAdmin={isAdmin} onLogin={() => setPage('login')} onSignup={() => { setLoginMode('signup'); setPage('login'); }} />}
-        {page === 'about'           && <About user={user} storeId={currentStoreId} storeShort={storeShort} goBack={goBack} onShop={() => goToPage('home')} onNotice={() => goToPage('notice')} onStores={() => goToPage('storeInfo')} onHelp={() => goToPage('customerCenter')} onSignup={() => { setLoginMode('signup'); setPage('login'); }} />}
+        {page === 'about'           && <About user={user} storeId={currentStoreId} storeShort={storeShort} goBack={goBack} onShop={() => goToPage('home')} onNotice={() => goToPage('notice')} onStores={() => goToPage('storeInfo')} onEvents={() => goToPage('events')} onHelp={() => goToPage('customerCenter')} onSignup={() => { setLoginMode('signup'); setPage('login'); }} />}
         </Suspense>
 
         {/* 제3자 제공 동의 팝업 — 로그인 직후 자동으로 뜨는 것 말고, 구매 내역에서

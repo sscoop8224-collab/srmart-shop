@@ -215,6 +215,11 @@ const BUNDLES = {
     { id: 'S44', name: '매장안내 — 목록', state: '목록', go: async p => { await aboutChip(p, '매장안내'); }, part: ['.store-card', '.v2 .store-card'] },
     { id: 'S44C', mock: 'S44', name: '매장안내 — 매장 바꾸기 확인', state: '매장 바꾸기 확인', go: async p => { await aboutChip(p, '매장안내'); await p.getByRole('button', { name: '이 매장으로' }).last().click(); await wait(p, 400); }, part: ['.alert', '.alert'] },
     { id: 'S44X', mock: 'S44', name: '매장안내 — 불러오지 못함', state: '불러오지 못함', opts: { storesFail: true }, go: async p => { await aboutChip(p, '매장안내'); }, part: ['.empty', '.v2 .ui-empty'] },
+    // 이벤트(S45) — 마이 → 회사 소개 → 「이벤트」
+    { id: 'S45', name: '이벤트 — 목록', state: '목록', go: async p => { await aboutChip(p, '이벤트'); }, part: ['.ev-card', '.v2 .ev-card'] },
+    { id: 'S45D', mock: 'S45', name: '이벤트 — 상세·행사 상품', state: '이벤트 상세 · 행사 상품', go: async p => { await aboutChip(p, '이벤트'); await p.locator('.ev-go').first().click(); await wait(p, 900); }, part: ['.banner', '.v2 .ev-banner'] },
+    { id: 'S45N', mock: 'S45', name: '이벤트 — 연결된 행사 없음', state: '연결된 행사 없음', opts: { noLinked: true }, go: async p => { await aboutChip(p, '이벤트'); await p.locator('.ev-go').first().click(); await wait(p, 900); }, part: ['.empty', '.v2 .ui-empty'] },
+    { id: 'S45E', mock: 'S45', name: '이벤트 — 비어 있음', state: '비어 있음', opts: { noEvents: true }, go: async p => { await aboutChip(p, '이벤트'); }, part: ['.empty', '.v2 .ui-empty'] },
     { id: 'S46', name: '고객센터 — 기본', state: '기본', go: async p => { await aboutChip(p, '고객센터'); }, part: ['.group', '.v2 .group'] },
     { id: 'S46O', mock: 'S46', name: '고객센터 — 질문 펼침', state: '질문 펼침', go: async p => { await aboutChip(p, '고객센터'); await p.locator('.faq-row').first().click(); await wait(p, 300); }, part: ['.faq .group', '.v2 .faq .group'] },
     { id: 'S42D', mock: 'S42', name: '내 리뷰 — 삭제 확인', state: '삭제 확인', go: async p => { await myOf(p, { row: '내 리뷰' }); await p.locator('.mr-del').first().click(); await wait(p, 400); }, part: ['.alert', '.alert'] },

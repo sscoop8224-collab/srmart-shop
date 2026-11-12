@@ -65,7 +65,8 @@ export const getShopNotices = (storeId) => API.get('/shop/notices', storeId ? { 
 export const createShopNotice = (data) => API.post('/admin/shop-notices', data);
 export const hideShopNotice = (id) => API.put(`/admin/shop-notices/${id}/visible`, { visible: false });
 // 진행 중인 행사(프로모션) — 상품마다 `promo_price`(1개만 사도 깎이는 행사) 또는 문구(`label`).
-export const getActivePromotions = (storeId) => API.get('/promotions/active', storeId ? { params: { store_id: storeId } } : {});
+// eventId(묶음 6 S45) — 그 이벤트에 연결된 행사만(이벤트↔행사 event_promotions)
+export const getActivePromotions = (storeId, eventId) => API.get('/promotions/active', storeId ? { params: { store_id: storeId, ...(eventId ? { event_id: eventId } : {}) } } : {});
 export const getCategories = () => API.get('/categories');
 export const getBanners = (storeId) => API.get('/banners', storeId ? { params: { store_id: storeId } } : {});
 // 스플래시 광고(콜드스타트 2번째 화면). 활성 광고 목록(공용+매장), 노출순서.
