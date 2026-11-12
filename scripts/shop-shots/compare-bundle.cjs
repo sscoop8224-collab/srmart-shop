@@ -59,6 +59,8 @@ async function login(p) {
 const pd = async (p, name) => { await p.locator('.pgrid .pc', { hasText: name }).first().locator('img').click(); await wait(p, 1000); };
 const cartOf = async p => { await login(p); await p.locator('.pgrid .add').nth(0).click(); await wait(p, 250); await p.locator('.pgrid .add').nth(1).click(); await wait(p, 250); await tab(p, '장바구니').click(); await wait(p, 1200); };
 // P03 — 장바구니의 「주문하기」 → 주문서(배송지·할인·결제 금액은 여기)
+// 주문내역(P01) — 로그인 → 탭바 「주문내역」 → 맨 위 탭
+const ordersOf = async (p, t) => { await login(p); await tab(p, '주문내역').click(); await wait(p, 1200); if (t) { await p.getByRole('tab', { name: t }).click(); await wait(p, 500); } };
 const orderOf = async p => { await cartOf(p); await p.getByRole('button', { name: '주문하기', exact: true }).click(); await wait(p, 1200); };
 const tab = (p, label) => p.locator('.tabbar .tab', { hasText: label }).first();
 
@@ -129,6 +131,18 @@ const BUNDLES = {
     { id: 'P03C', mock: 'P03', name: '주문서 — 쿠폰 시트(목업에 없는 상태)', go: async p => { await orderOf(p); await p.locator('.v2 .row.tap', { hasText: '쿠폰' }).first().click(); await wait(p, 500); } },
     { id: 'S13', name: '주문 완료(영수증)', go: async p => { await orderOf(p); await p.locator('.pay-bar button').click(); await wait(p, 1500); }, part: ['.bar', '.v2 .bar'] },
     { id: 'S12', name: '바로 주문', state: '기본', go: async p => { await login(p); await pd(p, '메론킥'); await p.getByRole('button', { name: '바로 주문', exact: true }).click(); await wait(p, 1200); }, part: ['.bar', '.v2 .bar'] },
+  ],
+  // 4 — 주문내역(P01) · 환불·교환(S15) · 매장 영수증(S17) · 온라인 주문 상세(S18)
+  4: [
+    { id: 'P01', name: '주문내역 — 전체', state: '전체', go: async p => { await ordersOf(p); }, part: ['.ocard', '.v2 .ocard'] },
+    { id: 'P01O', mock: 'P01', name: '주문내역 — 온라인', state: '온라인', go: async p => { await ordersOf(p, '온라인'); }, part: ['.ocard', '.v2 .ocard'] },
+    { id: 'P01S', mock: 'P01', name: '주문내역 — 매장', state: '매장', go: async p => { await ordersOf(p, '매장'); }, part: ['.ocard', '.v2 .ocard'] },
+    { id: 'P01N', mock: 'P01', name: '주문내역 — 매장 · 미동의', state: '매장 · 미동의', opts: { noConsent: true }, go: async p => { await ordersOf(p, '매장'); }, part: ['.notice.g', '.v2 .notice.g'] },
+    { id: 'P01E', mock: 'P01', name: '주문내역 — 비어 있음', state: '비어 있음', opts: { noOrders: true }, go: async p => { await ordersOf(p); }, part: ['.empty', '.v2 .ui-empty'] },
+    { id: 'S15', name: '환불 요청 시트', go: async p => { await ordersOf(p, '온라인'); await p.getByRole('button', { name: '환불 요청', exact: true }).first().click(); await wait(p, 600); }, part: ['.sheet', '.sheet.v2'] },
+    { id: 'S17', name: '매장 영수증 — 정상', state: '정상', go: async p => { await ordersOf(p, '매장'); await p.getByRole('button', { name: '영수증 보기' }).first().click(); await wait(p, 900); }, part: ['.receipt', '.v2 .receipt'] },
+    { id: 'S17V', mock: 'S17', name: '매장 영수증 — 취소된 거래', state: '취소된 거래', opts: { voidedReceipt: true }, go: async p => { await ordersOf(p, '매장'); await p.getByRole('button', { name: '영수증 보기' }).first().click(); await wait(p, 900); }, part: ['.receipt', '.v2 .receipt'] },
+    { id: 'S18', name: '온라인 주문 상세', go: async p => { await ordersOf(p, '온라인'); await p.locator('.ocard .oh').first().click(); await wait(p, 900); }, part: ['.timeline', '.v2 .timeline'] },
   ],
 };
 

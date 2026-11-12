@@ -69,7 +69,7 @@ const storePurchase = {
   payments: [{ seq: 1, method: 'card', amount: 23450, status: 'approved' }],
 };
 const onlinePurchase = {
-  id: 'order_1762480000000', date: '2026-11-07T10:12:00+09:00', total_price: 21350, delivery_fee: 3000, coupon_discount: 1000, points_used: 0,
+  id: 'order_1762480000000', date: '2026-11-07T10:12:00+09:00', total_price: 19350, total: 21350, delivery_fee: 3000, coupon_discount: 1000, points_used: 0,   // 서버처럼 total(낸 돈)을 따로 싣는다(목업 S18)
   status: '배송완료', courier: 'CJ대한통운', tracking_number: '640123456789', payment_method: '카카오페이',
   items: [
     { name: '농심 메론킥', spec: '60g', qty: 5, unit_price: 1450, line_total: 7250 },
@@ -131,7 +131,7 @@ function route(pathname, method, search, opts = {}) {
     if (opts.loginFail) return j({ error: '아이디 또는 비밀번호가 틀려요!' }, 401);
     return j({ token: 'mock.token.value', user });
   }
-  if (pathname === '/orders/my') return j(myOrders);
+  if (pathname === '/orders/my') return j(opts.noOrders ? [] : myOrders);   // noOrders — 주문내역 비어 있음(목업 P01)
   if (pathname === '/users/me/wishlist') return j(opts.emptyWish ? [] : [products[0], products[3]]);
   if (pathname === '/wishlist') return j({ wishlisted: true, message: '찜 목록에 담았어요!' });
   if (opts.benefitsFail && (pathname === '/me/points' || pathname === '/users/me/coupons')) return { abort: true };   // 보유 쿠폰·포인트를 못 불러옴(목업 S10)
@@ -139,8 +139,10 @@ function route(pathname, method, search, opts = {}) {
   if (pathname === '/users/me/coupons') return j(userCoupons);
   if (pathname === '/coupons/my') return j(userCoupons.filter(c => !c.used_at));
   if (pathname === '/users/me/login-history') return j(loginHistory);
+  if (pathname === '/me/purchases' && opts.noOrders) return j({ store_visible: true, purchases: [] });
   if (pathname === '/me/purchases') return j(opts.noConsent ? { ...purchases, store_visible: false, purchases: purchases.purchases.filter(p => p.kind === 'online') } : purchases);
-  if (pathname.startsWith('/me/purchases/store/')) return j(storePurchase);
+  // voidedReceipt — 취소된 매장 거래(목업 S17 「취소된 거래」)
+  if (pathname.startsWith('/me/purchases/store/')) return j(opts.voidedReceipt ? { ...storePurchase, voided: true, voided_at: '2026-11-10T18:40:00+09:00', payments: storePurchase.payments.map(p => ({ ...p, status: 'canceled' })) } : storePurchase);
   if (pathname.startsWith('/me/purchases/online/')) return j(onlinePurchase);
   // reviewsFail — 응답 자체가 없다(인터넷 끊김) · noReviews — 리뷰 0개(첫 리뷰)
   if (/^\/products\/\d+\/reviews$/.test(pathname)) return opts.reviewsFail ? { abort: true } : j(opts.noReviews ? { reviews: [], stats: { avg_rating: 0, total: 0 } } : reviews);

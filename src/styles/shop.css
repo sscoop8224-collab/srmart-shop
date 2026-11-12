@@ -310,3 +310,53 @@
 }
 .v2 .pill.b { background: var(--info-soft); color: var(--info); }
 .v2 .receipt-v2 .ui-empty, .v2.receipt-v2 .ui-empty { padding-bottom: var(--sp-4); }
+
+/* ── 묶음 4 — 주문내역(P01) · 환불·교환(S15) · 매장 영수증(S17) · 온라인 주문 상세(S18) — 목업 .ocard·.receipt·.timeline 그대로 ── */
+.v2 .olist > * + * { margin-top: var(--sp-3); }
+.v2 .ocard { background: var(--card); border-radius: var(--r-md); overflow: hidden; box-shadow: var(--shadow-1); }
+.v2 .ocard.dim { opacity: .55; }
+.v2 .ocard .oh { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4); width: 100%; text-align: left; color: var(--text); }
+.v2 .ocard .oh > div { min-width: 0; }
+.v2 .ocard .oh b { font-size: var(--fs-callout); }
+.v2 .ocard .oh small { display: block; font-size: var(--fs-cap); color: var(--text-3); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v2 .ocard .strip { padding: var(--sp-2) var(--sp-4); font-size: var(--fs-foot); line-height: var(--lh); color: var(--text); }
+.v2 .ocard .strip.r { background: var(--danger-soft); } .v2 .ocard .strip.o { background: var(--warning-soft); }
+.v2 .ocard .strip.g { background: var(--brand-soft); } .v2 .ocard .strip.b { background: var(--info-soft); }
+.v2 .t-r { color: var(--danger); } .v2 .t-o { color: var(--warning-strong, var(--warning)); } .v2 .t-g { color: var(--brand-strong); } .v2 .t-b { color: var(--info); }
+.v2 .ocard .oi { display: flex; align-items: center; gap: var(--sp-3); width: 100%; padding: var(--sp-2) var(--sp-4); border-top: var(--hairline) solid var(--sep); text-align: left; font-size: var(--fs-sub); color: var(--text); }
+.v2 .ocard .oi .lbl { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v2 .ocard .oi .chev { color: var(--text-3); display: inline-flex; }
+.v2 .ocard .of { padding: var(--sp-3) var(--sp-4); border-top: var(--hairline) solid var(--sep); }
+.v2 .ocard .of .kv { padding: 0; }
+.v2 .ocard .of .kv.ship { padding-top: var(--sp-2); font-size: var(--fs-foot); color: var(--text-2); }
+.v2 .ocard .of .kv.ship span { display: inline-flex; align-items: center; gap: var(--sp-1); }
+.v2 .ocard .of > .ui-btn, .v2 .ocard .of > .btn-row { margin-top: var(--sp-3); }
+.v2 .btn-row { display: flex; gap: var(--sp-2); }
+.v2 .btn-row > * { flex: 1; }
+.v2 .check { width: 22px; height: 22px; border-radius: var(--r-full); border: 1.5px solid var(--sep-strong); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--on-brand); }
+.v2 .check.on { background: var(--brand); border-color: var(--brand); }
+.v2 .receipt { background: var(--card); border-radius: var(--r-md); padding: var(--sp-5) var(--sp-4); box-shadow: var(--shadow-1); position: relative; overflow: hidden; }
+.v2 .receipt h2 { text-align: center; font-size: var(--fs-title3); font-weight: var(--fw-bold); margin: 0; }
+.v2 .receipt .c { text-align: center; font-size: var(--fs-cap); color: var(--text-2); }
+.v2 .receipt .c.t-r { color: var(--danger); font-weight: var(--fw-semibold); margin-top: var(--sp-2); }
+.v2 .receipt .dash { border-top: 1px dashed var(--sep-strong); margin: var(--sp-3) 0; }
+.v2 .receipt table { width: 100%; border-collapse: collapse; font-size: var(--fs-foot); font-variant-numeric: tabular-nums; }
+.v2 .receipt td { padding: 3px 0; vertical-align: top; }
+.v2 .receipt td.n { text-align: right; white-space: nowrap; padding-left: var(--sp-2); }
+.v2 .receipt .sub { color: var(--text-2); font-size: var(--fs-cap); }
+.v2 .receipt .kv { padding: 2px 0; }
+/* 바코드는 테마를 따르지 않는다 — 어둡게에서도 흰 바탕 위 검은 막대·숫자여야 스캐너가 읽는다(on-brand 는 두 모드 모두 흰색) */
+.v2 .receipt .bc { max-width: 300px; margin: 0 auto; background: var(--on-brand); border-radius: var(--r-xs); padding: var(--sp-2) var(--sp-2) var(--sp-1); }
+.v2 .stamp { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) rotate(-12deg); border: 3px solid var(--danger); color: var(--danger); font-size: var(--fs-title1); font-weight: var(--fw-bold); padding: var(--sp-1) var(--sp-4); border-radius: var(--r-sm); opacity: .85; pointer-events: none; white-space: nowrap; }
+/* 🔴 취소 배너 — 계산원이 한눈에(목업에는 도장만 — 다르게 둔 곳) */
+.v2 .void-banner { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-bottom: var(--sp-3); padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); background: var(--danger-soft); border: 2px solid var(--danger); color: var(--danger); text-align: center; }
+.v2 .void-banner b { font-size: var(--fs-title3); letter-spacing: 2px; }
+.v2 .void-banner span { font-weight: var(--fw-semibold); }
+.v2 .void-banner small { font-size: var(--fs-foot); }
+.v2 .timeline { display: flex; justify-content: space-between; padding: var(--sp-3) var(--sp-4); font-size: var(--fs-cap2); color: var(--text-3); }
+.v2 .timeline span { display: flex; flex-direction: column; align-items: center; gap: var(--sp-1); }
+.v2 .timeline span i { width: 10px; height: 10px; border-radius: var(--r-full); background: var(--sep-strong); }
+.v2 .timeline span.on { color: var(--brand-strong); font-weight: var(--fw-semibold); }
+.v2 .timeline span.on i { background: var(--brand); }
+.v2 .row .link { display: inline-flex; align-items: center; gap: 2px; }
+.v2 a.link { text-decoration: none; display: inline-flex; align-items: center; gap: 2px; }

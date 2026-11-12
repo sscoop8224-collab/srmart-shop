@@ -33,8 +33,8 @@ import { initPush } from './pushSetup';
 // 코드 스플리팅: 홈(App 내 inline) 외 페이지는 지연 로드 → 초기 번들 축소(파싱 단축).
 const HomePage = lazy(() => import('./pages/HomePage'));
 const Login = lazy(() => import('./pages/Login'));
-const Orders = lazy(() => import('./pages/Orders'));
-const Purchases = lazy(() => import('./pages/Purchases'));
+// 주문내역(P01) — 예전 「주문내역」(Orders.js)과 「구매 내역」(Purchases.jsx)을 한 화면이 대신한다(묶음 4)
+const OrderHistory = lazy(() => import('./pages/OrderHistory'));
 const Cart = lazy(() => import('./pages/Cart'));
 const Search = lazy(() => import('./pages/Search'));
 const ProductDetail = lazy(() => import('./pages/ProductDetail'));
@@ -108,6 +108,7 @@ function AppContent() {
   const [needsConsent, setNeedsConsent] = useState(false);
   // 전자영수증 알림을 탭해 들어온 경우 그 매출 번호. 구매 내역이 열리면서 바로 그 영수증을 편다.
   const [pushSaleId, setPushSaleId] = useState(null);
+  const [ordersDetail, setOrdersDetail] = useState(false);   // 주문내역에서 영수증·주문 상세를 연 동안 — 탭바를 숨긴다(묶음 4)
   const [products, setProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [productsError, setProductsError] = useState(false);
@@ -656,9 +657,9 @@ function AppContent() {
   }
 
   // 목업대로 옮긴 화면 — 바탕을 목업의 --bg 로(옛 화면은 --white 그대로). 묶음이 늘 때마다 여기에 더한다
-  const v2Page = ['home', 'search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt'].includes(page);
+  const v2Page = ['home', 'search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt', 'orders', 'purchases'].includes(page);
   // 아래 고정 바가 있는 화면은 탭바를 안 그린다(목업 S04·S08·S12·P03 — 바가 탭바를 덮던 것). 빈 장바구니(S09)는 탭바 — 묶음 3
-  const noTab = ['productDetail', 'quickOrder', 'orderSheet', 'receipt'].includes(page) || (page === 'cart' && cart.length > 0);
+  const noTab = ['productDetail', 'quickOrder', 'orderSheet', 'receipt'].includes(page) || (page === 'cart' && cart.length > 0) || (ordersDetail && (page === 'orders' || page === 'purchases'));
 
   return (
     <div className={`App${v2Page ? ' app-v2' : ''}${noTab ? ' no-tab' : ''}`}>
@@ -675,7 +676,7 @@ function AppContent() {
       )}
       {/* 헤더(P05) — 로고 이미지 · 매장 · AI 상담 · 종 · 로그인. 로그아웃은 마이 맨 아래(결정 11) — 묶음 1 */}
       {/* 검색 화면은 검색창이 헤더다(목업 S06) — 묶음 2 */}
-      {!['search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt'].includes(page) && <AppHeader
+      {!['search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt', 'orders', 'purchases'].includes(page) && <AppHeader
         storeName={storeShort}
         onStoreClick={!user && !isOwner ? () => setShowStoreModal(true) : null}
         onHome={() => goToPage('home')}
@@ -733,8 +734,7 @@ function AppContent() {
         {page === 'quickOrder'      && <QuickOrder items={quickOrderItem ? [quickOrderItem] : []} title="바로 주문" onBack={goBack} onPayment={(finalPrice, extras) => handleQuickPayment(quickOrderItem, finalPrice, extras)} user={currentUser} />}
         {page === 'orderSheet'      && <QuickOrder items={cart} title="주문서" onBack={goBack} onPayment={handlePayment} user={currentUser} />}
         {page === 'cart'            && <Cart cart={cart} setCart={setCart} onOrder={() => goToPage('orderSheet')} onHome={() => goToPage('home')} />}
-        {page === 'orders'          && <Orders orders={orders} goBack={goBack} />}
-        {page === 'purchases'       && <Purchases goBack={goBack} onOpenConsent={() => setNeedsConsent(true)} openSaleId={pushSaleId} onOpened={() => setPushSaleId(null)} />}
+        {(page === 'orders' || page === 'purchases') && <OrderHistory orders={orders} onReloadOrders={loadMyOrders} onOpenConsent={() => setNeedsConsent(true)} openSaleId={pushSaleId} onOpened={() => setPushSaleId(null)} onShop={() => goToPage('home')} onDetail={setOrdersDetail} />}
         {page === 'receipt'         && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
         {page === 'notificationSettings' && <NotificationSettings goBack={goBack} />}
         {page === 'mypage'          && <MyPage user={currentUser} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} users={users} setUsers={setUsers} isAdmin={isAdmin} />}

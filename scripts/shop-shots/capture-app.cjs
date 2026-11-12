@@ -102,7 +102,8 @@ const SCREENS = [
   { id: 'S14', name: '주문내역', go: async p => { await login(p); await openMyMenu(p, '주문내역'); } },
   { id: 'S15', name: '환불·교환 요청', go: async p => { await login(p); await openMyMenu(p, '주문내역'); await btn(p, '환불 요청').click(); await wait(p, 500); } },
   { id: 'S16', name: '구매 내역', go: async p => { await login(p); await openMyMenu(p, '구매 내역'); } },
-  { id: 'S17', name: '매장 영수증', go: async p => { await login(p); await openMyMenu(p, '구매 내역'); await p.getByText('코카콜라 1.5L 외 4건').click(); await wait(p, 900); } },
+  { id: 'S17', name: '매장 영수증', go: async p => { await login(p); await openMyMenu(p, '구매 내역'); await btn(p, '영수증 보기').click();   // 주문내역(P01) — 매장 카드의 「영수증 보기」(묶음 4)
+    await wait(p, 900); } },
   { id: 'S18', name: '온라인 주문 상세', go: async p => { await login(p); await openMyMenu(p, '구매 내역'); await p.getByText('농심 메론킥 60g 외 2건').click(); await wait(p, 900); } },
   { id: 'S19', name: '찜 목록', go: async p => { await login(p); await nav(p, '찜').click(); await wait(p, 900); } },
   { id: 'S20', name: '마이페이지', go: async p => { await login(p); await nav(p, '마이').click(); await wait(p, 1000); } },
