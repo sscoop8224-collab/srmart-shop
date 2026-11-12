@@ -78,6 +78,11 @@ export const getMyPointHistory = () => API.get('/me/point-history');
 export const requestReturn = (orderId, data) => API.post(`/orders/${orderId}/returns`, data);
 export const getActiveEvents = () => API.get('/events/active');
 export const getMyActiveCoupons = () => API.get('/users/me/coupons');
+// 알림 설정(2026-11-12 지시 5) — 주문·배송 알림 / 혜택 알림(광고성) 따로.
+// 응답: { order_notify, order_notify_at, marketing_push, marketing_push_at } — _at 은 마지막으로 켜거나 끈 시각('YYYY-MM-DD HH:mm:ss' | null).
+export const getNotificationPrefs = () => API.get('/users/me/notification-prefs');
+// 바꿀 값만 보낸다 — { order_notify?, marketing_push? }. 같은 모양으로 돌아온다.
+export const updateNotificationPrefs = (patch) => API.put('/users/me/notification-prefs', patch);
 export const applyCoupon = (data) => API.post('/coupons/apply', data);
 // 검색
 export const searchProducts = (params) => API.get('/search', { params });

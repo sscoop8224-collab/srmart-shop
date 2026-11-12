@@ -256,11 +256,18 @@ function Login({ onLogin, onGuest }) {
   //     필요하다. 동의하지 않아도 가입·주문은 그대로 되고, 매장 포인트 통합과 **매장
   //     구매 내역 표시(전자영수증)** 만 빠진다.
   //
-  // "전체 동의" 체크박스는 두지 않는다 — 선택 항목이 함께 켜지면 분리한 의미가 없다.
+  //   · 혜택 알림(행사·쿠폰) 수신 [선택] (2026-11-12 지시 5) — **광고성 정보**라 따로 묻는다
+  //     (정보통신망법 제50조). 가입 요청에 `marketing_push` 로 싣고, 나중에 마이 → 알림 설정에서 바꾼다.
+  //
+  // 「전체 동의」(2026-11-12 P04 확정)는 **한 번에 체크하는 단추일 뿐**이다 — 줄마다 따로 켜고 끌 수
+  // 있고, 서버에는 줄마다 따로 간다. 전체 동의 뒤 선택 줄 하나를 끄면 전체 동의도 꺼진다.
   const [privacyConsent, setPrivacyConsent] = useState(false);
   const [thirdPartyConsent, setThirdPartyConsent] = useState(false);
+  const [marketingPush, setMarketingPush] = useState(false);
+  const allConsent = privacyConsent && thirdPartyConsent && marketingPush;
+  const setAllConsent = (v) => { setPrivacyConsent(v); setThirdPartyConsent(v); setMarketingPush(v); };
 
-  const resetConsents = () => { setPrivacyConsent(false); setThirdPartyConsent(false); };
+  const resetConsents = () => { setPrivacyConsent(false); setThirdPartyConsent(false); setMarketingPush(false); };
 
   const emptyForm = {
     name: '', username: '', email: '', password: '', phone: '',
@@ -362,13 +369,17 @@ function Login({ onLogin, onGuest }) {
         birth: form.birth,        // 서버가 이 값으로 is_adult/age 를 다시 계산한다
         privacyConsent,           // 필수 — 서버도 없으면 400 으로 막는다
         thirdPartyConsent,        // 선택 — 미동의면 온라인 전용 회원이 된다
+        marketing_push: marketingPush,   // 선택 — 혜택 알림(광고성) 수신. 기본 false
         isAdult,
         age,
         store_id: Number(selectedStoreId),
         zipcode: signupZipcode || null,
         dong_name: signupDong || null,   // Daum 동 이름 → 체크아웃 배송권역 매칭용 저장
       });
-      notify(form.name + '님 가입을 환영해요! 🎉' + (isAdult ? '' : '\n미성년자로 확인됐어요. 성인 상품 구매가 제한됩니다.'));
+      // 혜택 알림에 동의했으면 처리 결과(날짜)를 같이 알린다 — 정보통신망법상 수신 동의 결과 안내.
+      const marketingNote = marketingPush ? `\n${todayYmd().replace(/-/g, '.')} 혜택 알림 수신에 동의하셨어요.` : '';
+      notify(form.name + '님 가입을 환영해요! 🎉' + (isAdult ? '' : '\n미성년자로 확인됐어요. 성인 상품 구매가 제한됩니다.') + marketingNote);
+      resetConsents();
       setMode('login');
       setForm({ ...emptyForm });
     } catch (err) {
@@ -635,6 +646,17 @@ function Login({ onLogin, onGuest }) {
 
               {/* 동의 항목 — 필수·선택을 나눠서 받는다(위 상태 주석 참고). */}
               <div style={{ marginTop: 18, padding: 14, borderRadius: 12, background: COLORS.greenTint, border: `1px solid ${COLORS.greenBorder}` }}>
+                <label style={{ display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer', paddingBottom: 12, marginBottom: 12, borderBottom: `1px solid ${COLORS.greenBorder}` }}>
+                  <input
+                    type="checkbox"
+                    checked={allConsent}
+                    onChange={e => setAllConsent(e.target.checked)}
+                    style={{ width: 20, height: 20, accentColor: COLORS.greenDark, flexShrink: 0 }}
+                  />
+                  <span style={{ fontSize: 15, fontWeight: 800, color: COLORS.ink900 }}>
+                    전체 동의 <span style={{ fontSize: 12, fontWeight: 500, color: COLORS.ink500 }}>(선택 항목 포함)</span>
+                  </span>
+                </label>
                 <ConsentRow
                   checked={privacyConsent}
                   onChange={setPrivacyConsent}
@@ -648,6 +670,13 @@ function Login({ onLogin, onGuest }) {
                   onChange={setThirdPartyConsent}
                   label="지점 통합 회원·포인트·구매 내역 이용 동의"
                   detail={`에스알마트 각 지점${branchList(stores) ? `(${branchList(stores)})` : ''}은 서로 다른 사업자입니다. 동의하시면 모든 지점에서 포인트를 함께 쌓고 쓰시고, 매장 구매 영수증도 앱에서 보실 수 있어요. 제공 항목은 이름·연락처·회원번호·포인트 내역·매장 구매 내역입니다. 동의하지 않으셔도 가입과 온라인 주문은 그대로 가능하며, 이 경우 매장 포인트 적립·사용과 매장 구매 내역 표시만 제한됩니다.`}
+                />
+                <div style={{ height: 10 }} />
+                <ConsentRow
+                  checked={marketingPush}
+                  onChange={setMarketingPush}
+                  label="혜택 알림(행사·쿠폰) 받기"
+                  detail="행사·쿠폰 소식을 앱 푸시·문자로 보내 드려요. 동의하지 않으셔도 가입·주문과 주문·배송 알림은 그대로예요. 마이 → 알림 설정에서 언제든 끌 수 있어요."
                 />
                 <div style={{ marginTop: 12, fontSize: 12 }}>
                   <a href="https://dongsinmarket.co.kr/privacy.html" target="_blank" rel="noreferrer"

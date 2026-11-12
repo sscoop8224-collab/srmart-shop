@@ -35,6 +35,7 @@ const Wishlist = lazy(() => import('./pages/Wishlist'));
 const Notice = lazy(() => import('./pages/Notice'));
 const Receipt = lazy(() => import('./pages/Receipt'));
 const MyPage = lazy(() => import('./pages/MyPage'));
+const NotificationSettings = lazy(() => import('./pages/NotificationSettings'));   // 마이 → 알림 설정(S50, 2026-11-12)
 const Offline = lazy(() => import('./pages/Offline'));
 const PageFallback = () => <div style={{ minHeight: '100vh', background: '#077D3C' }} />;   // 청크 로드 중 다크그린(흰 화면 방지)
 
@@ -916,6 +917,7 @@ function AppContent() {
         {page === 'orders'          && <Orders orders={orders} goBack={goBack} />}
         {page === 'purchases'       && <Purchases goBack={goBack} onOpenConsent={() => setNeedsConsent(true)} openSaleId={pushSaleId} onOpened={() => setPushSaleId(null)} />}
         {page === 'receipt'         && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
+        {page === 'notificationSettings' && <NotificationSettings goBack={goBack} />}
         {page === 'mypage'          && <MyPage user={currentUser} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} users={users} setUsers={setUsers} isAdmin={isAdmin} />}
         </Suspense>
 
