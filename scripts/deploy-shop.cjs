@@ -64,11 +64,27 @@ async function waitLocal(expect) {
   for (let i = 0; i < 30; i++) { const r = await get('http://127.0.0.1:3000/'); const m = mainOf(r.body); if (r.status === 200 && (!expect || m === expect)) return m; await sleep(700); }
   return mainOf((await get('http://127.0.0.1:3000/')).body) || '(응답 없음)';
 }
+// 🔴 번들 이름만 보면 「화면 번들은 같고 service-worker.js 만 바뀐」 배포에서 바꿔 끼웠는지 못 가린다(2026-11-12).
+//    그래서 build 폴더의 index.html·service-worker.js 와 **실제로 내려오는 것**의 해시를 맞춘다.
+const md5 = t => require('crypto').createHash('md5').update(t).digest('hex').slice(0, 12);
+async function sameAsBuild(base) {
+  const out = [];
+  for (const f of ['index.html', 'service-worker.js']) {
+    const want = md5(fs.readFileSync(P('build/' + f)));
+    const got = md5((await get(base + '/' + f.replace('index.html', ''))).body);
+    out.push({ f, ok: want === got, want, got });
+  }
+  return out;
+}
 const nginxLines = () => { try { return fs.readFileSync(NGINX_LOG, 'utf8').split('\n').length; } catch (e) { return -1; } };
 
 async function verify(expectMain) {
   const bad = [];
   const L0 = nginxLines();
+  for (const x of await sameAsBuild(SITE)) {
+    log(`   손님 주소 ${x.f} ${x.ok ? '= build' : '≠ build'} (${x.got})`);
+    if (!x.ok) bad.push(`손님 주소의 ${x.f} 가 build 와 다르다(${x.got} ≠ ${x.want})`);
+  }
   const live = mainOf((await get(SITE + '/')).body);
   log(`   손님 주소 ${SITE}/ → ${live || '(번들 못 찾음)'}`);
   if (expectMain && live !== expectMain) bad.push(`손님 주소의 번들이 ${live} — 새 번들 ${expectMain} 가 아니다`);
@@ -96,12 +112,13 @@ async function verify(expectMain) {
   if (CHECK_ONLY) { const bad = await verify(''); bad.forEach(b => log('🔴 ' + b)); log(bad.length ? '🔴 확인 실패' : '✅ 확인 통과'); process.exit(bad.length ? 1 : 0); }
 
   // 0. 사전 점검
-  const dirty = run('git', ['status', '--porcelain', '--', 'src', 'public', 'package.json', 'package-lock.json']);
+  // git 은 셸 없이 부른다 — 윈도 셸이 %s 같은 글자를 망가뜨린다(2026-11-12 「0. 커밋」 줄이 빈칸으로 나왔다)
+  const dirty = run('git', ['status', '--porcelain', '--', 'src', 'public', 'package.json', 'package-lock.json'], { shell: false });
   if (dirty.code !== 0) { log('🔴 git status 를 못 읽었다 — 커밋 상태를 셀 수 없으면 반영하지 않는다'); process.exit(1); }
   if (dirty.out.trim()) { log('🔴 커밋 안 된 변경이 있다 — 커밋한 뒤 다시:\n' + dirty.out); process.exit(1); }
   if (fs.existsSync(P('build_next'))) { log('🔴 build_next 가 이미 있다 — 무엇인지 확인하고 치운 뒤 다시(이 스크립트는 지우지 않는다)'); process.exit(1); }
   if (fs.existsSync(P(`build_prev_${STAMP}`))) { log(`🔴 build_prev_${STAMP} 가 이미 있다 — 1분 뒤 다시`); process.exit(1); }
-  const head = run('git', ['log', '-1', '--format=%h %s']).out.trim();
+  const head = run('git', ['log', '-1', '--format=%h %s'], { shell: false }).out.trim();
   log(`0. 커밋 ${head}`);
 
   // 1. 빌드
@@ -124,12 +141,14 @@ async function verify(expectMain) {
   log('4. 시작'); pm2('start');
   const served = await waitLocal(swapped ? newMain : oldMain);
   log(`   멈춘 시간 ${((Date.now() - t0) / 1000).toFixed(1)}초 · 127.0.0.1:3000 → ${served}`);
+  const localSame = swapped ? await sameAsBuild('http://127.0.0.1:3000') : [];
+  for (const x of localSame) log(`   127.0.0.1:3000 ${x.f} ${x.ok ? '= build' : '≠ build'}`);
   if (!swapped) { log('🔴 바꿔 끼우지 못했다 — 운영은 옛 빌드 그대로'); process.exit(1); }
   log(`   운영 build/index.html 시각 ${fs.statSync(P('build/index.html')).mtime.toLocaleString('ko-KR')}`);
 
   // 5. 확인
   log('5. 확인');
-  const bad = served === newMain ? await verify(newMain) : [`127.0.0.1:3000 이 새 번들을 안 내준다(${served})`];
+  const bad = served === newMain && localSame.every(x => x.ok) ? await verify(newMain) : [`127.0.0.1:3000 이 새 build 를 안 내준다(${served})`];
   if (!bad.length) { log(`✅ 반영 완료 — ${newMain} · 되돌릴 곳 build_prev_${STAMP}`); process.exit(0); }
 
   // 6. 되돌리기
