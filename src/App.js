@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
-import { login as apiLogin, getActiveProducts, getCategories, getBanners, getMyOrders, createOrder, getWishlist, toggleWishlist as toggleWishlistApi, imgUrl } from './api';
+import { login as apiLogin, getActiveProducts, getCategories, getBanners, getMyOrders, createOrder, getWishlist, toggleWishlist as toggleWishlistApi, imgUrl, getActivePromotions } from './api';
 import API from './api';
 import Chatbot from './components/Chatbot';
 import StoreSelectionModal from './components/StoreSelectionModal';
@@ -481,38 +481,31 @@ function AppContent() {
 
   useEffect(() => {
     if (filterLarge === '행사중') {
-      API.get('/events/active').then(res => {
-        const eventsData = res.data;
+      // 2026-11-12 고침: 예전엔 `/events/active` 의 `products` 를 읽었는데 그 표(events)는 비어 있고
+      // 행사 값은 매장 계산대와 같은 promotions 에 있다 — 그래서 이 목록이 늘 0개였다.
+      // 이제 공개 행사 API 를 읽는다. 가격은 서버가 계산대와 같은 식으로 낸 `promo_price` 를 그대로 쓰고
+      // (화면에서 다시 계산하면 계산대와 다른 값이 나갈 수 있다), 덤·묶음은 문구(`label`)만 붙인다.
+      getActivePromotions(currentStoreId).then(res => {
         const productEventMap = {};
-        eventsData.forEach(e => {
-          const prods = typeof e.products === 'string' ? JSON.parse(e.products) : (e.products || []);
-          prods.forEach(p => {
-            productEventMap[p.id] = {
-              eventType: e.event_type,
-              discountValue: e.discount_value,
-              bundleQty: e.bundle_qty,
-              bundlePrice: e.bundle_price,
-              eventName: e.name,
-            };
+        (Array.isArray(res.data) ? res.data : []).forEach(promo => {
+          (promo.products || []).forEach(pp => {
+            if (productEventMap[pp.product_id]) return; // 여러 행사에 걸리면 먼저 온 것 하나만
+            productEventMap[pp.product_id] = { promoPrice: pp.promo_price, label: promo.label, eventName: promo.name };
           });
         });
         const filtered = products
           .filter(p => productEventMap[p.id])
           .map(p => {
             const ev = productEventMap[p.id];
-            let salePrice = p.price;
-            if (ev.eventType === '정액할인') salePrice = Math.max(0, p.price - Number(ev.discountValue));
-            else if (ev.eventType === '퍼센트할인') salePrice = Math.floor(p.price * (1 - Number(ev.discountValue) / 100));
-            else if (ev.eventType === '단품행사') salePrice = Number(ev.discountValue);
-            else if (ev.eventType === '묶음가') salePrice = Number(ev.bundlePrice);
-            return { ...p, salePrice, eventLabel: ev.eventName, eventType: ev.eventType };
+            const salePrice = ev.promoPrice != null ? Number(ev.promoPrice) : p.price;
+            return { ...p, salePrice, eventLabel: ev.label || ev.eventName };
           });
         setEventProducts(filtered);
       }).catch(() => {
         console.log('행사 상품 불러오기 실패');
       });
     }
-  }, [filterLarge, products]);
+  }, [filterLarge, products, currentStoreId]);
 
   const filteredProducts = products.filter((p) => {
     if (filterLarge !== '전체' && p.large !== filterLarge) return false;

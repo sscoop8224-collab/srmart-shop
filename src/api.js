@@ -46,7 +46,12 @@ export const kakaoPayReady = (orderInfo) =>
 
 export const register = (data) => API.post('/register', data);
 export const login = (username, password) => API.post('/login', { username, password });
-export const getStores = () => API.get('/stores');
+// 손님 화면용 매장 목록 (2026-11-12) — `audience=customer` 면 서버가 「손님에게 보이기」가 켜진
+// 매장만, 공개 항목(전화·영업시간·우편번호·표시 이름)과 함께 준다. 옛 서버는 이 값을 무시하고
+// 전체를 주므로 배포 순서가 어긋나도 깨지지 않는다.
+export const getStores = () => API.get('/stores', { params: { audience: 'customer' } });
+// 진행 중인 행사(프로모션) — 상품마다 `promo_price`(1개만 사도 깎이는 행사) 또는 문구(`label`).
+export const getActivePromotions = (storeId) => API.get('/promotions/active', storeId ? { params: { store_id: storeId } } : {});
 export const getCategories = () => API.get('/categories');
 export const getBanners = (storeId) => API.get('/banners', storeId ? { params: { store_id: storeId } } : {});
 // 스플래시 광고(콜드스타트 2번째 화면). 활성 광고 목록(공용+매장), 노출순서.
