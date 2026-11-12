@@ -42,7 +42,7 @@ const BREAKERS = [
   { name: '회전할 때 장바구니가 비면', expect: '장바구니',
     js: () => { window.addEventListener('resize', () => {
       if (!window.__rotMark) return;
-      const kill = () => document.querySelectorAll('.header-nav-count, .bottom-nav .badge').forEach(el => { if (el.textContent !== '0') el.textContent = '0'; });
+      const kill = () => document.querySelectorAll('.tabbar .bdg').forEach(el => { if (el.textContent !== '0') el.textContent = '0'; });
       kill(); new MutationObserver(kill).observe(document.body, { subtree: true, childList: true, characterData: true });
     }); } },
   { name: '회전할 때 열린 창이 닫히면', expect: '열린 창이 닫혔다',
@@ -85,7 +85,7 @@ async function run({ breaker = null, quiet = false } = {}) {
 
   await p.goto(BASE.replace(/\/+$/, '') + '/', { waitUntil: 'domcontentloaded' }); await wait(1800);
   // ① 로그인 → 담기
-  await vis('.header-actions button', '로그인').click();
+  await vis('.app-nav button', '로그인').click();
   await p.getByPlaceholder('아이디를 입력해주세요').fill('guest_demo');
   await p.getByPlaceholder('비밀번호를 입력해주세요').fill('x');
   await p.getByRole('button', { name: '로그인', exact: true }).filter({ visible: true }).first().click(); await wait(900);
@@ -105,7 +105,7 @@ async function run({ breaker = null, quiet = false } = {}) {
   await box.fill(TYPED);
 
   const read = () => p.evaluate((typed) => {
-    const cnt = [...document.querySelectorAll('.header-nav-count, .bottom-nav .badge')].find(el => el.offsetParent !== null);
+    const cnt = [...document.querySelectorAll('.tabbar .bdg')].find(el => el.offsetParent !== null);
     const inp = [...document.querySelectorAll('input, textarea')].find(el => el.placeholder === '메시지를 입력하세요...' && el.offsetParent !== null);
     const anchor = document.querySelector('[data-rot-anchor]');
     return {

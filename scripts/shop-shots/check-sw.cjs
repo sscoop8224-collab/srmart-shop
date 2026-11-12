@@ -65,12 +65,12 @@ const SECRETS = ['guest_demo', 'demo@example.com', '010-1234-5678', 'mock.token.
   if (!controlled) { console.log(`🔴 검사 못 함 — 서비스워커가 화면을 맡지 않았다(${ready})`); await browser.close(); process.exit(2); }
 
   await step('로그인', async () => {
-    await p.locator('.header-actions button', { hasText: '로그인' }).click({ timeout: 4000 }); await p.waitForTimeout(500);
+    await p.locator('.app-nav button', { hasText: '로그인' }).click({ timeout: 4000 }); await p.waitForTimeout(500);
     await p.getByPlaceholder('아이디를 입력해주세요').fill('guest_demo'); await p.getByPlaceholder('비밀번호를 입력해주세요').fill('x');
     await p.getByRole('button', { name: '로그인', exact: true }).filter({ visible: true }).first().click(); await p.waitForTimeout(1500);
   });
-  const tabs = ['장바구니', '검색', '찜', '마이', '홈'];
-  const tab = t => p.locator('.bottom-nav button, .header-nav button').filter({ visible: true }).filter({ hasText: t }).first();
+  const tabs = ['장바구니', '검색', '주문내역', '마이', '홈'];   // 5칸 탭바(묶음 1) — 찜은 마이 안으로 갔다
+  const tab = t => p.locator('.tabbar .tab').filter({ visible: true }).filter({ hasText: t }).first();
   let moved = 0;
   for (let round = 1; round <= 2; round++) {
     // 🔴 p.goBack() 을 쓰지 않는다 — 이 앱은 주소가 안 바뀌는 한 장짜리라 브라우저 뒤로가기는 about:blank 로 나간다
@@ -78,7 +78,8 @@ const SECRETS = ['guest_demo', 'demo@example.com', '010-1234-5678', 'mock.token.
     for (const t of tabs) await step(`탭 ${t}`, async () => {
       // 장바구니처럼 하단 탭을 숨기는 화면이 있다 — 탭이 안 보이면 첫 화면을 다시 연다(새로 고침도 한 번 더 되는 셈)
       if (!(await tab(t).isVisible().catch(() => false))) { await p.goto(BASE + '/'); await p.waitForTimeout(1200); }
-      await tab(t).click({ timeout: 3000 });
+      // 장바구니 화면은 결제 바가 탭바를 덮는다(보이지만 눌리지 않는다 — 3번 묶음에서 목업처럼 결제 바가 탭바를 대신한다) — 그때도 첫 화면을 다시 연다
+      await tab(t).click({ timeout: 3000 }).catch(async () => { await p.goto(BASE + '/'); await p.waitForTimeout(1200); await tab(t).click({ timeout: 3000 }); });
       await p.waitForTimeout(700); moved++;
     });
     if (round === 1) { await p.reload(); await p.waitForTimeout(1500); }

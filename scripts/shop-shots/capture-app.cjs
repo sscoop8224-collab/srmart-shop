@@ -36,11 +36,11 @@ const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleW
 const wait = (p, ms) => p.waitForTimeout(ms);
 // 폰 폭과 태블릿 폭(≥768)에서 같은 버튼이 둘 다 DOM 에 있고 한쪽만 보인다 — 보이는 것만 누른다.
 const btn = (p, text) => p.getByRole('button', { name: text, exact: true }).filter({ visible: true }).first();
-// 폰은 하단 탭바(.bottom-nav), 태블릿(≥768)은 상단 메뉴(.header-nav) — 앱이 CSS 로 하나만 보인다.
-const nav = (p, text) => p.locator('.bottom-nav button, .header-nav button', { hasText: text }).filter({ visible: true }).first();
+// 하단 탭바(.tabbar) — 묶음 1(2026-11-12)부터 폰·태블릿 모두 같은 탭바다(예전엔 태블릿이 상단 메뉴).
+const nav = (p, text) => p.locator('.tabbar .tab', { hasText: text }).filter({ visible: true }).first();
 
 async function login(p) {
-  await p.locator('.header-actions button', { hasText: '로그인' }).click();
+  await p.locator('.app-nav button', { hasText: '로그인' }).click();
   await p.getByPlaceholder('아이디를 입력해주세요').fill('guest_demo');
   await p.getByPlaceholder('비밀번호를 입력해주세요').fill('x');
   await btn(p, '로그인').click();
@@ -107,14 +107,14 @@ const SCREENS = [
   { id: 'S23', name: '내 쿠폰', go: async p => { await login(p); await nav(p, '마이').click(); await wait(p, 900); await p.getByText('미사용 쿠폰').click(); await wait(p, 500); } },
   { id: 'S24', name: '로그인 이력', go: async p => { await login(p); await openMyMenu(p, '로그인 이력'); } },
   { id: 'S25', name: '회원탈퇴', go: async p => { await login(p); await nav(p, '마이').click(); await wait(p, 700); const b = btn(p, '회원탈퇴'); await b.scrollIntoViewIfNeeded(); await b.click(); await wait(p, 500); } },
-  { id: 'S26', name: '공지사항', go: async p => { await login(p); await p.locator('.header-actions button', { hasText: '공지' }).click(); await wait(p, 900); } },
-  { id: 'S27', name: '로그인', go: async p => { await p.locator('.header-actions button', { hasText: '로그인' }).click(); await wait(p, 900); } },
-  { id: 'S28', name: '회원가입', go: async p => { await p.locator('.header-actions button', { hasText: '로그인' }).click(); await wait(p, 500); await btn(p, '회원가입').click(); await wait(p, 900); } },
-  { id: 'S29', name: '아이디·비밀번호 찾기', go: async p => { await p.locator('.header-actions button', { hasText: '로그인' }).click(); await wait(p, 500); await btn(p, '아이디/비밀번호 찾기').click(); await wait(p, 700); } },
+  { id: 'S26', name: '공지사항', go: async p => { await login(p); await p.getByRole('button', { name: '공지' }).click(); await wait(p, 900); } },
+  { id: 'S27', name: '로그인', go: async p => { await p.locator('.app-nav button', { hasText: '로그인' }).click(); await wait(p, 900); } },
+  { id: 'S28', name: '회원가입', go: async p => { await p.locator('.app-nav button', { hasText: '로그인' }).click(); await wait(p, 500); await btn(p, '회원가입').click(); await wait(p, 900); } },
+  { id: 'S29', name: '아이디·비밀번호 찾기', go: async p => { await p.locator('.app-nav button', { hasText: '로그인' }).click(); await wait(p, 500); await btn(p, '아이디/비밀번호 찾기').click(); await wait(p, 700); } },
   { id: 'S30', name: '점포 선택', ctx: { noStore: true }, go: async p => { await wait(p, 600); } },
   { id: 'S31', name: '비밀번호 바꾸기(첫 로그인)', opts: { user: { ...customer, must_change_password: 1 } }, go: login },
   { id: 'S32', name: '매장 이용 동의', opts: { user: { ...customer, needsThirdPartyConsent: true } }, go: login },
-  { id: 'S33', name: '로그아웃 확인', go: async p => { await login(p); await p.locator('.header-actions button', { hasText: '로그아웃' }).click(); await wait(p, 400); } },
+  { id: 'S33', name: '로그아웃 확인', go: async p => { await login(p); await nav(p, '마이').click(); await wait(p, 800); const b = p.getByText('로그아웃', { exact: true }).last(); await b.scrollIntoViewIfNeeded(); await b.click(); await wait(p, 400); } },   // 헤더 로그아웃은 묶음 1 에서 빠졌다(마이 맨 아래)
   { id: 'S34', name: '알림·확인창(공용)', go: async p => { await nav(p, '장바구니').click(); await wait(p, 400); } },
   { id: 'S35', name: '토스트', go: async p => { await login(p); await p.locator('.product-grid button', { hasText: '+' }).first().click(); await wait(p, 300); } },
   { id: 'S36', name: '오프라인', go: async (p, c) => { await c.setOffline(true); await wait(p, 700); } },
