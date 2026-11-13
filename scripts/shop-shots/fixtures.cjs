@@ -133,6 +133,11 @@ const CART_PRESET = {
     { product_id: 103, unit_type: 'unit', quantity: 1, _status: 'not_in_store', _message: '왕길점에는 없는 상품이에요' },
     { product_id: 107, unit_type: 'unit', quantity: 1, _status: 'adult_required', _message: '주류는 19세 이상 본인확인 뒤에 살 수 있어요' },
   ],
+  // 행사 할인 줄(2026-11-13 지시 3) — 메론킥 1박스(2+1 −7,000원) + 코카콜라 2개. 장바구니 바 · 주문서 · 주문 완료에 「행사 할인 −7,000원」
+  promo: [
+    { product_id: 101, unit_type: 'box', quantity: 1, added_unit_price: 21000 },
+    { product_id: 102, unit_type: 'unit', quantity: 2, added_unit_price: 3200 },
+  ],
 };
 function cartUnitPrice(p, unitType) {
   if (unitType === 'box') return p.box_price_override || p.price * (p.box_quantity || 1);
@@ -184,9 +189,34 @@ function cartRoute(pathname, method, opts, body) {
   return j(cartView(st.lines, storeId()));
 }
 
+// 주문서 견적(POST /api/shop/quote · 서버 index.js 와 같은 응답 모양) — 줄 금액·행사는 cartView 와 같은 흉내(메론킥 박스 2+1 −7,000원),
+// 쿠폰은 보유 쿠폰(percent·fixed · 최소 금액) · 코드 쿠폰, 배송비는 3,000원 · 3만 원 이상 무료(가짜 배송 권역과 같다).
+function quoteRoute(body) {
+  const items = (body && body.items) || [];
+  const lines = items.map((it) => {
+    const p = products.find(x => x.id === Number(it.id)) || {};
+    const unitType = it.quantity_type === 'box' ? 'box' : (p.pricing_type === 'weight' ? 'weight' : 'unit');
+    const unit = cartUnitPrice(p, unitType);
+    const line = unitType === 'weight' ? Math.round(unit * (it.grams || 100) / 100) : unit * (Number(it.quantity) || 1);
+    const disc = p.id === 101 && unitType === 'box' ? 7000 * (Number(it.quantity) || 1) : 0;
+    return { id: Number(it.id), ok: !!p.stock, error: p.stock ? null : '재고가 부족해요 (남은 수량: 0개)', line, discount_amount: disc, net: line - disc, promotion_id: disc ? 1 : null, promo_label: disc ? '2+1' : null };
+  });
+  const gross = lines.reduce((a, l) => a + l.line, 0), promo = lines.reduce((a, l) => a + l.discount_amount, 0), subtotal = gross - promo;
+  let coupon = 0, couponError = null;
+  const c = body && body.coupon_id ? userCoupons.find(x => String(x.id) === String(body.coupon_id))
+    : body && body.coupon_code ? userCoupons.find(x => x.code === String(body.coupon_code).toUpperCase()) : null;
+  if ((body && (body.coupon_id || body.coupon_code)) && !c) couponError = '쓸 수 없는 쿠폰이에요';
+  else if (c && subtotal < (c.min_purchase_amount || 0)) couponError = `${(c.min_purchase_amount).toLocaleString('ko-KR')}원 이상 주문해야 쓸 수 있어요`;
+  else if (c) coupon = c.discount_type === 'percent' ? Math.floor(subtotal * c.discount / 100) : Math.min(subtotal, c.discount);
+  const fee = subtotal >= 30000 ? 0 : 3000;
+  return { status: 200, body: { store_id: 11, lines, gross, promo_discount: promo, subtotal, coupon_discount: coupon, coupon_error: couponError,
+    delivery_fee: fee, delivery_fee_rule: 3000, free_delivery_min: 30000, out_of_zone: false, final_before_points: Math.max(0, subtotal - coupon + fee) } };
+}
+
 /** /api 하위 경로 → 응답. body = 요청 본문(JSON · 장바구니가 읽는다). */
 function route(pathname, method, search, opts = {}, body = null) {
   if (pathname === '/shop/cart' || pathname.startsWith('/shop/cart/')) return cartRoute(pathname, method, opts, body);
+  if (pathname === '/shop/quote') return quoteRoute(body);
   const user = opts.user || customer;
   const j = (b, s = 200) => ({ status: s, body: b });
   if (pathname === '/stores') return opts.storesFail ? j({ error: '서버 오류' }, 500) : j(stores);

@@ -263,6 +263,10 @@ const BUNDLES = {
     { id: 'S08AS', mock: 'S08A', name: '장바구니 — 매장 바뀜', state: '매장 바뀜', opts: { cartPreset: 'check', cartStoreFlip: true }, go: async p => { await login(p); await tab(p, '장바구니').click(); await wait(p, 1200); }, part: ['.notice.g', '.v2 .notice.g'] },
     { id: 'S08AM', mock: 'S08A', name: '장바구니 — 로그인하면 합침(토스트)', state: '합침 안내', opts: { guestCart: GUEST_CART }, go: async p => { await login(p); }, part: ['.toast', '.toast'], partOnly: true },
     { id: 'S34L', mock: 'S34', name: '확인창 — 주문하려면 로그인', state: '안내', opts: { guestCart: GUEST_CART }, go: guestOrder, part: ['.alert', '.alert'] },
+    // 「상품 금액」(행사 전) 바로 아래 「행사 할인 −○원」 — 장바구니 바 · 주문서 · 주문 완료(2026-11-13 지시 3 · 금액은 서버 견적)
+    { id: 'S08AP', mock: 'S08A', name: '장바구니 — 행사 할인 줄(아래 바)', opts: { cartPreset: 'promo' }, go: async p => { await login(p); await tab(p, '장바구니').click(); await wait(p, 1200); }, part: ['.bar', '.v2 .bar'] },
+    { id: 'P03P', mock: 'P03', name: '주문서 — 행사 할인 줄(결제 금액)', opts: { cartPreset: 'promo' }, go: async p => { await login(p); await tab(p, '장바구니').click(); await wait(p, 1200); await p.getByRole('button', { name: '주문하기', exact: true }).click(); await wait(p, 1500); await p.locator('.sec-h', { hasText: '결제 금액' }).scrollIntoViewIfNeeded(); await wait(p, 300); }, part: ['.bar', '.v2 .bar'] },
+    { id: 'S13P', mock: 'S13', name: '주문 완료 — 행사 할인 줄', opts: { cartPreset: 'promo' }, go: async p => { await login(p); await tab(p, '장바구니').click(); await wait(p, 1200); await p.getByRole('button', { name: '주문하기', exact: true }).click(); await wait(p, 1500); await p.locator('.pay-bar button').click(); await wait(p, 1500); await p.locator('.kv', { hasText: '행사 할인' }).scrollIntoViewIfNeeded(); await wait(p, 300); }, part: ['.bar', '.v2 .bar'] },
   ],
 };
 
