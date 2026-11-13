@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.dongshin.srmart',
+  appId: 'com.dongsin.srmart',
   appName: '에스알마트',
   webDir: 'build',
   android: {

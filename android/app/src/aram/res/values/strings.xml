@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- 아람마트 앱(flavor aram) 이름 — brands/aram/brand.json 의 appName · appId 와 같은 값(2026-11-13) -->
+<resources>
+    <string name="app_name">아람마트</string>
+    <string name="title_activity_main">아람마트</string>
+    <string name="package_name">com.dongsin.arammart</string>
+    <string name="custom_url_scheme">com.dongsin.arammart</string>
+</resources>

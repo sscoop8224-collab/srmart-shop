@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 아람마트 앱(flavor aram) 색 — brands/aram/brand.json 의 colors 와 같은 값. 2026-11-13 대표님: 아이콘 바탕색 #DB102E -->
-<!-- gradle 에 productFlavors 의 aram 이 생겨야 쓰인다(지금 에스알마트 빌드에는 영향 없음) -->
+<!-- android/app/build.gradle 의 productFlavors aram 에서만 쓰인다(에스알마트 빌드에는 영향 없음) -->
 <resources>
     <color name="ic_launcher_background">#DB102E</color>
     <color name="splashBackground">#DB102E</color>

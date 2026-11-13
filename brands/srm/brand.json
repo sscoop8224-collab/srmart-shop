@@ -3,7 +3,7 @@
   "id": "srm",
   "name": "에스알마트",
   "appName": "에스알마트",
-  "appId": "com.dongshin.srmart",
+  "appId": "com.dongsin.srmart",
   "webPath": "/srm",
   "url": "https://www.dongsinmarket.com/srm/",
   "stores": ["001", "002", "003"],

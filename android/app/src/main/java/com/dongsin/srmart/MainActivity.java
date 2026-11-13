@@ -1,4 +1,4 @@
-package com.dongshin.srmart;
+package com.dongsin.srmart;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
