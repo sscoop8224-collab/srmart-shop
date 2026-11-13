@@ -1,18 +1,17 @@
 /**
- * AI 상담 단추 후보 비교 시트 (2026-11-13 대표님 지시 — B안: 홈 검색창 오른쪽).
+ * AI 상담 단추 시트 (2026-11-13 대표님 지시 — B안: 홈 검색창 오른쪽 · ③ 로봇 얼굴 확정).
  *
  *   node scripts/shop-shots/ai-button-sheets.cjs [--out C:/srmart/srmart-shop-mockup/sheets/ai-button]
  *
  * 만드는 것(<out>):
- *   sheet_1_bubble.png · sheet_2_headset.png · sheet_3_robot.png
- *     → 후보 하나에 한 장: 줄 = (폰 세로 · 태블릿 세로 · 태블릿 가로) × (밝게 · 어둡게), 칸 = 로그인 안 함 · 로그인함.
+ *   sheet_3_robot.png
+ *     → 확정 아이콘 한 장: 줄 = (폰 세로 · 태블릿 세로 · 태블릿 가로) × (밝게 · 어둡게), 칸 = 로그인 안 함 · 로그인함.
  *       홈(P05) 위쪽(헤더 · 검색 줄 · 배송 줄)만 잘라 붙인다 — 단추가 놓인 자리를 크게 보려고.
- *   sheet_4_zoom.png   → 세 아이콘 크게(밝게·어둡게) + 실제 크기(44px) 나란히
- *   sheet_5_first_tip.png → 처음 안내 말풍선 「궁금한 건 AI에게 물어보세요」(후보 ①로 · 세 크기 × 밝게·어둡게)
+ *   sheet_4_zoom.png   → ③ 아이콘 크게(밝게·어둡게) + 실제 크기(44px) 나란히
+ *   sheet_5_first_tip.png → 처음 안내 말풍선 「궁금한 건 AI에게 물어보세요」(세 크기 × 밝게·어둡게)
  *   shots/   → 시트에 들어간 낱장
  *
- * 목업은 주소로 후보를 고른다(?solo=P05&state=…&theme=…&ai=1|2|3). 글자가 한글이라 HTML 로 짜서 찍는다.
- * 앱 코드는 건드리지 않는다 — 대표님이 아이콘을 고른 뒤에 옮긴다.
+ * 목업 주소: ?solo=P05&state=…&theme=…  (①·② 후보와 ?ai= 는 2026-11-13 ③ 확정으로 지웠다). 글자가 한글이라 HTML 로 짜서 찍는다.
  */
 const path = require('path');
 const fs = require('fs');
@@ -26,7 +25,8 @@ const FONT = path.join(path.dirname(MOCK), 'assets/fonts');
 const SHOTS = path.join(OUT, 'shots');
 const url = f => pathToFileURL(f).href;
 
-const ICONS = [[1, 'bubble', '① 말풍선 + AI (추천)'], [2, 'headset', '② 헤드셋'], [3, 'robot', '③ 로봇 얼굴']];
+// 2026-11-13 대표님 ③ 로봇 얼굴 확정 — ①·② 후보는 목업에서 지웠다(?ai= 주소도 없다)
+const ICONS = [[3, 'robot', '③ 로봇 얼굴 (확정)']];
 const SIZES = [
   ['phone', '폰 세로 390×844', { width: 390, height: 844 }],
   ['tablet', '태블릿 세로 820×1180', { width: 820, height: 1180 }],
@@ -38,7 +38,7 @@ async function shoot(b, ai, sizeKey, vp, theme, state) {
   const ctx = await b.newContext({ viewport: vp, deviceScaleFactor: 2, colorScheme: theme, locale: 'ko-KR' });
   const p = await ctx.newPage(); const errs = [];
   p.on('pageerror', e => errs.push(e.message));
-  await p.goto(`${url(MOCK)}?solo=P05&theme=${theme}&ai=${ai}&state=${encodeURIComponent(state)}`);
+  await p.goto(`${url(MOCK)}?solo=P05&theme=${theme}&state=${encodeURIComponent(state)}`);
   await p.evaluate(() => document.fonts.ready); await p.waitForTimeout(120);
   const r = await p.locator('.screen').boundingBox();
   const f = path.join(SHOTS, `ai${ai}_${sizeKey}_${theme}_${state === '로그인함' ? 'login' : state === '로그인 안 함' ? 'guest' : 'tip'}.png`);
@@ -87,7 +87,7 @@ async function render(b, html, file, width) {
   //   (ICON 은 목업 안의 const 라 바깥에서 못 읽는다 — 소스에서 그 줄을 꺼낸다)
   const src = fs.readFileSync(MOCK, 'utf8');
   const ICON_SRC = {};
-  for (const n of ['aiBubble', 'headset', 'robot', 'search', 'bell']) {
+  for (const n of ['robot', 'search', 'bell']) {
     const m = src.match(new RegExp(`\\b${n}: '([^']+)'`));
     if (!m) throw new Error(`목업에 아이콘 ${n} 이 없다`);
     ICON_SRC[n] = m[1];
@@ -96,7 +96,7 @@ async function render(b, html, file, width) {
   const THEME = { light: { bg: '#ffffff', soft: '#e5f8ef', ink: '#007a43', name: '밝게' }, dark: { bg: '#000000', soft: 'rgba(0,196,113,.18)', ink: '#30d98b', name: '어둡게' } };
   let zoom = '';
   for (const [ai, key, label] of ICONS) {
-    const n = { 1: 'aiBubble', 2: 'headset', 3: 'robot' }[ai];
+    const n = 'robot';
     const cells = ['light', 'dark'].map(t => { const T = THEME[t]; return `<td><div style="background:${T.bg};padding:24px;border-radius:16px;display:flex;gap:28px;align-items:center">
       <div style="width:220px;height:220px;border-radius:50px;background:${T.soft};display:flex;align-items:center;justify-content:center">${svg(n, 120, T.ink)}</div>
       <div style="display:flex;flex-direction:column;gap:14px;align-items:center;color:${t === 'light' ? '#555' : '#aaa'};font-size:13px">
@@ -104,17 +104,17 @@ async function render(b, html, file, width) {
         <div style="display:flex;gap:12px">${svg('search', 24, t === 'light' ? '#111' : '#eee')}${svg('bell', 24, t === 'light' ? '#111' : '#eee')}${svg(n, 24, t === 'light' ? '#111' : '#eee')}</div>다른 아이콘과 나란히</div></div></td>`; }).join('');
     zoom += `<tr><td class="k">${label}</td>${cells}</tr>`;
   }
-  await render(b, `<h1>AI 상담 아이콘 — 크게 보기</h1><div class="sub">세 후보 모두 다른 아이콘과 같은 24 칸 · 선 굵기 2 · 끝 둥글게. 「AI」 글자도 선으로 그렸다(기기 글꼴·이모지에 기대지 않는다). 단추 바탕은 --brand-soft, 아이콘은 --brand-strong(밝게 #007a43 · 어둡게 #30d98b).</div><table><tr><th></th><th>밝게</th><th>어둡게</th></tr>${zoom}</table>`,
+  await render(b, `<h1>AI 상담 아이콘 — ③ 로봇 얼굴(확정) 크게 보기</h1><div class="sub"> 다른 아이콘과 같은 24 칸 · 선 굵기 2 · 끝 둥글게. 「AI」 글자도 선으로 그렸다(기기 글꼴·이모지에 기대지 않는다). 단추 바탕은 --brand-soft, 아이콘은 --brand-strong(밝게 #007a43 · 어둡게 #30d98b).</div><table><tr><th></th><th>밝게</th><th>어둡게</th></tr>${zoom}</table>`,
     path.join(OUT, 'sheet_4_zoom.png'), 120 + 2 * 520 + 60);
 
   // 처음 안내 말풍선
   let tip = '';
   for (const [sk, sl, vp] of SIZES) {
     const cells = [];
-    for (const th of ['light', 'dark']) cells.push(`<td><img src="${url(await shoot(b, 1, sk, vp, th, 'AI 처음 안내'))}" style="width:${imgW[sk]}px"></td>`);
+    for (const th of ['light', 'dark']) cells.push(`<td><img src="${url(await shoot(b, 3, sk, vp, th, 'AI 처음 안내'))}" style="width:${imgW[sk]}px"></td>`);
     tip += `<tr><td class="k">${sl}</td>${cells.join('')}</tr>`;
   }
-  await render(b, `<h1>처음 안내 — 「궁금한 건 AI에게 물어보세요」</h1><div class="sub">처음 들어온 손님에게 한 번만 · ✕ 로 닫거나 AI 단추를 한 번 누르면 다시 안 뜬다 · 아이콘과 무관(후보 ①로 찍음) · 로그인한 손님도 처음이면 같다</div><table><tr><th></th><th>밝게</th><th>어둡게</th></tr>${tip}</table>`,
+  await render(b, `<h1>처음 안내 — 「궁금한 건 AI에게 물어보세요」</h1><div class="sub">처음 들어온 손님에게 한 번만 · ✕ 로 닫거나 AI 단추를 한 번 누르면 다시 안 뜬다 · 아이콘과 무관(③ 로봇) · 로그인한 손님도 처음이면 같다</div><table><tr><th></th><th>밝게</th><th>어둡게</th></tr>${tip}</table>`,
     path.join(OUT, 'sheet_5_first_tip.png'), 160 + 2 * imgW.tland + 60);
   await b.close();
 })().catch(e => { console.error('🔴', e); process.exit(1); });
