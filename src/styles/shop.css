@@ -310,6 +310,12 @@
 .v2 .cart-line { display: flex; flex-direction: column; align-items: flex-end; gap: var(--sp-2); flex: none; }
 .v2 .cart-line .del { width: 28px; height: 28px; color: var(--text-3); display: inline-flex; align-items: center; justify-content: center; border-radius: var(--r-full); }
 .v2 .prow .info .box { color: var(--warning-strong); }
+/* 장바구니 줄 안내(2026-11-13 서버 장바구니 · 목업 S08A .cnote) — 서버가 다시 확인한 결과를 줄 아래 한 줄로 */
+.v2 .cart-row-in { flex: 1; min-width: 0; }
+.v2 .cnote { display: flex; gap: var(--sp-1); align-items: center; margin: var(--sp-2) 0 0 calc(var(--thumb) + var(--sp-3)); font-size: var(--fs-foot); font-weight: var(--fw-medium); line-height: var(--lh); }
+.v2 .cnote.o { color: var(--warning-strong); } .v2 .cnote.r { color: var(--danger); } .v2 .cnote.m { color: var(--text-2); } .v2 .cnote.s { color: var(--sale); }
+.v2 .cnote .was { color: var(--text-3); text-decoration: line-through; font-weight: var(--fw-regular); }
+.v2 .row.off .prow .pimg, .v2 .row.off .prow .nm, .v2 .row.off .prow .price { opacity: .45; }
 .v2 .pay-bar .ui-btn { min-width: 150px; }
 @media (min-width: 700px) {
   .v2 .split { display: grid; grid-template-columns: 1fr 340px; gap: var(--sp-5); align-items: start; padding: 0 var(--page-x); max-width: 1180px; margin: 0 auto; }

@@ -29,6 +29,7 @@ import { useAuth } from './AuthContext';
 import { useStore } from './StoreContext';
 import { initPush } from './pushSetup';
 import { objectJosa } from './utils/customerStores';
+import useShopCart from './hooks/useShopCart';
 
 // 코드 스플리팅: 홈(App 내 inline) 외 페이지는 지연 로드 → 초기 번들 축소(파싱 단축).
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -118,7 +119,6 @@ function AppContent() {
   const [productsLoading, setProductsLoading] = useState(false);
   const [productsError, setProductsError] = useState(false);
   const [categories, setCategories] = useState([]);
-  const [cart, setCart] = useState([]);
   const [user, setUser] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quickOrderItem, setQuickOrderItem] = useState(null);   // '바로 주문' 대상 아이템(카트형, 1개)
@@ -269,6 +269,10 @@ function AppContent() {
     setToast(msg);
     setTimeout(() => setToast(''), 1500);
   }, []);
+
+  // 🔴 장바구니는 서버(회원 계정)에 — 비회원은 이 기기에 두고 로그인하면 합친다(2026-11-13 · hooks/useShopCart.js · 목업 S08A)
+  const onCartMerged = useCallback((n) => showToast(`이 기기에 담아 둔 상품 ${n}개를 회원 장바구니에 합쳤어요`), [showToast]);
+  const shopCart = useShopCart({ user, storeId: currentStoreId, onMerged: onCartMerged });
 
   const loadWishlist = async () => {
     try {
@@ -465,42 +469,29 @@ function AppContent() {
     localStorage.removeItem('srmart_auto_login');
     localStorage.removeItem('srmart_token');
     authLogout();
-    setUser(null); setCart([]); setOrders([]); setProducts([]); setPageHistory([]); handleGuest();   // 로그아웃 후 게스트 홈
+    setUser(null); setOrders([]); setProducts([]); setPageHistory([]); handleGuest();   // 로그아웃 후 게스트 홈
     if (!quiet) notify({ icon: 'check', title: '로그아웃 되었어요', message: '이용해 주셔서 감사합니다.' });
   };
 
   // 로그인 안내(S34 「안내」) — 창을 먼저 보여 주고, 확인을 누르면 로그인 화면으로 간다(목업처럼 지금 화면 위에 뜬다 · 묶음 1)
   const requireLogin = (what) => notify({ icon: 'user', title: '로그인이 필요해요', message: `${what || '이 기능은'} 로그인 후 쓸 수 있어요.` }).then(() => setPage('login'));
 
-  const addToCart = (product) => {
-    if (!user) { requireLogin(); return; }
+  const addToCart = (product, qty = 1) => {
     if (product.isSoldOut) { showToast('품절된 상품이에요'); return; }
     if (product.stock !== '' && Number(product.stock) <= 0) { showToast('재고가 없어요'); return; }
     if (product.isAdult) {
       const latestUser = users.find(u => u.email === user.email) || user;
       if (!latestUser.isAdult) { showToast('성인 상품은 19세 이상만 구매할 수 있어요'); return; }
     }
-    // 함수형 업데이터 필수: ProductDetail 이 수량>1 을 같은 클릭 핸들러 안에서 addToCart 를
-    // 여러 번 반복 호출한다(단품 수량 루프·박스 수량 루프). setCart(cart...) 처럼 클로저의
-    // cart 를 직접 읽으면 루프 내 모든 호출이 같은 stale 값을 기준으로 계산해 마지막
-    // 호출만 반영되고 나머지는 덮어써진다 — "수량 3개 담기"가 실제로는 1개만 담기던 버그.
-    // prev 를 쓰면 React 가 매 호출마다 그 시점의 최신 값을 보장해 정확히 누적된다.
-    let stockExceeded = false;
-    setCart(prev => {
-      const existing = prev.find((item) => item.id === product.id);
-      if (existing) {
-        if (product.stock !== '' && existing.quantity >= Number(product.stock)) { stockExceeded = true; return prev; }
-        return prev.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
-      }
-      return [...prev, { ...product, quantity: 1 }];
+    // 수량은 한 번에 보낸다(상세의 수량·박스 수량) — 같은 상품·같은 포장 단위는 서버가 더하고 99개에서 멈춘다.
+    // 재고·판매 여부·주류는 서버가 다시 본다(장바구니를 열 때마다 줄 아래에 알린다).
+    shopCart.add(product, qty).then((err) => {
+      if (err) { showToast(err); return; }
+      // 목업 S35 — 「농심 메론킥 60g을 장바구니에 담았어요」(규격까지 · 그림 글자 없이 · 아이콘이 확인 표시)
+      const label = [product.name, product.spec].filter(Boolean).join(' ');
+      showToast(`${label}${objectJosa(label)} 장바구니에 담았어요`);
     });
-    if (stockExceeded) { showToast('재고 수량을 초과했어요'); return; }
-    // 목업 S35 — 「농심 메론킥 60g을 장바구니에 담았어요」(규격까지 · 그림 글자 없이 · 아이콘이 확인 표시)
-    const label = [product.name, product.spec].filter(Boolean).join(' ');
-    showToast(`${label}${objectJosa(label)} 장바구니에 담았어요`);
   };
-
-  const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   useEffect(() => {
     if (filterLarge === '행사중') {
@@ -546,6 +537,8 @@ function AppContent() {
   const selectedMediumObj = selectedLargeObj && selectedLargeObj.children.find((m) => m.name === filterMedium);
 
   const handlePayment = async (finalPrice, orderExtras = {}) => {
+    const cart = shopCart.orderItems;   // 서버가 「살 수 있다」고 한 줄만(가격도 서버 값)
+    const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
     if (cart.length === 0) { notify('장바구니가 비어있어요!'); return; }
     const latestUser = users.find(u => u.email === user.email) || user;
     if (cart.some(item => item.isAdult) && !latestUser.isAdult) {
@@ -578,7 +571,8 @@ function AppContent() {
           items: orderExtras.items || cart.map(item => ({ id: item.id, name: item.name, quantity: item.quantity })),
           store_id: orderExtras.store_id,   // owner 매장 미리보기 전용 — 서버가 role 확인 후에만 반영
         }).catch(err => console.error('주문 저장 실패:', err));
-        setOrders([newOrder, ...orders]); setLastOrder(newOrder); setCart([]);
+        setOrders([newOrder, ...orders]); setLastOrder(newOrder);
+        shopCart.removeMany(shopCart.lines.filter(l => l.ok));   // 주문한 줄만 뺀다 — 살 수 없어 남겨 둔 줄은 그대로(서버 장바구니에서도)
         window.open(result.next_redirect_pc_url, '_blank');
         goToPage('receipt');
       }
@@ -673,7 +667,7 @@ function AppContent() {
   // 목업대로 옮긴 화면 — 바탕을 목업의 --bg 로(옛 화면은 --white 그대로). 묶음이 늘 때마다 여기에 더한다
   const v2Page = ['home', 'search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt', 'orders', 'purchases', 'mypage', 'wishlist', 'about', 'notice', 'recentViews', 'myReviews', 'storeInfo', 'customerCenter', 'events'].includes(page);
   // 아래 고정 바가 있는 화면은 탭바를 안 그린다(목업 S04·S08·S12·P03 — 바가 탭바를 덮던 것). 빈 장바구니(S09)는 탭바 — 묶음 3
-  const noTab = ['productDetail', 'quickOrder', 'orderSheet', 'receipt'].includes(page) || (page === 'cart' && cart.length > 0) || (ordersDetail && (page === 'orders' || page === 'purchases'));
+  const noTab = ['productDetail', 'quickOrder', 'orderSheet', 'receipt'].includes(page) || (page === 'cart' && shopCart.count > 0) || (ordersDetail && (page === 'orders' || page === 'purchases'));
 
   return (
     <div className={`App${v2Page ? ' app-v2' : ''}${noTab ? ' no-tab' : ''}`}>
@@ -747,8 +741,8 @@ function AppContent() {
         {page === 'productDetail'   && <ProductDetail product={selectedProduct} onBack={goBack} onAddToCart={addToCart} onBuyNow={(item) => { if (!user) { requireLogin(); return; } setQuickOrderItem(item); goToPage('quickOrder'); }} user={currentUser} storeId={currentStoreId} storeShort={storeShort} adultOk={!!(currentUser && currentUser.isAdult)} wished={!!(selectedProduct && wishlist.some((w) => w.id === selectedProduct.id))} wishlist={wishlist} onToggleWish={toggleWishlist} onNeedLogin={requireLogin} onOpenProduct={(p) => setSelectedProduct(products.find((x) => x.id === p.id) || p)} />}
         {/* 주문서 한 장(P03) — 바로 주문(1건)과 장바구니의 「주문하기」(전부)가 같은 화면 · 결제 함수는 예전 그대로 둘 — 묶음 3 */}
         {page === 'quickOrder'      && <QuickOrder items={quickOrderItem ? [quickOrderItem] : []} title="바로 주문" onBack={goBack} onPayment={(finalPrice, extras) => handleQuickPayment(quickOrderItem, finalPrice, extras)} user={currentUser} />}
-        {page === 'orderSheet'      && <QuickOrder items={cart} title="주문서" onBack={goBack} onPayment={handlePayment} user={currentUser} />}
-        {page === 'cart'            && <Cart cart={cart} setCart={setCart} onOrder={() => goToPage('orderSheet')} onHome={() => goToPage('home')} />}
+        {page === 'orderSheet'      && <QuickOrder items={shopCart.orderItems} title="주문서" onBack={goBack} onPayment={handlePayment} user={currentUser} />}
+        {page === 'cart'            && <Cart cart={shopCart} loggedIn={!!user} onLogin={() => setPage('login')} onOrder={() => goToPage('orderSheet')} onHome={() => goToPage('home')} />}
         {(page === 'orders' || page === 'purchases') && <OrderHistory orders={orders} onReloadOrders={loadMyOrders} onOpenConsent={() => setNeedsConsent(true)} openSaleId={pushSaleId} onOpened={() => setPushSaleId(null)} onShop={() => goToPage('home')} onDetail={setOrdersDetail} />}
         {page === 'receipt'         && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
         {page === 'notificationSettings' && <NotificationSettings goBack={goBack} />}
@@ -770,7 +764,7 @@ function AppContent() {
       </div>
 
       {/* 하단 탭 — 홈·검색·장바구니·주문내역·마이(결정 6). 폰·태블릿 모두 — 묶음 1 */}
-      {!noTab && <TabBar page={page} cartCount={cart.length} loggedIn={!!user} onGo={goToPage} onNeedLogin={(key) => requireLogin({ cart: '장바구니는', orders: '주문내역은', mypage: '마이 화면은' }[key])} />}
+      {!noTab && <TabBar page={page} cartCount={shopCart.count} loggedIn={!!user} onGo={goToPage} onNeedLogin={(key) => requireLogin({ orders: '주문내역은', mypage: '마이 화면은' }[key])} />}
 
       {/* 토스트(S35) — 탭바 바로 위. 담김은 확인 표시, 막힘은 경고 표시 — 묶음 1 */}
       {toast && (

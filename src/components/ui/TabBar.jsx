@@ -6,7 +6,8 @@ import Icon from './Icon';
 const TABS = [
   { key: 'home', icon: 'home', label: '홈', pages: ['home'] },
   { key: 'search', icon: 'search', label: '검색', pages: ['search'] },
-  { key: 'cart', icon: 'cart', label: '장바구니', pages: ['cart'], login: true },
+  // 장바구니는 로그인 안 해도 연다(2026-11-13 서버 장바구니 — 비회원은 이 기기에 담고, 「주문하기」에서만 로그인을 묻는다 · S08A)
+  { key: 'cart', icon: 'cart', label: '장바구니', pages: ['cart'] },
   { key: 'orders', icon: 'receipt', label: '주문내역', pages: ['orders', 'purchases', 'receipt'], login: true },
   // 마이는 로그인 안 해도 연다(S47 — 로그인·회원가입 단추가 있는 마이) · 묶음 5
   { key: 'mypage', icon: 'user', label: '마이', pages: ['mypage', 'wishlist', 'notificationSettings', 'about', 'notice', 'recentViews', 'myReviews', 'storeInfo', 'customerCenter', 'events'] },
