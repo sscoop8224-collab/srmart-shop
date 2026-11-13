@@ -71,6 +71,8 @@ function Receipt({ order, onClose, onGoHome, earnPoints }) {
         <section className="sec">
           <div className="group"><div className="pad">
             {sm && <div className="kv"><span>상품 금액</span><span>{won(sm.goods)}</span></div>}
+            {/* 행사 할인 — 결제 화면 「결제 금액」 칸과 같은 줄(2026-11-13 지시 3) */}
+            {sm && sm.promo > 0 && <div className="kv"><span>행사 할인</span><span className="minus">−{won(sm.promo)}</span></div>}
             {sm && sm.coupon > 0 && <div className="kv"><span>쿠폰 할인</span><span className="minus">−{won(sm.coupon)}</span></div>}
             {sm && sm.points > 0 && <div className="kv"><span>포인트</span><span className="minus">−{won(sm.points)}</span></div>}
             {sm && <div className="kv"><span>배송비</span><span>{sm.deliveryFee > 0 ? won(sm.deliveryFee) : '무료'}</span></div>}

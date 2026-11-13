@@ -156,7 +156,7 @@ export function DiscountSection({ c, pointsOpen, setPointsOpen }) {
                 onChange={e => c.setUsePoints(Math.min(Number(e.target.value) || 0, c.myPoints))} placeholder="사용할 포인트" aria-label="사용할 포인트" />
               <span style={{ color: 'var(--text-2)' }}>P</span>
             </div>
-            <button className="ui-btn sm sec" onClick={() => c.setUsePoints(Math.min(c.myPoints, c.totalPrice - c.discountAmount + c.deliveryFee))}>전액</button>
+            <button className="ui-btn sm sec" onClick={() => c.setUsePoints(Math.min(c.myPoints, c.finalBeforePoints))}>전액</button>
             <button className="ui-btn sm gray" onClick={() => c.setUsePoints(0)}>취소</button>
           </div>
         )}
@@ -227,8 +227,9 @@ function CouponSheet({ c, onClose }) {
   );
 }
 
-// 영수증(S13)에 그대로 보일 금액 — 결제 화면의 「결제 금액」 칸과 같은 값. 🔴 서버로는 안 간다(App 의 createOrder 는 고른 칸만 보낸다)
-export const summaryOf = (c) => ({ goods: c.totalPrice, coupon: (c.discountAmount || 0) + (c.couponDiscount || 0), points: c.clampedUsePoints || 0, deliveryFee: c.deliveryFee || 0 });
+// 영수증(S13)에 그대로 보일 금액 — 결제 화면의 「결제 금액」 칸과 같은 값(서버 견적). 🔴 서버로는 안 간다(App 의 createOrder 는 고른 칸만 보낸다)
+//   goods = 상품 금액(행사 전) · promo = 행사 할인(2026-11-13 지시 3 — 장바구니·주문서·주문 완료에 같은 줄)
+export const summaryOf = (c) => ({ goods: c.totalPrice, promo: c.promoDiscount || 0, coupon: (c.discountAmount || 0) + (c.couponDiscount || 0), points: c.clampedUsePoints || 0, deliveryFee: c.deliveryFee || 0 });
 
 // ── 결제 금액 ─────────────────────────────────────────
 export function PayRows({ c }) {
@@ -238,14 +239,23 @@ export function PayRows({ c }) {
       <div className="sec-h">결제 금액</div>
       <div className="group"><div className="pad">
         <div className="kv"><span>상품 금액</span><span>{won(c.totalPrice)}</span></div>
+        {/* 행사 할인 — 상품 금액(행사 전) 바로 아래. 장바구니 바 · 주문 완료(영수증)와 같은 줄(2026-11-13 지시 3) */}
+        {c.promoDiscount > 0 && <div className="kv"><span>행사 할인</span><span className="minus">−{won(c.promoDiscount)}</span></div>}
         {coupon > 0 && <div className="kv"><span>쿠폰 할인</span><span className="minus">−{won(coupon)}</span></div>}
         {c.clampedUsePoints > 0 && <div className="kv"><span>포인트</span><span className="minus">−{won(c.clampedUsePoints)}</span></div>}
         <div className="kv">
           <span>배송비 {c.freeDeliveryMin > 0 && <span className="pill g">{won(c.freeDeliveryMin)} 이상 무료</span>}</span>
           <span>{won(c.deliveryFee)}</span>
         </div>
-        <div className="kv total"><span>총 결제금액</span><span>{won(c.finalPrice)}</span></div>
+        <div className="kv total"><span>총 결제금액</span><span>{c.quoteLoading ? '확인 중' : won(c.finalPrice)}</span></div>
       </div></div>
+      {/* 🔴 금액을 서버에서 못 받았거나(견적 실패) 그 사이 살 수 없게 된 상품이 있으면 — 결제 단추를 잠그고 이유를 말한다 */}
+      {(c.quoteError || (c.quoteProblems && c.quoteProblems.length > 0)) && (
+        <div className="notice r" role="alert" style={{ marginTop: 'var(--sp-2)' }}>
+          <Icon name="alert" />
+          <div>{c.quoteError || <>주문할 수 없는 상품이 있어요 — {c.quoteProblems.join(' · ')}<br />장바구니에서 빼고 다시 주문해 주세요.</>}</div>
+        </div>
+      )}
     </section>
   );
 }
@@ -274,13 +284,14 @@ export function BenefitsError({ c }) {
 export function PayBar({ c, onPay, payLabel }) {
   const ref = useRef(null);
   usePublishBottomBarHeight(ref);
-  const label = !c.zipcode ? '주소를 검색해 주세요' : !c.deliveryInfo?.zoneName ? '배송 구역을 확인해 주세요' : (payLabel || `${won(c.finalPrice)} 결제하기`);   // P03 「43,900원 결제하기」
+  const label = !c.zipcode ? '주소를 검색해 주세요' : !c.deliveryInfo?.zoneName ? '배송 구역을 확인해 주세요'
+    : c.quoteError ? '금액을 확인하지 못했어요' : c.quoteLoading ? '금액 확인 중…' : (payLabel || `${won(c.finalPrice)} 결제하기`);   // P03 「43,900원 결제하기」
   return (
     <>
       <div className="pad-bar" />
       <div ref={ref} className="bar pay-bar">
         <div className="in">
-          <div className="sum"><small>총 결제금액</small><b>{won(c.finalPrice)}</b></div>
+          <div className="sum"><small>총 결제금액</small><b>{c.quoteLoading ? '확인 중' : won(c.finalPrice)}</b></div>
           <button className={`ui-btn ${c.canPay ? 'pri' : 'dis'}`} disabled={!c.canPay} onClick={onPay}>{label}</button>
         </div>
       </div>

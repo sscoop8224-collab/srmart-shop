@@ -177,10 +177,14 @@ function Cart({ cart, loggedIn, onLogin, onOrder, onHome }) {
           <div className="sec-f" style={{ padding: 'var(--sp-2) var(--page-x) 0' }}>{loggedIn ? '배송지·쿠폰·포인트는 다음 「주문서」에서 골라요.' : '주문할 때 로그인하면 배송지·쿠폰·포인트를 골라요.'}</div>
       </div>
       <div className="pad-bar" />
-      {/* 「상품 금액」 = 위 줄 금액의 합(살 수 있는 줄만 · 서버 gross). 행사 할인은 줄 아래에 보이고, 결제 금액은 주문서(P03)에서 — 목업 S08A 와 같다 */}
+      {/* 「상품 금액」 = 위 줄 금액의 합(살 수 있는 줄만 · 서버 gross · 행사 전 — 목업 S08A).
+          🔴 바로 아래 「행사 할인 −○원」 — 주문서 · 주문 완료와 같은 줄(2026-11-13 지시 3). 결제 금액은 주문서(P03)에서 */}
       <div ref={barRef} className="bar pay-bar">
         <div className="in">
-          <div className="sum"><small>상품 금액</small><b>{checking ? '확인 중' : won(cart.view.gross)}</b></div>
+          <div className="sum">
+            <small>상품 금액</small><b>{checking ? '확인 중' : won(cart.view.gross)}</b>
+            {!checking && cart.view.promo_discount > 0 && <small className="promo">행사 할인 −{won(cart.view.promo_discount)}</small>}
+          </div>
           <button className="ui-btn pri" onClick={order}>{loggedIn ? '주문하기' : '로그인하고 주문하기'}</button>
         </div>
       </div>

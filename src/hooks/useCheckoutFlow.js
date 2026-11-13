@@ -1,21 +1,38 @@
-import { useState, useEffect, useCallback } from 'react';
-import { matchZipcode, getMyPoints, getMyActiveCoupons, applyCoupon } from '../api';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { matchZipcode, getMyPoints, getMyActiveCoupons, quoteOrder } from '../api';
 import API from '../api';
 import { getItemPrice } from '../utils/pricing';
 import { useDialog } from '../DialogContext';
 import { useStore } from '../StoreContext';
 
-// 장바구니(Cart.js)와 바로주문(QuickOrder.js)이 공유하는 결제 준비 로직.
+// 장바구니 주문서(orderSheet)와 바로 주문(quickOrder)이 공유하는 결제 준비 로직.
 //   - 배송지 자동채움(회원 기본주소) + 우편번호 → 배송권역 확인
-//   - 쿠폰(코드 입력 + 보유쿠폰 선택) + 포인트 사용
-//   - 상품금액/배송비/할인/포인트를 반영한 최종 결제금액 계산
+//   - 쿠폰(보유 쿠폰 하나 또는 코드 하나) + 포인트 사용
+//   - 🔴 금액은 **서버 견적**(POST /api/shop/quote)이 낸다 — 상품 금액(행사 전) · 행사 할인 · 쿠폰 할인 · 배송비 · 포인트 전 결제 금액
 //   - POST /orders 에 보낼 orderExtras 페이로드 구성(buildOrderExtras)
-// 원본은 Cart.js 에 있던 로직을 그대로 옮긴 것 — 계산식·API 호출·에러 메시지 전부 동일.
+//
+// 🔴 왜 견적인가 (2026-11-13 대표님 지시 2) — 예전엔 화면이 단가 × 수량으로 직접 더했다(getItemPrice). 행사가 들어온 뒤로
+//    서버(placeOrderInTx)는 행사 뒤 금액으로 결제를 다시 계산하므로, 행사가 걸린 장바구니는 **화면 금액 ≠ 서버 금액**이 되어
+//    결제가 409 「결제 금액이 맞지 않아요」로 막혔다. 쿠폰 율·무료배송 기준도 행사 뒤 금액을 본다.
+//    이제 견적과 주문이 **같은 줄(orderLinesOf)** 을 받고 같은 함수로 계산한다. 화면은 견적 값을 그대로 보이고 그대로 싣는다.
+//    장바구니 = 주문서 = 실제 주문 금액은 백엔드 tools/check-shop-amount-parity.cjs --live 가 1원 단위로 맞춰 본다.
 //
 // items: 카트형 아이템 배열([{id,name,price,quantity,grams,pricing_type,purchase_type,...}])
-//        Cart 는 cart 배열 그대로, QuickOrder 는 상품 1개짜리 배열을 넘긴다.
-// appliedCoupon(코드쿠폰)은 이 훅 안에서 독립적으로 관리 — Cart/QuickOrder 가 서로 다른
-// 체크아웃 세션이므로 App 레벨에 둘 이유가 없다(기존엔 App.js 가 들고 Cart 에만 내려줬음).
+//        주문서는 서버 장바구니의 살 수 있는 줄(useShopCart.orderItems), 바로 주문은 상품 1개짜리 배열.
+
+/** 주문 줄 — 견적과 주문 입구가 **같은 배열**을 받는다(다르면 두 금액이 갈라진다). 가격은 싣지 않는다(서버가 정한다). */
+export function orderLinesOf(items) {
+  return (items || []).map(item => ({
+    id: item.id,
+    name: item.name,
+    quantity: item.pricing_type === 'weight' ? 1 : item.quantity,
+    grams: item.pricing_type === 'weight' ? (item.grams || 100) : undefined,
+    quantity_type: item.purchase_type === 'box' ? 'box' : 'unit',
+  }));
+}
+
+const QUOTE_DELAY_MS = 250;   // 포인트·쿠폰을 연달아 바꿀 때 견적을 몰아서 한 번
+
 export function useCheckoutFlow(items, { user } = {}) {
   const { notify } = useDialog();
   const { currentStoreId, isOwner } = useStore();
@@ -34,7 +51,6 @@ export function useCheckoutFlow(items, { user } = {}) {
   const [usePoints, setUsePoints] = useState(0);
   const [myCoupons, setMyCoupons] = useState([]);
   const [selectedCouponId, setSelectedCouponId] = useState('');
-  const [couponDiscount, setCouponDiscount] = useState(0);
   // 🔴 쿠폰·포인트를 못 불러왔을 때 **손님에게 보여 줄 말**. 빈 문자열이면 정상.
   const [benefitsError, setBenefitsError] = useState('');
   const [benefitsLoading, setBenefitsLoading] = useState(false);
@@ -155,36 +171,69 @@ export function useCheckoutFlow(items, { user } = {}) {
     }
   };
 
-  const totalPrice = items.reduce((sum, item) => sum + getItemPrice(item), 0);
+  // ── 🔴 서버 견적 ─────────────────────────────────────────────
+  // 견적에 싣는 것 = 주문에 싣는 것(같은 줄 · 같은 쿠폰 · 같은 배송지). 하나라도 바뀌면 다시 묻고, 답이 올 때까지 결제 단추를 잠근다.
+  const lines = useMemo(() => orderLinesOf(items), [items]);
+  const quoteBody = useMemo(() => ({
+    items: lines,
+    coupon_id: selectedCouponId || null,
+    coupon_code: appliedCoupon ? appliedCoupon.code : null,
+    dong: matchedDong || undefined,
+    zipcode: zipcode || undefined,
+    // owner 매장 미리보기 — 서버가 role===owner 일 때만 반영(주문 입구와 같다) · 로그인 안 한 화면은 고른 매장
+    store_id: isOwner || !user ? currentStoreId : undefined,
+  }), [lines, selectedCouponId, appliedCoupon, matchedDong, zipcode, isOwner, user, currentStoreId]);
+  const quoteKey = JSON.stringify(quoteBody);
+  const [quote, setQuote] = useState(null);          // { key, data } — 마지막으로 받은 견적과 그 질문
+  const [quoteError, setQuoteError] = useState('');
+  const quoteSeq = useRef(0);
 
-  const discountAmount = appliedCoupon
-    ? appliedCoupon.type === 'percent'
-      ? Math.floor(totalPrice * appliedCoupon.discount / 100)
-      : appliedCoupon.discount
-    : 0;
+  useEffect(() => {
+    if (!lines.length) { setQuote(null); return undefined; }
+    const my = ++quoteSeq.current;
+    setQuoteError('');
+    const t = setTimeout(async () => {
+      try {
+        const r = await quoteOrder(quoteBody);
+        if (my === quoteSeq.current) setQuote({ key: quoteKey, data: r.data });
+      } catch (e) {
+        if (my !== quoteSeq.current) return;
+        if (e.response?.data?.code === 'COUPON_ONE_ONLY') { setAppliedCoupon(null); notify(e.response.data.error); return; }
+        setQuoteError(e.response?.data?.error || '금액을 확인하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.');
+      }
+    }, QUOTE_DELAY_MS);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quoteKey]);
 
-  // 배송비 = '동별 배송비 = 최종값' — /api/store/match-zipcode 가 이미 우선순위(권역 매칭 시
-  // 그 권역값, 권역이 하나도 없는 지점만 점포 기본값 폴백)를 판단해 내려주므로 프론트는
-  // deliveryInfo 값을 그대로 최종 배송비로 쓴다(점포 기본을 여기서 다시 더하지 않음).
-  const freeDeliveryMin = deliveryInfo?.freeDeliveryMin ?? 0;
-  const totalDeliveryFee = (freeDeliveryMin > 0 && totalPrice >= freeDeliveryMin) ? 0 : (deliveryInfo?.deliveryFee ?? 0);
+  const q = quote ? quote.data : null;
+  const quoteFresh = !!quote && quote.key === quoteKey;
 
-  const baseAfterCoupon = Math.max(0, totalPrice - discountAmount + totalDeliveryFee - couponDiscount);
-  const clampedUsePoints = Math.min(usePoints, myPoints, baseAfterCoupon);
-  const finalPrice = Math.max(0, baseAfterCoupon - clampedUsePoints);
+  // 쿠폰이 서버 판정에서 막히면(최소 금액·기한·한도 등) 이유를 말하고 뺀다 — 뺀 채 다시 견적을 받는다
+  useEffect(() => {
+    if (!quoteFresh || !q?.coupon_error) return;
+    notify(q.coupon_error);
+    setSelectedCouponId(''); setAppliedCoupon(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quoteFresh, q?.coupon_error]);
 
+  // 견적 전(처음 몇백 ms)에만 줄 정가 합으로 자리를 채운다 — 결제 단추는 견적이 올 때까지 잠겨 있다
+  const totalPrice = q ? q.gross : items.reduce((sum, item) => sum + getItemPrice(item), 0);   // 상품 금액(행사 전)
+  const promoDiscount = q ? q.promo_discount : 0;                                               // 행사 할인
+  const couponTotal = q ? q.coupon_discount : 0;
+  const discountAmount = appliedCoupon ? couponTotal : 0;      // 코드 쿠폰 할인
+  const couponDiscount = selectedCouponId ? couponTotal : 0;   // 보유 쿠폰 할인
+  const totalDeliveryFee = q ? q.delivery_fee : (deliveryInfo?.deliveryFee ?? 0);
+  const freeDeliveryMin = q ? q.free_delivery_min : (deliveryInfo?.freeDeliveryMin ?? 0);
+  const finalBeforePoints = q ? q.final_before_points : Math.max(0, totalPrice + totalDeliveryFee);
+  const clampedUsePoints = Math.min(usePoints, myPoints, finalBeforePoints);
+  const finalPrice = Math.max(0, finalBeforePoints - clampedUsePoints);   // 서버 serverFinal 과 같은 식(포인트를 뺀다)
+  const quoteProblems = q ? q.lines.filter(l => !l.ok).map(l => l.error) : [];
+
+  // 쿠폰은 주문당 한 장(2026-11-13 결정 5) — 하나를 고르면 다른 하나를 뺀다. 할인 금액은 견적이 낸다.
   const handleCouponSelect = async (couponId) => {
     setSelectedCouponId(couponId);
-    if (!couponId) { setCouponDiscount(0); return; }
-    const cp = myCoupons.find(c => String(c.coupon_id) === String(couponId) || String(c.id) === String(couponId));
-    if (!cp) { setCouponDiscount(0); return; }
-    try {
-      const r = await applyCoupon({ code: cp.code, total_amount: totalPrice - discountAmount + totalDeliveryFee });
-      setCouponDiscount(r.data.discount_amount || 0);
-    } catch (err) {
-      notify(err.response?.data?.message || '쿠폰 적용 실패');
-      setSelectedCouponId(''); setCouponDiscount(0);
-    }
+    if (couponId) setAppliedCoupon(null);
   };
 
   const handleApplyCoupon = async () => {
@@ -192,11 +241,9 @@ export function useCheckoutFlow(items, { user } = {}) {
     try {
       const res = await API.post('/coupons/check', { code: couponInput.toUpperCase() });
       const coupon = res.data;
-      if (coupon.min_order_amount > 0 && totalPrice < coupon.min_order_amount) {
-        notify(`최소 주문금액 ₩${coupon.min_order_amount.toLocaleString()} 이상이어야 해요!`);
-        return;
-      }
+      // 최소 금액·기한·한도는 견적(서버)이 행사 뒤 금액으로 판정한다 — 막히면 위 effect 가 이유를 말하고 뺀다
       setAppliedCoupon(coupon);
+      setSelectedCouponId('');
       notify((coupon.description || coupon.code) + ' 쿠폰이 적용됐어요! 😊');
       setCouponInput('');
     } catch (err) {
@@ -208,10 +255,11 @@ export function useCheckoutFlow(items, { user } = {}) {
 
   const currentAddress = useDefaultAddress ? defaultAddress : address;
   const isAddressComplete = !!(currentAddress.name && currentAddress.phone && currentAddress.address);
-  const canPay = isAddressComplete && !!zipcode && !!deliveryInfo?.zoneName && !matchingZipcode;
+  const quoteReady = quoteFresh && !quoteError && quoteProblems.length === 0 && !q.out_of_zone && !q.coupon_error;
+  const canPay = isAddressComplete && !!zipcode && !!deliveryInfo?.zoneName && !matchingZipcode && quoteReady;
 
   // 결제 버튼 onClick 에서 그대로 onPayment(finalPrice, orderExtras) 에 넘길 페이로드.
-  // Cart/QuickOrder 양쪽이 이 함수 하나로 구성해 필드 누락·불일치를 막는다.
+  // 🔴 items · coupon · dong · zipcode 는 **방금 견적에 실은 그 값**이다(quoteBody) — 따로 만들면 두 금액이 갈라진다.
   const buildOrderExtras = () => ({
     zipcode,
     dong: matchedDong,   // 서버가 zone 을 직접 재조회할 때 씀(배송비 숫자는 이제 안 보냄 — 서버가 재계산)
@@ -219,20 +267,13 @@ export function useCheckoutFlow(items, { user } = {}) {
     // is_test_order=1을 자동으로 붙인다(POST /api/orders). 일반 회원은 서버가 무시.
     store_id: isOwner ? currentStoreId : undefined,
     use_points: clampedUsePoints,
-    coupon_id: selectedCouponId || null,
-    coupon_discount: couponDiscount,
+    coupon_id: quoteBody.coupon_id,
+    coupon_code: quoteBody.coupon_code,
     address: currentAddress.address,
     addressDetail: currentAddress.detail,
     receiverName: currentAddress.name,
     receiverPhone: currentAddress.phone,
-    items: items.map(item => ({
-      id: item.id,
-      name: item.name,
-      quantity: item.pricing_type === 'weight' ? 1 : item.quantity,
-      grams: item.pricing_type === 'weight' ? (item.grams || 100) : undefined,
-      quantity_type: item.purchase_type === 'box' ? 'box' : 'unit',
-      price: getItemPrice(item),
-    })),
+    items: quoteBody.items,
   });
 
   return {
@@ -249,8 +290,10 @@ export function useCheckoutFlow(items, { user } = {}) {
     benefitsError, benefitsLoading, retryBenefits: loadBenefits,
     // 포인트
     myPoints, usePoints, setUsePoints, clampedUsePoints,
-    // 금액 — deliveryFee 는 단일 최종 배송비(권역 매칭 시 권역값, 아니면 점포 기본 폴백)
-    totalPrice, discountAmount, deliveryFee: totalDeliveryFee, freeDeliveryMin, totalDeliveryFee, finalPrice,
+    // 금액 — 전부 서버 견적. totalPrice = 상품 금액(행사 전) · promoDiscount = 행사 할인 · deliveryFee = 최종 배송비
+    totalPrice, promoDiscount, discountAmount, deliveryFee: totalDeliveryFee, freeDeliveryMin, totalDeliveryFee, finalBeforePoints, finalPrice,
+    // 견적 상태 — 화면이 「금액 확인 중」·오류·살 수 없는 줄을 말한다
+    quoteLoading: !!lines.length && !quoteFresh && !quoteError, quoteError, quoteProblems,
     // 결제
     canPay, buildOrderExtras,
   };

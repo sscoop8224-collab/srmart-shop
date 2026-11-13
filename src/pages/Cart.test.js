@@ -106,3 +106,19 @@ test('비회원 — 이 기기에 저장 안내 · 「로그인하고 주문하�
   fireEvent.click(screen.getByText('로그인하고 주문하기'));
   await waitFor(() => expect(onLogin).toHaveBeenCalled());
 });
+
+test('아래 바 — 「상품 금액」(행사 전) 바로 아래 「행사 할인 −○원」 · 행사가 없으면 안 그린다 (2026-11-13 지시 3)', async () => {
+  api.getCart.mockResolvedValue({ data: { ...VIEW, gross: 4350, promo_discount: 1450, subtotal: 2900, lines: [line({ quantity: 3, line: 4350, discount_amount: 1450, promo_label: '2+1' })], problem_count: 0 } });
+  const { result } = renderHook(() => useShopCart({ user: { id: 7 }, storeId: 1 }));
+  await waitFor(() => expect(result.current.view.gross).toBe(4350));
+  const { unmount } = render(<Cart cart={result.current} loggedIn onLogin={jest.fn()} onOrder={jest.fn()} onHome={jest.fn()} />);
+  const bar = screen.getByText('상품 금액').parentElement;
+  expect(bar.textContent).toContain('4,350원');
+  expect(bar.querySelector('.promo').textContent).toBe('행사 할인 −1,450원');
+  unmount();
+  api.getCart.mockResolvedValue({ data: VIEW });
+  const h2 = renderHook(() => useShopCart({ user: { id: 8 }, storeId: 1 }));
+  await waitFor(() => expect(h2.result.current.view.gross).toBe(2900));
+  render(<Cart cart={h2.result.current} loggedIn onLogin={jest.fn()} onOrder={jest.fn()} onHome={jest.fn()} />);
+  expect(screen.getByText('상품 금액').parentElement.querySelector('.promo')).toBeNull();
+});

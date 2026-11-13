@@ -565,6 +565,7 @@ function AppContent() {
           dong: orderExtras.dong || '',   // 배송비는 서버가 이 dong으로 zone 직접 재조회해 계산(클라값 미신뢰)
           use_points: orderExtras.use_points || 0,
           coupon_id: orderExtras.coupon_id || null,
+          coupon_code: orderExtras.coupon_code || null,   // 코드 쿠폰 — 견적에 실은 그 값(2026-11-13 지시 2 · 예전엔 안 실어서 결제가 409)
           receiverName: orderExtras.receiverName || user.name,
           receiverPhone: orderExtras.receiverPhone || user.phone || '',
           // orderExtras.items 에는 quantity_type/grams 가 담겨 서버 소계 재계산에 필요
@@ -611,6 +612,7 @@ function AppContent() {
           dong: orderExtras.dong || '',
           use_points: orderExtras.use_points || 0,
           coupon_id: orderExtras.coupon_id || null,
+          coupon_code: orderExtras.coupon_code || null,   // 코드 쿠폰 — 견적에 실은 그 값(2026-11-13 지시 2 · 예전엔 안 실어서 결제가 409)
           receiverName: orderExtras.receiverName || user.name,
           receiverPhone: orderExtras.receiverPhone || user.phone || '',
           items: orderExtras.items || [{ id: item.id, name: item.name, quantity: item.quantity }],

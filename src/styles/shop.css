@@ -260,6 +260,7 @@
 .v2 .bar .sum { flex: 1; min-width: 0; }
 .v2 .bar .sum small { display: block; font-size: var(--fs-cap); color: var(--text-2); }
 .v2 .bar .sum b { font-size: var(--fs-title3); font-weight: var(--fw-bold); }
+.v2 .bar .sum small.promo { color: var(--sale); font-weight: var(--fw-semibold); }   /* 장바구니 바 「행사 할인 −○원」(2026-11-13 지시 3) */
 
 @media (min-width: 700px) {
   .v2 .hero-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5); padding: calc(env(safe-area-inset-top) + var(--nav-h)) var(--page-x) 0; }
