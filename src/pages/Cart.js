@@ -113,8 +113,7 @@ function Cart({ cart, loggedIn, onLogin, onOrder, onHome }) {
           )}
           {cart.storeNotice && (
             <section className="sec" style={{ marginTop: 'var(--sp-2)' }}>
-              <div className="notice g"><Icon name="pin" /><div style={{ flex: 1 }}><b>{String(cart.storeNotice).replace(/^에스알마트\s*/, '')}</b> 기준으로 가격·재고를 다시 확인했어요</div>
-                <button className="nav-btn plain" aria-label="안내 닫기" onClick={cart.dismissStoreNotice}><Icon name="x" size="sm" /></button></div>
+              <div className="notice g"><Icon name="pin" /><div style={{ flex: 1 }}><b>{String(cart.storeNotice).replace(/^에스알마트\s*/, '')}</b> 기준으로 가격·재고를 다시 확인했어요</div></div>
             </section>
           )}
           {cart.error && (
@@ -140,7 +139,7 @@ function Cart({ cart, loggedIn, onLogin, onOrder, onHome }) {
                           <div className="info">
                             <div className="nm">{l.name || '상품'}</div>
                             {/* 규격 — 같은 상품도 용량이 여러 가지라(500ml/1.5L) 이게 없으면 담은 것이 어느 물건인지 모른다 */}
-                            <div className="spec">{l.spec}{box && <> · <span className="box">박스 구매</span></>}{weight && ` · ${l.grams || 100}g`}</div>
+                            <div className="spec">{l.spec}{box && <> · <span className="box">박스 구매{l.box_quantity ? `(${l.box_quantity}개)` : ''}</span></>}{weight && ` · ${l.grams || 100}g`}</div>
                             {priceText && <div className="price">{priceText}</div>}
                           </div>
                         </div>
@@ -178,9 +177,10 @@ function Cart({ cart, loggedIn, onLogin, onOrder, onHome }) {
           <div className="sec-f" style={{ padding: 'var(--sp-2) var(--page-x) 0' }}>{loggedIn ? '배송지·쿠폰·포인트는 다음 「주문서」에서 골라요.' : '주문할 때 로그인하면 배송지·쿠폰·포인트를 골라요.'}</div>
       </div>
       <div className="pad-bar" />
+      {/* 「상품 금액」 = 위 줄 금액의 합(살 수 있는 줄만 · 서버 gross). 행사 할인은 줄 아래에 보이고, 결제 금액은 주문서(P03)에서 — 목업 S08A 와 같다 */}
       <div ref={barRef} className="bar pay-bar">
         <div className="in">
-          <div className="sum"><small>상품 금액</small><b>{checking ? '확인 중' : won(cart.view.subtotal)}</b></div>
+          <div className="sum"><small>상품 금액</small><b>{checking ? '확인 중' : won(cart.view.gross)}</b></div>
           <button className="ui-btn pri" onClick={order}>{loggedIn ? '주문하기' : '로그인하고 주문하기'}</button>
         </div>
       </div>
