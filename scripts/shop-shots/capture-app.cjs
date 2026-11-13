@@ -139,7 +139,7 @@ const SCREENS = [
 async function shoot(browser, s, dev, dark) {
   const ctxOpt = s.ctx || {};
   const ctx = await browser.newContext({
-    viewport: dev.viewport, deviceScaleFactor: dev.dsf, isMobile: true, hasTouch: true,
+    viewport: dev.viewport, deviceScaleFactor: dev.dsf, isMobile: true, hasTouch: true, serviceWorkers: 'block',   // 워커가 보낸 /api 는 가짜 API 를 안 거친다(compare-bundle 과 같은 이유)
     userAgent: ctxOpt.iphone ? IPHONE_UA : ANDROID_UA, colorScheme: dark ? 'dark' : 'light', locale: 'ko-KR',
   });
   await ctx.addInitScript(({ noStore, iphone }) => {
@@ -149,14 +149,14 @@ async function shoot(browser, s, dev, dark) {
       window.open = () => null;                              // 결제창 팝업은 열지 않는다
     } catch (e) {}
   }, { noStore: !!ctxOpt.noStore, iphone: !!ctxOpt.iphone });
-  const opts = s.opts || {};
+  const opts = { ...(s.opts || {}), _cart: {} };   // 장바구니 줄은 촬영(문맥) 하나마다 새로
   await ctx.route('**/*', async (r) => {
     const u = new URL(r.request().url());
     if (u.hostname === 'localhost' && u.port === '5001') {   // 카카오페이 준비(가짜)
       return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ next_redirect_pc_url: 'about:blank' }) });
     }
     if (u.origin === new URL(BASE).origin && u.pathname.startsWith('/api/')) {
-      const res = route(u.pathname.slice(4), r.request().method(), u.search, opts);
+      const res = route(u.pathname.slice(4), r.request().method(), u.search, opts, (() => { try { return JSON.parse(r.request().postData() || 'null'); } catch (e) { return null; } })());
       if (res.delay) return;                                  // 끝까지 안 답한다(로딩 화면)
       return r.fulfill({ status: res.status, contentType: 'application/json', body: JSON.stringify(res.body) });
     }
