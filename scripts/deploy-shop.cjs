@@ -11,6 +11,7 @@
  *  0. 사전 점검: 작업 폴더의 미커밋 변경(git status --porcelain)을 **보여 주고 경고만** 한다 —
  *     🔴 빌드는 작업 폴더가 아니라 **커밋된 HEAD** 로 하므로 그 변경들은 이번 배포에 들어가지 않는다.
  *     (2026-11-12 대표님 지시 7: 다른 창의 미커밋 줄이 작업 폴더 빌드에 섞여 운영에 나갈 뻔했다)
+ *  0-b. 🔴 금액 일치 검사 — 백엔드 tools/check-shop-amount-parity.cjs --live(장바구니 = 주문서 = 실제 주문). 실패하면 빌드도 안 한다
  *  1. HEAD 를 깨끗한 폴더로 꺼내(git worktree add --detach C:/srmart/_deploy_wt-shop-<시각>) 거기서 빌드 →
  *     산출물에 BUILD_COMMIT.txt(커밋 해시)를 넣고 → 작업 폴더의 build_next 로 옮긴다 → worktree 를 치운다.
  *     · node_modules 는 작업 폴더 것을 junction 으로 연결한다(다시 설치하지 않는다).
@@ -255,6 +256,17 @@ function prune(yes) {
   }
   const stale = ourWorktrees();
   if (stale.length) log(`⚠ 지난 배포의 worktree 가 남아 있다(중단된 듯) — 확인 후 치울 것: ${stale.join(', ')}`);
+
+  // 0-b. 🔴 금액 일치(2026-11-13 대표님 지시 2) — 같은 장바구니로 장바구니 화면 · 주문서(견적) · 실제 주문 금액이 1원도 다르지 않은가.
+  //      백엔드 검사기를 임시 MySQL(127.0.0.1)·실제 서버로 끝까지 돌린다(운영 DB 는 표 구조만 읽는다 · 10초 남짓).
+  //      통과하지 않으면 **빌드도 하지 않는다** — 갈라진 채 나가면 손님 결제가 409 「결제 금액이 맞지 않아요」 로 막힌다.
+  const parityTool = path.join(ROOT, '..', 'srmart-backend', 'tools', 'check-shop-amount-parity.cjs');
+  if (!fs.existsSync(parityTool)) { log(`🔴 금액 일치 검사기가 없다(${parityTool}) — 백엔드가 서버 장바구니보다 옛것이다. 반영하지 않는다`); process.exit(1); }
+  log('0-b. 금액 일치 검사(장바구니 = 주문서 = 실제 주문 · 임시 DB)');
+  const parity = spawnSync(process.execPath, [parityTool, '--live'], { cwd: path.dirname(path.dirname(parityTool)), encoding: 'utf8' });
+  const parityLast = (parity.stdout || '').trim().split('\n').pop();
+  log(`   ${parityLast}`);
+  if (parity.status !== 0) { log('🔴 금액 일치 검사 실패 — 반영하지 않는다(운영은 그대로)\n' + (parity.stdout || '').split('\n').filter(l => /🔴/.test(l)).join('\n') + (parity.stderr || '').slice(-800)); process.exit(1); }
   if (process.argv.includes('--build-only')) { log('시험 모드(--build-only) — pm2·build 는 안 건드린다'); process.exit(buildOnly()); }
   if (fs.existsSync(P('build_next'))) { log('🔴 build_next 가 이미 있다 — 무엇인지 확인하고 치운 뒤 다시(이 스크립트는 지우지 않는다)'); process.exit(1); }
   if (fs.existsSync(P(`build_prev_${STAMP}`))) { log(`🔴 build_prev_${STAMP} 가 이미 있다 — 1분 뒤 다시`); process.exit(1); }
