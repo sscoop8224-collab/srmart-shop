@@ -44,6 +44,8 @@ const SIZES = {
 };
 const AI_MIN_SEARCH = 200;   // AI 단추 옆 검색창의 최소 폭(px) — 「검색창이 너무 좁아지지 않게」(2026-11-13)
 const FIRST_PEEK = 80;   // 폰 가로: 첫 상품 사진이 탭바 위로 이만큼은 보여야 한다(px)
+// --brand aram → 같은 화면을 아람마트 설정(?brand=aram)으로 — 로고·매장 이름이 길어져 넘치는지 본다(2026-11-13 화이트라벨)
+const BRAND_Q = (b => b ? '&brand=' + encodeURIComponent(b) : '')(arg('--brand', ''));
 const PICK = (arg('--sizes', '') || Object.keys(SIZES).join(',')).split(',').filter(k => SIZES[k]);
 
 async function run(mockFile, { quiet = false, sizes = PICK, ids = null } = {}) {
@@ -66,7 +68,7 @@ async function run(mockFile, { quiet = false, sizes = PICK, ids = null } = {}) {
       p.on('pageerror', e => errs.push(e.message.slice(0, 120)));
       for (const s of all.filter(x => !ids || ids.includes(x.id))) for (const st of (s.states.length ? s.states : [''])) {
         errs.length = 0; runs++;
-        await p.goto(`${url}?solo=${s.id}&theme=${theme}${st ? '&state=' + encodeURIComponent(st) : ''}`);
+        await p.goto(`${url}?solo=${s.id}&theme=${theme}${BRAND_Q}${st ? '&state=' + encodeURIComponent(st) : ''}`);
         await p.waitForTimeout(60);
         const r = await p.evaluate((AI_MIN_SEARCH_) => {
           const scr = document.querySelector('.screen'); if (!scr) return { none: 1 };
