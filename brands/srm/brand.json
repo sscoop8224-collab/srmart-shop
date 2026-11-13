@@ -1,0 +1,21 @@
+{
+  "_설명": "브랜드(화이트라벨) 설정 — 에스알마트. 같은 화면 코드로 브랜드마다 앱을 따로 찍는다(2026-11-13 대표님 지시). 원본 그림은 저장소 밖 C:/srmart/brand/<id>/ 에 둔다.",
+  "id": "srm",
+  "name": "에스알마트",
+  "appName": "에스알마트",
+  "appId": "com.dongshin.srmart",
+  "webPath": "/srm",
+  "url": "https://www.dongsinmarket.com/srm/",
+  "stores": ["001", "002", "003"],
+  "colors": {
+    "primary": "#00c471",
+    "iconBackground": "#00c471",
+    "splashBackground": "#077D3C"
+  },
+  "assets": {
+    "_설명": "에스알마트는 지금 앱에 들어 있는 그림을 그대로 쓴다(공식 확정 사양 — brand/README.md). 9종 규격 이름으로 옮기는 것은 별건.",
+    "master": "srmart-shop/brand/srm-logo-master.png",
+    "header": "srmart-shop/src/assets/brand/logo_h_ko.png",
+    "headerDark": "srmart-shop/src/assets/brand/logo_h_ko.png"
+  }
+}

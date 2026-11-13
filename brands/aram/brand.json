@@ -1,0 +1,31 @@
+{
+  "_설명": "브랜드(화이트라벨) 설정 — 아람마트(고촌점). 정식 로고 aram_01~09 (2026-11-13). 원본은 C:/srmart/brand/aram/ (README 에 쓰는 자리).",
+  "id": "aram",
+  "name": "아람마트",
+  "appName": "아람마트",
+  "appId": "com.dongshin.aram",
+  "_appId_확인": "패키지 이름은 아직 대표님 확정 전이다 — 플레이스토어에 한 번 올리면 바꿀 수 없다.",
+  "webPath": "/aram",
+  "url": "https://www.dongsinmarket.com/aram/",
+  "stores": ["004"],
+  "colors": {
+    "primary": "#DB102E",
+    "iconBackground": "#DB102E",
+    "splashBackground": "#DB102E",
+    "_화면색": "primary 는 브랜드 대표색으로 적어 둔다. 앱 화면의 단추·글자색(토큰 --brand)을 빨강으로 바꿀지는 대표님 결정 전 — 지금 화면은 초록."
+  },
+  "assets": {
+    "dir": "C:/srmart/brand/aram",
+    "header": "aram_06_horizontal_ko_color.png",
+    "headerDark": "aram_06_horizontal_ko_color.png",
+    "icon": "aram_01_icon_square_1024.png",
+    "adaptiveBackground": "aram_02_icon_background_1024.png",
+    "adaptiveForeground": "aram_03_icon_foreground_1024.png",
+    "splash": "aram_03_icon_foreground_1024.png",
+    "themeIconLight": "aram_04_mono_black_1024.png",
+    "notificationIcon": "aram_05_mono_white_1024.png",
+    "headerEn": "aram_07_horizontal_en_color.png",
+    "monoKo": "aram_08_horizontal_ko_mono.png",
+    "monoEn": "aram_09_horizontal_en_mono.png"
+  }
+}
