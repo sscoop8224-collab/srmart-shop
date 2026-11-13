@@ -17,6 +17,7 @@
  * 현재 사진이 없는 화면(S39 앱 전용 · S40 들어갈 길 없음 · 새 화면)은 이유를 적은 빈 칸,
  * 확정 화면(P01~)은 대신하는(replaces) 첫 화면, 없으면 대응 첫 화면의 현재 사진을 쓴다. 결정 기록(D01~)은 현재 칸을 비운다.
  */
+require('../lib/msys-path.cjs');   // Git Bash 경로 변환 막기(/shop·/srm·/aram) — 2026-11-13 지시 6
 const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');

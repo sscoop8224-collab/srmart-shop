@@ -13,6 +13,7 @@
  *
  * 목업 주소: ?solo=P05&state=…&theme=…  (①·② 후보와 ?ai= 는 2026-11-13 ③ 확정으로 지웠다). 글자가 한글이라 HTML 로 짜서 찍는다.
  */
+require('../lib/msys-path.cjs');   // Git Bash 경로 변환 막기(/shop·/srm·/aram) — 2026-11-13 지시 6
 const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');

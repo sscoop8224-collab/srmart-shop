@@ -9,6 +9,7 @@
  *  ⑶ 버튼 영역 사진을 남긴다 — <out>/F11_<tag>_<phone|tablet>_<light|dark>.png
  * 하나라도 막히면 종료코드 1.
  */
+require('../lib/msys-path.cjs');   // Git Bash 경로 변환 막기(/shop·/srm·/aram) — 2026-11-13 지시 6
 const path = require('path');
 const fs = require('fs');
 const { chromium } = require('playwright');

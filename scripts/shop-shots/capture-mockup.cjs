@@ -14,6 +14,7 @@
  * - 화면마다 ⑴ 스크립트 오류 ⑵ 가로 넘침(가로 스크롤이 생기는 요소)을 재서 보고한다 — 넘치면 🔴.
  * - 서버를 띄우지 않는다(file:// 로 연다). 외부 요청은 전부 막는다(목업은 외부 CDN 을 안 쓴다 — 쓰면 여기서 🔴).
  */
+require('../lib/msys-path.cjs');   // Git Bash 경로 변환 막기(/shop·/srm·/aram) — 2026-11-13 지시 6
 const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');

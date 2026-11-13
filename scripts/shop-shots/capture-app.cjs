@@ -13,6 +13,7 @@
  *
  * 파일 이름: 폰 = S01_light.png / S01_dark.png, 태블릿 = S01_tablet_light.png / S01_tablet_dark.png
  */
+require('../lib/msys-path.cjs');   // Git Bash 경로 변환 막기(/shop·/srm·/aram) — 2026-11-13 지시 6
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');

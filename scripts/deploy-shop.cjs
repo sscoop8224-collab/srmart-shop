@@ -32,6 +32,7 @@
  *    (보관 폴더 정리는 따로: --prune 으로 보고 --prune --yes 로 최근 2개만 남긴다 — 아래 prune()).
  * 종료코드: 0 반영 완료 · 1 실패(되돌림 완료) · 3 실패했고 되돌리기도 실패 — 🔴 사람이 바로 봐야 한다
  */
+require('./lib/msys-path.cjs');   // Git Bash 경로 변환 막기(/shop·/srm·/aram) — 2026-11-13 지시 6
 const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');

@@ -27,6 +27,7 @@
  *              AI 단추를 넓혀 검색창을 좁힘 · 안내 말풍선을 화면 밖으로)을 만들어 위 검사가 잡는지 본다.
  *              못 잡으면 검사기가 없는 것과 같다.
  */
+require('../lib/msys-path.cjs');   // Git Bash 경로 변환 막기(/shop·/srm·/aram) — 2026-11-13 지시 6
 const fs = require('fs');
 const os = require('os');
 const path = require('path');

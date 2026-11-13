@@ -11,6 +11,7 @@
  * - /uploads 는 읽기만 한다(GET). 상품 사진을 실제와 같게 보이려는 것.
  * - 🔴 주소는 127.0.0.1 고정. 0.0.0.0 으로 열면 이 PC 는 공인 IP 라 곧 인터넷이다.
  */
+require('../lib/msys-path.cjs');   // Git Bash 경로 변환 막기(/shop·/srm·/aram) — 2026-11-13 지시 6
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -20,7 +21,8 @@ const port = Number(process.argv[3] || 5311);
 const upIdx = process.argv.indexOf('--uploads');
 const uploads = upIdx > 0 ? path.resolve(process.argv[upIdx + 1]) : null;
 const pxIdx = process.argv.indexOf('--prefix');
-const prefix = pxIdx > 0 ? process.argv[pxIdx + 1].replace(/\/+$/, '') : '';
+const { urlPathArg } = require('../lib/msys-path.cjs');
+const prefix = pxIdx > 0 ? urlPathArg(process.argv[pxIdx + 1], '--prefix').replace(/\/+$/, '') : '';
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',

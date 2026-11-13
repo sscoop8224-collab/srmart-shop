@@ -19,6 +19,7 @@
  *   docs/shots/compare/bundleN/<ID>_<size>_<theme>_diff.png                              (빨간 표시)
  *   docs/shots/compare/bundleN/sheet_<theme>.png · report.json · report.md                (시트·숫자)
  */
+require('../lib/msys-path.cjs');   // Git Bash 경로 변환 막기(/shop·/srm·/aram) — 2026-11-13 지시 6
 const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');

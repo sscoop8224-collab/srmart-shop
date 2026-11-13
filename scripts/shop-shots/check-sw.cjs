@@ -21,6 +21,7 @@
  *    가로채도록 Playwright 실험 플래그를 켠다. 운영에 돌릴 때는 nginx 기록으로 0줄을 확인할 것.
  * 종료코드: 0 통과 · 1 실패 · 2 검사 못 함(서비스워커가 화면을 못 맡음 등)
  */
+require('../lib/msys-path.cjs');   // Git Bash 경로 변환 막기(/shop·/srm·/aram) — 2026-11-13 지시 6
 process.env.PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS = '1';
 const { chromium } = require('playwright');
 const { route } = require('./fixtures.cjs');

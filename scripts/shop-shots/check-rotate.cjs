@@ -24,6 +24,7 @@
  *       종료코드 1 — 못 잡는 검사기의 ✅ 는 아무 뜻이 없다. 망가뜨리기는 시험 브라우저 안의 init script 로만 한다
  *       (앱 빌드·운영은 건드리지 않는다). 먼저 멀쩡한 앱이 통과하는지 보고(전제), 그다음 사례를 돈다.
  */
+require('../lib/msys-path.cjs');   // Git Bash 경로 변환 막기(/shop·/srm·/aram) — 2026-11-13 지시 6
 const { chromium } = require('playwright');
 const { route } = require('./fixtures.cjs');
 
