@@ -76,6 +76,13 @@ export const getActiveProducts = (storeId) => API.get('/products/active', storeI
 export const getOrders = () => API.get('/orders');
 export const getMyOrders = () => API.get('/orders/my');
 export const createOrder = (data) => API.post('/orders', data);
+// 서버 장바구니(2026-11-13) — 회원은 계정에 저장 · 비회원은 기기에 두고 미리보기로 같은 판정을 받는다(hooks/useShopCart.js)
+export const getCart = () => API.get('/shop/cart');
+export const previewCart = (storeId, items) => API.post('/shop/cart/preview', { store_id: storeId, items });
+export const putCartLine = (line) => API.put('/shop/cart/lines', line);
+export const deleteCartLine = (id) => API.delete(`/shop/cart/lines/${id}`);
+export const clearCartApi = () => API.delete('/shop/cart');
+export const mergeCart = (items) => API.post('/shop/cart/merge', { items });
 export const getCoupons = () => API.get('/coupons');
 // store_id는 owner 매장 미리보기 전용(useCheckoutFlow가 currentStoreId를 넘김) — 일반 회원은
 // 백엔드가 body.store_id를 무시하고 항상 본인 가입점포로 처리하므로 그냥 같이 보내도 무해하다.

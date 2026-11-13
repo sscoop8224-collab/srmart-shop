@@ -79,6 +79,13 @@ const installOf = async (p, ios) => {
 };
 const orderOf = async p => { await cartOf(p); await p.getByRole('button', { name: '주문하기', exact: true }).click(); await wait(p, 1200); };
 const tab = (p, label) => p.locator('.tabbar .tab', { hasText: label }).first();
+// 비회원이 이 기기에 담아 둔 줄(목업 S08A 「비회원」: 메론킥 1박스 · 코카콜라 2개) — 담을 때 값이 지금 값과 같아 「가격이 바뀌었어요」는 안 뜬다
+const GUEST_CART = [
+  { product_id: 101, unit_type: 'box', quantity: 1, grams: null, added_unit_price: 21000, snapshot: { name: '농심 메론킥', spec: '60g' } },
+  { product_id: 102, unit_type: 'unit', quantity: 2, grams: null, added_unit_price: 3200, snapshot: { name: '코카콜라', spec: '1.5L' } },
+];
+// 비회원 장바구니 → 「로그인하고 주문하기」 → 로그인 안내(S34 「안내」 · 2026-11-13 부터 탭은 열리고 여기서만 묻는다)
+const guestOrder = async p => { await tab(p, '장바구니').click(); await wait(p, 1200); await p.getByRole('button', { name: '로그인하고 주문하기' }).click(); await wait(p, 500); };
 // 로그인 화면(S27) — 홈 헤더 「로그인」 · 회원가입(P04) — 거기서 「회원가입」
 const loginPage = async p => { await p.locator('.app-nav button', { hasText: '로그인' }).click(); await wait(p, 700); };
 const fillLogin = async (p, pw = 'password') => { await p.getByPlaceholder(/아이디를 입력해 ?주세요/).fill('guest_demo'); await p.getByPlaceholder(/비밀번호를 입력해 ?주세요/).fill(pw); };
@@ -110,7 +117,7 @@ const signupStep = async (p, n) => {
  */
 const BUNDLES = {
   1: [
-    { id: 'S34', name: '확인창 — 안내(로그인이 필요해요)', state: '안내', go: async p => { await tab(p, '장바구니').click(); await wait(p, 500); }, part: ['.alert', '.alert'] },
+    { id: 'S34', name: '확인창 — 안내(주문하려면 로그인)', state: '안내', opts: { guestCart: GUEST_CART }, go: guestOrder, part: ['.alert', '.alert'] },
     { id: 'S35', name: '토스트 — 담김', state: '담김', go: async p => { await login(p); await p.locator('.pgrid .add').first().click(); await wait(p, 300); }, part: ['.toast', '.toast'] },
     { id: 'S36', name: '오프라인', state: '기본', go: async (p, c) => { await c.setOffline(true); await wait(p, 900); } },
     { id: 'S43', name: '불러오는 중(화면 조각을 받는 동안)', go: async (p, c, ctl) => { ctl.holdChunks = true; await tab(p, '검색').click(); await wait(p, 700); } },
@@ -249,6 +256,14 @@ const BUNDLES = {
     { id: 'P05AT', mock: 'P05', name: 'AI 처음 안내 말풍선', state: 'AI 처음 안내', opts: { aiTip: true }, extraSizes: true, go: async () => {}, part: ['.ai-tip', '.ai-tip'] },
     { id: 'P05ATL', mock: 'P05', name: 'AI 처음 안내 — 로그인함', state: 'AI 처음 안내(로그인함)', opts: { aiTip: true }, go: async p => { await login(p); }, part: ['.ai-tip', '.ai-tip'] },
   ],
+  // 묶음 8 — 서버 장바구니(2026-11-13). 열 때 서버가 다시 확인한 줄 안내 · 비회원(이 기기) · 매장 바뀜 · 로그인하면 합침 · 주문할 때만 로그인
+  8: [
+    { id: 'S08A', name: '장바구니 — 줄 안내(다시 확인)', state: '줄 안내', opts: { cartPreset: 'check' }, go: async p => { await login(p); await tab(p, '장바구니').click(); await wait(p, 1200); }, part: ['.group', '.v2 .group'] },
+    { id: 'S08AG', mock: 'S08A', name: '장바구니 — 비회원', state: '비회원', opts: { guestCart: GUEST_CART }, go: async p => { await tab(p, '장바구니').click(); await wait(p, 1200); }, part: ['.notice.b', '.v2 .notice.b'] },
+    { id: 'S08AS', mock: 'S08A', name: '장바구니 — 매장 바뀜', state: '매장 바뀜', opts: { cartPreset: 'check', cartStoreFlip: true }, go: async p => { await login(p); await tab(p, '장바구니').click(); await wait(p, 1200); }, part: ['.notice.g', '.v2 .notice.g'] },
+    { id: 'S08AM', mock: 'S08A', name: '장바구니 — 로그인하면 합침(토스트)', state: '합침 안내', opts: { guestCart: GUEST_CART }, go: async p => { await login(p); }, part: ['.toast', '.toast'], partOnly: true },
+    { id: 'S34L', mock: 'S34', name: '확인창 — 주문하려면 로그인', state: '안내', opts: { guestCart: GUEST_CART }, go: guestOrder, part: ['.alert', '.alert'] },
+  ],
 };
 
 async function shootMock(browser, s, size, theme) {
@@ -264,14 +279,18 @@ async function shootMock(browser, s, size, theme) {
 }
 
 async function shootApp(browser, s, size, theme) {
-  const ctx = await browser.newContext({ viewport: size.viewport, deviceScaleFactor: size.dsf, isMobile: true, hasTouch: true, userAgent: ANDROID_UA, colorScheme: theme, locale: 'ko-KR' });
+  // 🔴 서비스 워커를 막는다 — 워커가 자리를 잡으면 그 뒤 /api 요청은 워커가 직접 보내 ctx.route(가짜 API)를 안 거친다.
+  //    장바구니를 열 때 다시 확인하는 GET 이 정적 서버로 새어 「불러오지 못함」이 되고, 사진은 앞의 응답으로 찍혔다(2026-11-13).
+  const ctx = await browser.newContext({ viewport: size.viewport, deviceScaleFactor: size.dsf, isMobile: true, hasTouch: true, userAgent: ANDROID_UA, colorScheme: theme, locale: 'ko-KR', serviceWorkers: 'block' });
   // AI 처음 안내(2026-11-13)는 opts.aiTip 일 때만 — 다른 화면 사진이 말풍선에 가리지 않게 「이미 봤다」로 둔다
   await ctx.addInitScript((aiTip) => { try { localStorage.setItem('guestStoreId', '11'); localStorage.setItem('srmart_pwa_dismissed_at', String(Date.now())); if (!aiTip) localStorage.setItem('srm_ai_tip_seen', '1'); window.open = () => null; } catch (e) {} }, !!(s.opts && s.opts.aiTip));
   const ctl = { holdChunks: false };
+  const opts = { ...(s.opts || {}), _cart: {} };   // 장바구니 줄은 촬영(문맥) 하나마다 새로 — 앞 사진의 줄이 넘어오지 않게
+  if (opts.guestCart) await ctx.addInitScript((g) => { try { localStorage.setItem('srm_cart_v1:srm', JSON.stringify(g)); } catch (e) {} }, opts.guestCart);
   await ctx.route('**/*', async (r) => {
     const u = new URL(r.request().url());
     if (u.origin === new URL(BASE).origin && u.pathname.startsWith('/api/')) {
-      const res = route(u.pathname.slice(4), r.request().method(), u.search, s.opts || {});
+      const res = route(u.pathname.slice(4), r.request().method(), u.search, opts, (() => { try { return JSON.parse(r.request().postData() || 'null'); } catch (e) { return null; } })());
       if (res.delay) return;
       if (res.abort) return r.abort();   // 인터넷이 끊긴 것처럼(응답 자체가 없다)
       return r.fulfill({ status: res.status, contentType: 'application/json', body: JSON.stringify(res.body) });

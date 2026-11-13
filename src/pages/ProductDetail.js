@@ -115,11 +115,12 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, user, storeId, 
   })();
   const fresh = ['농산물', '축산물', '수산물'].includes(product.product_type);
 
-  // 박스 구매도 단품처럼 count 만큼 반복 담기 — 화면에 보이는 '박스가 × 수량' 합계와
+  // 박스 구매도 단품처럼 count 만큼 담기 — 화면에 보이는 '박스가 × 수량' 합계와
   // 실제 장바구니에 담기는 수량이 일치한다(예전엔 박스가 항상 1개만 담겼음).
+  // 2026-11-13 서버 장바구니부터는 반복 호출하지 않고 수량을 **한 번에** 보낸다(서버 요청이 수량만큼 나가지 않게).
   const handleAddToCart = () => {
     const { item, count } = buildCartItem(product, { quantity, purchaseType, grams });
-    for (let i = 0; i < count; i++) onAddToCart(item);
+    onAddToCart(item, count);
   };
 
   // 장바구니를 거치지 않고 바로 결제로 진입. buildCartItem 을 handleAddToCart 와 공유하므로

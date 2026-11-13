@@ -122,8 +122,71 @@ const DELIV = {
 // 사업자 정보 — 목업처럼 상호만 채우고 나머지는 「—」(값은 대표님이 어드민에서 채운다)
 const bizInfo = { company_name: '동신마켓', ceo_name: '—', address: '—', phone: '—', business_number: '—', mail_order_number: '—', privacy_officer: '—' };
 
-/** /api 하위 경로 → 응답. 함수면 (url, method, body) 로 부른다. */
-function route(pathname, method, search, opts = {}) {
+// 서버 장바구니(2026-11-13 · 서버 src/services/shopCart.js 의 응답 모양) — 촬영 한 번(브라우저 문맥 하나)마다 opts._cart 에 줄을 둔다.
+// 판정은 촬영에 필요한 만큼만 흉내 낸다: 재고 0 → 품절 · cartPreset 'check' 이면 목업 S08A 「줄 안내」 다섯 줄(할인·가격 바뀜·품절·이 매장에 없음·주류).
+const CART_STORE = (id) => { const s = stores.find(x => x.id === id) || stores[0]; return { id: s.id, name: s.name }; };
+const CART_PRESET = {
+  check: [
+    { product_id: 101, unit_type: 'box', quantity: 1, added_unit_price: 21000 },
+    { product_id: 102, unit_type: 'unit', quantity: 2, added_unit_price: 2900 },
+    { product_id: 105, unit_type: 'unit', quantity: 1 },
+    { product_id: 103, unit_type: 'unit', quantity: 1, _status: 'not_in_store', _message: '왕길점에는 없는 상품이에요' },
+    { product_id: 107, unit_type: 'unit', quantity: 1, _status: 'adult_required', _message: '주류는 19세 이상 본인확인 뒤에 살 수 있어요' },
+  ],
+};
+function cartUnitPrice(p, unitType) {
+  if (unitType === 'box') return p.box_price_override || p.price * (p.box_quantity || 1);
+  return p.unit_price ?? p.price;
+}
+function cartView(rawLines, storeId) {
+  const lines = rawLines.map((l, i) => {
+    const p = products.find(x => x.id === l.product_id) || {};
+    const o = { id: l.id ?? i + 1, product_id: l.product_id, unit_type: l.unit_type, quantity: l.quantity, grams: l.grams ?? null,
+      added_unit_price: l.added_unit_price ?? null, name: p.name, spec: p.spec, image: p.image, box_quantity: p.box_quantity ?? null,
+      status: 'ok', ok: true, message: null, unit_price: null, price_changed: false, line: 0, discount_amount: 0, net: 0, promo_label: null, on_sale: false, pickup_only: false };
+    if (l._status) return Object.assign(o, { status: l._status, ok: false, message: l._message });
+    const unit = cartUnitPrice(p, l.unit_type);
+    const line = l.unit_type === 'weight' ? Math.round(unit * (l.grams || 100) / 100) : unit * l.quantity;
+    Object.assign(o, { unit_price: unit, line, net: line, price_changed: o.added_unit_price != null && o.added_unit_price !== unit });
+    if (!p.stock) return Object.assign(o, { status: 'sold_out', ok: false, message: '품절이에요' });   // 서버처럼 품절 줄도 금액은 보인다(합계에서만 빠진다)
+    if (p.id === 101 && l.unit_type === 'box') Object.assign(o, { discount_amount: 7000, net: line - 7000, promo_label: '2+1', on_sale: true });   // 목업 「2+1 (−7,000원)」
+    return o;
+  });
+  const okl = lines.filter(l => l.ok);
+  const gross = okl.reduce((s, l) => s + l.line, 0), promo = okl.reduce((s, l) => s + l.discount_amount, 0);
+  return { brand: 'srm', store: CART_STORE(storeId), store_brand_mismatch: false, updated_at: '2026-11-13T10:00:00.000Z', lines, gross, promo_discount: promo, subtotal: gross - promo, ok_count: okl.length, problem_count: lines.length - okl.length };
+}
+function cartRoute(pathname, method, opts, body) {
+  const st = opts._cart || (opts._cart = {});
+  if (!st.lines) { st.lines = (CART_PRESET[opts.cartPreset] || []).map((l, i) => ({ id: i + 1, ...l })); st.seq = st.lines.length; st.gets = 0; }
+  // cartStoreFlip — 처음 한 번은 검암점, 그다음부터 왕길점(목업 「매장 바뀜」: 왕길점 기준으로 다시 확인했어요)
+  const storeId = () => (opts.cartStoreFlip && st.gets++ === 0 ? 1 : 11);
+  const key = (l) => `${l.product_id}:${l.unit_type}`;
+  const put = (l, mode) => {
+    const cur = st.lines.find(x => key(x) === key(l));
+    const p = products.find(x => x.id === Number(l.product_id)) || {};
+    if (!cur) { st.lines.push({ id: ++st.seq, product_id: Number(l.product_id), unit_type: l.unit_type || 'unit', quantity: l.quantity || 1, grams: l.grams ?? null, added_unit_price: cartUnitPrice(p, l.unit_type) }); return; }
+    if (cur.unit_type === 'weight') cur.grams = Math.min(20000, mode === 'add' ? (cur.grams || 0) + (l.grams || 0) : l.grams);
+    else cur.quantity = Math.min(99, mode === 'add' ? cur.quantity + (l.quantity || 1) : l.quantity);
+  };
+  const j = (b) => ({ status: 200, body: b });
+  if (pathname === '/shop/cart/preview') return j(cartView((body && body.items) || [], Number(body && body.store_id) || 11));
+  if (pathname === '/shop/cart/merge') {
+    const items = (body && body.items) || [];
+    const had = new Set(st.lines.map(key));
+    items.forEach(l => put(l, 'add'));
+    return j({ ...cartView(st.lines, storeId()), merged: { added: items.filter(l => !had.has(key(l))).length, summed: items.filter(l => had.has(key(l))).length, clamped: 0, dropped: 0, invalid: 0 } });
+  }
+  if (pathname === '/shop/cart/lines' && method === 'PUT') put(body || {}, body && body.mode);
+  const del = pathname.match(/^\/shop\/cart\/lines\/(\d+)$/);
+  if (del && method === 'DELETE') st.lines = st.lines.filter(l => l.id !== Number(del[1]));
+  if (pathname === '/shop/cart' && method === 'DELETE') st.lines = [];
+  return j(cartView(st.lines, storeId()));
+}
+
+/** /api 하위 경로 → 응답. body = 요청 본문(JSON · 장바구니가 읽는다). */
+function route(pathname, method, search, opts = {}, body = null) {
+  if (pathname === '/shop/cart' || pathname.startsWith('/shop/cart/')) return cartRoute(pathname, method, opts, body);
   const user = opts.user || customer;
   const j = (b, s = 200) => ({ status: s, body: b });
   if (pathname === '/stores') return opts.storesFail ? j({ error: '서버 오류' }, 500) : j(stores);
