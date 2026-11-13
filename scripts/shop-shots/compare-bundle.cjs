@@ -226,7 +226,7 @@ const BUNDLES = {
     { id: 'S44', name: '매장안내 — 목록', state: '목록', go: async p => { await aboutChip(p, '매장안내'); }, part: ['.store-card', '.v2 .store-card'] },
     { id: 'S44C', mock: 'S44', name: '매장안내 — 매장 바꾸기 확인', state: '매장 바꾸기 확인', go: async p => { await aboutChip(p, '매장안내'); await p.getByRole('button', { name: '이 매장으로' }).last().click(); await wait(p, 400); }, part: ['.alert', '.alert'] },
     { id: 'S44X', mock: 'S44', name: '매장안내 — 불러오지 못함', state: '불러오지 못함', opts: { storesFail: true }, go: async p => { await aboutChip(p, '매장안내'); }, part: ['.empty', '.v2 .ui-empty'] },
-    // AI 상담(S37) — 홈 헤더의 AI 아이콘 → 한 마디 보내기(가짜 응답)
+    // AI 상담(S37) — 홈 검색창 오른쪽 AI 단추(③ 로봇) → 한 마디 보내기(가짜 응답)
     { id: 'S37', name: 'AI 상담 — 대화', state: '대화', go: async p => { await chatSay(p); }, part: ['.sheet', '.sheet.chat-sheet'] },
     { id: 'S37X', mock: 'S37', name: 'AI 상담 — 오류', state: '오류', opts: { chatFail: true }, go: async p => { await chatSay(p); }, part: ['.sheet', '.sheet.chat-sheet'] },
     // 앱 설치 안내(S38) — 사진 도구는 안내를 숨겨 두므로 ?install=1(숨김 무시)로 다시 연다
@@ -240,6 +240,13 @@ const BUNDLES = {
     { id: 'S46', name: '고객센터 — 기본', state: '기본', go: async p => { await aboutChip(p, '고객센터'); }, part: ['.group', '.v2 .group'] },
     { id: 'S46O', mock: 'S46', name: '고객센터 — 질문 펼침', state: '질문 펼침', go: async p => { await aboutChip(p, '고객센터'); await p.locator('.faq-row').first().click(); await wait(p, 300); }, part: ['.faq .group', '.v2 .faq .group'] },
     { id: 'S42D', mock: 'S42', name: '내 리뷰 — 삭제 확인', state: '삭제 확인', go: async p => { await myOf(p, { row: '내 리뷰' }); await p.locator('.mr-del').first().click(); await wait(p, 400); }, part: ['.alert', '.alert'] },
+  ],
+  // 묶음 7 — 2026-11-13 결정분. AI 상담 단추(B안 · ③ 로봇 얼굴): 헤더에서 빼고 홈 검색창 오른쪽 44px · 처음 안내 말풍선
+  7: [
+    { id: 'P05AH', mock: 'P05', name: '홈 헤더 — AI 단추 없음', state: '로그인 안 함', go: async () => {}, part: ['.homebar', '.homebar'], partOnly: true },
+    { id: 'P05AS', mock: 'P05', name: '검색 줄 — 검색창 + AI 단추(③ 로봇)', state: '로그인 안 함', extraSizes: true, go: async () => {}, part: ['.search-row', '.search-row'] },
+    { id: 'P05AT', mock: 'P05', name: 'AI 처음 안내 말풍선', state: 'AI 처음 안내', opts: { aiTip: true }, extraSizes: true, go: async () => {}, part: ['.ai-tip', '.ai-tip'] },
+    { id: 'P05ATL', mock: 'P05', name: 'AI 처음 안내 — 로그인함', state: 'AI 처음 안내(로그인함)', opts: { aiTip: true }, go: async p => { await login(p); }, part: ['.ai-tip', '.ai-tip'] },
   ],
 };
 
@@ -257,7 +264,8 @@ async function shootMock(browser, s, size, theme) {
 
 async function shootApp(browser, s, size, theme) {
   const ctx = await browser.newContext({ viewport: size.viewport, deviceScaleFactor: size.dsf, isMobile: true, hasTouch: true, userAgent: ANDROID_UA, colorScheme: theme, locale: 'ko-KR' });
-  await ctx.addInitScript(() => { try { localStorage.setItem('guestStoreId', '11'); localStorage.setItem('srmart_pwa_dismissed_at', String(Date.now())); window.open = () => null; } catch (e) {} });
+  // AI 처음 안내(2026-11-13)는 opts.aiTip 일 때만 — 다른 화면 사진이 말풍선에 가리지 않게 「이미 봤다」로 둔다
+  await ctx.addInitScript((aiTip) => { try { localStorage.setItem('guestStoreId', '11'); localStorage.setItem('srmart_pwa_dismissed_at', String(Date.now())); if (!aiTip) localStorage.setItem('srm_ai_tip_seen', '1'); window.open = () => null; } catch (e) {} }, !!(s.opts && s.opts.aiTip));
   const ctl = { holdChunks: false };
   await ctx.route('**/*', async (r) => {
     const u = new URL(r.request().url());

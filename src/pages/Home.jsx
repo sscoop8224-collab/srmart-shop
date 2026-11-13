@@ -12,6 +12,12 @@ import { useEffect, useRef, useState } from 'react';
 import Icon from '../components/ui/Icon';
 import { getDeliveryPromise, getSignupCoupon, getBusinessInfo, imgUrl } from '../api';
 
+// AI 상담 처음 안내 — 닫거나 단추를 한 번 누르면 다시 안 뜬다(2026-11-13 B안). 저장이 막힌 기기(사생활 보호 창)에서는
+// 한 번 띄우고 그 화면 동안만 기억한다 — 저장 실패로 화면이 깨지지 않게 읽기·쓰기 모두 감싼다
+const AI_TIP_KEY = 'srm_ai_tip_seen';
+const aiTipSeen = () => { try { return localStorage.getItem(AI_TIP_KEY) === '1'; } catch { return false; } };
+const markAiTipSeen = () => { try { localStorage.setItem(AI_TIP_KEY, '1'); } catch { /* 저장 못 해도 이 화면에서는 닫힌다 */ } };
+
 const won = (n) => `${Number(n || 0).toLocaleString('ko-KR')}원`;
 
 // 배송 한 줄 — 서버 문구에서 굵게 할 곳만 고른다(목업 promise())
@@ -180,8 +186,10 @@ export default function Home({
   user, storeId, storeShort, banners, categories,
   filterLarge, filterMedium, filterSmall, onLarge, onMedium, onSmall, largeObj, mediumObj,
   list, loading, error, onRetry, sortOrder, setSortOrder,
-  wishlist, onWish, onAdd, onOpen, onSearch, onSignup, fallbackImage,
+  wishlist, onWish, onAdd, onOpen, onSearch, onAi, onSignup, fallbackImage,
 }) {
+  const [aiTip, setAiTip] = useState(() => !!onAi && !aiTipSeen());
+  const closeAiTip = () => { setAiTip(false); markAiTipSeen(); };
   const promise = useDeliveryPromise(storeId);
   const [coupon, setCoupon] = useState(null);
   useEffect(() => {
@@ -198,9 +206,23 @@ export default function Home({
   return (
     <div className="v2 home-v2">
       <div className="sec" style={{ marginTop: 'var(--sp-1)' }}>
-        <button className="search tall" onClick={onSearch} aria-label="상품 검색">
-          <Icon name="search" size="sm" /><span>상품을 검색해 보세요</span>
-        </button>
+        {/* 검색창 + 오른쪽 AI 상담 단추(③ 로봇 · 검색창과 같은 44px · 글자 없이 선 아이콘) — 목업 homeSearch() */}
+        <div className="search-row">
+          <button className="search tall" onClick={onSearch} aria-label="상품 검색">
+            <Icon name="search" size="sm" /><span>상품을 검색해 보세요</span>
+          </button>
+          {onAi && (
+            <button type="button" className="ai-btn" aria-label="AI 상담" onClick={() => { closeAiTip(); onAi(); }}>
+              <Icon name="robot" />
+            </button>
+          )}
+          {onAi && aiTip && (
+            <div className="ai-tip" role="status">
+              궁금한 건 AI에게 물어보세요
+              <button type="button" aria-label="안내 닫기" onClick={closeAiTip}><Icon name="x" size="sm" /></button>
+            </div>
+          )}
+        </div>
         {(promise && promise.mode !== 'off') || showCoupon ? (
           <div className="dl-row">
             {promiseRow}

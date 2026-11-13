@@ -1,6 +1,6 @@
 // 고객센터 (목업 정본 v1 의 S46, 묶음 6 · 2026-11-13 새벽)
 // 지시 6: 새 화면. 회사 소개(S40)의 「고객센터」 칩 → 이 화면(뒤로 = 앞 화면).
-//   · 문의하기 — **내 매장 전화**(맨 위) · AI 상담(S37 — 헤더 아이콘과 같은 창을 연다)
+//   · 문의하기 — **내 매장 전화**(맨 위) · AI 상담(S37 — 홈 검색창 오른쪽 단추와 같은 창을 연다)
 //   · 다른 매장 전화 — 손님에게 보이는 매장 중 내 매장을 뺀 곳(2026-11-12 확정)
 //   · 자주 묻는 질문 — `GET /api/shop/faqs`(어드민 「자주 묻는 질문」) · 누르면 펼침. 매장 전화는 FAQ 에 따로 적지 않는다(매장 API 의 phone).
 // 매장 = `GET /api/stores?audience=customer` 의 phone · operating_hours. 비어 있는 칸은 빼고 보인다(지어내지 않는다).
@@ -54,7 +54,7 @@ function CustomerCenter({ goBack, onOpenChat }) {
               </a>
             )}
             <button type="button" className="row tap ind" onClick={onOpenChat}>
-              <span className="ricon t-blue"><Icon name="sparkle" /></span>
+              <span className="ricon t-blue"><Icon name="robot" /></span>
               <span className="lbl">AI 상담<small>상품·배송·주문 문의 — 사람이 아닌 AI 도우미</small></span>
               <span className="chev"><Icon name="chevR" size="sm" /></span>
             </button>

@@ -1,5 +1,5 @@
 // AI 상담 (목업 정본 v1 의 S37, 묶음 6 · 2026-11-13 새벽)
-// 여는 곳: 홈 헤더의 AI 상담 아이콘(떠 있는 단추 없앰 — 묶음 1) · 고객센터(S46) 「AI 상담」 줄.
+// 여는 곳: 홈 검색창 오른쪽 AI 상담 단추(③ 로봇, 2026-11-13 B안 — 떠 있는 단추 없음) · 고객센터(S46) 「AI 상담」 줄.
 // 모양: 아래에서 올라오는 시트 「쇼핑 도우미」 — 맨 위에 **사람이 아닌 AI 라는 고지**(파란 안내) · 말풍선(내 말 = 초록, AI = 카드) · 아래 입력줄.
 //   응답을 기다리는 동안 「입력 중…」 · 오류는 빨간 글씨 말풍선(목업 「오류」).
 // AI 키는 서버(연동 관리)에만 보관 — 클라이언트 하드코딩 없음. 챗봇은 백엔드 /api/chatbot 경유(보내는 값은 예전 그대로: 메시지 · 이전 대화 · 매장).
@@ -58,7 +58,7 @@ const Chatbot = ({ open = false, onClose }) => {
         </div>
         <div className="sheet-b">
           <div className="sec chat-note">
-            <div className="notice b"><Icon name="sparkle" /><div>안녕하세요! 에스알마트 AI 상담사예요 <b>(사람이 아닌 AI 도우미예요)</b>. 상품·배송·주문 문의를 도와드려요.</div></div>
+            <div className="notice b"><Icon name="robot" /><div>안녕하세요! 에스알마트 AI 상담사예요 <b>(사람이 아닌 AI 도우미예요)</b>. 상품·배송·주문 문의를 도와드려요.</div></div>
           </div>
           <div className="chat" aria-live="polite">
             {messages.map((m, i) => (

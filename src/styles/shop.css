@@ -23,6 +23,13 @@
 /* 검색창 · 스위치 */
 .v2 .search { display: flex; align-items: center; gap: var(--sp-2); height: 38px; padding: 0 var(--sp-3); border-radius: var(--r-sm); background: var(--fill); color: var(--text-2); font-size: var(--fs-body); flex: 1; min-width: 0; }
 .v2 .search.tall { height: 44px; width: 100%; text-align: left; }
+/* 홈 검색 줄 — 검색창 + AI 상담 단추(③ 로봇) + 처음 안내 말풍선 (목업 .search-row/.ai-btn/.ai-tip, 2026-11-13 B안) */
+.v2 .search-row { display: flex; align-items: center; gap: var(--sp-2); position: relative; }
+.v2 .search-row .search { min-width: 0; }
+.v2 .ai-btn { width: 44px; height: 44px; flex: none; border: 0; border-radius: var(--r-sm); display: inline-flex; align-items: center; justify-content: center; background: var(--brand-soft); color: var(--brand-strong); cursor: pointer; }
+.v2 .ai-tip { position: absolute; right: 0; top: calc(100% + 10px); z-index: 5; display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-3); border-radius: var(--r-sm); background: var(--brand-fill); color: var(--on-brand-fill); font-size: var(--fs-sub); font-weight: var(--fw-semibold); white-space: nowrap; box-shadow: var(--shadow-brand); }
+.v2 .ai-tip::before { content: ''; position: absolute; top: -6px; right: 16px; width: 12px; height: 12px; background: var(--brand-fill); transform: rotate(45deg); border-radius: 2px; }
+.v2 .ai-tip button { display: inline-flex; border: 0; background: none; color: inherit; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: var(--r-full); cursor: pointer; }
 .v2 .search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 16px; padding: 0; }   /* 16px — 아이폰이 입력칸을 확대하지 않는 최소 크기 */
 .v2 .search input::placeholder { color: var(--text-2); }
 .v2 .search input::-webkit-search-cancel-button { display: none; }   /* 지우기는 목업의 x 단추 하나 */

@@ -253,7 +253,7 @@ function AppContent() {
   const [filterSmall, setFilterSmall] = useState('전체');
   const [sortOrder, setSortOrder] = useState('default');
   const [toast, setToast] = useState('');
-  const [chatOpen, setChatOpen] = useState(false);   // AI 상담 — 헤더 아이콘으로 연다(떠 있는 단추 없앰, 묶음 1)
+  const [chatOpen, setChatOpen] = useState(false);   // AI 상담 — 홈 검색창 오른쪽 단추 · 고객센터 줄로 연다(2026-11-13 B안, 떠 있는 단추 없음)
   const [lastOrder, setLastOrder] = useState(null);
   const [events, setEvents] = useState([]);
   const [banners, setBanners] = useState([]); // 백엔드에서 로드(admin 관리). 0건이면 배너 영역 숨김.
@@ -681,13 +681,12 @@ function AppContent() {
       <InstallPrompt />
       {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
       {mcpUser && <ForcePasswordChangeModal onDone={handleForcePasswordChangeDone} />}
-      {/* 헤더(P05) — 로고 이미지 · 매장 · AI 상담 · 종 · 로그인. 로그아웃은 마이 맨 아래(결정 11) — 묶음 1 */}
+      {/* 헤더(P05) — 로고 이미지 · 매장 · 종 · 로그인(AI 상담은 홈 검색창 오른쪽). 로그아웃은 마이 맨 아래(결정 11) — 묶음 1 */}
       {/* 검색 화면은 검색창이 헤더다(목업 S06) — 묶음 2 */}
       {!['search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt', 'orders', 'purchases', 'mypage', 'wishlist', 'about', 'notice', 'recentViews', 'myReviews', 'storeInfo', 'customerCenter', 'events'].includes(page) && <AppHeader
         storeName={storeShort}
         onStoreClick={!user && !isOwner ? () => setShowStoreModal(true) : null}
         onHome={() => goToPage('home')}
-        onAi={() => setChatOpen((v) => !v)}
         onBell={() => (user ? goToPage('notice') : requireLogin())}
         loggedIn={!!user}
         onLogin={() => setPage('login')}
@@ -726,6 +725,7 @@ function AppContent() {
             wishlist={wishlist} onWish={toggleWishlist} onAdd={addToCart}
             onOpen={(product) => { setSelectedProduct(product); goToPage('productDetail'); }}
             onSearch={() => goToPage('search')}
+            onAi={() => setChatOpen(true)}
             onSignup={() => { setLoginMode('signup'); setPage('login'); }}
             fallbackImage={getCategoryImage}
           />
