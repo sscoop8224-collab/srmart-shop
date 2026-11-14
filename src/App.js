@@ -9,6 +9,7 @@ import StoreSelectionModal from './components/StoreSelectionModal';
 import ForcePasswordChangeModal from './components/ForcePasswordChangeModal';
 import ThirdPartyConsentModal from './components/ThirdPartyConsentModal';
 import InstallPrompt from './components/InstallPrompt';
+import UpdateGate from './components/UpdateGate';
 import SplashAd from './components/SplashAd';
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import './App.css';
@@ -792,7 +793,9 @@ function App() {
   return (
     <ThemeProvider>
       <DialogProvider>
-        <AppContent />
+        <UpdateGate>
+          <AppContent />
+        </UpdateGate>
       </DialogProvider>
     </ThemeProvider>
   );

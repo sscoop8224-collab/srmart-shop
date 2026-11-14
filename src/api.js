@@ -97,6 +97,8 @@ export const getCoverage = (zipcode, dong) => API.post('/store/coverage', { zipc
 // FCM 기기 토큰 등록(푸시) — 앱 실행 시. 로그인 상태면 서버가 user·store 연결, 게스트는 store_id 전달.
 // 푸시 기기 등록 — app_id(앱 패키지)로 서버가 브랜드를 정한다(2026-11-14 결정 b). brand 는 앱 정보를 못 읽을 때의 보조.
 export const registerPushToken = ({ token, platform, store_id, app_id, brand }) => API.post('/push/register', { token, platform, store_id, app_id, brand });
+// 최소 버전 확인(2026-11-14 지시 12) — 앱이 켜질 때 한 번 · 실패하면 막지 않는다(components/UpdateGate.jsx)
+export const checkAppVersion = ({ app_id, platform, version }) => API.post('/app/version-check', { app_id, platform, version }, { timeout: 6000 });
 export const getMyPoints = () => API.get('/me/points');
 export const deleteAccount = (password) => API.delete('/users/me', { data: { password } });
 export const getMyPointHistory = () => API.get('/me/point-history');
