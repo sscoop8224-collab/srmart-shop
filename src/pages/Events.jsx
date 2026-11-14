@@ -32,11 +32,11 @@ function Events({ storeId, products = [], wishlist = [], adultOk, onProductClick
   useEffect(() => {
     let alive = true;
     setFailed(false);
-    getActiveEvents()
+    getActiveEvents(storeId)
       .then((r) => { if (alive) setEvents(Array.isArray(r.data) ? r.data : []); })
       .catch(() => { if (alive) { setFailed(true); setEvents([]); } });
     return () => { alive = false; };
-  }, [tick]);
+  }, [tick, storeId]);
 
   useEffect(() => {
     if (!sel) return undefined;

@@ -9,6 +9,7 @@ import StoreSelectionModal from './components/StoreSelectionModal';
 import ForcePasswordChangeModal from './components/ForcePasswordChangeModal';
 import ThirdPartyConsentModal from './components/ThirdPartyConsentModal';
 import InstallPrompt from './components/InstallPrompt';
+import UpdateGate from './components/UpdateGate';
 import SplashAd from './components/SplashAd';
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import './App.css';
@@ -27,9 +28,10 @@ import { DialogProvider, useDialog } from './DialogContext';
 import { kakaoPayReady } from './pages/KakaoPay';
 import { useAuth } from './AuthContext';
 import { useStore } from './StoreContext';
-import { initPush } from './pushSetup';
+import { initPush, registerPushForUser } from './pushSetup';
 import { objectJosa } from './utils/customerStores';
 import useShopCart from './hooks/useShopCart';
+import { BRAND, shortStoreName } from './brand';
 
 // 코드 스플리팅: 홈(App 내 inline) 외 페이지는 지연 로드 → 초기 번들 축소(파싱 단축).
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -157,6 +159,8 @@ function AppContent() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  // 로그인하면 기기를 그 회원에게 다시 등록한다(첫 실행 때는 비회원으로 등록됐을 수 있다 — 2026-11-14 결정 b)
+  useEffect(() => { if (user?.id) registerPushForUser(); }, [user?.id]);
 
   // 콘텐츠 로드 후(스플래시 종료 이후) 상태바를 다크모드에 맞춤 — 라이트=흰 배경/어두운 아이콘,
   // 다크=#1a1a1a(홈 헤더의 다크모드 배경과 동일)/밝은 아이콘. setBackgroundColor는 안드로이드 전용
@@ -241,10 +245,10 @@ function AppContent() {
     return saved ? JSON.parse(saved) : [];
   });
   const [messages] = useState({
-    welcome: '환영해요! SR Mart 가족이 되셨어요! 🎉',
+    welcome: `환영해요! ${BRAND.name} 가족이 되셨어요! 🎉`,
     logout: '로그아웃 되었어요. 이용해주셔서 감사합니다! 😊',
     login: '님, 환영해요! 즐거운 쇼핑 되세요 😊',
-    banner: 'SR Mart에 오신 것을 환영해요!',
+    banner: `${BRAND.name}에 오신 것을 환영해요!`,
     bannerSub: '신선하고 다양한 상품을 만나보세요',
   });
   const [filterLarge, setFilterLarge] = useState('전체');
@@ -261,7 +265,7 @@ function AppContent() {
   useEffect(() => { localStorage.setItem('srmart_users', JSON.stringify(users)); }, [users]);
 
   const currentUser = user || null;
-  const storeShort = currentStore ? String(currentStore.name || '').replace(/^에스알마트\s*/, '').trim() : '';
+  const storeShort = currentStore ? shortStoreName(currentStore.name) : '';
   const [loginMode, setLoginMode] = useState('login');   // 홈 가입 쿠폰 띠 「가입하기」면 'signup'
   useEffect(() => { if (page !== 'login') setLoginMode('login'); }, [page]);
 
@@ -789,7 +793,9 @@ function App() {
   return (
     <ThemeProvider>
       <DialogProvider>
-        <AppContent />
+        <UpdateGate>
+          <AppContent />
+        </UpdateGate>
       </DialogProvider>
     </ThemeProvider>
   );

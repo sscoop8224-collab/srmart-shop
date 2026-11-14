@@ -7,6 +7,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import API from '../api';
 import { useStore } from '../StoreContext';
 import Icon from './ui/Icon';
+import { BRAND } from '../brand';
 
 const ERR = '죄송해요, 일시적인 오류가 발생했어요. 다시 시도해 주세요!';
 
@@ -58,7 +59,7 @@ const Chatbot = ({ open = false, onClose }) => {
         </div>
         <div className="sheet-b">
           <div className="sec chat-note">
-            <div className="notice b"><Icon name="robot" /><div>안녕하세요! 에스알마트 AI 상담사예요 <b>(사람이 아닌 AI 도우미예요)</b>. 상품·배송·주문 문의를 도와드려요.</div></div>
+            <div className="notice b"><Icon name="robot" /><div>안녕하세요! {BRAND.aiName}예요 <b>(사람이 아닌 AI 도우미예요)</b>. 상품·배송·주문 문의를 도와드려요.</div></div>
           </div>
           <div className="chat" aria-live="polite">
             {messages.map((m, i) => (

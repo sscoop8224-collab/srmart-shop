@@ -9,12 +9,13 @@
 import { useState, useEffect, useRef } from 'react';
 import FindAccount from './FindAccount';
 import logo from '../assets/brand/logo_h_ko.png';
-import { getStores, register, getCoverage } from '../api';
+import { getStores, register, getCoverage, SITE } from '../api';
 import { useDialog } from '../DialogContext';
 import { todayYmd } from '../utils/localDate';
 import Icon from '../components/ui/Icon';
 // 동의 문구의 지점 목록 — 아래 `stores`(GET /api/stores?audience=customer)로 만든다. 못 불러오면 목록 없이 「각 지점」.
 import { branchList } from '../utils/customerStores';
+import { BRAND, shortStoreName } from '../brand';
 
 // 만 나이 — **생년월일**에서 계산한다.
 //
@@ -217,8 +218,8 @@ function Login({ onLogin, onGuest, initialMode }) {
   };
 
   const setF = (k) => (e) => { const v = e.target.value; setForm((p) => ({ ...p, [k]: v })); if (errs[k]) setErrs((x) => ({ ...x, [k]: null })); };
-  // 목업처럼 「왕길점」 — 앞의 「에스알마트」 는 뗀다(모든 매장 이름 앞에 붙어 있어 한 줄을 넘긴다)
-  const shortName = (n) => String(n || '').replace(/^에스알마트\s*/, '');
+  // 목업처럼 「왕길점」 — 앞의 상호(브랜드 이름)는 뗀다(모든 매장 이름 앞에 붙어 있어 한 줄을 넘긴다)
+  const shortName = shortStoreName;
   const storeName = (id) => (stores.find((s) => String(s.id) === String(id)) || {}).name
     || (((coverage && coverage.stores) || []).find((s) => String(s.store_id) === String(id)) || {}).store_name || '';
 
@@ -348,9 +349,9 @@ function Login({ onLogin, onGuest, initialMode }) {
       <div className="v2 plain auth-v2">
         <div className="auth-wrap">
           <div className="auth-top">
-            <img src={logo} alt="에스알마트" />
+            <img src={logo} alt={BRAND.name} />
             <h1>즐거운 쇼핑을 시작하세요</h1>
-            <p>오늘도 에스알마트에서 좋은 하루 되세요</p>
+            <p>오늘도 {BRAND.name}에서 좋은 하루 되세요</p>
           </div>
           <div className="auth">
             <Field label="아이디" error={loginErrors.username}>
@@ -533,13 +534,13 @@ function Login({ onLogin, onGuest, initialMode }) {
                   detail="이름, 아이디, 이메일, 휴대전화번호, 생년월일, 주소를 회원 관리와 주문·배송에 이용합니다." />
                 <ConsentRow checked={thirdPartyConsent} onChange={setThirdPartyConsent}
                   label="지점 통합 회원·포인트·구매 내역 이용 동의"
-                  detail={`에스알마트 각 지점${branchList(stores) ? `(${branchList(stores)})` : ''}은 서로 다른 사업자입니다. 동의하시면 모든 지점에서 포인트를 함께 쌓고 쓰시고, 매장 구매 영수증도 앱에서 보실 수 있어요. 제공 항목은 이름·연락처·회원번호·포인트 내역·매장 구매 내역입니다. 동의하지 않으셔도 가입과 온라인 주문은 그대로 가능하며, 이 경우 매장 포인트 적립·사용과 매장 구매 내역 표시만 제한됩니다.`} />
+                  detail={`${BRAND.name} 각 지점${branchList(stores) ? `(${branchList(stores)})` : ''}은 서로 다른 사업자입니다. 동의하시면 모든 지점에서 포인트를 함께 쌓고 쓰시고, 매장 구매 영수증도 앱에서 보실 수 있어요. 제공 항목은 이름·연락처·회원번호·포인트 내역·매장 구매 내역입니다. 동의하지 않으셔도 가입과 온라인 주문은 그대로 가능하며, 이 경우 매장 포인트 적립·사용과 매장 구매 내역 표시만 제한됩니다.`} />
                 <ConsentRow checked={marketingPush} onChange={setMarketingPush}
                   label="혜택 알림(행사·쿠폰) 받기"
                   detail="행사·쿠폰 소식을 앱 푸시·문자로 보내 드려요. 동의하지 않으셔도 가입·주문과 주문·배송 알림은 그대로예요. 마이 → 알림 설정에서 언제든 끌 수 있어요." />
               </div>
               {errs.consent && <div className="f-err" style={{ padding: '0 var(--sp-4)' }}><Icon name="alert" size="sm" />{errs.consent}</div>}
-              <div className="sec-f"><a className="link" href="https://dongsinmarket.co.kr/privacy.html" target="_blank" rel="noreferrer">개인정보처리방침 전문 보기</a></div>
+              <div className="sec-f"><a className="link" href={`${SITE}/privacy.html?b=${BRAND.code}`} target="_blank" rel="noreferrer">개인정보처리방침 전문 보기</a></div>
             </section>
           </>
         )}

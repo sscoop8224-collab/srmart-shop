@@ -1,0 +1,78 @@
+#!/usr/bin/env node
+// 🔴 빌드 뒤 — 브랜드 정적 파일 바꿔 끼우기 + 번들에 다른 브랜드 이름이 0 인지 (2026-11-14 대표님 지시 10) — postbuild
+//
+//   · JS 번들의 브랜드는 src/brand.js(REACT_APP_BRAND)가 정한다. 그런데 public/ 의 index.html · manifest.json ·
+//     offline.html · service-worker.js 는 빌드가 **그대로 복사**한다 — 그래서 아람마트 빌드일 때 여기서 이름을 바꾼다.
+//     원본(public/)은 고치지 않는다(에스알마트가 기본).
+//   · 그 뒤 빌드 폴더 전체(.js .html .json .css .txt)를 읽어 **다른 브랜드 이름**을 센다. CRA 압축기는 한글을 \uXXXX 로
+//     바꾸므로 풀어서 센다(그냥 grep 하면 0 으로 보여 거짓 통과한다).
+//       아람마트 빌드: 「에스알마트」 · 「SR마트」 · 「SR Mart」 가 0 이어야 한다.
+//       에스알마트 빌드: 「아람마트」 가 0 이어야 한다.
+//     하나라도 있으면 종료코드 1 — 배포(deploy-shop.cjs)가 거기서 멈춘다.
+//   · 사용: npm run build 가 부른다(postbuild). 따로: node scripts/brand-build.cjs [빌드 폴더]
+'use strict';
+const fs = require('fs');
+const path = require('path');
+
+const ROOT = path.join(__dirname, '..');
+const BRAND = process.env.REACT_APP_BRAND === 'aram' ? 'aram' : 'srm';
+const OUT = path.resolve(ROOT, process.argv[2] || process.env.BUILD_PATH || 'build');
+
+const FORBID = { aram: ['에스알마트', 'SR마트', 'SR Mart'], srm: ['아람마트'] };
+// 아람마트 빌드에서 바꿀 글자(긴 것부터). 회사 이름 「동신마켓」 은 두 브랜드 같다(결정 d).
+const SWAP = [
+  ['에스알마트 동신마켓', '아람마트'],
+  ['에스알마트', '아람마트'],
+  ['SR마트', '아람마트'],
+  ['SR Mart', 'Aram Mart'],
+];
+const SWAP_FILES = ['index.html', 'manifest.json', 'offline.html', 'service-worker.js'];
+
+const decode = (s) => s.replace(/\\u([0-9a-fA-F]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+
+function walk(dir, acc = []) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) walk(p, acc);
+    else if (/\.(js|html|json|css|txt)$/.test(e.name) && !/\.map$/.test(e.name)) acc.push(p);
+  }
+  return acc;
+}
+
+/** 빌드 폴더에서 금지 글자를 센다 → [{ file, word, n }] */
+function count(dir, words) {
+  const out = [];
+  for (const f of walk(dir)) {
+    const s = decode(fs.readFileSync(f, 'utf8'));
+    for (const w of words) { const n = s.split(w).length - 1; if (n) out.push({ file: path.relative(dir, f).replace(/\\/g, '/'), word: w, n }); }
+  }
+  return out;
+}
+
+// 자가 시험 — \uXXXX 로 숨은 글자도 잡는다
+{
+  const tmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'brand-build-st-'));
+  fs.writeFileSync(path.join(tmp, 'a.js'), 'var x="\\uc5d0\\uc2a4\\uc54c\\ub9c8\\ud2b8";');   // 에스알마트
+  const got = count(tmp, ['에스알마트']);
+  fs.rmSync(tmp, { recursive: true, force: true });
+  if (got.length !== 1) { console.error('🔴 brand-build 자가 시험 실패 — \\uXXXX 로 적힌 브랜드 이름을 못 찾았다'); process.exit(1); }
+}
+
+if (!fs.existsSync(path.join(OUT, 'index.html'))) { console.error(`🔴 빌드 폴더가 없다: ${OUT}`); process.exit(1); }
+
+if (BRAND === 'aram') {
+  for (const name of SWAP_FILES) {
+    const f = path.join(OUT, name);
+    if (!fs.existsSync(f)) continue;
+    let s = fs.readFileSync(f, 'utf8');
+    for (const [a, b] of SWAP) s = s.split(a).join(b);
+    fs.writeFileSync(f, s);
+  }
+}
+
+const bad = count(OUT, FORBID[BRAND]);
+if (bad.length) {
+  console.error(`🔴 ${BRAND} 빌드에 다른 브랜드 이름이 남았다 — ${bad.map(b => `${b.file} 「${b.word}」 ${b.n}`).join(' · ')}`);
+  process.exit(1);
+}
+console.log(`✅ ${BRAND} 빌드 — 다른 브랜드 이름(${FORBID[BRAND].join('·')}) 0 · ${OUT}`);

@@ -1,3 +1,4 @@
+import { BRAND } from '../brand';
 const NAV = [
   { section: '메인' },
   { page: 'adminPC', icon: 'ti-layout-dashboard', label: '대시보드' },
@@ -58,7 +59,7 @@ export default function Sidebar({ currentPage, setPage, dark }) {
         paddingBottom: 16,
         borderBottom: `1px solid ${c.border}`,
       }}>
-        <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--primary)', letterSpacing: '-0.3px' }}>에스알마트</div>
+        <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--primary)', letterSpacing: '-0.3px' }}>{BRAND.name}</div>
         <div style={{ fontSize: 11, color: c.logoSub, marginTop: 2 }}>관리자 시스템</div>
       </div>
 

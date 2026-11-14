@@ -21,6 +21,7 @@ import { useState } from 'react';
 import API from '../api';
 import Icon from './ui/Icon';
 import { useCustomerBranchList, topicJosa } from '../utils/customerStores';
+import { BRAND } from '../brand';
 
 export default function ThirdPartyConsentModal({ onDone }) {
   const branches = useCustomerBranchList();
@@ -53,8 +54,8 @@ export default function ThirdPartyConsentModal({ onDone }) {
               {/* 지점 이름은 손님에게 보이는 매장 목록(GET /api/stores?audience=customer)으로 만든다 —
                   utils/customerStores.js 머리말. 못 불러오면 목록 없이 「각 지점」. */}
               {branches
-                ? <>에스알마트 <b>{branches}</b>{topicJosa(branches)} 각각 다른 사업자예요.</>
-                : <>에스알마트 각 지점은 각각 다른 사업자예요.</>}
+                ? <>{BRAND.name} <b>{branches}</b>{topicJosa(branches)} 각각 다른 사업자예요.</>
+                : <>{BRAND.name} 각 지점은 각각 다른 사업자예요.</>}
               {' '}매장에서 포인트를 쌓고 쓰시고 <b>매장에서 사신 영수증을 앱에서 보시려면</b>,
               이름·연락처·회원번호·포인트 내역과 매장 구매 내역을 각 지점에 제공하는 데 동의가 필요해요.
             </p>

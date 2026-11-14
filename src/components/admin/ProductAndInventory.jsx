@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { imgUrl } from '../../api';
 import Sidebar from '../layout/Sidebar';
 import { useDialog } from '../../DialogContext';
+import { BRAND } from '../../brand';
 
 const sg = 'var(--primary)';
 const sgd = '#009a58';
@@ -351,7 +352,7 @@ function ExcelUploadModal({ c, s, largeCategories, setRawProducts, onClose }) {
     ws['!cols'] = [{ wch: 20 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 16 }, { wch: 8 }, { wch: 8 }, { wch: 14 }, { wch: 10 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, '상품목록');
-    XLSX.writeFile(wb, 'SR마트_상품등록_양식.xlsx');
+    XLSX.writeFile(wb, `${BRAND.name}_상품등록_양식.xlsx`);
   };
 
   const handleExcelFile = async (e) => {

@@ -13,6 +13,7 @@ import { useDialog } from '../DialogContext';
 import { useStore } from '../StoreContext';
 import Icon from '../components/ui/Icon';
 import { DeliveryLine, useDeliveryPromise } from './Home';
+import { shortStoreName } from '../brand';
 
 const getCategoryImage = (large) => {
   switch(large) {
@@ -47,7 +48,7 @@ function Cart({ cart, loggedIn, onLogin, onOrder, onHome }) {
   const { confirm, notify } = useDialog();
   const { currentStoreId, currentStore } = useStore();
   const promise = useDeliveryPromise(currentStoreId);
-  const storeShort = currentStore ? String(currentStore.name || '').replace(/^에스알마트\s*/, '').trim() : '';
+  const storeShort = currentStore ? shortStoreName(currentStore.name) : '';
   const barRef = useRef(null);
   usePublishBottomBarHeight(barRef);
   const lines = cart.lines;
@@ -113,7 +114,7 @@ function Cart({ cart, loggedIn, onLogin, onOrder, onHome }) {
           )}
           {cart.storeNotice && (
             <section className="sec" style={{ marginTop: 'var(--sp-2)' }}>
-              <div className="notice g"><Icon name="pin" /><div style={{ flex: 1 }}><b>{String(cart.storeNotice).replace(/^에스알마트\s*/, '')}</b> 기준으로 가격·재고를 다시 확인했어요</div></div>
+              <div className="notice g"><Icon name="pin" /><div style={{ flex: 1 }}><b>{shortStoreName(cart.storeNotice)}</b> 기준으로 가격·재고를 다시 확인했어요</div></div>
             </section>
           )}
           {cart.error && (

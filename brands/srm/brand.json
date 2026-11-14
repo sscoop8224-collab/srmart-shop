@@ -6,7 +6,7 @@
   "appId": "com.dongsin.srmart",
   "webPath": "/srm",
   "url": "https://www.dongsinmarket.com/srm/",
-  "stores": ["001", "002", "003"],
+  "stores": ["001", "002", "003", "005", "006"],
   "colors": {
     "primary": "#00c471",
     "iconBackground": "#00c471",

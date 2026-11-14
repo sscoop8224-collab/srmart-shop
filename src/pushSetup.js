@@ -3,8 +3,27 @@
 //  허용되면 FCM 토큰을 발급받아 서버(device_tokens)에 등록한다. 웹에서는 아무것도 하지 않음.
 import { Capacitor } from '@capacitor/core';
 import { registerPushToken } from './api';
+import { BRAND } from './brand';
+import { nativeAppInfo } from './appInfo';
 
 let _done = false;
+let _token = null;   // 마지막으로 받은 FCM 토큰 — 로그인하면 다시 등록해 회원과 잇는다
+
+/** 서버에 기기를 등록한다 — 어느 앱(패키지)·어느 브랜드인지 같이 알린다(2026-11-14 결정 b). */
+async function sendToken() {
+  if (!_token) return;
+  const info = await nativeAppInfo();
+  const guestStoreId = Number(localStorage.getItem('guestStoreId')) || undefined;
+  await registerPushToken({ token: _token, platform: Capacitor.getPlatform(), store_id: guestStoreId, app_id: info?.id || undefined, brand: BRAND.code });
+}
+
+/**
+ * 로그인(회원이 바뀜) 때 부른다 — 첫 실행 때 비회원으로 등록된 기기를 그 회원에게 잇는다.
+ * 이게 없으면 회원에게 가는 알림(주문·영수증·장바구니 할인)이 그 기기로 안 간다.
+ */
+export function registerPushForUser() {
+  return sendToken().catch(() => {});
+}
 
 /**
  * 알림을 **탭했을 때** 갈 곳. App 이 initPush(onOpen) 으로 넘긴다.
@@ -30,8 +49,8 @@ export async function initPush(onOpen) {
 
     // 2) 토큰 발급 리스너 → 서버 등록
     PushNotifications.addListener('registration', (token) => {
-      const guestStoreId = Number(localStorage.getItem('guestStoreId')) || undefined;
-      registerPushToken(token.value, Capacitor.getPlatform(), guestStoreId).catch(() => {});
+      _token = token.value;
+      sendToken().catch(() => {});
     });
     PushNotifications.addListener('registrationError', (err) => {
       console.warn('[push] 토큰 등록 오류:', err?.error || err);

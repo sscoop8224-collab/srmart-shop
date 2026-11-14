@@ -1,4 +1,5 @@
 import { useTheme } from '../ThemeContext';
+import { BRAND } from '../brand';
 
 function AdminHome({ setPage, products, orders, users, goBack }) {
   const { darkMode, setDarkMode } = useTheme();
@@ -82,7 +83,7 @@ function AdminHome({ setPage, products, orders, users, goBack }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 1 }}>
           <div>
             <h2 style={{ margin: 0, color: 'white', fontSize: '20px', fontWeight: '800' }}>관리자 대시보드</h2>
-            <p style={{ margin: '4px 0 0', color: 'rgba(255,255,255,0.8)', fontSize: '13px' }}>에스알마트 관리 시스템</p>
+            <p style={{ margin: '4px 0 0', color: 'rgba(255,255,255,0.8)', fontSize: '13px' }}>{BRAND.name} 관리 시스템</p>
           </div>
           <button onClick={() => setDarkMode && setDarkMode(d => !d)}
             style={{ width: 38, height: 38, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', flexShrink: 0 }}>
