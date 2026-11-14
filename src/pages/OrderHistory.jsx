@@ -14,6 +14,7 @@ import { getMyPurchases, getStorePurchase, getOnlinePurchase, requestReturn, img
 import { useDialog } from '../DialogContext';
 import Code128 from '../components/Code128';
 import Icon from '../components/ui/Icon';
+import { BRAND } from '../brand';
 
 const won = (n) => `${Number(n || 0).toLocaleString('ko-KR')}원`;
 const pts = (n) => `${Number(n || 0).toLocaleString('ko-KR')}P`;
@@ -147,7 +148,7 @@ function StoreReceipt({ d }) {
       )}
       <div className="receipt">
         {voided && <div className="stamp" aria-hidden="true">취소됨</div>}
-        <h2>{store.display_name ? `에스알마트 ${store.display_name}` : (store.name || '에스알마트')}</h2>
+        <h2>{store.display_name ? `${BRAND.name} ${store.display_name}` : (store.name || BRAND.name)}</h2>
         <div className="c">{[store.address, fullDate(d.date), d.pos_number ? `POS ${d.pos_number}` : ''].filter(Boolean).join(' · ')}</div>
         {(store.business_number || store.phone) && <div className="c">{[store.business_number && `사업자번호 ${store.business_number}`, store.phone].filter(Boolean).join(' · ')}</div>}
         <div className="dash" />
@@ -399,7 +400,7 @@ export default function OrderHistory({ orders = [], onReloadOrders, onOpenConsen
       <Icon name="info" />
       <div style={{ flex: 1 }}>
         <b>매장에서 사신 내역은 아직 안 보여요.</b><br />
-        에스알마트 각 지점은 서로 다른 사업자라, 매장 구매 내역을 보시려면 지점 통합 이용에 동의가 필요해요.
+        {BRAND.name} 각 지점은 서로 다른 사업자라, 매장 구매 내역을 보시려면 지점 통합 이용에 동의가 필요해요.
         {onOpenConsent && <div style={{ marginTop: 'var(--sp-2)' }}><button className="ui-btn sm pri" onClick={onOpenConsent}>동의하고 매장 내역 보기</button></div>}
       </div>
     </div>

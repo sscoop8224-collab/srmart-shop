@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { getSignupCoupon, getBusinessInfo } from '../api';
 import Icon from '../components/ui/Icon';
 import { BIZ, useDeliveryPromise } from './Home';
+import { BRAND } from '../brand';
 
 // 배송 약속 한 줄 — 오늘 도착이면 서버 문구 그대로, 아니면 「사유 · ○일 배송」(홈 DeliveryLine 과 같은 말)
 const promiseText = (p) => {
@@ -57,7 +58,7 @@ export default function About({ user, storeId, storeShort, goBack, onShop, onNot
       </div>
 
       <section className="sec">
-        <div className="sec-h">고객 만족을 위한 에스알마트의 약속</div>
+        <div className="sec-h">고객 만족을 위한 {BRAND.name}의 약속</div>
         <div className="group">
           <div className="row ind"><span className="ricon"><Icon name="sparkle" /></span><span className="lbl">신선한 식품<small>매장에서 직접 고른 신선 식품</small></span></div>
           <div className="row ind"><span className="ricon t-blue"><Icon name="truck" /></span><span className="lbl">빠른 배송<small>{ship ? `${ship}${storeShort ? ` (${storeShort})` : ''}` : '가까운 매장에서 바로 보내 드려요'}</small></span></div>

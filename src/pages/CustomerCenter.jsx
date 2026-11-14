@@ -8,9 +8,10 @@ import { useEffect, useState } from 'react';
 import { getStores, getShopFaqs } from '../api';
 import { useStore } from '../StoreContext';
 import Icon from '../components/ui/Icon';
+import { shortStoreName } from '../brand';
 
 const telHref = (t) => `tel:${String(t || '').replace(/[^0-9+]/g, '')}`;
-const shortName = (n) => String(n || '').replace(/^에스알마트\s*/, '');
+const shortName = shortStoreName;
 const sub = (s) => [s.phone, s.operating_hours].filter(Boolean).join(' · ');
 
 function CustomerCenter({ goBack, onOpenChat }) {

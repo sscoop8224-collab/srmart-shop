@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Sidebar from '../layout/Sidebar';
 import { useDialog } from '../../DialogContext';
+import { BRAND } from '../../brand';
 
 const sg = 'var(--primary)';
 const sgd = '#009a58';
@@ -418,7 +419,7 @@ export function KakaoPaySettlement({ setPage, dark, setDark, orders = [], user }
           <div style={{ background: dark ? '#2a2600' : '#fffde6', border: '1px solid #fac775', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
             <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#FEE500', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>K</div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: c.textPrimary }}>SR마트 카카오페이 연동 중</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: c.textPrimary }}>{BRAND.name} 카카오페이 연동 중</div>
               <div style={{ fontSize: 11, color: c.textSecondary, marginTop: 2 }}>앱 ID: 1424384 · 가맹점 코드: SRMART-001 · 정산 주기: 매주 화요일</div>
             </div>
             <span style={{ ...s.pill, background: sgl, color: sgd }}>연동 정상</span>
@@ -688,7 +689,7 @@ export function Settings({ setPage, dark, setDark, users = [], setUsers, user })
   );
 
   const pages = [
-    <div key="store"><div style={s.sectionCard}><div style={s.sectionTitle}>쇼핑몰 기본 정보</div><Field label="쇼핑몰 이름" value="에스알마트 (SR Mart)" /><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}><Field label="대표 전화" value="032-555-1234" /><Field label="대표 이메일" value="srmart@srmart.co.kr" /></div><Field label="사업자등록번호" value="123-45-67890" /><Field label="사업장 주소" value="인천광역시 서구 검암동 123-45" /></div></div>,
+    <div key="store"><div style={s.sectionCard}><div style={s.sectionTitle}>쇼핑몰 기본 정보</div><Field label="쇼핑몰 이름" value={BRAND.name} /><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}><Field label="대표 전화" value="032-555-1234" /><Field label="대표 이메일" value="srmart@srmart.co.kr" /></div><Field label="사업자등록번호" value="123-45-67890" /><Field label="사업장 주소" value="인천광역시 서구 검암동 123-45" /></div></div>,
     <div key="delivery"><div style={s.sectionCard}><div style={s.sectionTitle}>배송 기본 설정</div><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}><Field label="기본 배송비 (원)" value="3000" type="number" /><Field label="무료배송 기준 (원)" value="30000" type="number" /></div></div><div style={s.sectionCard}><div style={s.sectionTitle}>배송 알림</div><ToggleRow label="주문 확인 알림" desc="결제 완료 시 카카오 알림톡 발송" k="orderNoti" /><ToggleRow label="배송 출발 알림" desc="배송 시작 시 운송장 번호 포함 발송" k="shipNoti" /><ToggleRow label="배송 완료 알림" desc="배송 완료 시 리뷰 작성 유도 발송" k="delivNoti" /></div></div>,
     <div key="notify"><div style={s.sectionCard}><div style={s.sectionTitle}>관리자 알림 설정</div><ToggleRow label="신규 주문 알림" desc="새 주문이 들어올 때마다 이메일 알림" k="newOrder" /><ToggleRow label="품절 임박 알림" desc="재고가 최소 기준 이하로 내려갈 때" k="lowStock" /><ToggleRow label="신규 리뷰 알림" desc="별점 3점 이하 리뷰 등록 시 즉시 알림" k="newReview" /><ToggleRow label="정산 완료 알림" desc="카카오페이 정산 완료 시 이메일 알림" k="settlement" /><ToggleRow label="일일 매출 리포트" desc="매일 오전 8시 전날 매출 요약 발송" k="dailyReport" /></div></div>,
     <AdminAccountTab key="admin" c={c} s={s} dark={dark} users={users} setUsers={setUsers} />,

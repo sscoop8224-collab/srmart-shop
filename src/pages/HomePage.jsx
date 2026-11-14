@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getSignupCoupon } from '../api';
+import { BRAND } from '../brand';
 
 export default function HomePage({ onShop, onLogin, darkMode }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -53,12 +54,12 @@ export default function HomePage({ onShop, onLogin, darkMode }) {
         <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, textDecoration: 'none', cursor: 'pointer' }}>
           <img
             src={`${process.env.PUBLIC_URL}/srm-logo-transparent.png`}
-            alt="에스알마트 로고"
+            alt={`${BRAND.name} 로고`}
             style={{ height: 40, width: 'auto' }}
             onError={e => { e.currentTarget.src = `${process.env.PUBLIC_URL}/srm-logo.svg`; }}
           />
           <span style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: darkMode ? '#ffffff' : '#1a1a1a', letterSpacing: '-0.3px' }}>
-            에스알마트
+            {BRAND.name}
           </span>
         </a>
 
@@ -161,9 +162,9 @@ export default function HomePage({ onShop, onLogin, darkMode }) {
       <section style={{ padding: 'clamp(48px, 8vw, 80px) clamp(20px, 5vw, 80px)' }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <h2 style={{ fontSize: 'clamp(22px, 4vw, 36px)', fontWeight: 800, color: text, margin: '0 0 12px', letterSpacing: '-0.5px' }}>
-            왜 에스알마트인가요?
+            왜 {BRAND.name}인가요?
           </h2>
-          <p style={{ fontSize: 15, color: sub, margin: 0 }}>고객 만족을 위한 에스알마트의 약속</p>
+          <p style={{ fontSize: 15, color: sub, margin: 0 }}>고객 만족을 위한 {BRAND.name}의 약속</p>
         </div>
 
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 1200, margin: '0 auto' }}>
@@ -205,7 +206,7 @@ export default function HomePage({ onShop, onLogin, darkMode }) {
         <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.85)', margin: '0 0 36px' }}>
           {signupCoupon
             ? `가입하면 ${signupCoupon.label}을 드려요.${signupCoupon.sub ? ` (${signupCoupon.sub})` : ''}`
-            : '우리 동네 에스알마트 장보기, 지금 시작해 보세요.'}
+            : `우리 동네 ${BRAND.name} 장보기, 지금 시작해 보세요.`}
         </p>
 
         <button onClick={onShop} style={{

@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getMyPurchases, getStorePurchase, getOnlinePurchase } from '../api';
 import Code128 from '../components/Code128';
+import { BRAND } from '../brand';
 
 const won = (n) => '₩' + Number(n || 0).toLocaleString('ko-KR');
 
@@ -133,7 +134,7 @@ export default function Purchases({ goBack, onOpenConsent, openSaleId = null, on
           color: 'var(--text, #222)',
         }}>
           <b>매장에서 사신 내역은 아직 안 보여요.</b><br />
-          에스알마트 각 지점은 서로 다른 사업자라, 매장 구매 내역을 이 앱에서 보시려면
+          {BRAND.name} 각 지점은 서로 다른 사업자라, 매장 구매 내역을 이 앱에서 보시려면
           지점 통합 이용에 동의가 필요해요.
           {onOpenConsent && (
             <div style={{ marginTop: 10 }}>
@@ -284,7 +285,7 @@ function StoreReceipt({ d }) {
 
       <div style={{ textAlign: 'center', marginBottom: 16 }}>
         <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text, #222)' }}>
-          {d.store?.display_name || d.store?.name || '에스알마트'}
+          {d.store?.display_name || d.store?.name || BRAND.name}
         </div>
         {!!d.store?.business_number && (
           <div style={{ fontSize: 12, color: 'var(--text2, #868e96)', marginTop: 3 }}>

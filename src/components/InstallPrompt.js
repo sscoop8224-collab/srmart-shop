@@ -5,6 +5,7 @@
 //   · 아이폰 = 아래 시트 「홈 화면에 추가하기」 — Safari 「공유 → 홈 화면에 추가」 안내 · 「나중에」
 import { useState, useEffect } from 'react';
 import Icon from './ui/Icon';
+import { BRAND } from '../brand';
 
 const DISMISSED_KEY = 'srmart_pwa_dismissed_at';
 const DISMISS_DAYS  = 7;
@@ -99,9 +100,9 @@ export default function InstallPrompt() {
   if (!show) return null;
   return (
     <div className="v2 install-v2">
-      <div className="toast install-card" role="dialog" aria-label="에스알마트 앱 설치">
+      <div className="toast install-card" role="dialog" aria-label={`${BRAND.name} 앱 설치`}>
         <img src={ICON} alt="" />
-        <div className="install-txt"><b>에스알마트 앱 설치</b><div className="f-hint">홈 화면에서 앱처럼 빠르게 열려요</div></div>
+        <div className="install-txt"><b>{BRAND.name} 앱 설치</b><div className="f-hint">홈 화면에서 앱처럼 빠르게 열려요</div></div>
         <button type="button" className="ui-btn sm pri" onClick={install}>설치</button>
         <button type="button" className="nav-btn plain" aria-label="닫기" onClick={dismiss}><Icon name="x" size="sm" /></button>
       </div>

@@ -1,5 +1,6 @@
 import { getUserRole } from '../../AuthContext';
 import DarkModeToggle from '../DarkModeToggle';
+import { BRAND } from '../../brand';
 
 const NAV = [
   { section: '메인' },
@@ -91,7 +92,7 @@ export default function Sidebar({ currentPage, setPage, dark, user }) {
   return (
     <div style={{ width: 220, background: c.sidebarBg, borderRight: `1px solid ${c.border}`, display: 'flex', flexDirection: 'column', flexShrink: 0, height: '100vh', transition: 'background 0.2s' }}>
       <div style={{ paddingLeft: 20, paddingRight: 20, paddingTop: 'max(20px, env(safe-area-inset-top))', paddingBottom: 16, borderBottom: `1px solid ${c.border}` }}>
-        <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--primary)', letterSpacing: '-0.3px' }}>에스알마트</div>
+        <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--primary)', letterSpacing: '-0.3px' }}>{BRAND.name}</div>
         <div style={{ fontSize: 11, color: c.logoSub, marginTop: 2 }}>관리자 시스템</div>
       </div>
 

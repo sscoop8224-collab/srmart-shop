@@ -8,10 +8,10 @@
 //   · 금액은 서버 값만 쓴다. 화면에서 다시 계산하지 않는다.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getCart, previewCart, putCartLine, deleteCartLine, clearCartApi, mergeCart } from '../api';
+import { BRAND } from '../brand';
 
-// 브랜드 앱이 나뉘기 전까지는 에스알마트 하나(서버도 헤더가 없으면 매장의 브랜드를 따른다).
-const BRAND = 'srm';
-export const GUEST_KEY = `srm_cart_v1:${BRAND}`;
+// 브랜드는 빌드가 정한다(src/brand.js). 기기 장바구니도 브랜드마다 다른 키 — 서버는 X-Shop-Brand 로 같은 브랜드 장바구니를 연다.
+export const GUEST_KEY = `srm_cart_v1:${BRAND.code}`;
 export const CART_MAX_QTY = 99;
 
 /** 상품(목록·상세에서 넘어온 모양) → 장바구니 줄 */
