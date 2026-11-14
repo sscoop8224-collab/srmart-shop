@@ -103,7 +103,8 @@ export const getMyPoints = () => API.get('/me/points');
 export const deleteAccount = (password) => API.delete('/users/me', { data: { password } });
 export const getMyPointHistory = () => API.get('/me/point-history');
 export const requestReturn = (orderId, data) => API.post(`/orders/${orderId}/returns`, data);
-export const getActiveEvents = () => API.get('/events/active');
+// 범위(2026-11-14 지시 8) — 전체 + 이 앱의 브랜드(X-Shop-Brand) + 이 매장 것만 온다
+export const getActiveEvents = (storeId) => API.get('/events/active', storeId ? { params: { store_id: storeId } } : {});
 export const getMyActiveCoupons = () => API.get('/users/me/coupons');
 // 알림 설정(2026-11-12 지시 5) — 주문·배송 알림 / 혜택 알림(광고성) 따로.
 // 응답: { order_notify, order_notify_at, marketing_push, marketing_push_at } — _at 은 마지막으로 켜거나 끈 시각('YYYY-MM-DD HH:mm:ss' | null).
