@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>쇼핑앱 받기 | 동신마켓</title>
+<meta name="robots" content="noindex">
+<!--
+  매장 POP QR 의 고정 주소 — https://www.dongsinmarket.com/app?b=srm | aram (2026-11-14 대표님 지시 11)
+  자리: C:\srmart\homepage\app\index.html (홈페이지는 git 밖이라 원본은 srmart-shop/landing/app/ 에 둔다)
+  nginx 는 바꾸지 않는다 — location / 의 try_files $uri $uri/ 가 /app → app/index.html 로 보낸다.
+
+  기기별:
+    안드로이드 → 플레이스토어(등록 전에는 「준비 중」 안내 + 웹 쇼핑몰)
+    아이폰     → 홈 화면에 추가 안내(사파리에서만 된다 — 카카오톡 등 앱 안 브라우저면 사파리로 열라고 안내)
+    PC         → QR 과 두 갈래 안내
+
+  🔴 플레이스토어에 등록되면 그 브랜드의 playReady 를 true 로 바꾼다(패키지 이름은 brands/<id>/brand.json 의 appId 와 같다).
+  🔴 QR 그림은 이 주소를 담는다 — 주소를 바꾸면 매장에 붙인 POP 를 전부 다시 찍어야 한다. 주소는 바꾸지 않는다.
+-->
+<style>
+  :root {
+    --brand: #00c471; --bg: #f6f7f9; --card: #ffffff; --text: #191f28; --sub: #4e5968; --muted: #8b95a1; --line: #e5e8eb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #101215; --card: #1b1e23; --text: #f2f4f6; --sub: #c4cad1; --muted: #8b95a1; --line: #2c3036; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif; line-height: 1.55; }
+  main { max-width: 440px; margin: 0 auto; padding: 32px 16px 48px; }
+  .brand { font-size: 28px; font-weight: 800; color: var(--brand); letter-spacing: -0.5px; }
+  .company { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px; margin-top: 20px; }
+  h1 { font-size: 19px; margin: 0 0 8px; }
+  p { margin: 0 0 10px; color: var(--sub); font-size: 15px; }
+  ol { margin: 8px 0 0; padding-left: 22px; color: var(--sub); font-size: 15px; }
+  ol li { margin-bottom: 8px; }
+  .btn { display: block; width: 100%; text-align: center; padding: 15px 16px; border-radius: 12px; background: var(--brand); color: #fff; font-size: 16px; font-weight: 700; text-decoration: none; margin-top: 14px; border: 0; }
+  .btn.ghost { background: transparent; color: var(--brand); border: 1.5px solid var(--brand); }
+  .note { font-size: 13px; color: var(--muted); margin-top: 12px; }
+  .qr { display: block; width: 200px; height: 200px; margin: 6px auto 0; background: #fff; padding: 8px; border-radius: 12px; }
+  [hidden] { display: none !important; }
+  b { color: var(--text); }
+</style>
+</head>
+<body>
+<main>
+  <div class="brand" id="brandName">에스알마트</div>
+  <div class="company">동신마켓</div>
+
+  <!-- 안드로이드 -->
+  <section class="card" id="android" hidden>
+    <h1>앱 받기</h1>
+    <div id="androidReady" hidden>
+      <p>플레이스토어로 이동해요. 이동하지 않으면 아래 단추를 눌러 주세요.</p>
+      <a class="btn" id="playLink" href="#">플레이스토어에서 받기</a>
+    </div>
+    <div id="androidWait" hidden>
+      <p><b>플레이스토어 등록을 준비하고 있어요.</b> 등록되면 이 QR 로 바로 받을 수 있어요.</p>
+      <p>그동안은 웹 쇼핑몰로 이용해 주세요.</p>
+    </div>
+  </section>
+
+  <!-- 아이폰 -->
+  <section class="card" id="ios" hidden>
+    <h1>홈 화면에 추가하기</h1>
+    <div id="iosInApp" hidden>
+      <p><b>사파리에서 열어 주세요.</b> 카카오톡·네이버 같은 앱 안에서는 홈 화면에 추가할 수 없어요.</p>
+      <p>오른쪽 아래(또는 위)의 <b>⋯</b> 단추 → <b>「Safari로 열기」</b> 를 눌러 주세요.</p>
+    </div>
+    <ol>
+      <li>아래 <b>「쇼핑몰 열기」</b> 를 눌러요.</li>
+      <li>사파리 아래쪽의 <b>공유 단추</b>(네모에 위 화살표)를 눌러요.</li>
+      <li><b>「홈 화면에 추가」</b> → 오른쪽 위 <b>「추가」</b> 를 눌러요.</li>
+    </ol>
+    <p class="note">홈 화면의 아이콘으로 앱처럼 열려요.</p>
+  </section>
+
+  <!-- PC -->
+  <section class="card" id="desktop" hidden>
+    <h1>휴대폰으로 QR 을 찍어 주세요</h1>
+    <img class="qr" id="qrImg" alt="쇼핑앱 받기 QR">
+    <p class="note" style="text-align:center">안드로이드는 플레이스토어로, 아이폰은 홈 화면에 추가하는 안내로 이어져요.</p>
+  </section>
+
+  <!-- 웹 쇼핑몰(모든 기기) -->
+  <section id="webBox">
+    <a class="btn" id="webLink" href="#">쇼핑몰 열기</a>
+  </section>
+  <section class="card" id="webWait" hidden>
+    <p><b>웹 쇼핑몰도 준비하고 있어요.</b> 곧 열어 드릴게요.</p>
+  </section>
+</main>
+<script>
+(function () {
+  // 브랜드 — brands/<id>/brand.json 과 같은 값. 🔴 플레이스토어에 등록되면 playReady 를 true 로.
+  var BRANDS = {
+    srm:  { name: '에스알마트', color: '#00c471', appId: 'com.dongsin.srmart',   playReady: false, web: '/shop/' },
+    aram: { name: '아람마트',   color: '#DB102E', appId: 'com.dongsin.arammart', playReady: false, web: null }
+  };
+  var code = '';
+  try { code = new URLSearchParams(location.search).get('b') || ''; } catch (e) { code = ''; }
+  if (!BRANDS[code]) code = 'srm';
+  var b = BRANDS[code];
+
+  document.title = b.name + ' 쇼핑앱 받기';
+  document.documentElement.style.setProperty('--brand', b.color);
+  document.getElementById('brandName').textContent = b.name;
+  document.getElementById('qrImg').src = '/app/qr-' + code + '.png';
+
+  var ua = navigator.userAgent || '';
+  var isAndroid = /Android/i.test(ua);
+  var isIOS = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
+  var inApp = /KAKAOTALK|NAVER|Instagram|FBAN|FBAV|Line\//i.test(ua);
+
+  if (b.web) document.getElementById('webLink').href = b.web;
+  else { document.getElementById('webBox').hidden = true; document.getElementById('webWait').hidden = false; }
+
+  if (isAndroid) {
+    document.getElementById('android').hidden = false;
+    if (b.playReady) {
+      var play = 'https://play.google.com/store/apps/details?id=' + b.appId;
+      document.getElementById('androidReady').hidden = false;
+      document.getElementById('playLink').href = play;
+      document.getElementById('webLink').className = 'btn ghost';
+      setTimeout(function () { location.replace(play); }, 400);
+    } else {
+      document.getElementById('androidWait').hidden = false;
+    }
+  } else if (isIOS) {
+    document.getElementById('ios').hidden = false;
+    if (inApp) document.getElementById('iosInApp').hidden = false;
+  } else {
+    document.getElementById('desktop').hidden = false;
+    document.getElementById('webLink').className = 'btn ghost';
+  }
+})();
+</script>
+</body>
+</html>
