@@ -9,7 +9,7 @@
 import { useState, useEffect, useRef } from 'react';
 import FindAccount from './FindAccount';
 import logo from '../assets/brand/logo_h_ko.png';
-import { getStores, register, getCoverage } from '../api';
+import { getStores, register, getCoverage, SITE } from '../api';
 import { useDialog } from '../DialogContext';
 import { todayYmd } from '../utils/localDate';
 import Icon from '../components/ui/Icon';
@@ -540,7 +540,7 @@ function Login({ onLogin, onGuest, initialMode }) {
                   detail="행사·쿠폰 소식을 앱 푸시·문자로 보내 드려요. 동의하지 않으셔도 가입·주문과 주문·배송 알림은 그대로예요. 마이 → 알림 설정에서 언제든 끌 수 있어요." />
               </div>
               {errs.consent && <div className="f-err" style={{ padding: '0 var(--sp-4)' }}><Icon name="alert" size="sm" />{errs.consent}</div>}
-              <div className="sec-f"><a className="link" href="https://dongsinmarket.co.kr/privacy.html" target="_blank" rel="noreferrer">개인정보처리방침 전문 보기</a></div>
+              <div className="sec-f"><a className="link" href={`${SITE}/privacy.html?b=${BRAND.code}`} target="_blank" rel="noreferrer">개인정보처리방침 전문 보기</a></div>
             </section>
           </>
         )}
