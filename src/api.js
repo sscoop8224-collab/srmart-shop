@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
+import { BRAND } from './brand';
 
 // 서비스 도메인. 네이티브 앱은 절대 도메인, 웹은 같은 출처(상대경로 /api → nginx 프록시).
 // Tailscale IP 하드코딩 제거 — 서버 이전으로 IP가 바뀌어도 도메인은 불변.
@@ -24,6 +25,8 @@ const API = axios.create({
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem('srmart_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
+  // 이 앱의 브랜드(빌드가 정함 · src/brand.js) — 서버 장바구니·푸시가 같은 브랜드 것만 연다
+  config.headers['X-Shop-Brand'] = BRAND.code;
   return config;
 });
 
@@ -92,7 +95,8 @@ export const matchZipcode = (zipcode, dong, storeId) => API.post('/store/match-z
 // 주소 커버리지(공개) — 동 이름 우선 + 우편번호. 이 주소를 배송하는 매장 전체 + 추천 1곳 (회원가입 안내용)
 export const getCoverage = (zipcode, dong) => API.post('/store/coverage', { zipcode, dong });
 // FCM 기기 토큰 등록(푸시) — 앱 실행 시. 로그인 상태면 서버가 user·store 연결, 게스트는 store_id 전달.
-export const registerPushToken = (token, platform, store_id) => API.post('/push/register', { token, platform, store_id });
+// 푸시 기기 등록 — app_id(앱 패키지)로 서버가 브랜드를 정한다(2026-11-14 결정 b). brand 는 앱 정보를 못 읽을 때의 보조.
+export const registerPushToken = ({ token, platform, store_id, app_id, brand }) => API.post('/push/register', { token, platform, store_id, app_id, brand });
 export const getMyPoints = () => API.get('/me/points');
 export const deleteAccount = (password) => API.delete('/users/me', { data: { password } });
 export const getMyPointHistory = () => API.get('/me/point-history');

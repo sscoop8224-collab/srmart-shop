@@ -27,7 +27,7 @@ import { DialogProvider, useDialog } from './DialogContext';
 import { kakaoPayReady } from './pages/KakaoPay';
 import { useAuth } from './AuthContext';
 import { useStore } from './StoreContext';
-import { initPush } from './pushSetup';
+import { initPush, registerPushForUser } from './pushSetup';
 import { objectJosa } from './utils/customerStores';
 import useShopCart from './hooks/useShopCart';
 import { BRAND, shortStoreName } from './brand';
@@ -158,6 +158,8 @@ function AppContent() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  // 로그인하면 기기를 그 회원에게 다시 등록한다(첫 실행 때는 비회원으로 등록됐을 수 있다 — 2026-11-14 결정 b)
+  useEffect(() => { if (user?.id) registerPushForUser(); }, [user?.id]);
 
   // 콘텐츠 로드 후(스플래시 종료 이후) 상태바를 다크모드에 맞춤 — 라이트=흰 배경/어두운 아이콘,
   // 다크=#1a1a1a(홈 헤더의 다크모드 배경과 동일)/밝은 아이콘. setBackgroundColor는 안드로이드 전용
