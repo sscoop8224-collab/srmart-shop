@@ -8,7 +8,6 @@
 //      「받았다」 는 증거가 없다. 서버에 칸이 생기면 함께 넣는다.
 import { useState, useEffect, useRef } from 'react';
 import FindAccount from './FindAccount';
-import logo from '../assets/brand/logo_h_ko.png';
 import { getStores, register, getCoverage, SITE } from '../api';
 import { useDialog } from '../DialogContext';
 import { todayYmd } from '../utils/localDate';
@@ -349,7 +348,7 @@ function Login({ onLogin, onGuest, initialMode }) {
       <div className="v2 plain auth-v2">
         <div className="auth-wrap">
           <div className="auth-top">
-            <img src={logo} alt={BRAND.name} />
+            <img src={BRAND.logo} alt={BRAND.name} />
             <h1>즐거운 쇼핑을 시작하세요</h1>
             <p>오늘도 {BRAND.name}에서 좋은 하루 되세요</p>
           </div>

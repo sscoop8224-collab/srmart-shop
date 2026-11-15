@@ -1,5 +1,4 @@
 import Icon from './Icon';
-import logo from '../../assets/brand/logo_h_ko.png';
 import { BRAND } from '../../brand';
 
 // 홈 헤더(P05) — 로고 이미지 · 매장 · 종(공지) · 로그인 (목업 homebar(), 묶음 1 · 2026-11-12)
@@ -9,7 +8,7 @@ export default function AppHeader({ storeName, onStoreClick, onHome, onBell, log
   return (
     <header className="app-nav">
       <div className="homebar">
-        <img src={logo} alt={BRAND.name} onClick={onHome} />
+        <img src={BRAND.logo} alt={BRAND.name} onClick={onHome} />
         {storeName && (
           <button type="button" className="store-chip" onClick={onStoreClick} disabled={!onStoreClick}>
             {storeName}{onStoreClick && <Icon name="chevD" size="sm" />}

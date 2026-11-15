@@ -70,6 +70,28 @@ if (BRAND === 'aram') {
   }
 }
 
+// 🔴 그림도 브랜드 것으로 (2026-11-16 밤샘 · 아람 점검) — public/ 의 홈 화면 아이콘·파비콘은 빌드가 그대로 복사해서
+//    아람 빌드에 에스알마트 아이콘이 나갔다(홈 화면에 추가하면 SRM 아이콘). 위 글자 검사는 그림을 못 본다.
+//    brands/<id>/public/ 을 빌드 폴더 위에 덮어쓰고, 덮어쓴 뒤 **에스알마트 그림과 한 바이트도 같으면 실패**한다.
+//    그림 만들기: node brand/generate-brand-web.cjs <id>
+if (BRAND !== 'srm') {
+  const PUB = path.join(ROOT, 'brands', BRAND, 'public');
+  const copyTree = (from, to, acc = []) => {
+    for (const e of fs.readdirSync(from, { withFileTypes: true })) {
+      const a = path.join(from, e.name), b = path.join(to, e.name);
+      if (e.isDirectory()) { fs.mkdirSync(b, { recursive: true }); copyTree(a, b, acc); } else { fs.copyFileSync(a, b); acc.push(b); }
+    }
+    return acc;
+  };
+  if (!fs.existsSync(PUB)) { console.error(`🔴 ${BRAND} 웹 그림이 없다(${PUB}) — node brand/generate-brand-web.cjs ${BRAND}`); process.exit(1); }
+  const copied = copyTree(PUB, OUT);
+  const md5 = (f) => require('crypto').createHash('md5').update(fs.readFileSync(f)).digest('hex');
+  const MUST = ['favicon.ico', 'logo192.png', 'logo512.png', ...fs.readdirSync(path.join(ROOT, 'public', 'icons')).map(f => `icons/${f}`)];
+  const same = MUST.filter(rel => !fs.existsSync(path.join(OUT, rel)) || md5(path.join(OUT, rel)) === md5(path.join(ROOT, 'public', rel)));
+  if (same.length) { console.error(`🔴 ${BRAND} 빌드에 에스알마트 그림이 남았다(없거나 같은 바이트) — ${same.join(' · ')}`); process.exit(1); }
+  console.log(`   ${BRAND} 그림 ${copied.length}개를 덮어썼다(홈 화면 아이콘 · 파비콘)`);
+}
+
 const bad = count(OUT, FORBID[BRAND]);
 if (bad.length) {
   console.error(`🔴 ${BRAND} 빌드에 다른 브랜드 이름이 남았다 — ${bad.map(b => `${b.file} 「${b.word}」 ${b.n}`).join(' · ')}`);

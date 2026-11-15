@@ -14,6 +14,10 @@ export const BRAND = process.env.REACT_APP_BRAND === 'aram'
     name: '아람마트',
     appId: 'com.dongsin.arammart',
     aiName: '아람마트 AI 상담사',
+    // 헤더·로그인 가로 로고(2026-11-16 — 예전엔 두 화면이 에스알마트 로고를 바로 import 해 아람 빌드에도 SRM 이 떴다).
+    // require 를 삼항식 **안에** 둔다 — 빌드가 조건을 상수로 바꾸면 안 쓰는 브랜드 그림은 번들에 들어가지 않는다.
+    // 그림 만들기: node brand/generate-brand-web.cjs aram
+    logo: require('./assets/brand/aram/logo_h_ko.png'),
     // 매장 이름 앞에 붙는 상호 — 「아람마트 고촌점」 → 「고촌점」
     storePrefix: /^(아람마트|동신마켓)\s*/i,
   })
@@ -22,6 +26,7 @@ export const BRAND = process.env.REACT_APP_BRAND === 'aram'
     name: '에스알마트',
     appId: 'com.dongsin.srmart',
     aiName: '에스알마트 AI 상담사',
+    logo: require('./assets/brand/logo_h_ko.png'),
     storePrefix: /^(에스알마트|SR\s*마트|에스알|동신마켓)\s*/i,
   });
 
