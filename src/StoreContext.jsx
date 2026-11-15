@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect, useContext } from 'react';
 import { AuthContext } from './AuthContext';
 import { getStores } from './api';
+import { GUEST_STORE_KEY } from './brand';
 
 export const StoreContext = createContext(null);
 
@@ -11,7 +12,7 @@ export function StoreProvider({ children }) {
   const [stores, setStores] = useState([]);
   const [storesLoading, setStoresLoading] = useState(false);
   const [guestStoreId, setGuestStoreIdState] = useState(() => {
-    const saved = localStorage.getItem('guestStoreId');
+    const saved = localStorage.getItem(GUEST_STORE_KEY);
     return saved ? Number(saved) : null;
   });
 
@@ -40,10 +41,10 @@ export function StoreProvider({ children }) {
 
   const setGuestStoreId = (storeId) => {
     if (storeId) {
-      localStorage.setItem('guestStoreId', String(storeId));
+      localStorage.setItem(GUEST_STORE_KEY, String(storeId));
       setGuestStoreIdState(Number(storeId));
     } else {
-      localStorage.removeItem('guestStoreId');
+      localStorage.removeItem(GUEST_STORE_KEY);
       setGuestStoreIdState(null);
     }
   };

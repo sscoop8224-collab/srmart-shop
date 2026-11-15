@@ -30,3 +30,12 @@ export const COMPANY = '동신마켓';
 
 /** 매장 이름에서 앞머리 상호를 뗀다 — 「에스알마트 왕길점」 → 「왕길점」 */
 export const shortStoreName = (n) => String(n || '').replace(BRAND.storePrefix, '').trim();
+
+/**
+ * 비로그인 손님이 고른 매장을 기억하는 자리(localStorage) — 브랜드마다 따로 (2026-11-15 아람 웹 경로)
+ *   웹에서는 /srm/ · /aram/ 이 **같은 출처**라 localStorage 를 같이 쓴다. 키가 같으면 에스알마트에서 고른 매장이
+ *   아람마트 웹에 그대로 넘어가, 아람 간판 아래 다른 브랜드 매장의 가격·재고가 보인다.
+ *   에스알마트는 옛 키(guestStoreId)를 그대로 쓴다 — 바꾸면 지금 손님들이 고른 매장이 사라진다.
+ *   지키는 검사: scripts/check-brand-paths.cjs
+ */
+export const GUEST_STORE_KEY = BRAND.code === 'srm' ? 'guestStoreId' : `guestStoreId:${BRAND.code}`;

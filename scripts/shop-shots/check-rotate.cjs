@@ -66,7 +66,7 @@ async function run({ breaker = null, quiet = false } = {}) {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: PORTRAIT, deviceScaleFactor: 1, isMobile: true, hasTouch: true, locale: 'ko-KR',
     userAgent: 'Mozilla/5.0 (Linux; Android 13; SM-X200) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36' });
-  await ctx.addInitScript(() => { try { localStorage.setItem('guestStoreId', '11'); localStorage.setItem('srmart_pwa_dismissed_at', String(Date.now())); } catch (e) {} });
+  await ctx.addInitScript(() => { try { localStorage.setItem('guestStoreId', '11'); localStorage.setItem('guestStoreId:aram', '11'); localStorage.setItem('srmart_pwa_dismissed_at', String(Date.now())); } catch (e) {} });
   if (breaker) await ctx.addInitScript(breaker.js);
   await ctx.route('**/*', async r => {
     const u = new URL(r.request().url());

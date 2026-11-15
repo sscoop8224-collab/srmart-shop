@@ -3,7 +3,7 @@
 //  허용되면 FCM 토큰을 발급받아 서버(device_tokens)에 등록한다. 웹에서는 아무것도 하지 않음.
 import { Capacitor } from '@capacitor/core';
 import { registerPushToken } from './api';
-import { BRAND } from './brand';
+import { BRAND, GUEST_STORE_KEY } from './brand';
 import { nativeAppInfo } from './appInfo';
 
 let _done = false;
@@ -13,7 +13,7 @@ let _token = null;   // 마지막으로 받은 FCM 토큰 — 로그인하면 �
 async function sendToken() {
   if (!_token) return;
   const info = await nativeAppInfo();
-  const guestStoreId = Number(localStorage.getItem('guestStoreId')) || undefined;
+  const guestStoreId = Number(localStorage.getItem(GUEST_STORE_KEY)) || undefined;
   await registerPushToken({ token: _token, platform: Capacitor.getPlatform(), store_id: guestStoreId, app_id: info?.id || undefined, brand: BRAND.code });
 }
 

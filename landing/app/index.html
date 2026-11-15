@@ -94,9 +94,10 @@
 <script>
 (function () {
   // 브랜드 — brands/<id>/brand.json 과 같은 값. 🔴 플레이스토어에 등록되면 playReady 를 true 로.
+  // web 은 brand.json 의 webPath(2026-11-15). 🔴 nginx 에 /srm/·/aram/ 을 건 **뒤에** 홈페이지로 복사한다(docs/ARAM_WEB_PATH.md).
   var BRANDS = {
-    srm:  { name: '에스알마트', color: '#00c471', appId: 'com.dongsin.srmart',   playReady: false, web: '/shop/' },
-    aram: { name: '아람마트',   color: '#DB102E', appId: 'com.dongsin.arammart', playReady: false, web: null }
+    srm:  { name: '에스알마트', color: '#00c471', appId: 'com.dongsin.srmart',   playReady: false, web: '/srm/' },
+    aram: { name: '아람마트',   color: '#DB102E', appId: 'com.dongsin.arammart', playReady: false, web: '/aram/' }
   };
   var code = '';
   try { code = new URLSearchParams(location.search).get('b') || ''; } catch (e) { code = ''; }

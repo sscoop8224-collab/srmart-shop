@@ -144,7 +144,7 @@ async function shoot(browser, s, dev, dark) {
   });
   await ctx.addInitScript(({ noStore, iphone }) => {
     try {
-      if (!noStore) localStorage.setItem('guestStoreId', '11');
+      if (!noStore) { localStorage.setItem('guestStoreId', '11'); localStorage.setItem('guestStoreId:aram', '11'); }
       if (!iphone) localStorage.setItem('srmart_pwa_dismissed_at', String(Date.now()));
       window.open = () => null;                              // 결제창 팝업은 열지 않는다
     } catch (e) {}

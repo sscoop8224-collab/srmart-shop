@@ -31,7 +31,7 @@ const DEVICES = [
   for (const dev of DEVICES) for (const dark of [false, true]) {
     // 서비스워커는 막는다 — 서비스워커가 받은 요청은 아래 가짜 응답을 건너뛰어 **실서버 API 로 나간다**(운영에 돌릴 때 기록이 남는다)
     const ctx = await browser.newContext({ viewport: dev.viewport, deviceScaleFactor: dev.dsf, isMobile: true, hasTouch: true, colorScheme: dark ? 'dark' : 'light', locale: 'ko-KR', serviceWorkers: 'block' });
-    await ctx.addInitScript(() => { try { localStorage.setItem('guestStoreId', '11'); localStorage.setItem('srmart_pwa_dismissed_at', String(Date.now())); } catch (e) {} });
+    await ctx.addInitScript(() => { try { localStorage.setItem('guestStoreId', '11'); localStorage.setItem('guestStoreId:aram', '11'); localStorage.setItem('srmart_pwa_dismissed_at', String(Date.now())); } catch (e) {} });
     await ctx.route('**/*', r => {
       const u = new URL(r.request().url());
       if (u.origin === new URL(BASE).origin && u.pathname.startsWith('/api/')) { const x = route(u.pathname.slice(4), r.request().method(), u.search, {}); return r.fulfill({ status: x.status, contentType: 'application/json', body: JSON.stringify(x.body) }); }

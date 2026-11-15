@@ -98,5 +98,8 @@ app/src/main/assets/public
 
 # Generated Config files
 app/src/main/assets/capacitor.config.json
+# 브랜드(flavor)별 앱 주소 사본 — scripts/cap-brand-config.cjs 가 cap sync 뒤에 쓴다(2026-11-15)
+app/src/srm/assets/capacitor.config.json
+app/src/aram/assets/capacitor.config.json
 app/src/main/assets/capacitor.plugins.json
 app/src/main/res/xml/config.xml
