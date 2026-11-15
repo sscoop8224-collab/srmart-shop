@@ -92,6 +92,29 @@ if (BRAND !== 'srm') {
   console.log(`   ${BRAND} 그림 ${copied.length}개를 덮어썼다(홈 화면 아이콘 · 파비콘)`);
 }
 
+// 🔴 부팅 배경색도 브랜드 것으로 (2026-11-16 밤샘 · 아람 점검) — 네이티브 스플래시는 브랜드 색(아람 빨강 #DB102E)인데
+//    웹이 올라오는 구간(index.html 초기 배경 · 시작 광고 바탕 · 상태바)은 에스알마트 초록 #077D3C 이 코드에 박혀 있어
+//    아람 앱이 빨강 → 초록 → 화면으로 깜빡였다. 원본(src/·public/)은 고치지 않는다 — 색을 화면 코드에 새로 쓰면
+//    check-ui-rules 가 막고(옳다), 브랜드별 토큰을 tokens.css 에 넣는 것은 공용 토큰 변경이라 대표님 승인 거리다.
+//    그래서 지금은 빌드 뒤에 글자처럼 바꿔 끼운다: index.html · static/js/*.js 의 #077D3C → brand.json colors.splashBackground.
+//    바꾼 뒤 #077D3C 가 하나라도 남으면 실패한다(에스알마트 색이 아람 앱에 남는 것).
+const SRM_BOOT = '#077D3C';
+if (BRAND !== 'srm') {
+  const bg = JSON.parse(fs.readFileSync(path.join(ROOT, 'brands', BRAND, 'brand.json'), 'utf8')).colors.splashBackground;
+  if (!/^#[0-9a-fA-F]{6}$/.test(bg || '')) { console.error(`🔴 brands/${BRAND}/brand.json colors.splashBackground 가 #rrggbb 가 아니다: ${bg}`); process.exit(1); }
+  const re = new RegExp(SRM_BOOT, 'gi');
+  const targets = [path.join(OUT, 'index.html'), ...walk(path.join(OUT, 'static', 'js')).filter(f => f.endsWith('.js'))];
+  let n = 0;
+  for (const f of targets) {
+    const s = fs.readFileSync(f, 'utf8');
+    const hit = (s.match(re) || []).length;
+    if (hit) { fs.writeFileSync(f, s.replace(re, bg)); n += hit; }
+  }
+  const left = targets.filter(f => new RegExp(SRM_BOOT, 'i').test(fs.readFileSync(f, 'utf8')));   // g 정규식의 test 는 lastIndex 를 들고 다녀 거짓 통과한다 — 새로 만든다
+  if (left.length) { console.error(`🔴 ${BRAND} 빌드에 에스알마트 부팅색 ${SRM_BOOT} 가 남았다 — ${left.map(f => path.relative(OUT, f)).join(' · ')}`); process.exit(1); }
+  console.log(`   ${BRAND} 부팅색 ${SRM_BOOT} → ${bg} ${n}곳(index.html · 시작 광고 · 상태바)`);
+}
+
 const bad = count(OUT, FORBID[BRAND]);
 if (bad.length) {
   console.error(`🔴 ${BRAND} 빌드에 다른 브랜드 이름이 남았다 — ${bad.map(b => `${b.file} 「${b.word}」 ${b.n}`).join(' · ')}`);
