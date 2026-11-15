@@ -100,6 +100,27 @@ release 빌드에는 서명 설정이 없다.
   `device_tokens` 에 앱 구분 칸(예: `app_id`)을 두고, 앱이 등록할 때 자기 패키지를 실어 보내게 하는 것이 맞다.
   이것은 스키마 변경이라 대표님 승인 뒤에 한다.
 
+## 🔴 앱 ID(패키지 이름)는 한 곳에서만 바꾼다 (2026-11-16)
+
+원본은 **`brands/<id>/brand.json` 의 `appId`** 하나다. 같은 값이 손으로 적힌 자리가 일곱 곳이었다(아래). 바꿀 때는 brand.json 만 고치고:
+
+```
+node scripts/brand-ids.cjs --write     (앱 쪽 자리를 brand.json 값으로 고쳐 쓴다)
+node scripts/brand-ids.cjs             (대조만 — 웹 빌드 prebuild 가 돌린다 · 어긋나면 빌드가 멈춘다)
+```
+
+| 자리 | `--write` 가 고치나 |
+|---|---|
+| `android/app/build.gradle` productFlavors `applicationId` | 고친다 |
+| `strings.xml` `package_name`·`custom_url_scheme` (srm = `main/res` · 그 밖 = `src/<id>/res`) | 고친다 |
+| `src/brand.js` 브랜드마다 `appId` | 고친다 |
+| `capacitor.config.ts` `appId` (기본 브랜드 srm) | 고친다 |
+| `android/app/src/<id>/google-services.json` 안의 `package_name` | **대조만** — Firebase 콘솔에서 그 패키지로 다시 받는다 |
+| 백엔드 `src/services/brands.js` `app_id` · DB `brands` 표 | **대조만**(옆 저장소가 보일 때) — 서버 재시작·마이그레이션이 얽혀 따로 한다 |
+
+- Java 자리(`namespace`·`MainActivity` 의 `package com.dongsin.srmart`)는 앱 ID 가 **아니다** — 두 브랜드가 같이 쓰고 바꾸지 않는다.
+- 🔴 패키지 이름은 플레이스토어에 한 번 올리면 못 바꾼다. ID 체계는 대표님 결정 대기(2026-11-16) — 정해지면 여기서 한 번에.
+
 ## 대표님 할 일 — 순서대로
 
 1. **Firebase 콘솔에 두 패키지 앱을 등록한다.** 같은 프로젝트에 안드로이드 앱 두 개를 둔다.

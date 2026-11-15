@@ -18,7 +18,9 @@ android {
         }
     }
     // 브랜드(화이트라벨) — 같은 화면 코드로 브랜드마다 앱을 따로 찍는다. 값은 brands/<id>/brand.json 과 같아야 한다
-    //   (tools 없이 사람이 맞춘다 — 바꾸면 brand.json 의 appId 도 같이).
+    //   🔴 applicationId 는 brands/<id>/brand.json 의 appId 가 원본이다 — 여기를 손으로 고치지 말고 brand.json 을 고친 뒤
+    //      `node scripts/brand-ids.cjs --write` (strings.xml · capacitor.config.ts · src/brand.js 까지 같이 고친다 · 2026-11-16).
+    //      웹 빌드의 prebuild 가 `brand-ids.cjs` 로 어긋남을 막는다.
     //   그림·색·이름: app/src/<flavor>/res (srm 은 main 그대로 · aram 은 brand/generate-android-brand.cjs 로 만든다)
     //   google-services.json: app/src/<flavor>/google-services.json (Firebase 콘솔에서 그 패키지로 받은 것)
     flavorDimensions = ["brand"]
