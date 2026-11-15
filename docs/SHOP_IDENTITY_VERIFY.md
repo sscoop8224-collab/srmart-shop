@@ -57,6 +57,21 @@ live 조건: **진짜 업체 어댑터 + 그 업체 열쇠 전부 + `IDENTITY_CI
 가입·재설정은 **옛 문자 인증** 그대로이고, 아이디 찾기는 「준비 중」. 가입 쿠폰은 **나가지 않는다**
 (「지급 가능」 판정이 `verify_off` — 홈·가입 화면도 쿠폰을 약속하지 않는다).
 
+## 앱 쪽 연결부 — `src/identity/identityClient.js` (2026-11-16 밤샘 · 화면에는 아직 안 붙음)
+
+업체와 무관한 흐름만 담았다: `identityStatus` → `startIdentity(purpose)`(회원 목적은 `/users/me/identity/start`) → `openVendor` → `completeIdentity` → token.
+화면은 `verifyIdentity(purpose, …)` 하나만 부르면 된다. Jest 7건(`identityClient.test.js` — 네트워크 없음).
+
+- **업체 창**: start 응답의 `url`(주소 열기) 또는 `form`(숨은 폼 POST)을 연다. 결과는 **돌아오는 화면**이
+  `window.opener.postMessage({ type: 'srm-identity-result', tx_id, result })` 로 돌려준다 — 앱은 **같은 거래(tx_id)·같은 출처**의 메시지만 받는다.
+  🔴 그 「돌아오는 화면」(서버 `IDENTITY_RETURN_URL`)은 **아직 없다** — 업체마다 돌아오는 값의 모양이 달라 계약 뒤 백엔드에 만든다(어댑터와 같이).
+  앱 안(Capacitor)에서 팝업 대신 인앱 브라우저가 필요하면 그때 `@capacitor/browser` 를 더한다(지금 의존성 없음).
+- **시험용 가짜(기본 꺼짐)**: 서버가 mock(`IDENTITY_PROVIDER=mock` + 시험 서버 실행 줄에만 `IDENTITY_MOCK_LIVE=1`) **이고** 이 빌드가
+  `REACT_APP_IDENTITY_MOCK=1` 일 때만 업체 창 대신 넘긴 값(`mockInput`)을 결과로 쓴다. 🔴 `.env.production` 에 넣지 않는다.
+  둘 중 하나만 켜면 쓸모가 없다(서버가 결과를 다시 확인 — 신뢰 경계는 서버).
+- 🔴 **가입 함정** — 서버는 본인확인이 켜지면 가입에 `identityToken` 을, 문자·알림톡이 켜지면 `verificationToken` 을 요구한다(백엔드 `index.js` 가입 입구).
+  지금 앱 가입 화면은 둘 다 안 보내므로 **어느 쪽이든 켜는 순간 쇼핑앱 가입이 400 으로 막힌다.** 켜기 전에 P04 2단계를 이 연결부로 붙인다.
+
 ## 🔴 확인 필요
 
 - CI(HMAC) 보관 기간 — 지금은 회원인 동안 + 가입 쿠폰 원장 1년. 개인정보 처리방침 문안에 넣을 것.
