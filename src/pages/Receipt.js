@@ -90,7 +90,8 @@ function Receipt({ order, onClose, onGoHome, earnPoints }) {
 
         <section className="sec">
           <div className="group">
-            <div className="row"><span className="lbl">주문번호</span><span className="val">{order.id}</span></div>
+            {/* 나눠 결제(배송+픽업)는 주문번호가 둘 — 한 줄에 하나씩(한 줄에 이으면 이름표가 세로로 쪼개진다 · 2026-11-17 사진) */}
+            <div className="row"><span className="lbl" style={{ whiteSpace: 'nowrap' }}>주문번호</span><span className="val" style={{ textAlign: 'right', wordBreak: 'break-all' }}>{String(order.id).split(' · ').map((x) => <span key={x} style={{ display: 'block' }}>{x}</span>)}</span></div>
             <div className="row"><span className="lbl">주문 일시</span><span className="val">{order.date}</span></div>
             <div className="row"><span className="lbl">상태</span><span className={`pill ${TONE[status] || 'g'}`} style={{ marginLeft: 'auto' }}>{status}</span></div>
           </div>
