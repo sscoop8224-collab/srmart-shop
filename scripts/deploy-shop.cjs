@@ -12,6 +12,13 @@
  *     🔴 빌드는 작업 폴더가 아니라 **커밋된 HEAD** 로 하므로 그 변경들은 이번 배포에 들어가지 않는다.
  *     (2026-11-12 대표님 지시 7: 다른 창의 미커밋 줄이 작업 폴더 빌드에 섞여 운영에 나갈 뻔했다)
  *  0-b. 🔴 금액 일치 검사 — 백엔드 tools/check-shop-amount-parity.cjs --live(장바구니 = 주문서 = 실제 주문). 실패하면 빌드도 안 한다
+ *  1-b. 🔴 브랜드 화면 검사(scripts/shop-shots/check-brand-live.cjs) — 꺼낸 폴더의 빌드를 127.0.0.1 에 띄우고 화면이 부르는 /api 를
+ *     **운영 백엔드의 같은 주소(읽기만 하는 GET 목록)** 로 넘겨 화면마다 다른 브랜드 글자·그림이 나오는지 본다. 빌드 몫이 1건이라도
+ *     있으면 바꿔 끼우지 않는다(2026-11-17 — 운영 /aram/ 에 에스알마트 로고·아이콘이 나간 일. 글자 검사만 있었고 그림·서버 응답은 안 봤다).
+ *     서버 자료 몫(예: 범위가 「전체」 인 배너의 「SR Mart」)은 적기만 한다 — 배포로는 못 고친다.
+ *  1-c. 🔴 서비스워커 판 — 서비스워커는 아이콘·offline·manifest 처럼 이름이 고정된 파일도 「캐시 먼저」로 내준다. 그런 파일이
+ *     바뀌었는데 service-worker.js 가 지금 운영과 바이트까지 같으면, 이미 연 기기는 새 서비스워커를 안 받고 옛 그림을 계속 낸다
+ *     (2026-11-17 실측: 운영 /aram/ 을 연 기기의 shop-v7:/aram/ 에 에스알마트 icon-192). 그때는 반영하지 않는다 — public/service-worker.js 의 VERSION 을 올릴 것.
  *  1. HEAD 를 깨끗한 폴더로 꺼내(git worktree add --detach C:/srmart/_deploy_wt-shop-<시각>) 거기서 빌드 →
  *     산출물에 BUILD_COMMIT.txt(커밋 해시)를 넣고 → 작업 폴더의 build_next 로 옮긴다 → worktree 를 치운다.
  *     · node_modules 는 작업 폴더 것을 junction 으로 연결한다(다시 설치하지 않는다).
@@ -163,6 +170,34 @@ function buildFromHead(take) {
   finally { res.cleaned = cleanupWorktree(wt); }
   return res;
 }
+/** 1-b. 브랜드 화면 검사 — 꺼낸 폴더(wt)의 검사기로, 꺼낸 폴더의 빌드를 본다(작업 폴더의 미커밋 검사기가 섞이지 않게) */
+function brandLive(dir, wt) {
+  const tool = path.join(wt, 'scripts', 'shop-shots', 'check-brand-live.cjs');
+  if (!fs.existsSync(tool)) { log('🔴 브랜드 화면 검사기가 없다(check-brand-live.cjs) — 반영하지 않는다'); return false; }
+  const out = path.join(require('os').tmpdir(), `deploy-shop-brand-${BRAND}-${STAMP}`);
+  const r = spawnSync(process.execPath, [tool, '--build', dir, '--brand', BRAND, '--out', out], { cwd: wt, encoding: 'utf8', timeout: 600000 });
+  const lines = (r.stdout || '').split('\n');
+  const i = lines.findIndex(l => /브랜드 화면 검사\(/.test(l));
+  log((i >= 0 ? lines.slice(i) : lines.slice(-12)).filter(Boolean).map(l => '   ' + l).join('\n') + ((r.stderr || '').trim() ? '\n   ' + r.stderr.trim().slice(-400) : ''));
+  log(`   ${r.status === 0 ? '✅' : '🔴'} 브랜드 화면 검사 종료코드 ${r.status} · 사진 ${out}`);
+  return r.status === 0;
+}
+/** 1-c. 이름 고정 파일이 바뀌었는데 서비스워커가 그대로인가 → 바뀐 파일 목록(비어 있으면 통과) */
+function swStale(newDir, oldDir) {
+  const swNew = path.join(newDir, 'service-worker.js'), swOld = path.join(oldDir, 'service-worker.js');
+  if (!fs.existsSync(swOld) || !fs.existsSync(swNew)) return [];
+  if (!fs.readFileSync(swNew).equals(fs.readFileSync(swOld))) return [];   // 서비스워커가 바뀌면 기기가 새로 받고, 판이 갈리면 옛 캐시를 지운다
+  const FIXED = /\.(png|jpe?g|webp|gif|svg|ico)$|(^|\/)(manifest\.json|offline\.html)$/i;
+  const walk = (d, acc = []) => {
+    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      const p = path.join(d, e.name);
+      if (e.isDirectory()) { if (!(d === newDir && e.name === 'static')) walk(p, acc); } else acc.push(p);   // static/ 은 이름에 해시가 있다
+    }
+    return acc;
+  };
+  return walk(newDir).map(f => path.relative(newDir, f).replace(/\\/g, '/')).filter(rel => FIXED.test(rel))
+    .filter(rel => { const o = path.join(oldDir, rel); return !fs.existsSync(o) || !fs.readFileSync(o).equals(fs.readFileSync(path.join(newDir, rel))); });
+}
 function moveDirSync(src, dst) {
   for (let i = 0; i < 6; i++) {
     try { fs.renameSync(src, dst); return true; } catch (e) {
@@ -177,7 +212,8 @@ function buildOnly() {
   const out = i > 0 ? path.resolve(process.argv[i + 1] || '') : '';
   if (out && (samePath(out, ROOT) || path.resolve(out).toLowerCase().startsWith(path.resolve(ROOT).toLowerCase() + path.sep))) { log('🔴 --out 은 저장소 밖이어야 한다'); return 1; }
   if (out && fs.existsSync(out)) { log(`🔴 --out ${out} 가 이미 있다 — 새 이름으로`); return 1; }
-  const r = buildFromHead((dir) => {
+  const r = buildFromHead((dir, res) => {
+    if (!brandLive(dir, res.wt)) return false;
     const js = path.join(dir, mainOfPath(dir));
     log(`   산출물 index.html ${fs.statSync(path.join(dir, 'index.html')).size}B · main ${fs.statSync(js).size}B · BUILD_COMMIT.txt ${fs.existsSync(path.join(dir, 'BUILD_COMMIT.txt')) ? '있음' : '없음'}`);
     if (out) { fs.cpSync(dir, out, { recursive: true }); log(`   복사 → ${out}`); }
@@ -298,7 +334,14 @@ function prune(yes) {
 
   // 1. 빌드 — 커밋된 HEAD 를 깨끗한 폴더로 꺼내서
   log(`1. HEAD 를 꺼내 빌드(${BRAND}) → ${PROF.next}`);
-  const b = buildFromHead(dir => moveDirSync(dir, P(PROF.next)));
+  const b = buildFromHead((dir, res) => {
+    log('1-b. 브랜드 화면 검사(운영과 같은 응답 · 읽기만)');
+    if (!brandLive(dir, res.wt)) { res.out += '\n🔴 브랜드 화면 검사 실패 — 다른 브랜드 글자·그림이 빌드에 남았다(위 줄)'; return false; }
+    const stale = fs.existsSync(P(PROF.dir)) ? swStale(dir, P(PROF.dir)) : [];
+    log(`1-c. 서비스워커 판 — 이름 고정 파일 바뀜 ${stale.length}개${stale.length ? ' · 🔴 service-worker.js 는 운영과 같다' : ''}`);
+    if (stale.length) { res.out += `\n🔴 ${stale.slice(0, 8).join(' · ')} 가 바뀌었는데 service-worker.js 가 그대로다 — 이미 연 기기에는 옛 파일이 계속 나간다. public/service-worker.js 의 VERSION 을 올리고 커밋한 뒤 다시`; return false; }
+    return moveDirSync(dir, P(PROF.next));
+  });
   const newMain = b.ok && fs.existsSync(P(PROF.next + '/index.html')) ? mainOf(fs.readFileSync(P(PROF.next + '/index.html'), 'utf8')) : '';
   if (!b.ok || !newMain) { log('🔴 빌드 실패 — 운영은 그대로\n' + b.out.slice(-1500)); process.exit(1); }
   const oldMain = FIRST ? '' : mainOf(fs.readFileSync(P(PROF.dir + '/index.html'), 'utf8'));

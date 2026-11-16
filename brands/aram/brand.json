@@ -7,6 +7,8 @@
   "_appId_확인": "2026-11-13 대표님 확정 — 회사 철자 dongsin(도메인과 같음) · com.dongsin.<브랜드>mart. 플레이스토어에 한 번 올리면 바꿀 수 없다. android/app/build.gradle 의 productFlavors 와 같은 값.",
   "webPath": "/aram",
   "url": "https://www.dongsinmarket.com/aram/",
+  "webKeywords": "동신마켓, 아람마트, 온라인쇼핑, 동네마트, 고촌, 김포",
+  "_webKeywords": "웹 검색어(index.html keywords) — 빌드가 바꿔 끼운다(scripts/brand-build.cjs). 에스알마트는 public/index.html 그대로.",
   "stores": ["004"],
   "colors": {
     "primary": "#DB102E",

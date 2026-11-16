@@ -17,10 +17,15 @@
  *   ⑴ 이름 = shop-<판>:<범위>  ⑵ activate 는 같은 범위의 다른 판 + 범위를 넣기 전의 옛 이름(srmart-shop-v1~v6)만 지운다
  *   ⑶ 꺼낼 때도 내 캐시에서만 찾는다(caches.match 는 출처의 모든 캐시를 뒤진다 — 다른 브랜드 화면이 나올 수 있다).
  *   지키는 검사: scripts/check-brand-paths.cjs
+ *
+ * 🔴 v8 (2026-11-17 밤샘 지시 1·2) — 아이콘·offline·manifest 처럼 **이름이 고정된 파일도 캐시-먼저로** 나간다.
+ *   운영 /aram/ 을 한 번 연 기기에는 shop-v7:/aram/ 에 **에스알마트 icon-192** 가 들어 있다(2026-11-17 실측).
+ *   아람 그림을 고쳐 내보내도 이 파일이 같으면 브라우저가 새 서비스워커를 안 받고 옛 캐시를 계속 쓴다 → 판을 올린다.
+ *   지키는 관문: deploy-shop.cjs 1-c(이름 고정 파일이 바뀌었는데 이 파일이 그대로면 반영하지 않는다).
  */
 // 이 SW 가 맡는 주소의 앞머리(예: /shop/)
 const SCOPE_PATH = new URL(self.registration.scope).pathname;
-const VERSION = 'v7';
+const VERSION = 'v8';
 const CACHE = `shop-${VERSION}:${SCOPE_PATH}`;
 const OFFLINE_URL = 'offline.html'; // 스코프 상대 — serve.json 의 cleanUrls:false 가 있어야 301 을 안 탄다
 // 지워도 되는 캐시 — 같은 범위의 다른 판, 또는 범위를 이름에 넣기 전의 옛 이름

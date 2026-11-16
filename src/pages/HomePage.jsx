@@ -53,10 +53,10 @@ export default function HomePage({ onShop, onLogin, darkMode }) {
         {/* 로고 */}
         <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, textDecoration: 'none', cursor: 'pointer' }}>
           <img
-            src={`${process.env.PUBLIC_URL}/srm-logo-transparent.png`}
+            src={BRAND.landingLogo}
             alt={`${BRAND.name} 로고`}
             style={{ height: 40, width: 'auto' }}
-            onError={e => { e.currentTarget.src = `${process.env.PUBLIC_URL}/srm-logo.svg`; }}
+            onError={process.env.REACT_APP_BRAND !== 'aram' ? (e => { e.currentTarget.src = `${process.env.PUBLIC_URL}/srm-logo.svg`; }) : undefined}
           />
           <span style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: darkMode ? '#ffffff' : '#1a1a1a', letterSpacing: '-0.3px' }}>
             {BRAND.name}
