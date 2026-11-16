@@ -43,10 +43,22 @@ const https = require('https');
 const ROOT = path.join(__dirname, '..');
 const NGINX_LOG = 'C:/nginx/logs/access.log';
 const CHECK_ONLY = process.argv.includes('--check-only');
-const SITE = (() => {
-  const m = fs.readFileSync(path.join(ROOT, 'capacitor.config.ts'), 'utf8').match(/url:\s*'([^']+)'/);
-  return (m ? m[1] : 'https://www.dongsinmarket.com/shop/').replace(/\/+$/, '');
-})();
+// ── 브랜드 (2026-11-15 대표님 지시 — 아람 웹 경로) ─────────────────────────────────────────
+//   node scripts/deploy-shop.cjs                 # 에스알마트(srm) — 지금까지와 같다
+//   node scripts/deploy-shop.cjs --brand aram    # 아람마트 — 따로 빌드해 따로 띄운다(build_aram · pm2 srmart-shop-aram · 127.0.0.1:3002)
+//   손님 주소는 brands/<id>/brand.json 의 url 이 원본이다. 에스알마트는 옛 앱이 여는 /shop 도 같은 build 를 내주는지 본다.
+//   🔴 nginx 에 /srm/·/aram/ 이 걸리기 전에는 그 주소가 홈페이지를 내주므로 확인에서 멈추고 되돌린다(안전한 쪽으로 실패).
+const BRAND = (() => { const i = process.argv.indexOf('--brand'); return i > 0 ? String(process.argv[i + 1] || '') : 'srm'; })();
+const PROFILES = {
+  srm: { pm2: 'srmart-shop', port: 3000, dir: 'build', next: 'build_next', prev: 'build_prev_', failed: 'build_failed_', env: {}, also: ['https://www.dongsinmarket.com/shop'] },
+  aram: { pm2: 'srmart-shop-aram', port: 3002, dir: 'build_aram', next: 'build_aram_next', prev: 'build_aram_prev_', failed: 'build_aram_failed_', env: { REACT_APP_BRAND: 'aram' }, also: [] },
+};
+if (!PROFILES[BRAND]) { console.log(`🔴 --brand ${BRAND} — 모르는 브랜드(${Object.keys(PROFILES).join('·')})`); process.exit(1); }
+const PROF = PROFILES[BRAND];
+const SITE = JSON.parse(fs.readFileSync(path.join(ROOT, 'brands', BRAND, 'brand.json'), 'utf8')).url.replace(/\/+$/, '');
+const LOCAL = `http://127.0.0.1:${PROF.port}`;
+// 아람은 처음 반영할 때 pm2 에 새로 올린다 — 에스알마트(ecosystem.config.js)와 같은 serve 로, 🔴 127.0.0.1 에만 연다
+const SERVE_MAIN = 'C:/Users/user/AppData/Roaming/npm/node_modules/serve/build/main.js';
 const pad = n => String(n).padStart(2, '0');
 const now = new Date();
 const STAMP = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
@@ -71,10 +83,10 @@ async function rename(a, b) {
     try { fs.renameSync(P(a), P(b)); return true; } catch (e) { if (i === 5) { log(`🔴 ${a} → ${b} 이름 바꾸기 실패: ${e.code}`); return false; } await sleep(700); }
   }
 }
-const pm2 = verb => { const r = run('pm2', [verb, 'srmart-shop']); log(`   pm2 ${verb} srmart-shop → 종료코드 ${r.code}`); return r.code === 0; };
+const pm2 = verb => { const r = run('pm2', [verb, PROF.pm2]); log(`   pm2 ${verb} ${PROF.pm2} → 종료코드 ${r.code}`); return r.code === 0; };
 async function waitLocal(expect) {
-  for (let i = 0; i < 30; i++) { const r = await get('http://127.0.0.1:3000/'); const m = mainOf(r.body); if (r.status === 200 && (!expect || m === expect)) return m; await sleep(700); }
-  return mainOf((await get('http://127.0.0.1:3000/')).body) || '(응답 없음)';
+  for (let i = 0; i < 30; i++) { const r = await get(LOCAL + '/'); const m = mainOf(r.body); if (r.status === 200 && (!expect || m === expect)) return m; await sleep(700); }
+  return mainOf((await get(LOCAL + '/')).body) || '(응답 없음)';
 }
 // 🔴 번들 이름만 보면 「화면 번들은 같고 service-worker.js 만 바뀐」 배포에서 바꿔 끼웠는지 못 가린다(2026-11-12).
 //    그래서 build 폴더의 index.html·service-worker.js 와 **실제로 내려오는 것**의 해시를 맞춘다.
@@ -82,7 +94,7 @@ const md5 = t => require('crypto').createHash('md5').update(t).digest('hex').sli
 async function sameAsBuild(base) {
   const out = [];
   for (const f of ['index.html', 'service-worker.js']) {
-    const want = md5(fs.readFileSync(P('build/' + f)));
+    const want = md5(fs.readFileSync(P(PROF.dir + '/' + f)));
     const got = md5((await get(base + '/' + f.replace('index.html', ''))).body);
     out.push({ f, ok: want === got, want, got });
   }
@@ -136,7 +148,8 @@ function buildFromHead(take) {
     for (const f of ENV_FILES) if (fs.existsSync(P(f)) && !fs.existsSync(path.join(wt, f))) { fs.copyFileSync(P(f), path.join(wt, f)); res.env.push(f); }
     if (res.env.length) log(`   git 에 없는 빌드 설정 복사: ${res.env.join(', ')}`);
     // 옆 저장소 검사기(예: 백엔드 check-store-settings-defaults)가 「이 앱」을 작업 폴더가 아니라 꺼낸 폴더에서 읽게 한다
-    const env = { ...process.env, REPO_DIR_SHOP: wt }; delete env.BUILD_PATH;
+    const env = { ...process.env, ...PROF.env, REPO_DIR_SHOP: wt }; delete env.BUILD_PATH;
+    if (BRAND === 'srm') delete env.REACT_APP_BRAND;   // 셸에 남은 aram 이 에스알마트 빌드에 섞이지 않게(.env.production 의 srm 이 쓰인다)
     const t = Date.now();
     const b = run('npm', ['run', 'build'], { cwd: wt, env, timeout: 900000 });
     res.secs = (Date.now() - t) / 1000; res.out = b.out;
@@ -171,7 +184,7 @@ function buildOnly() {
   });
   log(`   빌드 ${r.secs.toFixed(0)}초 · 번들 ${r.main || '(없음)'} · 커밋 ${r.hash.slice(0, 8)} ${r.subj}`);
   if (!r.ok) log('🔴 빌드 실패\n' + r.out.slice(-1500));
-  log(`   worktree 치움 ${r.cleaned ? '✅' : '🔴 실패'} · build_next ${fs.existsSync(P('build_next')) ? '🔴 있음' : '없음'} · node_modules ${fs.existsSync(P('node_modules/react-scripts/package.json')) ? '멀쩡' : '🔴 이상'}`);
+  log(`   worktree 치움 ${r.cleaned ? '✅' : '🔴 실패'} · ${PROF.next} ${fs.existsSync(P(PROF.next)) ? '🔴 있음' : '없음'} · node_modules ${fs.existsSync(P('node_modules/react-scripts/package.json')) ? '멀쩡' : '🔴 이상'}`);
   return r.ok && r.cleaned ? 0 : 1;
 }
 const mainOfPath = dir => mainOf(fs.readFileSync(path.join(dir, 'index.html'), 'utf8'));
@@ -181,9 +194,11 @@ const nginxLines = () => { try { return fs.readFileSync(NGINX_LOG, 'utf8').split
 async function verify(expectMain) {
   const bad = [];
   const L0 = nginxLines();
-  for (const x of await sameAsBuild(SITE)) {
-    log(`   손님 주소 ${x.f} ${x.ok ? '= build' : '≠ build'} (${x.got})`);
-    if (!x.ok) bad.push(`손님 주소의 ${x.f} 가 build 와 다르다(${x.got} ≠ ${x.want})`);
+  for (const base of [SITE, ...PROF.also]) {
+    for (const x of await sameAsBuild(base)) {
+      log(`   ${base}/ ${x.f} ${x.ok ? '= build' : '≠ build'} (${x.got})`);
+      if (!x.ok) bad.push(`${base}/ 의 ${x.f} 가 ${PROF.dir} 와 다르다(${x.got} ≠ ${x.want})${base === SITE ? ' — nginx 에 이 경로가 걸렸는지 볼 것(docs/ARAM_WEB_PATH.md)' : ''}`);
+    }
   }
   const live = mainOf((await get(SITE + '/')).body);
   log(`   손님 주소 ${SITE}/ → ${live || '(번들 못 찾음)'}`);
@@ -212,6 +227,7 @@ async function verify(expectMain) {
  *
  *   node scripts/deploy-shop.cjs --prune          # 무엇을 지울지 보여 주기만
  *   node scripts/deploy-shop.cjs --prune --yes    # 최근 2개(build_prev_*)만 남기고 지운다
+ *   node scripts/deploy-shop.cjs --brand aram --prune [--yes]   # 아람(build_aram_prev_*) — 브랜드마다 따로 센다
  *
  * 🔴 지우는 것은 이름이 정확히 build_prev_YYYYMMDD 또는 build_prev_YYYYMMDD_HHMM 인 폴더뿐이다.
  *    운영 build · build_next · build_failed_* 는 건드리지 않는다(실패본은 원인을 보기 전까지 사람이 판단).
@@ -219,7 +235,7 @@ async function verify(expectMain) {
  */
 const PRUNE_KEEP = 2;
 function prune(yes) {
-  const re = /^build_prev_(\d{8})(?:_(\d{4}))?$/;
+  const re = new RegExp('^' + PROF.prev + '(\\d{8})(?:_(\\d{4}))?$');   // 에스알마트 build_prev_* · 아람 build_aram_prev_*
   const list = fs.readdirSync(ROOT, { withFileTypes: true })
     .filter(d => d.isDirectory() && re.test(d.name))
     .map(d => { const m = d.name.match(re); return { name: d.name, key: m[1] + (m[2] || '0000') }; })
@@ -243,7 +259,8 @@ function prune(yes) {
 
 (async () => {
   if (process.argv.includes('--prune')) process.exit(prune(process.argv.includes('--yes')));
-  log(`쇼핑앱 운영 반영 ${STAMP}${CHECK_ONLY ? ' (확인만)' : ''} · 손님 주소 ${SITE}/`);
+  log(`쇼핑앱 운영 반영 ${STAMP}${CHECK_ONLY ? ' (확인만)' : ''} · 브랜드 ${BRAND} · 손님 주소 ${SITE}/${PROF.also.length ? ' (+ ' + PROF.also.join(', ') + ')' : ''} · pm2 ${PROF.pm2} · ${LOCAL} · ${PROF.dir}`);
+  if (CHECK_ONLY && !fs.existsSync(P(PROF.dir + '/index.html'))) { log(`🔴 ${PROF.dir} 가 없다 — 아직 한 번도 반영하지 않았다(처음 반영은 --check-only 없이)`); process.exit(1); }
   if (CHECK_ONLY) { const bad = await verify(''); bad.forEach(b => log('🔴 ' + b)); log(bad.length ? '🔴 확인 실패' : '✅ 확인 통과'); process.exit(bad.length ? 1 : 0); }
 
   // 0. 사전 점검
@@ -268,50 +285,76 @@ function prune(yes) {
   log(`   ${parityLast}`);
   if (parity.status !== 0) { log('🔴 금액 일치 검사 실패 — 반영하지 않는다(운영은 그대로)\n' + (parity.stdout || '').split('\n').filter(l => /🔴/.test(l)).join('\n') + (parity.stderr || '').slice(-800)); process.exit(1); }
   if (process.argv.includes('--build-only')) { log('시험 모드(--build-only) — pm2·build 는 안 건드린다'); process.exit(buildOnly()); }
-  if (fs.existsSync(P('build_next'))) { log('🔴 build_next 가 이미 있다 — 무엇인지 확인하고 치운 뒤 다시(이 스크립트는 지우지 않는다)'); process.exit(1); }
-  if (fs.existsSync(P(`build_prev_${STAMP}`))) { log(`🔴 build_prev_${STAMP} 가 이미 있다 — 1분 뒤 다시`); process.exit(1); }
+  if (fs.existsSync(P(PROF.next))) { log(`🔴 ${PROF.next} 가 이미 있다 — 무엇인지 확인하고 치운 뒤 다시(이 스크립트는 지우지 않는다)`); process.exit(1); }
+  if (fs.existsSync(P(`${PROF.prev}${STAMP}`))) { log(`🔴 ${PROF.prev}${STAMP} 가 이미 있다 — 1분 뒤 다시`); process.exit(1); }
+  // 🔴 처음 반영(아람): 운영 폴더도 pm2 앱도 없다 — 보관할 옛 build 가 없으니 되돌릴 곳도 없다(실패하면 멈추고 실패본으로 옮긴다)
+  const FIRST = !fs.existsSync(P(PROF.dir));
+  const registered = run('pm2', ['describe', PROF.pm2]).code === 0;
+  if (FIRST === registered) { log(`🔴 ${PROF.dir} ${FIRST ? '없음' : '있음'} · pm2 ${PROF.pm2} ${registered ? '있음' : '없음'} — 둘이 어긋난다. 사람이 보고 맞춘 뒤 다시`); process.exit(1); }
+  if (FIRST && !fs.existsSync(SERVE_MAIN)) { log(`🔴 serve 가 없다(${SERVE_MAIN})`); process.exit(1); }
+  if (FIRST) log(`   처음 반영 — ${PROF.dir} 를 새로 만들고 pm2 에 ${PROF.pm2}(127.0.0.1:${PROF.port}) 를 올린다. 🔴 끝나면 pm2 save(재부팅 뒤에도 뜨게)`);
   const head = git(['log', '-1', '--format=%h %s']).out.trim();
   log(`0. 커밋 ${head}`);
 
   // 1. 빌드 — 커밋된 HEAD 를 깨끗한 폴더로 꺼내서
-  log('1. HEAD 를 꺼내 빌드 → build_next');
-  const b = buildFromHead(dir => moveDirSync(dir, P('build_next')));
-  const newMain = b.ok && fs.existsSync(P('build_next/index.html')) ? mainOf(fs.readFileSync(P('build_next/index.html'), 'utf8')) : '';
+  log(`1. HEAD 를 꺼내 빌드(${BRAND}) → ${PROF.next}`);
+  const b = buildFromHead(dir => moveDirSync(dir, P(PROF.next)));
+  const newMain = b.ok && fs.existsSync(P(PROF.next + '/index.html')) ? mainOf(fs.readFileSync(P(PROF.next + '/index.html'), 'utf8')) : '';
   if (!b.ok || !newMain) { log('🔴 빌드 실패 — 운영은 그대로\n' + b.out.slice(-1500)); process.exit(1); }
-  const oldMain = mainOf(fs.readFileSync(P('build/index.html'), 'utf8'));
-  log(`   빌드 ${b.secs.toFixed(0)}초 · 커밋 ${b.hash.slice(0, 8)} (build_next/BUILD_COMMIT.txt) · worktree 치움 ${b.cleaned ? '✅' : '🔴 실패 — 끝나고 사람이 볼 것'}`);
-  log(`   새 번들 ${newMain} (지금 운영 ${oldMain})`);
+  const oldMain = FIRST ? '' : mainOf(fs.readFileSync(P(PROF.dir + '/index.html'), 'utf8'));
+  log(`   빌드 ${b.secs.toFixed(0)}초 · 커밋 ${b.hash.slice(0, 8)} (${PROF.next}/BUILD_COMMIT.txt) · worktree 치움 ${b.cleaned ? '✅' : '🔴 실패 — 끝나고 사람이 볼 것'}`);
+  log(`   새 번들 ${newMain} (지금 운영 ${oldMain || '없음 — 처음'})`);
 
   // 2~4. 멈춤 · 보관 · 바꿔 끼우기 · 시작
   const t0 = Date.now();
-  log('2. 멈춤'); pm2('stop');
-  log(`3. build → build_prev_${STAMP} 보관 · build_next → build`);
+  log('2. 멈춤'); if (!FIRST) pm2('stop'); else log('   (처음 — 멈출 것 없음)');
+  log(`3. ${FIRST ? '' : `${PROF.dir} → ${PROF.prev}${STAMP} 보관 · `}${PROF.next} → ${PROF.dir}`);
   let swapped = false;
-  if (await rename('build', `build_prev_${STAMP}`)) {
-    if (await rename('build_next', 'build')) swapped = true;
-    else await rename(`build_prev_${STAMP}`, 'build');
+  if (FIRST) swapped = await rename(PROF.next, PROF.dir);
+  else if (await rename(PROF.dir, `${PROF.prev}${STAMP}`)) {
+    if (await rename(PROF.next, PROF.dir)) swapped = true;
+    else await rename(`${PROF.prev}${STAMP}`, PROF.dir);
   }
-  log('4. 시작'); pm2('start');
+  log('4. 시작');
+  if (FIRST && swapped) {
+    const r = run('pm2', ['start', SERVE_MAIN, '--name', PROF.pm2, '--interpreter', 'node', '--', '-s', P(PROF.dir).replace(/\\/g, '/'), '-l', `tcp://127.0.0.1:${PROF.port}`]);
+    log(`   pm2 start ${PROF.pm2} (serve -s ${PROF.dir} -l tcp://127.0.0.1:${PROF.port}) → 종료코드 ${r.code}`);
+  } else if (!FIRST) pm2('start');
   const served = await waitLocal(swapped ? newMain : oldMain);
-  log(`   멈춘 시간 ${((Date.now() - t0) / 1000).toFixed(1)}초 · 127.0.0.1:3000 → ${served}`);
-  const localSame = swapped ? await sameAsBuild('http://127.0.0.1:3000') : [];
-  for (const x of localSame) log(`   127.0.0.1:3000 ${x.f} ${x.ok ? '= build' : '≠ build'}`);
-  if (!swapped) { log('🔴 바꿔 끼우지 못했다 — 운영은 옛 빌드 그대로'); process.exit(1); }
-  log(`   운영 build/index.html 시각 ${fs.statSync(P('build/index.html')).mtime.toLocaleString('ko-KR')}`);
+  log(`   멈춘 시간 ${((Date.now() - t0) / 1000).toFixed(1)}초 · ${LOCAL} → ${served}`);
+  const localSame = swapped ? await sameAsBuild(LOCAL) : [];
+  for (const x of localSame) log(`   ${LOCAL} ${x.f} ${x.ok ? '= build' : '≠ build'}`);
+  if (!swapped) { log(`🔴 바꿔 끼우지 못했다 — 운영은 옛 빌드 그대로${FIRST ? ` (처음: ${PROF.next} 가 남았다)` : ''}`); process.exit(1); }
+  log(`   운영 ${PROF.dir}/index.html 시각 ${fs.statSync(P(PROF.dir + '/index.html')).mtime.toLocaleString('ko-KR')}`);
+  // 🔴 처음 올린 serve 가 127.0.0.1 에만 열렸는지(이때만 이 스크립트가 주소를 정한다) — 아니면 확인 실패로 친다
+  const listenBad = [];
+  if (FIRST) {
+    const ns = run('netstat', ['-ano'], { shell: false }).out.split('\n').filter(l => /LISTENING/.test(l) && new RegExp(`:${PROF.port}\\s`).test(l)).map(l => l.trim());
+    log(`   netstat :${PROF.port} → ${ns.join(' | ') || '(없음)'}`);
+    if (!ns.length || ns.some(l => !/^TCP\s+127\.0\.0\.1:/.test(l))) listenBad.push(`${PROF.port} 이 127.0.0.1 에만 열리지 않았다(${ns.join(' | ') || '안 열림'})`);
+  }
 
   // 5. 확인
   log('5. 확인');
-  const bad = served === newMain && localSame.every(x => x.ok) ? await verify(newMain) : [`127.0.0.1:3000 이 새 build 를 안 내준다(${served})`];
-  if (!bad.length) { log(`✅ 반영 완료 — ${newMain} · 커밋 ${b.hash.slice(0, 8)} · 되돌릴 곳 build_prev_${STAMP}${b.cleaned ? "" : " · 🔴 worktree 남음: " + b.wt}`); process.exit(0); }
+  const bad = served === newMain && localSame.every(x => x.ok) ? [...listenBad, ...await verify(newMain)] : [`${LOCAL} 이 새 ${PROF.dir} 를 안 내준다(${served})`];
+  if (!bad.length) { log(`✅ 반영 완료 — ${BRAND} · ${newMain} · 커밋 ${b.hash.slice(0, 8)} · 되돌릴 곳 ${FIRST ? '없음(처음 반영)' : PROF.prev + STAMP}${FIRST ? ' · 🔴 pm2 save 를 할 것(재부팅 뒤에도 뜨게)' : ''}${b.cleaned ? "" : " · 🔴 worktree 남음: " + b.wt}`); process.exit(0); }
 
   // 6. 되돌리기
   bad.forEach(x => log('🔴 ' + x));
-  log(`6. 되돌린다 — build → build_failed_${STAMP} · build_prev_${STAMP} → build`);
+  if (FIRST) {
+    // 처음 반영이 실패했으면 되돌릴 옛 build 가 없다 — 멈추고 실패본으로 옮긴다(pm2 앱은 멈춘 채 남는다 · nginx 의 그 경로는 502)
+    log(`6. 처음 반영 실패 — 멈추고 ${PROF.dir} → ${PROF.failed}${STAMP}`);
+    pm2('stop');
+    const okF = await rename(PROF.dir, `${PROF.failed}${STAMP}`);
+    log(okF ? `🔴 반영 실패 — ${PROF.pm2} 는 멈춤(pm2 목록에 남아 있다). 실패한 빌드는 ${PROF.failed}${STAMP}` : '🔴🔴 실패본으로 옮기지도 못했다 — 사람이 바로 볼 것');
+    process.exit(okF ? 1 : 3);
+  }
+  log(`6. 되돌린다 — ${PROF.dir} → ${PROF.failed}${STAMP} · ${PROF.prev}${STAMP} → ${PROF.dir}`);
   pm2('stop');
-  const ok = (await rename('build', `build_failed_${STAMP}`)) && (await rename(`build_prev_${STAMP}`, 'build'));
+  const ok = (await rename(PROF.dir, `${PROF.failed}${STAMP}`)) && (await rename(`${PROF.prev}${STAMP}`, PROF.dir));
   pm2('start');
   const back = await waitLocal(oldMain);
-  log(`   127.0.0.1:3000 → ${back}`);
-  if (ok && back === oldMain) { log(`🔴 반영 실패 — 옛 번들 ${oldMain} 로 되돌렸다. 실패한 빌드는 build_failed_${STAMP}`); process.exit(1); }
+  log(`   ${LOCAL} → ${back}`);
+  if (ok && back === oldMain) { log(`🔴 반영 실패 — 옛 번들 ${oldMain} 로 되돌렸다. 실패한 빌드는 ${PROF.failed}${STAMP}`); process.exit(1); }
   log('🔴🔴 되돌리기도 실패 — 지금 운영 상태를 사람이 바로 봐야 한다'); process.exit(3);
 })().catch(e => { console.error('🔴 중단', e); process.exit(3); });

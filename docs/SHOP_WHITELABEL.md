@@ -49,9 +49,9 @@ gradlew.bat assembleSrmDebug assembleAramDebug
 
 - `google-services.json` 이 어느 브랜드에도 없으면 **푸시 없이** 빌드한다. 이때 경고 한 줄이 찍힌다.
   한 브랜드 파일만 있으면 다른 브랜드는 경고만 남기고 푸시 없이 빌드된다(`missingGoogleServicesStrategy = 'WARN'`).
-- 🔴 앱이 띄우는 웹 주소(`capacitor.config.ts` 의 `server.url`)는 아직 **두 브랜드가 같다**(`/shop/`).
-  브랜드별 웹 주소(`/srm`·`/aram`)와 nginx 배선은 따로 할 일이다. 지금 아람 APK 는 아이콘·이름·스플래시만 아람이고,
-  화면은 에스알마트 웹을 연다.
+- 🔴 앱이 띄우는 웹 주소는 브랜드마다 다르다(2026-11-15 준비): 에스알마트 `/srm/` · 아람 `/aram/`(`brands/<id>/brand.json` 의 url).
+  `npx cap sync android` **뒤에** `node scripts/cap-brand-config.cjs` 를 돌려 flavor 자리에 주소 사본을 쓴다(안 하면 두 앱이 같은 주소를 연다).
+  🔴 nginx 에 `/srm/`·`/aram/` 을 건 **뒤에** APK 를 찍는다 — 적용 순서·되돌리기는 `docs/ARAM_WEB_PATH.md`.
 
 ## 서명 키 — 지금과 정식 출시 계획
 

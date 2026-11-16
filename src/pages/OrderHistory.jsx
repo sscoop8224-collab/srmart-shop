@@ -15,6 +15,7 @@ import { useDialog } from '../DialogContext';
 import Code128 from '../components/Code128';
 import Icon from '../components/ui/Icon';
 import { BRAND } from '../brand';
+import SellerTaxNote from '../components/SellerTaxNote';
 
 const won = (n) => `${Number(n || 0).toLocaleString('ko-KR')}원`;
 const pts = (n) => `${Number(n || 0).toLocaleString('ko-KR')}P`;
@@ -244,6 +245,8 @@ function OnlineDetail({ d, o, onReturn, onList }) {
           {d.points_used > 0 && <div className="kv"><span>포인트</span><span className="minus">−{won(d.points_used)}</span></div>}
           <div className="kv total"><span>결제금액</span><span>{won(d.total)}</span></div>
           {d.payment_method && <div className="kv"><span>결제수단</span><span>{d.payment_method}</span></div>}
+          {/* 부가세·세금계산서 — 이 주문을 **판 때** 의 판매자 과세 유형(서버 seller_tax · 2026-11-15 지시 3). 없으면 안 그린다 */}
+          <SellerTaxNote info={d.seller_tax} />
         </div>
       </section>
       {d.tracking_number && (

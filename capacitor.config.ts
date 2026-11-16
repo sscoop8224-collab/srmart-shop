@@ -15,8 +15,12 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
     // 웹뷰가 배포된 라이브 쇼핑몰을 로드(호스티드). 도메인 고정.
+    // 🔴 브랜드마다 주소가 다르다(2026-11-15): 에스알마트 /srm/ · 아람마트 /aram/ — 값의 원본은 brands/<id>/brand.json 의 url.
+    //    이 값은 에스알마트(srm) 것이다. cap sync 뒤 scripts/cap-brand-config.cjs 가 브랜드(flavor)별 사본을
+    //    android/app/src/<브랜드>/assets/capacitor.config.json 에 쓴다(flavor 쪽이 main 을 덮는다).
+    //    🔴 nginx 에 /srm/·/aram/ 이 걸리기 전에 이 주소로 APK 를 찍으면 앱이 홈페이지를 연다(docs/ARAM_WEB_PATH.md).
     // 이점: 웹 배포가 앱에 바로 반영(웹 변경 시 APK 재빌드 불필요). 단, 서버 접속 필요(오프라인=빈 화면).
-    url: 'https://www.dongsinmarket.com/shop/',
+    url: 'https://www.dongsinmarket.com/srm/',
     cleartext: false,
   },
   plugins: {

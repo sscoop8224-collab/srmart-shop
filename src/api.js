@@ -61,6 +61,8 @@ export const getSignupCoupon = () => API.get('/signup-coupon');
 export const getDeliveryPromise = (storeId) => API.get(`/stores/${storeId}/delivery-promise`);
 // 홈 맨 아래 사업자 정보(묶음 2) — 어드민 「사업자 정보」(대표만)에서 채운다. 빈 칸은 화면이 안 그린다.
 export const getBusinessInfo = () => API.get('/shop/business-info');
+// 판매자(동신마켓) 과세 유형 문구(2026-11-15 지시 3) — 주문 완료 화면용. 🔴 실패하면 화면은 아무것도 안 그린다(세금계산서 단추가 생기지 않는 쪽)
+export const getSellerTax = () => API.get('/shop/seller-tax');
 // 자주 묻는 질문(묶음 6 S46) — 어드민 「자주 묻는 질문」에서 쓴 것 · 보이기로 둔 것만
 export const getShopFaqs = () => API.get('/shop/faqs');
 // 공지사항(묶음 5 S26 · F2) — 손님: 전 매장 공지 + 이 매장 공지. 관리자 등록·숨기기는 어드민 「공지 관리」와 같은 경로

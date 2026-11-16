@@ -287,7 +287,7 @@ async function shootApp(browser, s, size, theme) {
   //    장바구니를 열 때 다시 확인하는 GET 이 정적 서버로 새어 「불러오지 못함」이 되고, 사진은 앞의 응답으로 찍혔다(2026-11-13).
   const ctx = await browser.newContext({ viewport: size.viewport, deviceScaleFactor: size.dsf, isMobile: true, hasTouch: true, userAgent: ANDROID_UA, colorScheme: theme, locale: 'ko-KR', serviceWorkers: 'block' });
   // AI 처음 안내(2026-11-13)는 opts.aiTip 일 때만 — 다른 화면 사진이 말풍선에 가리지 않게 「이미 봤다」로 둔다
-  await ctx.addInitScript((aiTip) => { try { localStorage.setItem('guestStoreId', '11'); localStorage.setItem('srmart_pwa_dismissed_at', String(Date.now())); if (!aiTip) localStorage.setItem('srm_ai_tip_seen', '1'); window.open = () => null; } catch (e) {} }, !!(s.opts && s.opts.aiTip));
+  await ctx.addInitScript((aiTip) => { try { localStorage.setItem('guestStoreId', '11'); localStorage.setItem('guestStoreId:aram', '11'); localStorage.setItem('srmart_pwa_dismissed_at', String(Date.now())); if (!aiTip) localStorage.setItem('srm_ai_tip_seen', '1'); window.open = () => null; } catch (e) {} }, !!(s.opts && s.opts.aiTip));
   const ctl = { holdChunks: false };
   const opts = { ...(s.opts || {}), _cart: {} };   // 장바구니 줄은 촬영(문맥) 하나마다 새로 — 앞 사진의 줄이 넘어오지 않게
   if (opts.guestCart) await ctx.addInitScript((g) => { try { localStorage.setItem('srm_cart_v1:srm', JSON.stringify(g)); } catch (e) {} }, opts.guestCart);

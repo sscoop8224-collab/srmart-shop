@@ -5,7 +5,9 @@
 //    예전엔 결제 금액(할인·배송비 반영)을 「상품 금액」으로 적고 배송비를 늘 「무료」로 적었다 — 배송비 3,000원을 낸 손님에게도.
 //    줄 금액도 단가 × 수량이라 박스·무게 상품이 틀렸다(이제 장바구니와 같은 getItemPrice).
 // 색·크기는 styles/shop.css(토큰 이름만).
-import { imgUrl } from '../api';
+import { useEffect, useState } from 'react';
+import { imgUrl, getSellerTax } from '../api';
+import SellerTaxNote from '../components/SellerTaxNote';
 import { getItemPrice } from '../utils/pricing';
 import Icon from '../components/ui/Icon';
 
@@ -23,6 +25,14 @@ const won = (n) => `${Number(n || 0).toLocaleString('ko-KR')}원`;
 const TONE = { '결제완료': 'g', '배송중': 'b', '배송완료': 'g', '취소': 'r' };
 
 function Receipt({ order, onClose, onGoHome, earnPoints }) {
+  // 판매자 과세 유형 문구(2026-11-15 지시 3) — 🔴 못 받으면 null 그대로 → 부가세 줄도 세금계산서 단추도 안 그린다
+  const [sellerTax, setSellerTax] = useState(null);
+  useEffect(() => {
+    let live = true;
+    // Promise.resolve().then(…) — 부르는 것 자체가 던져도(옛 api · 시험의 가짜 api) 같은 catch 로 가서 숨긴다
+    Promise.resolve().then(() => getSellerTax()).then(r => { if (live) setSellerTax(r.data || null); }).catch(() => {});
+    return () => { live = false; };
+  }, []);
   if (!order) return null;
 
   const status = order.status || '결제완료';
@@ -77,6 +87,7 @@ function Receipt({ order, onClose, onGoHome, earnPoints }) {
             {sm && sm.points > 0 && <div className="kv"><span>포인트</span><span className="minus">−{won(sm.points)}</span></div>}
             {sm && <div className="kv"><span>배송비</span><span>{sm.deliveryFee > 0 ? won(sm.deliveryFee) : '무료'}</span></div>}
             <div className="kv total"><span>총 결제금액</span><span>{won(order.totalPrice)}</span></div>
+            <SellerTaxNote info={sellerTax} />
           </div></div>
         </section>
       </div>

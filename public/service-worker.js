@@ -9,13 +9,23 @@
  *   → 같은 출처 + 스코프(/shop/) 안 주소만 손댄다. 나머지는 respondWith 를 부르지 않는다(브라우저가 그대로 보냄).
  *   재발 방지 검사: scripts/shop-shots/check-sw.cjs
  *
- * 🔴 CACHE 이름을 올리면 activate 가 옛 캐시를 통째로 지운다 — 이미 설치한 기기의 옛 /api 캐시도 이걸로 사라진다.
+ * 🔴 판(VERSION)을 올리면 activate 가 **이 범위의** 옛 캐시를 지운다 — 이미 설치한 기기의 옛 /api 캐시도 이걸로 사라진다.
+ *
+ * 🔴 **캐시 이름에 범위(/shop/ · /srm/ · /aram/)를 넣고, 지울 때도 내 범위 것만 지운다** (2026-11-15 아람 웹 경로).
+ *   Cache Storage 는 범위가 아니라 **출처(www.dongsinmarket.com) 단위**다. 예전 activate 는 「내 이름이 아닌 캐시는
+ *   전부」 지웠다. 그래서 같은 출처에 /srm/·/aram/ 이 생기면 서비스워커끼리 **서로의 캐시를 지운다**(오프라인 화면이 사라진다).
+ *   ⑴ 이름 = shop-<판>:<범위>  ⑵ activate 는 같은 범위의 다른 판 + 범위를 넣기 전의 옛 이름(srmart-shop-v1~v6)만 지운다
+ *   ⑶ 꺼낼 때도 내 캐시에서만 찾는다(caches.match 는 출처의 모든 캐시를 뒤진다 — 다른 브랜드 화면이 나올 수 있다).
+ *   지키는 검사: scripts/check-brand-paths.cjs
  */
-const CACHE = 'srmart-shop-v6';
-const OFFLINE_URL = 'offline.html'; // 스코프(/shop/) 상대 — serve.json 의 cleanUrls:false 가 있어야 301 을 안 탄다
-
 // 이 SW 가 맡는 주소의 앞머리(예: /shop/)
 const SCOPE_PATH = new URL(self.registration.scope).pathname;
+const VERSION = 'v7';
+const CACHE = `shop-${VERSION}:${SCOPE_PATH}`;
+const OFFLINE_URL = 'offline.html'; // 스코프 상대 — serve.json 의 cleanUrls:false 가 있어야 301 을 안 탄다
+// 지워도 되는 캐시 — 같은 범위의 다른 판, 또는 범위를 이름에 넣기 전의 옛 이름
+const isMineOld = (k) => k !== CACHE && ((k.startsWith('shop-') && k.endsWith(`:${SCOPE_PATH}`)) || /^srmart-shop-v\d+$/.test(k));
+const fromMine = (req) => caches.open(CACHE).then((c) => c.match(req));
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -28,7 +38,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter(isMineOld).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -49,14 +59,14 @@ self.addEventListener('fetch', (event) => {
       fetch(req).then((res) => {
         if (res && res.status === 200) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
         return res;
-      }).catch(() => caches.match(req).then((c) => c || caches.match(OFFLINE_URL)))
+      }).catch(() => fromMine(req).then((c) => c || fromMine(OFFLINE_URL)))
     );
     return;
   }
 
   // 정적 자원(스코프 안): 캐시 우선 + 런타임 캐싱
   event.respondWith(
-    caches.match(req).then((cached) =>
+    fromMine(req).then((cached) =>
       cached ||
       fetch(req).then((res) => {
         if (res && res.status === 200 && res.type === 'basic') {
