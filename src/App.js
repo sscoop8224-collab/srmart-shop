@@ -31,6 +31,7 @@ import { useStore } from './StoreContext';
 import { initPush, registerPushForUser } from './pushSetup';
 import { objectJosa } from './utils/customerStores';
 import useShopCart from './hooks/useShopCart';
+import useIdentityLive from './identity/useIdentityLive';
 import { BRAND, shortStoreName } from './brand';
 
 // 코드 스플리팅: 홈(App 내 inline) 외 페이지는 지연 로드 → 초기 번들 축소(파싱 단축).
@@ -122,6 +123,9 @@ function AppContent() {
   const [productsError, setProductsError] = useState(false);
   const [categories, setCategories] = useState([]);
   const [user, setUser] = useState(null);
+  // 본인확인이 켜져 있으면 성인 상품 안내가 「본인확인 뒤 매장 픽업」을 말한다(목업 S35 · 2026-11-16 지시 7). 판정은 서버가 한다.
+  const [idLive] = useIdentityLive(true);
+  const ADULT_MSG = idLive ? '주류는 19세 이상 본인확인 뒤 매장 픽업으로 살 수 있어요' : '성인 상품은 19세 이상만 구매할 수 있어요';
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quickOrderItem, setQuickOrderItem] = useState(null);   // '바로 주문' 대상 아이템(카트형, 1개)
   const [wishlist, setWishlist] = useState([]);
@@ -485,7 +489,7 @@ function AppContent() {
     if (product.stock !== '' && Number(product.stock) <= 0) { showToast('재고가 없어요'); return; }
     if (product.isAdult) {
       const latestUser = users.find(u => u.email === user.email) || user;
-      if (!latestUser.isAdult) { showToast('성인 상품은 19세 이상만 구매할 수 있어요'); return; }
+      if (!latestUser.isAdult) { showToast(ADULT_MSG); return; }
     }
     // 수량은 한 번에 보낸다(상세의 수량·박스 수량) — 같은 상품·같은 포장 단위는 서버가 더하고 99개에서 멈춘다.
     // 재고·판매 여부·주류는 서버가 다시 본다(장바구니를 열 때마다 줄 아래에 알린다).
@@ -593,7 +597,7 @@ function AppContent() {
     if (!item) { notify('주문할 상품이 없어요!'); return; }
     const latestUser = users.find(u => u.email === user.email) || user;
     if (item.isAdult && !latestUser.isAdult) {
-      notify('🔞 성인 상품은 19세 이상만 구매할 수 있어요!'); return;
+      notify({ icon: 'alert', title: '성인 상품이에요', message: ADULT_MSG }); return;
     }
     try {
       const orderId = 'order_' + Date.now();
@@ -753,7 +757,7 @@ function AppContent() {
         {page === 'receipt'         && <Receipt order={lastOrder} onClose={() => goToPage('orders')} onGoHome={() => goToPage('home')} />}
         {page === 'notificationSettings' && <NotificationSettings goBack={goBack} />}
         {/* 마이(P02) — 로그인 안 한 손님도 연다(S47 — 로그인·회원가입 단추) · 묶음 5 */}
-        {page === 'mypage'          && <MyPage user={user ? currentUser : null} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} users={users} setUsers={setUsers} isAdmin={isAdmin} onLogin={() => setPage('login')} onSignup={() => { setLoginMode('signup'); setPage('login'); }} />}
+        {page === 'mypage'          && <MyPage user={user ? currentUser : null} orders={orders} wishlist={wishlist} goToPage={goToPage} onLogout={handleLogout} users={users} setUsers={setUsers} onUserChange={(patch) => setUser((u) => (u ? { ...u, ...patch } : u))} isAdmin={isAdmin} onLogin={() => setPage('login')} onSignup={() => { setLoginMode('signup'); setPage('login'); }} />}
         {page === 'about'           && <About user={user} storeId={currentStoreId} storeShort={storeShort} goBack={goBack} onShop={() => goToPage('home')} onNotice={() => goToPage('notice')} onStores={() => goToPage('storeInfo')} onEvents={() => goToPage('events')} onHelp={() => goToPage('customerCenter')} onSignup={() => { setLoginMode('signup'); setPage('login'); }} />}
         </Suspense>
 

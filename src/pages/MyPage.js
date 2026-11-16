@@ -3,7 +3,10 @@
 // 결정 9·11(2026-11-12): 예전 마이(S20)를 P02 가 대신한다.
 //   · 위 — 프로필 한 줄(누르면 회원정보 수정 S21) + 요약 4칸(주문 · 찜 · 포인트 · 쿠폰). 예전의 통계 3칸 + 카드 3칸(같은 숫자 두 번)을 하나로.
 //   · 쇼핑 — 「주문내역」 한 줄(예전 「구매 내역」·「주문내역」 두 줄이 같은 화면으로 갔다 — P01) · 「찜」 한 줄(예전 「찜한 상품」·「찜 목록」) · 「내 쿠폰」.
-//   · 계정·정보 — 알림 설정 · 비밀번호 변경(S22) · 로그인 이력(S24) · 공지사항.
+//   · 계정·정보 — 본인확인(켜져 있을 때만) · 알림 설정 · 비밀번호 변경(S22) · 로그인 이력(S24) · 공지사항.
+//   · 휴대폰 본인확인(2026-11-16 지시 7 · 목업 P02·S21·S48) — 서버가 「연동 켬」일 때만 보인다(꺼져 있으면 예전 그대로).
+//     「본인확인 하기」 → POST /users/me/identity · 번호는 본인확인으로만 바꾼다 → PUT /users/me/phone.
+//     본인확인한 회원의 이름은 읽기 전용(서버 PUT /users/:id 도 본인 수정이면 이름을 그대로 둔다 — 판정은 서버).
 //   · 오른쪽(태블릿) — 화면 모드 · 회사 소개·사업자 정보(S40) · 로그아웃(맨 아래 — 확인창 S33) · 회원탈퇴(S25).
 //   · 🔴 로그인 안 한 손님(S47)도 마이를 연다 — 로그인·회원가입 단추 + 공지 · 회사 소개 · 화면 모드(예전엔 마이 탭을 누르면 로그인 창뿐이었다).
 // 🔴 쿠폰은 **창 하나**(S23) — 예전엔 창이 둘이었고, 그중 통계 칸이 부르던 `/coupons/my` 는 서버에 없는 주소라 늘 0장이었다.
@@ -11,7 +14,9 @@ import { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { useTheme } from '../ThemeContext';
 import { useAuth } from '../AuthContext';
-import { getMyPoints, getMyActiveCoupons, deleteAccount, SITE } from '../api';
+import { getMyPoints, getMyActiveCoupons, deleteAccount, SITE, verifyMemberIdentity, changePhoneByIdentity } from '../api';
+import IdentitySheet from '../identity/IdentitySheet';
+import useIdentityLive from '../identity/useIdentityLive';
 import API from '../api';
 import { useDialog } from '../DialogContext';
 import Icon from '../components/ui/Icon';
@@ -45,6 +50,9 @@ const PW_CHECKS = [
   ['숫자', (p) => /[0-9]/.test(p)],
   ['특수문자', (p) => /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(p)],
 ];
+
+// 읽기 전용 번호 표시 — 01012345678 → 010-1234-5678(목업 S21). 모양이 다르면 그대로 둔다
+const phoneView = (v) => { const d = String(v || '').replace(/\D/g, ''); return /^01\d{8,9}$/.test(d) ? d.replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3') : (v || ''); };
 
 function Row({ icon, tone = '', label, sub, val, danger, chev = true, onClick, children }) {
   return (
@@ -155,7 +163,7 @@ function LoginHistorySheet({ rows, loading, failed, onClose }) {
   );
 }
 
-function MyPage({ user, orders = [], wishlist = [], goToPage, onLogout, users, setUsers, isAdmin, onLogin, onSignup }) {
+function MyPage({ user, orders = [], wishlist = [], goToPage, onLogout, users, setUsers, onUserChange, isAdmin, onLogin, onSignup }) {
   const { themeMode, setThemeMode } = useTheme();
   const { login: setAuthUser } = useAuth();   // 저장 성공 후 로그인 사용자 정보 갱신(재로그인 없이 반영)
   const { notify } = useDialog();
@@ -177,6 +185,8 @@ function MyPage({ user, orders = [], wishlist = [], goToPage, onLogout, users, s
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [idLive] = useIdentityLive(!!user);
+  const [idvSheet, setIdvSheet] = useState(null);   // 'verify_member' | 'phone_change'
 
   useEffect(() => {
     if (!user) return;
@@ -187,6 +197,35 @@ function MyPage({ user, orders = [], wishlist = [], goToPage, onLogout, users, s
 
   const currentUser = users?.find((u) => u.email === user?.email) || user;
   const liveCoupons = coupons.filter((c) => !couponGone(c)).length;
+  const verified = !!(currentUser?.identityVerified ?? user?.identityVerified);
+
+  // 본인확인 결과를 로그인 정보에 반영 — 다시 로그인하지 않고 이름·번호·성인 여부가 바뀐다(서버가 돌려준 값만 쓴다)
+  const applyUser = (patch) => {
+    const updated = { ...user, ...patch };
+    setAuthUser(updated);
+    if (onUserChange) onUserChange(patch);   // App 의 user — 마이·성인 상품 판정이 이것을 읽는다
+    if (setUsers) setUsers((prev) => prev.map((u) => ((u.id ? u.id === (currentUser?.id || user?.id) : u.email === user?.email) ? { ...u, ...patch } : u)));
+  };
+  const onIdentityDone = async (r) => {
+    const purpose = idvSheet;
+    setIdvSheet(null);
+    try {
+      if (purpose === 'verify_member') {
+        const res = await verifyMemberIdentity(r.token);
+        const d = res.data || {};
+        applyUser({ identityVerified: true, name: d.name || user?.name, phone: d.phone || user?.phone, isAdult: !!d.adult, is_adult: d.adult ? 1 : 0 });
+        notify({ icon: 'check', title: '본인확인을 마쳤어요', message: d.adult ? '이제 주류를 매장 픽업으로 주문할 수 있어요.' : '이름·휴대폰 번호가 본인확인한 값으로 바뀌었어요.' });
+      } else {
+        const res = await changePhoneByIdentity(r.token);
+        const phone = (res.data && res.data.phone) || '';
+        applyUser({ phone });
+        setForm((p) => ({ ...p, phone }));
+        setSaveErr(false); setSaveMsg('본인확인으로 휴대폰 번호를 바꿨어요');
+      }
+    } catch (e) {
+      notify({ icon: 'alert', title: '본인확인을 반영하지 못했어요', message: e.response?.data?.error || '잠시 후 다시 시도해 주세요.' });
+    }
+  };
 
   // 서버(PUT /api/users/:id)에 실제로 저장한 뒤에만 성공 표시한다.
   // ※ 이 엔드포인트는 부분 수정이 아니라 전체 UPDATE 라, 화면에서 안 고치는 username·is_adult 도
@@ -368,6 +407,9 @@ function MyPage({ user, orders = [], wishlist = [], goToPage, onLogout, users, s
 
           <Group h={login ? '계정·정보' : '정보'}>
             {login && <>
+              {idLive && (verified
+                ? <Row icon="shield" label="본인확인" sub="휴대폰 본인확인을 마쳤어요" val="완료" chev={false} />
+                : <Row icon="shield" label="본인확인" sub="주류 구매·휴대폰 번호 변경에 필요해요" val="본인확인 하기" onClick={() => setIdvSheet('verify_member')} />)}
               <Row icon="bell" tone="t-blue" label="알림 설정" sub="주문·배송 알림 · 혜택 알림" onClick={() => goToPage('notificationSettings')} />
               <Row icon="lock" tone="t-gray" label="비밀번호 변경" onClick={() => { setPwForm({ current: '', next: '', confirm: '' }); setPwError(null); setPwShow(false); setSheet('pw'); }} />
               <Row icon="clock" tone="t-gray" label="로그인 이력" onClick={openHistory} />
@@ -421,12 +463,27 @@ function MyPage({ user, orders = [], wishlist = [], goToPage, onLogout, users, s
             )}
             <label className="f-lbl">아이디</label>
             <div className="field ro"><span className="v">{currentUser?.username || '(없음)'}</span><span className="ro-tag">변경 불가</span></div>
-            <label className="f-lbl" htmlFor="my-name">이름</label>
-            <div className="field"><input id="my-name" value={form.name} placeholder="이름" onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></div>
+            {verified ? (
+              <><label className="f-lbl">이름</label><div className="field ro"><span className="v">{form.name}</span><span className="ro-tag">본인확인</span></div></>
+            ) : (
+              <><label className="f-lbl" htmlFor="my-name">이름</label>
+              <div className="field"><input id="my-name" value={form.name} placeholder="이름" onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></div></>
+            )}
             <label className="f-lbl" htmlFor="my-email">이메일 (선택)</label>
             <div className="field"><input id="my-email" type="email" value={form.email || ''} placeholder="example@email.com" onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} /></div>
-            <label className="f-lbl" htmlFor="my-phone">휴대폰 번호</label>
-            <div className="field"><input id="my-phone" inputMode="tel" value={form.phone || ''} placeholder="010-0000-0000" onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} /></div>
+            {idLive ? (
+              <>
+                <label className="f-lbl">휴대폰 번호</label>
+                <div className="addr-row">
+                  <div className="field ro" style={{ flex: 1 }}><span className={form.phone ? 'v' : 'ph'}>{form.phone ? phoneView(form.phone) : '번호 없음'}</span>{verified && <span className="ro-tag">본인확인</span>}</div>
+                  <button type="button" className="ui-btn md sec" onClick={() => setIdvSheet(verified ? 'phone_change' : 'verify_member')}>{verified ? '본인확인으로 변경' : '본인확인 하기'}</button>
+                </div>
+                <div className="f-hint">번호는 본인확인으로만 바꿀 수 있어요</div>
+              </>
+            ) : (
+              <><label className="f-lbl" htmlFor="my-phone">휴대폰 번호</label>
+              <div className="field"><input id="my-phone" inputMode="tel" value={form.phone || ''} placeholder="010-0000-0000" onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} /></div></>
+            )}
             <label className="f-lbl">주소</label>
             <div className="addr-row">
               <div className="field ro zip"><span className="v">{form.zipcode || '우편번호'}</span></div>
@@ -483,6 +540,7 @@ function MyPage({ user, orders = [], wishlist = [], goToPage, onLogout, users, s
           </div>
         </Sheet>
       )}
+      {idvSheet && <IdentitySheet purpose={idvSheet} onClose={() => setIdvSheet(null)} onDone={onIdentityDone} />}
     </div>
   );
 }

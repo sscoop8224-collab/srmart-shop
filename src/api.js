@@ -48,6 +48,16 @@ export const kakaoPayReady = (orderInfo) =>
   }).then((res) => res.data);
 
 export const register = (data) => API.post('/register', data);
+// 가입·계정 찾기의 본인 확인(2026-11-16 지시 7) — 업체 흐름 자체는 src/identity/identityClient.js
+//   문자 인증(옛 경로 · 본인확인이 꺼져 있고 문자·알림톡이 켜져 있을 때만 쓰인다): 서버가 꺼져 있으면 { enabled:false } 만 준다(아무것도 안 보낸다)
+export const sendSignupCode = (phone, store_id) => API.post('/auth/send-code', { purpose: 'signup', phone, store_id });
+export const verifySignupCode = (phone, code) => API.post('/auth/verify-code', { purpose: 'signup', phone, code });
+//   본인확인 토큰을 쓰는 입구 — 토큰은 15분 · 한 번 · 그 목적에만
+export const findIdByIdentity = (identity_token) => API.post('/auth/find-id', { identity_token });
+export const resetByIdentity = (identity_token, username) => API.post('/auth/identity-reset', { identity_token, username });
+export const resetPassword = (token, newPassword) => API.post('/auth/reset-password', { token, newPassword });
+export const verifyMemberIdentity = (identity_token) => API.post('/users/me/identity', { identity_token });
+export const changePhoneByIdentity = (identity_token) => API.put('/users/me/phone', { identity_token });
 export const login = (username, password) => API.post('/login', { username, password });
 // 손님 화면용 매장 목록 (2026-11-12) — `audience=customer` 면 서버가 「손님에게 보이기」가 켜진
 // 매장만, 공개 항목(전화·영업시간·우편번호·표시 이름)과 함께 준다. 옛 서버는 이 값을 무시하고
