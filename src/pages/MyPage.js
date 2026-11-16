@@ -20,6 +20,7 @@ import useIdentityLive from '../identity/useIdentityLive';
 import API from '../api';
 import { useDialog } from '../DialogContext';
 import Icon from '../components/ui/Icon';
+import { sameUser } from '../utils/sameUser';
 
 const won = (n) => `${Number(n || 0).toLocaleString('ko-KR')}원`;
 const pad2 = (x) => String(x).padStart(2, '0');
@@ -195,7 +196,7 @@ function MyPage({ user, orders = [], wishlist = [], goToPage, onLogout, users, s
     getMyActiveCoupons().then((r) => setCoupons(r.data || [])).catch(() => {}).finally(() => setCouponsLoading(false));
   }, [user]);
 
-  const currentUser = users?.find((u) => u.email === user?.email) || user;
+  const currentUser = users?.find((u) => sameUser(u, user)) || user;
   const liveCoupons = coupons.filter((c) => !couponGone(c)).length;
   const verified = !!(currentUser?.identityVerified ?? user?.identityVerified);
 
@@ -204,7 +205,7 @@ function MyPage({ user, orders = [], wishlist = [], goToPage, onLogout, users, s
     const updated = { ...user, ...patch };
     setAuthUser(updated);
     if (onUserChange) onUserChange(patch);   // App 의 user — 마이·성인 상품 판정이 이것을 읽는다
-    if (setUsers) setUsers((prev) => prev.map((u) => ((u.id ? u.id === (currentUser?.id || user?.id) : u.email === user?.email) ? { ...u, ...patch } : u)));
+    if (setUsers) setUsers((prev) => prev.map((u) => (sameUser(u, currentUser || user) ? { ...u, ...patch } : u)));
   };
   const onIdentityDone = async (r) => {
     const purpose = idvSheet;
@@ -256,7 +257,7 @@ function MyPage({ user, orders = [], wishlist = [], goToPage, onLogout, users, s
       };
       setAuthUser(updated);
       if (setUsers) {
-        setUsers((prev) => prev.map((u) => ((u.id ? u.id === uid : u.email === user?.email) ? { ...u, ...updated } : u)));
+        setUsers((prev) => prev.map((u) => (sameUser(u, { id: uid, email: user?.email }) ? { ...u, ...updated } : u)));
       }
       setSaveMsg('저장했어요');
       setTimeout(() => { setSaveMsg(''); setSheet(null); }, 1200);

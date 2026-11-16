@@ -33,6 +33,7 @@ import { objectJosa } from './utils/customerStores';
 import useShopCart from './hooks/useShopCart';
 import useIdentityLive from './identity/useIdentityLive';
 import { BRAND, shortStoreName } from './brand';
+import { sameUser, payerKey } from './utils/sameUser';   // 이메일 없는 회원(2026-11-17) — 같은 사람은 번호로
 
 // 코드 스플리팅: 홈(App 내 inline) 외 페이지는 지연 로드 → 초기 번들 축소(파싱 단축).
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -488,7 +489,7 @@ function AppContent() {
     if (product.isSoldOut) { showToast('품절된 상품이에요'); return; }
     if (product.stock !== '' && Number(product.stock) <= 0) { showToast('재고가 없어요'); return; }
     if (product.isAdult) {
-      const latestUser = users.find(u => u.email === user.email) || user;
+      const latestUser = users.find(u => sameUser(u, user)) || user;
       if (!latestUser.isAdult) { showToast(ADULT_MSG); return; }
     }
     // 수량은 한 번에 보낸다(상세의 수량·박스 수량) — 같은 상품·같은 포장 단위는 서버가 더하고 99개에서 멈춘다.
@@ -548,14 +549,14 @@ function AppContent() {
     const cart = shopCart.orderItems;   // 서버가 「살 수 있다」고 한 줄만(가격도 서버 값)
     const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
     if (cart.length === 0) { notify('장바구니가 비어있어요!'); return; }
-    const latestUser = users.find(u => u.email === user.email) || user;
+    const latestUser = users.find(u => sameUser(u, user)) || user;
     if (cart.some(item => item.isAdult) && !latestUser.isAdult) {
       notify('🔞 장바구니에 성인 상품이 있어요. 19세 이상만 구매할 수 있어요!'); return;
     }
     try {
       const orderId = 'order_' + Date.now();
       const orderInfo = {
-        orderId, userId: user.email,
+        orderId, userId: payerKey(user),
         itemName: cart.length === 1 ? cart[0].name : cart[0].name + ' 외 ' + (cart.length - 1) + '건',
         quantity: cart.reduce((sum, item) => sum + item.quantity, 0),
         totalAmount: finalPrice || totalPrice,
@@ -595,14 +596,14 @@ function AppContent() {
   // orderInfo/createOrder 페이로드 구성 방식은 handlePayment 와 1:1로 맞춰뒀다.
   const handleQuickPayment = async (item, finalPrice, orderExtras = {}) => {
     if (!item) { notify('주문할 상품이 없어요!'); return; }
-    const latestUser = users.find(u => u.email === user.email) || user;
+    const latestUser = users.find(u => sameUser(u, user)) || user;
     if (item.isAdult && !latestUser.isAdult) {
       notify({ icon: 'alert', title: '성인 상품이에요', message: ADULT_MSG }); return;
     }
     try {
       const orderId = 'order_' + Date.now();
       const orderInfo = {
-        orderId, userId: user.email,
+        orderId, userId: payerKey(user),
         itemName: item.name,
         quantity: item.quantity,
         totalAmount: finalPrice,

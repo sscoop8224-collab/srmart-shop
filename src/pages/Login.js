@@ -95,6 +95,7 @@ function EyeBtn({ show, setShow, inputRef }) {
   );
 }
 
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;   // 서버 src/services/orderOwner.js EMAIL_RE 와 같다
 const EMPTY_FORM = { name: '', username: '', email: '', password: '', phone: '', address: '', addressDetail: '', birth: '' };
 // 문자 인증 상태 — needed: null(아직 안 물음) · false(서버가 꺼 둠) · true(인증번호 칸)
 const SMS0 = { needed: null, code: '', token: null, busy: false };
@@ -248,7 +249,8 @@ function Login({ onLogin, onGuest, initialMode }) {
     if (!form.username.trim()) e.username = '아이디를 입력해 주세요.';
     if (!form.password) e.password = '비밀번호를 입력해 주세요.';
     else if (pwProblem(form.password)) e.password = pwProblem(form.password);
-    if (!form.email.trim()) e.email = '이메일을 입력해 주세요.';
+    // 이메일은 선택이다(2026-11-17 대표 확정) — 넣었을 때만 모양을 본다. 서버도 같은 규칙(orderOwner.normalizeSignupEmail).
+    if (form.email.trim() && !EMAIL_SHAPE.test(form.email.trim())) e.email = '이메일 모양이 맞지 않아요. 비워 두셔도 가입할 수 있어요.';
     if (idLive) {
       if (!idv) e.identity = '휴대폰 본인확인을 해 주세요.';
     } else {
@@ -565,9 +567,10 @@ function Login({ onLogin, onGuest, initialMode }) {
             )}
             {/* 휴대폰 본인확인(목업 P04 2단계 · S48) — 켜져 있을 때만. 이름·생년월일·번호는 확인된 값(서버도 그 값으로 저장한다) */}
             {idLive && (idv ? <VerifiedFields result={idv} /> : <IdentityCard onStart={() => setIdvOpen(true)} error={errs.identity} />)}
-            <Field label="이메일" error={errs.email}>
-              <input type="email" value={form.email} onChange={setF('email')} placeholder="이메일을 입력해 주세요" autoComplete="email" autoCapitalize="none" />
+            <Field label="이메일 (선택)" error={errs.email}>
+              <input type="email" value={form.email} onChange={setF('email')} placeholder="예) name@example.com" autoComplete="email" autoCapitalize="none" />
             </Field>
+            {!errs.email && <div className="f-hint">넣으시면 이메일로도 로그인할 수 있어요. 비워 두셔도 가입돼요.</div>}
             {!idLive && (
               <>
                 <Field label="전화번호" error={errs.phone}>
@@ -617,7 +620,7 @@ function Login({ onLogin, onGuest, initialMode }) {
                 <ConsentRow big checked={allConsent} onChange={setAllConsent} label="전체 동의" detail="선택 항목 포함" />
                 <ConsentRow checked={privacyConsent} onChange={(v) => { setPrivacyConsent(v); setErrs({}); }} required
                   label="개인정보 수집·이용 동의"
-                  detail="이름, 아이디, 이메일, 휴대전화번호, 생년월일, 주소를 회원 관리와 주문·배송에 이용합니다." />
+                  detail="이름, 아이디, 휴대전화번호, 생년월일, 주소(이메일은 넣으신 경우만)를 회원 관리와 주문·배송에 이용합니다." />
                 <ConsentRow checked={thirdPartyConsent} onChange={setThirdPartyConsent}
                   label="지점 통합 회원·포인트·구매 내역 이용 동의"
                   detail={`${BRAND.name} 각 지점${branchList(stores) ? `(${branchList(stores)})` : ''}은 서로 다른 사업자입니다. 동의하시면 모든 지점에서 포인트를 함께 쌓고 쓰시고, 매장 구매 영수증도 앱에서 보실 수 있어요. 제공 항목은 이름·연락처·회원번호·포인트 내역·매장 구매 내역입니다. 동의하지 않으셔도 가입과 온라인 주문은 그대로 가능하며, 이 경우 매장 포인트 적립·사용과 매장 구매 내역 표시만 제한됩니다.`} />

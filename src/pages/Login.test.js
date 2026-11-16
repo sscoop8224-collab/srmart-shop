@@ -53,7 +53,7 @@ test('로그인 — 빈 칸은 칸 아래에 바로 알리고, 서버 오류는 
   expect(onLogin).toHaveBeenCalledWith({ username: 'guest_demo', password: 'pw' });
 });
 
-async function toStep2() {
+async function toStep2({ email = 'kim@example.com' } = {}) {
   render(<Login onLogin={jest.fn().mockResolvedValue()} initialMode="signup" />);
   await waitFor(() => expect(api.getStores).toHaveBeenCalled());
   fireEvent.change(screen.getByPlaceholderText('이름을 입력해 주세요'), { target: { value: '김손님' } });
@@ -64,11 +64,11 @@ async function toStep2() {
   expect(screen.getByText('계정 만들기')).toBeInTheDocument();
   fireEvent.change(screen.getByPlaceholderText('아이디를 입력해 주세요'), { target: { value: 'kimson' } });
   fireEvent.change(screen.getByPlaceholderText('비밀번호를 입력해 주세요'), { target: { value: 'abc' } });
-  fireEvent.change(screen.getByPlaceholderText('이메일을 입력해 주세요'), { target: { value: 'kim@example.com' } });
+  if (email !== null) fireEvent.change(screen.getByPlaceholderText('예) name@example.com'), { target: { value: email } });
 }
 
-async function toStep3() {
-  await toStep2();
+async function toStep3(opt) {
+  await toStep2(opt);
   fireEvent.change(screen.getByPlaceholderText('010-0000-0000'), { target: { value: '010-1234-5678' } });
   fireEvent.change(document.querySelector('input[type=date]'), { target: { value: '1990-05-12' } });
   // 서버 규칙(6자 · 2종)에 못 미치면 넘어가지 않는다
@@ -78,6 +78,27 @@ async function toStep3() {
   fireEvent.click(screen.getByRole('button', { name: '다음' }));
   expect(await screen.findByRole('heading', { name: '동의' })).toBeInTheDocument();
 }
+
+test('가입 — 이메일은 선택: 비워 두면 그대로 가입하고, 빈 값을 보낸다(서버가 NULL 로 넣는다)', async () => {
+  api.register.mockResolvedValue({ data: { signup_coupon: { granted: false } } });
+  await toStep3({ email: null });
+  fireEvent.click(screen.getByLabelText(/전체 동의/));
+  fireEvent.click(screen.getByRole('button', { name: '가입하기' }));
+  await screen.findByText('가입을 환영해요, 김손님님!');
+  expect(api.register.mock.calls[0][0].email).toBe('');
+});
+
+test('가입 — 이메일을 넣었으면 모양을 본다(틀리면 2단계에 머문다)', async () => {
+  await toStep2({ email: 'kim@' });
+  expect(screen.getByText('이메일 (선택)')).toBeInTheDocument();
+  expect(screen.getByText('넣으시면 이메일로도 로그인할 수 있어요. 비워 두셔도 가입돼요.')).toBeInTheDocument();
+  fireEvent.change(screen.getByPlaceholderText('010-0000-0000'), { target: { value: '010-1234-5678' } });
+  fireEvent.change(document.querySelector('input[type=date]'), { target: { value: '1990-05-12' } });
+  fireEvent.change(screen.getByPlaceholderText('비밀번호를 입력해 주세요'), { target: { value: 'abcd1234' } });
+  fireEvent.click(screen.getByRole('button', { name: '다음' }));
+  expect(screen.getByText('이메일 모양이 맞지 않아요. 비워 두셔도 가입할 수 있어요.')).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: '동의' })).toBeNull();
+});
 
 test('가입 — 필수 동의 없이는 가입하지 않는다', async () => {
   await toStep3();
