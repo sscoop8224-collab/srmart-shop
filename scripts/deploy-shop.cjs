@@ -33,7 +33,8 @@
  *  4. pm2 start srmart-shop → 127.0.0.1:3000 이 새 번들을 내주는지
  *  5. 확인 — 손님 앱이 여는 주소(capacitor.config.ts server.url, 기본 https://www.dongsinmarket.com/shop)에서
  *     ⑴ 새 번들 이름이 내려오는지 ⑵ check-sw.cjs ⑶ check-f11.cjs
- *     ⑷ 확인하는 동안 nginx 기록에 시험 브라우저(HeadlessChrome)의 /api 요청이 0줄인지(가짜 응답만 썼는지)
+ *     ⑷ 확인하는 동안 nginx 기록에서 **배포 주소(/srm/·/shop/·/aram/)에서 나간** 시험 브라우저의 /api 요청이 0줄인지
+ *        (가짜 응답만 썼는지 · 시험 흔적은 HeadlessChrome·지어 넣은 휴대폰 UA·이 PC 의 휴대폰 UA — scripts/lib/nginx-test-hits.cjs)
  *  6. 하나라도 실패하면: 멈춤 → build 를 build_failed_<시각> 로 · build_prev_<시각> 를 build 로 → 시작 → 옛 번들인지 확인
  *
  * 🔴 백엔드·어드민은 건드리지 않는다. nginx 도 안 건드린다. 반영 흐름은 아무것도 지우지 않는다
@@ -49,6 +50,12 @@ const https = require('https');
 
 const ROOT = path.join(__dirname, '..');
 const NGINX_LOG = 'C:/nginx/logs/access.log';
+// 마지막 확인의 nginx 판정 — 멀쩡한지 먼저 묻는다(못 믿을 판정으로 반영·되돌리기를 정하지 않는다 · 2026-11-17 지시 7)
+const nginxTest = require('./lib/nginx-test-hits.cjs');
+{
+  const st = nginxTest.selftest();
+  if (!st.ok) { console.log(`🔴 nginx 시험 기록 판정 자가 시험 실패 — 반영하지 않는다\n   ${st.bad.join('\n   ')}`); process.exit(1); }
+}
 const CHECK_ONLY = process.argv.includes('--check-only');
 // ── 브랜드 (2026-11-15 대표님 지시 — 아람 웹 경로) ─────────────────────────────────────────
 //   node scripts/deploy-shop.cjs                 # 에스알마트(srm) — 지금까지와 같다
@@ -250,10 +257,12 @@ async function verify(expectMain) {
   }
   await sleep(1500);
   if (L0 > 0) {
+    // 🔴 배포 주소(/srm/·/shop/·/aram/)에서 나간 기록만 본다 — 다른 창의 시험 브라우저(/admin 등)는 세기만 한다.
+    //    시험 흔적은 넓게(HeadlessChrome · 지어 넣은 휴대폰 UA · 이 PC 의 휴대폰 UA) — scripts/lib/nginx-test-hits.cjs (2026-11-17 지시 7)
     const lines = fs.readFileSync(NGINX_LOG, 'utf8').split('\n').slice(L0 - 1);
-    const hits = lines.filter(l => /HeadlessChrome/.test(l) && /"[A-Z]+ \/api/.test(l));
-    log(`   nginx: 확인 중 새 줄 ${lines.length}개 · 시험 브라우저의 /api ${hits.length}줄`);
-    if (hits.length) bad.push(`시험 브라우저가 실서버 /api 를 ${hits.length}번 불렀다: ${hits.slice(0, 2).map(l => (l.match(/"[A-Z]+ [^ ]+/) || [''])[0]).join(', ')}`);
+    const { hits, otherTest } = nginxTest.testHits(lines);
+    log(`   nginx: 확인 중 새 줄 ${lines.length}개 · 배포 주소에서 나간 시험 브라우저의 /api ${hits.length}줄${otherTest.length ? ` · (다른 주소의 시험 /api ${otherTest.length}줄 — 다른 창 · 세지 않음)` : ''}`);
+    if (hits.length) bad.push(`시험 브라우저가 배포 주소에서 실서버 /api 를 ${hits.length}번 불렀다: ${hits.slice(0, 2).map(l => (l.match(/"[A-Z]+ [^ ]+/) || [''])[0]).join(', ')}`);
   } else log('   ⚠ nginx 기록을 못 읽었다 — /api 0줄 확인은 사람이 한다');
   return bad;
 }
