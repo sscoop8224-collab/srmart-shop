@@ -33,7 +33,11 @@ export function orderLinesOf(items) {
 
 const QUOTE_DELAY_MS = 250;   // 포인트·쿠폰을 연달아 바꿀 때 견적을 몰아서 한 번
 
-export function useCheckoutFlow(items, { user } = {}) {
+// 🔴 fulfillment: 'pickup' — 매장 픽업 주문(주류 · S51). 배송지·배송 구역을 묻지 않고, 견적·주문에 fulfillment 를 싣는다.
+//    서버가 픽업은 주류가 든 주문에만 연다(PICKUP_NOT_AVAILABLE) — 이 값은 장바구니 줄의 pickup_only(서버 판정)로만 정한다.
+// benefits: false — 쿠폰·포인트를 이 주문에 걸지 않는다(배송+픽업 나눠 결제에서 픽업 쪽 · 쿠폰은 두 주문 합쳐 한 장).
+export function useCheckoutFlow(items, { user, fulfillment = 'delivery', benefits = true } = {}) {
+  const isPickup = fulfillment === 'pickup';
   const { notify } = useDialog();
   const { currentStoreId, isOwner } = useStore();
   const [couponInput, setCouponInput] = useState('');
@@ -132,7 +136,7 @@ export function useCheckoutFlow(items, { user } = {}) {
   //   · 결제 자체를 막지는 않는다 — 손님이 지금 사고 싶을 수 있다
   //   · 다만 **할인이 빠진다는 사실**을 반드시 말한다. 그게 이 경고의 목적이다
   const loadBenefits = useCallback(() => {
-    if (!user) return;
+    if (!user || !benefits) return;
     setBenefitsError('');
     setBenefitsLoading(true);
     Promise.allSettled([getMyPoints(), getMyActiveCoupons()]).then(([pt, cp]) => {
@@ -152,7 +156,7 @@ export function useCheckoutFlow(items, { user } = {}) {
       setBenefitsError(`보유 ${failed.join('·')}을 불러오지 못했어요 — ${why}.`
         + ' 지금 결제하면 할인이 빠진 금액으로 결제돼요.');
     });
-  }, [user]);
+  }, [user, benefits]);
 
   useEffect(() => { loadBenefits(); }, [loadBenefits]);
 
@@ -178,11 +182,12 @@ export function useCheckoutFlow(items, { user } = {}) {
     items: lines,
     coupon_id: selectedCouponId || null,
     coupon_code: appliedCoupon ? appliedCoupon.code : null,
-    dong: matchedDong || undefined,
-    zipcode: zipcode || undefined,
+    dong: isPickup ? undefined : (matchedDong || undefined),
+    zipcode: isPickup ? undefined : (zipcode || undefined),
+    fulfillment: isPickup ? 'pickup' : undefined,
     // owner 매장 미리보기 — 서버가 role===owner 일 때만 반영(주문 입구와 같다) · 로그인 안 한 화면은 고른 매장
     store_id: isOwner || !user ? currentStoreId : undefined,
-  }), [lines, selectedCouponId, appliedCoupon, matchedDong, zipcode, isOwner, user, currentStoreId]);
+  }), [lines, selectedCouponId, appliedCoupon, matchedDong, zipcode, isPickup, isOwner, user, currentStoreId]);
   const quoteKey = JSON.stringify(quoteBody);
   const [quote, setQuote] = useState(null);          // { key, data } — 마지막으로 받은 견적과 그 질문
   const [quoteError, setQuoteError] = useState('');
@@ -256,11 +261,23 @@ export function useCheckoutFlow(items, { user } = {}) {
   const currentAddress = useDefaultAddress ? defaultAddress : address;
   const isAddressComplete = !!(currentAddress.name && currentAddress.phone && currentAddress.address);
   const quoteReady = quoteFresh && !quoteError && quoteProblems.length === 0 && !q.out_of_zone && !q.coupon_error;
-  const canPay = isAddressComplete && !!zipcode && !!deliveryInfo?.zoneName && !matchingZipcode && quoteReady;
+  // 픽업은 배송지를 묻지 않는다 — 받는 사람 이름·전화(신분증 대조 · 보관 안내용)만 있으면 된다
+  const canPay = isPickup ? (!!lines.length && !!(currentAddress.name && currentAddress.phone) && quoteReady)
+    : (isAddressComplete && !!zipcode && !!deliveryInfo?.zoneName && !matchingZipcode && quoteReady);
 
   // 결제 버튼 onClick 에서 그대로 onPayment(finalPrice, orderExtras) 에 넘길 페이로드.
   // 🔴 items · coupon · dong · zipcode 는 **방금 견적에 실은 그 값**이다(quoteBody) — 따로 만들면 두 금액이 갈라진다.
-  const buildOrderExtras = () => ({
+  const buildOrderExtras = () => (isPickup ? {
+    fulfillment: 'pickup',
+    store_id: isOwner ? currentStoreId : undefined,
+    use_points: clampedUsePoints,
+    coupon_id: quoteBody.coupon_id,
+    coupon_code: quoteBody.coupon_code,
+    receiverName: currentAddress.name,
+    receiverPhone: currentAddress.phone,
+    items: quoteBody.items,
+  } : {
+    fulfillment: 'delivery',
     zipcode,
     dong: matchedDong,   // 서버가 zone 을 직접 재조회할 때 씀(배송비 숫자는 이제 안 보냄 — 서버가 재계산)
     // owner 매장 미리보기 전용 — 서버가 role===owner일 때만 이 값을 실제로 반영하고
@@ -295,6 +312,6 @@ export function useCheckoutFlow(items, { user } = {}) {
     // 견적 상태 — 화면이 「금액 확인 중」·오류·살 수 없는 줄을 말한다
     quoteLoading: !!lines.length && !quoteFresh && !quoteError, quoteError, quoteProblems,
     // 결제
-    canPay, buildOrderExtras,
+    canPay, buildOrderExtras, isPickup,
   };
 }

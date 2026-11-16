@@ -54,6 +54,12 @@ function Cart({ cart, loggedIn, onLogin, onOrder, onHome }) {
   const lines = cart.lines;
   const checking = lines.some(l => l.status === 'checking');
   const problems = lines.filter(l => !l.ok && l.status !== 'checking');
+  // S52 — 주류(매장 픽업)와 배송 상품이 섞이면 두 묶음으로 보인다. 나누는 기준은 서버가 준 pickup_only 하나(주문서와 같다)
+  const pickLines = lines.filter(l => l.pickup_only);
+  const mixed = pickLines.length > 0 && pickLines.length < lines.length;
+  const groups = mixed
+    ? [{ key: 'd', icon: 'truck', name: '배송 주문', list: lines.filter(l => !l.pickup_only) }, { key: 'p', icon: 'store', name: '매장 픽업 주문', list: pickLines }]
+    : [{ key: 'all', list: lines }];
 
   // 열 때마다 서버가 다시 확인한다(가격·행사·재고·판매 여부)
   useEffect(() => { cart.refresh(); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
@@ -120,12 +126,20 @@ function Cart({ cart, loggedIn, onLogin, onOrder, onHome }) {
           {cart.error && (
             <section className="sec"><div className="notice r"><Icon name="alert" /><div style={{ flex: 1 }}>{cart.error}</div><button className="ui-btn sm sec" onClick={cart.refresh}>다시 시도</button></div></section>
           )}
-          {loggedIn && promise && promise.mode !== 'off' && (
+          {/* 배송 줄 — 비회원도 고른 매장 기준으로 본다(2026-11-17 밤샘 지시 6 · 예전엔 로그인한 손님만) */}
+          {promise && promise.mode !== 'off' && (
             <div className="sec" style={{ marginTop: 'var(--sp-2)' }}><DeliveryLine p={promise} storeShort={storeShort} /></div>
           )}
-          <section className="sec">
+          {mixed && (
+            <section className="sec" style={{ marginTop: 'var(--sp-2)' }}>
+              <div className="notice b"><Icon name="info" /><div style={{ flex: 1 }}>주문이 두 개로 나뉘어요 — <b>배송 주문 + 매장 픽업 주문</b>. 주류는 배송하지 않아요.</div></div>
+            </section>
+          )}
+          {groups.map((g) => (
+          <section className="sec" key={g.key}>
+            {g.name && <div className="sec-h"><Icon name={g.icon} size="sm" /> {g.name} · {g.list.length}개</div>}
             <div className="group">
-              {lines.map((l) => {
+              {g.list.map((l) => {
                 const weight = l.unit_type === 'weight';
                 const box = l.unit_type === 'box';
                 const off = OFF.includes(l.status);
@@ -167,7 +181,9 @@ function Cart({ cart, loggedIn, onLogin, onOrder, onHome }) {
                 );
               })}
             </div>
+            {g.key === 'p' && <div className="sec-f">{storeShort ? `${storeShort} ` : ''}계산대에서 신분증으로 나이를 확인한 뒤 드려요</div>}
           </section>
+          ))}
           {problems.length > 0 && (
             <section className="sec">
               <button className="ui-btn sec" style={{ width: '100%' }} onClick={async () => {

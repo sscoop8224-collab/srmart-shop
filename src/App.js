@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
-import { login as apiLogin, getActiveProducts, getCategories, getBanners, getMyOrders, createOrder, getWishlist, toggleWishlist as toggleWishlistApi, getActivePromotions } from './api';
+import { login as apiLogin, getActiveProducts, getCategories, getBanners, getMyOrders, createOrder, createCheckout, getWishlist, toggleWishlist as toggleWishlistApi, getActivePromotions } from './api';
 import API from './api';
 import Chatbot from './components/Chatbot';
 import StoreSelectionModal from './components/StoreSelectionModal';
@@ -24,6 +24,7 @@ import Offline from './pages/Offline';
 import Home from './pages/Home';   // 첫 화면이라 바로 싣는다(묶음 2)
 import { ThemeProvider, useTheme } from './ThemeContext';
 import { DialogProvider, useDialog } from './DialogContext';
+import { buildOrderRequest, orderErrorAction } from './utils/orderSubmit';
 
 import { kakaoPayReady } from './pages/KakaoPay';
 import { useAuth } from './AuthContext';
@@ -545,96 +546,74 @@ function AppContent() {
   const selectedLargeObj = categories.find((c) => c.name === filterLarge);
   const selectedMediumObj = selectedLargeObj && selectedLargeObj.children.find((m) => m.name === filterMedium);
 
-  const handlePayment = async (finalPrice, orderExtras = {}) => {
-    const cart = shopCart.orderItems;   // 서버가 「살 수 있다」고 한 줄만(가격도 서버 값)
-    const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    if (cart.length === 0) { notify('장바구니가 비어있어요!'); return; }
-    const latestUser = users.find(u => sameUser(u, user)) || user;
-    if (cart.some(item => item.isAdult) && !latestUser.isAdult) {
-      notify('🔞 장바구니에 성인 상품이 있어요. 19세 이상만 구매할 수 있어요!'); return;
-    }
+  // ── 주문 보내기 — 장바구니(handlePayment)와 바로 주문(handleQuickPayment)이 같은 길을 쓴다 ──
+  // 🔴 (2026-11-17 밤샘 지시 6) 주문 저장이 **끝나야** 결제 창을 열고 완료 화면으로 간다. 예전엔 저장을 기다리지 않아
+  //    서버가 409(금액이 바뀜 · 주류는 나눠 결제)·403(본인확인 전)으로 거절해도 「주문이 완료됐어요」가 떴다.
+  //    거절되면 이유를 말하고(utils/orderSubmit.orderErrorAction) 장바구니를 서버에서 다시 확인한다.
+  // 🔴 PG 자리(비움): 결제 연동은 아직 정하지 않았다(카카오페이 시험 CID 휴면 그대로). 나눠 결제(배송+픽업)도 같은 자리를 쓴다 —
+  //    결제를 한 번/두 번으로 할지는 PG 연동 때 정한다(목업 S52). 지금은 「결제 준비 → 주문 저장 → 결제 창」 순서만 지킨다.
+  const placeOrder = async ({ finalPrice, orderExtras, items, onPlaced }) => {
     try {
       const orderId = 'order_' + Date.now();
       const orderInfo = {
         orderId, userId: payerKey(user),
-        itemName: cart.length === 1 ? cart[0].name : cart[0].name + ' 외 ' + (cart.length - 1) + '건',
-        quantity: cart.reduce((sum, item) => sum + item.quantity, 0),
-        totalAmount: finalPrice || totalPrice,
+        itemName: items.length === 1 ? items[0].name : items[0].name + ' 외 ' + (items.length - 1) + '건',
+        quantity: items.reduce((sum, item) => sum + item.quantity, 0),
+        totalAmount: finalPrice,
       };
-      const result = await kakaoPayReady(orderInfo);
-      if (result.next_redirect_pc_url) {
-        const newOrder = { id: orderId, date: new Date().toLocaleString('ko-KR'), items: [...cart], totalPrice: finalPrice || totalPrice, summary: orderExtras.summary, userId: user.email, status: '결제완료' };   // summary — 영수증(S13)에 결제 화면과 같은 금액을 보이려고(서버로는 안 보낸다)
-        createOrder({
-          id: orderId,
-          final_amount: finalPrice,                 // 서버 검증용 실결제(서버가 재계산 후 대조)
-          status: '결제완료',
-          address: orderExtras.address || user.address || '',
-          addressDetail: orderExtras.addressDetail || user.address_detail || '',
-          zipcode: orderExtras.zipcode || '',
-          dong: orderExtras.dong || '',   // 배송비는 서버가 이 dong으로 zone 직접 재조회해 계산(클라값 미신뢰)
-          use_points: orderExtras.use_points || 0,
-          coupon_id: orderExtras.coupon_id || null,
-          coupon_code: orderExtras.coupon_code || null,   // 코드 쿠폰 — 견적에 실은 그 값(2026-11-13 지시 2 · 예전엔 안 실어서 결제가 409)
-          receiverName: orderExtras.receiverName || user.name,
-          receiverPhone: orderExtras.receiverPhone || user.phone || '',
-          // orderExtras.items 에는 quantity_type/grams 가 담겨 서버 소계 재계산에 필요
-          items: orderExtras.items || cart.map(item => ({ id: item.id, name: item.name, quantity: item.quantity })),
-          store_id: orderExtras.store_id,   // owner 매장 미리보기 전용 — 서버가 role 확인 후에만 반영
-        }).catch(err => console.error('주문 저장 실패:', err));
-        setOrders([newOrder, ...orders]); setLastOrder(newOrder);
-        shopCart.removeMany(shopCart.lines.filter(l => l.ok));   // 주문한 줄만 뺀다 — 살 수 없어 남겨 둔 줄은 그대로(서버 장바구니에서도)
-        window.open(result.next_redirect_pc_url, '_blank');
-        goToPage('receipt');
+      const result = await kakaoPayReady(orderInfo);   // ── PG 자리(비움 · 시험 CID) ──
+      if (!result.next_redirect_pc_url) return;
+      const req = buildOrderRequest(orderId, finalPrice, orderExtras, user);
+      let saved;
+      try {
+        saved = req.path === '/orders/checkout' ? await createCheckout(req.body) : await createOrder(req.body);
+      } catch (err) {
+        const act = orderErrorAction(err);
+        await notify({ icon: 'alert', title: act.title, message: act.message });
+        if (act.refresh) { shopCart.refresh(); goToPage('cart'); }
+        else if (act.verify) goToPage('mypage');
+        return;
       }
+      const split = !!orderExtras.split;
+      const placed = saved?.data?.orders || [];
+      const newOrder = {
+        id: split ? (placed.map(o => o.orderId).join(' · ') || orderId) : orderId,
+        date: new Date().toLocaleString('ko-KR'), items: [...items], totalPrice: finalPrice,
+        summary: orderExtras.summary,   // 영수증(S13)에 결제 화면과 같은 금액을 보이려고(서버로는 안 보낸다)
+        fulfillment: split ? 'split' : (orderExtras.fulfillment || 'delivery'),
+        pickupItems: split ? items.filter(i => i.pickup_only) : orderExtras.fulfillment === 'pickup' ? [...items] : [],
+        userId: user.email, status: '결제완료',
+      };
+      setOrders([newOrder, ...orders]); setLastOrder(newOrder);
+      onPlaced();
+      window.open(result.next_redirect_pc_url, '_blank');
+      goToPage('receipt');
     } catch (error) {
       notify('결제 준비 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.');
     }
   };
 
-  // '바로 주문' 전용 결제 — handlePayment 와 로직은 동일하되 전역 cart 를 전혀 건드리지 않는다
-  // (장바구니를 거치지 않은 주문이므로 읽지도 비우지도 않음). 두 결제 흐름이 갈리지 않도록
-  // orderInfo/createOrder 페이로드 구성 방식은 handlePayment 와 1:1로 맞춰뒀다.
+  const handlePayment = async (finalPrice, orderExtras = {}) => {
+    const cart = shopCart.orderItems;   // 서버가 「살 수 있다」고 한 줄만(가격도 서버 값)
+    if (cart.length === 0) { notify('장바구니가 비어있어요!'); return; }
+    const latestUser = users.find(u => sameUser(u, user)) || user;
+    if (cart.some(item => item.isAdult) && !latestUser.isAdult) {
+      notify('🔞 장바구니에 성인 상품이 있어요. 19세 이상만 구매할 수 있어요!'); return;
+    }
+    await placeOrder({
+      finalPrice, orderExtras, items: cart,
+      onPlaced: () => shopCart.removeMany(shopCart.lines.filter(l => l.ok)),   // 주문한 줄만 뺀다 — 살 수 없어 남겨 둔 줄은 그대로(서버 장바구니에서도)
+    });
+  };
+
+  // '바로 주문' 전용 결제 — 전역 장바구니를 읽지도 비우지도 않는다(장바구니를 거치지 않은 주문). 보내는 길은 placeOrder 하나.
   const handleQuickPayment = async (item, finalPrice, orderExtras = {}) => {
     if (!item) { notify('주문할 상품이 없어요!'); return; }
     const latestUser = users.find(u => sameUser(u, user)) || user;
     if (item.isAdult && !latestUser.isAdult) {
       notify({ icon: 'alert', title: '성인 상품이에요', message: ADULT_MSG }); return;
     }
-    try {
-      const orderId = 'order_' + Date.now();
-      const orderInfo = {
-        orderId, userId: payerKey(user),
-        itemName: item.name,
-        quantity: item.quantity,
-        totalAmount: finalPrice,
-      };
-      const result = await kakaoPayReady(orderInfo);
-      if (result.next_redirect_pc_url) {
-        const newOrder = { id: orderId, date: new Date().toLocaleString('ko-KR'), items: [item], totalPrice: finalPrice, summary: orderExtras.summary, userId: user.email, status: '결제완료' };
-        createOrder({
-          id: orderId,
-          final_amount: finalPrice,
-          status: '결제완료',
-          address: orderExtras.address || user.address || '',
-          addressDetail: orderExtras.addressDetail || user.address_detail || '',
-          zipcode: orderExtras.zipcode || '',
-          dong: orderExtras.dong || '',
-          use_points: orderExtras.use_points || 0,
-          coupon_id: orderExtras.coupon_id || null,
-          coupon_code: orderExtras.coupon_code || null,   // 코드 쿠폰 — 견적에 실은 그 값(2026-11-13 지시 2 · 예전엔 안 실어서 결제가 409)
-          receiverName: orderExtras.receiverName || user.name,
-          receiverPhone: orderExtras.receiverPhone || user.phone || '',
-          items: orderExtras.items || [{ id: item.id, name: item.name, quantity: item.quantity }],
-          store_id: orderExtras.store_id,   // owner 매장 미리보기 전용 — 서버가 role 확인 후에만 반영
-        }).catch(err => console.error('주문 저장 실패:', err));
-        setOrders([newOrder, ...orders]); setLastOrder(newOrder);
-        setQuickOrderItem(null);
-        window.open(result.next_redirect_pc_url, '_blank');
-        goToPage('receipt');
-      }
-    } catch (error) {
-      notify('결제 준비 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.');
-    }
+    await placeOrder({ finalPrice, orderExtras, items: [item], onPlaced: () => setQuickOrderItem(null) });
   };
 
   if (page === 'homepage') {

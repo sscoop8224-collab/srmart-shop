@@ -91,6 +91,8 @@ export const getActiveProducts = (storeId) => API.get('/products/active', storeI
 export const getOrders = () => API.get('/orders');
 export const getMyOrders = () => API.get('/orders/my');
 export const createOrder = (data) => API.post('/orders', data);
+// 배송+픽업 나눠 결제(주류 · S52) — 결제 한 번 · 주문 두 건(서버가 금액을 둘 다 다시 계산하고 합계를 대조한다)
+export const createCheckout = (data) => API.post('/orders/checkout', data);
 // 주문서 견적(2026-11-13) — 주문 저장과 같은 계산(행사·쿠폰·배송비). 주문서는 이 값을 그대로 보이고 그대로 싣는다(hooks/useCheckoutFlow.js)
 export const quoteOrder = (body) => API.post('/shop/quote', body);
 // 서버 장바구니(2026-11-13) — 회원은 계정에 저장 · 비회원은 기기에 두고 미리보기로 같은 판정을 받는다(hooks/useShopCart.js)
