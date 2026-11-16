@@ -655,7 +655,7 @@ function AppContent() {
   }
 
   // 목업대로 옮긴 화면 — 바탕을 목업의 --bg 로(옛 화면은 --white 그대로). 묶음이 늘 때마다 여기에 더한다
-  const v2Page = ['home', 'search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt', 'orders', 'purchases', 'mypage', 'wishlist', 'about', 'notice', 'recentViews', 'myReviews', 'storeInfo', 'customerCenter', 'events'].includes(page);
+  const v2Page = ['home', 'search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt', 'orders', 'purchases', 'mypage', 'wishlist', 'about', 'notice', 'recentViews', 'myReviews', 'storeInfo', 'customerCenter', 'events', 'notificationSettings'].includes(page);
   // 아래 고정 바가 있는 화면은 탭바를 안 그린다(목업 S04·S08·S12·P03 — 바가 탭바를 덮던 것). 빈 장바구니(S09)는 탭바 — 묶음 3
   const noTab = ['productDetail', 'quickOrder', 'orderSheet', 'receipt'].includes(page) || (page === 'cart' && shopCart.count > 0) || (ordersDetail && (page === 'orders' || page === 'purchases'));
 
@@ -667,7 +667,7 @@ function AppContent() {
       {mcpUser && <ForcePasswordChangeModal onDone={handleForcePasswordChangeDone} />}
       {/* 헤더(P05) — 로고 이미지 · 매장 · 종 · 로그인(AI 상담은 홈 검색창 오른쪽). 로그아웃은 마이 맨 아래(결정 11) — 묶음 1 */}
       {/* 검색 화면은 검색창이 헤더다(목업 S06) — 묶음 2 */}
-      {!['search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt', 'orders', 'purchases', 'mypage', 'wishlist', 'about', 'notice', 'recentViews', 'myReviews', 'storeInfo', 'customerCenter', 'events'].includes(page) && <AppHeader
+      {!['search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt', 'orders', 'purchases', 'mypage', 'wishlist', 'about', 'notice', 'recentViews', 'myReviews', 'storeInfo', 'customerCenter', 'events', 'notificationSettings'].includes(page) && <AppHeader
         storeName={storeShort}
         onStoreClick={!user && !isOwner ? () => setShowStoreModal(true) : null}
         onHome={() => goToPage('home')}
