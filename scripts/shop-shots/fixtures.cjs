@@ -133,6 +133,16 @@ const CART_PRESET = {
     { product_id: 103, unit_type: 'unit', quantity: 1, _status: 'not_in_store', _message: '왕길점에는 없는 상품이에요' },
     { product_id: 107, unit_type: 'unit', quantity: 1, _status: 'adult_required', _message: '주류는 19세 이상 본인확인 뒤에 살 수 있어요' },
   ],
+  // 배송 + 매장 픽업(주류 · S52 · 2026-11-17 밤샘 지시 6) — 본인확인한 손님의 장바구니: 과자·음료(배송) + 참이슬 2병(픽업)
+  pickup: [
+    { product_id: 101, unit_type: 'box', quantity: 1, added_unit_price: 21000 },
+    { product_id: 102, unit_type: 'unit', quantity: 2, added_unit_price: 2900 },
+    { product_id: 107, unit_type: 'unit', quantity: 2, _pickup: true },
+  ],
+  // 픽업만(S51) — 참이슬 2병
+  pickupOnly: [
+    { product_id: 107, unit_type: 'unit', quantity: 2, _pickup: true },
+  ],
   // 행사 할인 줄(2026-11-13 지시 3) — 메론킥 1박스(2+1 −7,000원) + 코카콜라 2개. 장바구니 바 · 주문서 · 주문 완료에 「행사 할인 −7,000원」
   promo: [
     { product_id: 101, unit_type: 'box', quantity: 1, added_unit_price: 21000 },
@@ -150,6 +160,7 @@ function cartView(rawLines, storeId) {
       added_unit_price: l.added_unit_price ?? null, name: p.name, spec: p.spec, image: p.image, box_quantity: p.box_quantity ?? null,
       status: 'ok', ok: true, message: null, unit_price: null, price_changed: false, line: 0, discount_amount: 0, net: 0, promo_label: null, on_sale: false, pickup_only: false };
     if (l._status) return Object.assign(o, { status: l._status, ok: false, message: l._message });
+    if (l._pickup) o.pickup_only = true;   // 서버 판정 흉내 — 본인확인한 19세 이상 손님의 주류(매장 픽업)
     const unit = cartUnitPrice(p, l.unit_type);
     const line = l.unit_type === 'weight' ? Math.round(unit * (l.grams || 100) / 100) : unit * l.quantity;
     Object.assign(o, { unit_price: unit, line, net: line, price_changed: o.added_unit_price != null && o.added_unit_price !== unit });
@@ -208,7 +219,7 @@ function quoteRoute(body) {
   if ((body && (body.coupon_id || body.coupon_code)) && !c) couponError = '쓸 수 없는 쿠폰이에요';
   else if (c && subtotal < (c.min_purchase_amount || 0)) couponError = `${(c.min_purchase_amount).toLocaleString('ko-KR')}원 이상 주문해야 쓸 수 있어요`;
   else if (c) coupon = c.discount_type === 'percent' ? Math.floor(subtotal * c.discount / 100) : Math.min(subtotal, c.discount);
-  const fee = subtotal >= 30000 ? 0 : 3000;
+  const fee = body && body.fulfillment === 'pickup' ? 0 : subtotal >= 30000 ? 0 : 3000;   // 매장 픽업은 배송비 없음
   return { status: 200, body: { store_id: 11, lines, gross, promo_discount: promo, subtotal, coupon_discount: coupon, coupon_error: couponError,
     delivery_fee: fee, delivery_fee_rule: 3000, free_delivery_min: 30000, out_of_zone: false, final_before_points: Math.max(0, subtotal - coupon + fee) } };
 }
@@ -229,6 +240,12 @@ function route(pathname, method, search, opts = {}, body = null) {
     { id: 5, category: '혜택', question: '포인트·쿠폰은 어디서 보나요?', answer: '마이 → 요약 칸의 포인트·쿠폰.' },
   ]);
   if (/^\/stores\/\d+\/delivery-promise$/.test(pathname)) return j(DELIV[opts.deliv || 'today']);
+  // 알림 설정(S50) — 서버 GET·PUT /api/users/me/notification-prefs 모양. PUT 은 받은 값에 그날 날짜를 붙여 돌려준다
+  if (pathname === '/users/me/notification-prefs') {
+    const st = opts._prefs || (opts._prefs = { order_notify: true, order_notify_at: null, marketing_push: true, marketing_push_at: '2026-11-12 10:00:00' });
+    if (method === 'PUT' && body) for (const k of ['order_notify', 'marketing_push']) if (k in body) { st[k] = !!body[k]; st[k + '_at'] = '2026-11-17 09:00:00'; }
+    return j({ ...st });
+  }
   if (pathname === '/signup-coupon') return j(opts.noCoupon ? { enabled: false } : { enabled: true, label: '신규회원 10% 할인 쿠폰', sub: '2만 원 이상 주문 · 가입 후 30일' });
   if (pathname === '/shop/business-info') return j(bizInfo);
   // 공지(묶음 5 S26) — 서버 shopContent.js 와 같은 모양(created_at 은 'YYYY-MM-DD HH:mm' 글자) · noNotices 면 비어 있음
@@ -297,6 +314,7 @@ function route(pathname, method, search, opts = {}, body = null) {
   if (pathname === '/store/match-zipcode') return j({ matched: true, zone: { zone_name: '왕길동 배송구역', free_delivery_min: 30000 }, delivery_fee: 3000 });
   if (pathname === '/store/coverage') return j({ stores: [{ store_id: 11, store_name: '에스알마트 왕길점' }], recommended: { store_id: 11, store_name: '에스알마트 왕길점' } });
   if (pathname === '/orders') return j({ ok: true });
+  if (pathname === '/orders/checkout') return j({ payment_group_id: 'PGTEST', orders: ((body && body.orders) || []).map(o => ({ orderId: o.id, fulfillment: o.fulfillment, final_amount: 0 })) });
   if (pathname === '/chatbot' && opts.chatFail) return j({ error: '서버 오류' }, 500);
   if (pathname === '/chatbot') return j({ reply: '네! 코카콜라 1.5L 는 왕길점에 24개 있어요. 장바구니에 담아 드릴까요?' });
   if (pathname === '/users/third-party-consent') return j({ ok: true });
