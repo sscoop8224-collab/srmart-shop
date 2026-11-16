@@ -191,3 +191,17 @@ test('가입 — 본인확인이 켜져 있으면 번호·생년월일 칸 대�
   expect(await screen.findByText('가입을 환영해요, 홍확인님!')).toBeInTheDocument();
   expect(api.register).toHaveBeenCalledWith(expect.objectContaining({ identityToken: 'idt-1', name: '홍확인', birth: '1988-03-04', phone: '', isAdult: true }));
 });
+
+test('가입 3단계 — 동의 줄 「보기」는 전문 시트(S49)만 열고 체크는 그대로 · 문안은 자리표시', async () => {
+  await toStep3();
+  const privacyBox = screen.getByLabelText(/개인정보 수집·이용 동의/);
+  expect(privacyBox).not.toBeChecked();
+  fireEvent.click(screen.getAllByRole('button', { name: '보기' })[0]);
+  const sheet = screen.getByTestId('terms:privacy');
+  expect(sheet).toHaveTextContent('문안 확정 전이에요');
+  expect(sheet).toHaveTextContent('수집 항목');
+  expect(privacyBox).not.toBeChecked();
+  fireEvent.click(screen.getByRole('button', { name: '확인' }));
+  expect(screen.queryByTestId('terms:privacy')).toBeNull();
+  expect(screen.getAllByRole('button', { name: '보기' })).toHaveLength(3);
+});

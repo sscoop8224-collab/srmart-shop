@@ -10,6 +10,7 @@
 //   🔸 목업 3단계의 [필수] 만 14세 · 이용약관 줄은 넣지 않았다 — 서버가 받아 남기지 않는 동의를 화면에만 두면
 //      「받았다」 는 증거가 없다. 서버에 칸이 생기면 함께 넣는다.
 import { useState, useEffect, useRef } from 'react';
+import TermsSheet from '../components/TermsSheet';
 import FindAccount from './FindAccount';
 import { getStores, register, getCoverage, SITE, sendSignupCode, verifySignupCode } from '../api';
 import IdentitySheet, { IdentityCard, VerifiedFields } from '../identity/IdentitySheet';
@@ -65,7 +66,8 @@ const SqCheck = ({ on }) => <span className={`check sq${on ? ' on' : ''}`}>{on &
 // 동의 한 줄 — 설명을 접어두지 않고 **항상 펼쳐서** 보여준다. 접어두면 대부분 안 펴보고 체크하는데,
 // 그건 동의를 받았다고 하기 어렵다. 특히 선택 항목은 "동의 안 해도 된다" 는 사실이 보여야 의미가 있다.
 // 줄 전체가 <label> — 휴대폰에서 체크만 겨냥하기 어렵다.
-function ConsentRow({ checked, onChange, label, detail, required = false, big = false }) {
+// onView — 「보기」(S49 전문 시트). 누르면 체크는 그대로 두고 시트만 연다
+function ConsentRow({ checked, onChange, label, detail, required = false, big = false, onView }) {
   return (
     <label className={`consent${big ? ' all' : ''}`}>
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
@@ -74,6 +76,8 @@ function ConsentRow({ checked, onChange, label, detail, required = false, big = 
         <b>{!big && <span className={required ? 'req' : 'opt-t'}>{required ? '[필수]' : '[선택]'}</span>}{!big && ' '}{label}</b>
         {detail && <p>{detail}</p>}
       </span>
+      {onView && <button type="button" className="link" style={{ flexShrink: 0, alignSelf: 'flex-start', background: 'none', border: 0, padding: 'var(--sp-1)' }}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onView(); }}>보기</button>}
     </label>
   );
 }
@@ -154,6 +158,7 @@ function Login({ onLogin, onGuest, initialMode }) {
   // 「전체 동의」(2026-11-12 P04 확정)는 **한 번에 체크하는 단추일 뿐**이다 — 줄마다 따로 켜고 끌 수
   // 있고, 서버에는 줄마다 따로 간다. 전체 동의 뒤 선택 줄 하나를 끄면 전체 동의도 꺼진다.
   const [privacyConsent, setPrivacyConsent] = useState(false);
+  const [termsKind, setTermsKind] = useState(null);   // S49 전문 시트 — privacy · thirdParty · marketing
   const [thirdPartyConsent, setThirdPartyConsent] = useState(false);
   const [marketingPush, setMarketingPush] = useState(false);
   const allConsent = privacyConsent && thirdPartyConsent && marketingPush;
@@ -618,19 +623,20 @@ function Login({ onLogin, onGuest, initialMode }) {
             <section className="sec">
               <div className="group consents">
                 <ConsentRow big checked={allConsent} onChange={setAllConsent} label="전체 동의" detail="선택 항목 포함" />
-                <ConsentRow checked={privacyConsent} onChange={(v) => { setPrivacyConsent(v); setErrs({}); }} required
+                <ConsentRow checked={privacyConsent} onChange={(v) => { setPrivacyConsent(v); setErrs({}); }} required onView={() => setTermsKind('privacy')}
                   label="개인정보 수집·이용 동의"
                   detail="이름, 아이디, 휴대전화번호, 생년월일, 주소(이메일은 넣으신 경우만)를 회원 관리와 주문·배송에 이용합니다." />
-                <ConsentRow checked={thirdPartyConsent} onChange={setThirdPartyConsent}
+                <ConsentRow checked={thirdPartyConsent} onChange={setThirdPartyConsent} onView={() => setTermsKind('thirdParty')}
                   label="지점 통합 회원·포인트·구매 내역 이용 동의"
                   detail={`${BRAND.name} 각 지점${branchList(stores) ? `(${branchList(stores)})` : ''}은 서로 다른 사업자입니다. 동의하시면 모든 지점에서 포인트를 함께 쌓고 쓰시고, 매장 구매 영수증도 앱에서 보실 수 있어요. 제공 항목은 이름·연락처·회원번호·포인트 내역·매장 구매 내역입니다. 동의하지 않으셔도 가입과 온라인 주문은 그대로 가능하며, 이 경우 매장 포인트 적립·사용과 매장 구매 내역 표시만 제한됩니다.`} />
-                <ConsentRow checked={marketingPush} onChange={setMarketingPush}
+                <ConsentRow checked={marketingPush} onChange={setMarketingPush} onView={() => setTermsKind('marketing')}
                   label="혜택 알림(행사·쿠폰) 받기"
                   detail="행사·쿠폰 소식을 앱 푸시·문자로 보내 드려요. 동의하지 않으셔도 가입·주문과 주문·배송 알림은 그대로예요. 마이 → 알림 설정에서 언제든 끌 수 있어요." />
               </div>
               {errs.consent && <div className="f-err" style={{ padding: '0 var(--sp-4)' }}><Icon name="alert" size="sm" />{errs.consent}</div>}
               <div className="sec-f"><a className="link" href={`${SITE}/privacy.html?b=${BRAND.code}`} target="_blank" rel="noreferrer">개인정보처리방침 전문 보기</a></div>
             </section>
+            {termsKind && <TermsSheet kind={termsKind} onClose={() => setTermsKind(null)} />}
           </>
         )}
       </div>
