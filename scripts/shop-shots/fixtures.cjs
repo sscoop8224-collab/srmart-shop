@@ -260,6 +260,15 @@ function route(pathname, method, search, opts = {}, body = null) {
   if (pathname === '/signup-coupon') return j(opts.noCoupon ? { enabled: false } : { enabled: true, label: '신규회원 10% 할인 쿠폰', sub: '2만 원 이상 주문 · 가입 후 30일' });
   if (pathname === '/shop/business-info') return j(bizInfo);
   // 공지(묶음 5 S26) — 서버 shopContent.js 와 같은 모양(created_at 은 'YYYY-MM-DD HH:mm' 글자) · noNotices 면 비어 있음
+  // newNotice — 오늘 올라온 공지 하나를 맨 위에(홈 종 빨간 점 촬영 · 2026-11-17 낮 지시 5). 시각은 찍는 순간의 그 지역 시각.
+  if (pathname === '/shop/notices' && opts.newNotice && !opts.noNotices) {
+    const d = new Date(Date.now() - 60000), p2 = (n) => String(n).padStart(2, '0');
+    const now = `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+    return j([
+      { id: 3, store_id: null, title: '연말 휴무 안내', body: '12월 31일은 오후 6시까지 영업해요.', is_pinned: 0, is_visible: 1, created_at: now, updated_at: now },
+      ...route('/shop/notices', 'GET', '', { ...opts, newNotice: 0 }).body,
+    ]);
+  }
   if (pathname === '/shop/notices') return j(opts.noNotices ? [] : [
     { id: 2, store_id: null, title: '추석 연휴 배송 안내', body: '11월 15일은 배송이 하루 늦어질 수 있어요.', is_pinned: 1, is_visible: 1, created_at: '2026-11-01 09:00', updated_at: '2026-11-01 09:00' },
     { id: 1, store_id: 11, title: '왕길점 영업시간 변경', body: '11월부터 밤 10시까지 영업해요.', is_pinned: 0, is_visible: 1, created_at: '2026-10-20 10:00', updated_at: '2026-10-20 10:00' },
