@@ -113,3 +113,20 @@ test('매장 영수증에 과세 물품가액 · 부가세 — 면세 품목이 
   expect(screen.queryByText('면세 물품가액')).not.toBeInTheDocument();
   expect(screen.queryByText('부가세(포함)')).not.toBeInTheDocument();
 });
+
+// 온라인 카드 품목 줄 — 주문 줄에 items 가 있을 때만(지금 서버 목록엔 없다 → 요약 한 줄) · 2026-11-17 낮 지시 5
+test('주문 줄에 품목이 있으면 앞 두 개 + 「외 N건」, 없으면 요약 한 줄', async () => {
+  const O = [
+    { id: 'I1', created_at: '2026-11-16T10:00:00', total_price: 9000, final_amount: 9000, status: '배송중', items: [
+      { product_name: '코카콜라', spec: '1.5L', quantity: 2, price: 3200 },
+      { name: '농심 메론킥', spec: '60g', qty: 1, line_total: 1450 },
+      { name: '신라면', qty: 1, line_total: 1150 },
+    ] },
+  ];
+  render(<OrderHistory orders={O} />);
+  expect(await screen.findByText('코카콜라')).toBeInTheDocument();
+  expect(screen.getByText('6,400원')).toBeInTheDocument();          // 3,200 × 2 — 서버가 준 단가 × 수량
+  expect(screen.getByText('농심 메론킥')).toBeInTheDocument();
+  expect(screen.queryByText('신라면')).not.toBeInTheDocument();
+  expect(screen.getByText('외 1건')).toBeInTheDocument();
+});

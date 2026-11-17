@@ -296,6 +296,12 @@ function route(pathname, method, search, opts = {}, body = null) {
   }
   // 가입(묶음 5 P04) — 서버 index.js 와 같은 모양. 쿠폰은 서버가 「지급했다」 할 때만 granted(noCoupon 이면 꺼짐)
   if (pathname === '/register') return j({ message: '회원가입 성공! 🎉', signup_coupon: opts.noCoupon ? { granted: false } : { granted: true, user_coupon_id: 9, coupon_id: 3, name: '신규회원 10% 할인', label: '신규회원 10% 할인 쿠폰', sub: '2만 원 이상 주문 · 가입 후 30일' } });
+  // orderItems — 서버가 주문 목록에 품목을 실은 날의 모양(카드 품목 줄 촬영 · 2026-11-17 낮 지시 5). 지금 운영 서버는 안 싣는다.
+  if (pathname === '/orders/my' && opts.orderItems) return j(myOrders.map((o, i) => (i === 0 ? { ...o, items: [
+    { product_name: '농심 메론킥', spec: '60g', quantity: 1, price: 21000, image: null },
+    { product_name: '코카콜라', spec: '1.5L', quantity: 2, price: 3200, image: null },
+    { product_name: '참이슬 후레쉬', spec: '360ml', quantity: 2, price: 1950, image: null },
+  ] } : o)));
   if (pathname === '/orders/my') return j(opts.noOrders ? [] : opts.pickupOrders ? [...pickupOrders, ...myOrders] : myOrders);   // noOrders — 주문내역 비어 있음(목업 P01)
   // 서버 찜 줄은 `w.*` + 상품 몇 칸 — id 는 **찜 줄 번호**, 상품 번호는 product_id, 가격은 없다(묶음 5 — 진짜 모양으로)
   if (pathname === '/users/me/wishlist') return j(opts.emptyWish ? [] : [products[0], products[3]].map((p, i) => ({ id: 501 + i, user_id: 9001, product_id: p.id, created_at: '2026-11-10T10:00:00', name: p.name, large: p.large, spec: p.spec, image: p.image })));

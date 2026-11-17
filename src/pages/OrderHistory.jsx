@@ -78,8 +78,20 @@ function pickupLine(o) {
   return until ? `매장 픽업 · ${until} 찾아가 주세요` : '매장 픽업';
 }
 
+// 카드의 품목 줄(목업 P01) — 주문 줄의 items 가 있을 때만(지금 서버 목록엔 없다 → 요약 한 줄). 앞 두 개 + 「외 N건」.
+//   서버 모양(product_name · quantity · price)과 상세 모양(name · qty · line_total)을 다 받는다. 앱이 금액을 지어내지 않는다 — 없으면 금액 칸을 비운다.
+export function cardItems(o) {
+  const list = Array.isArray(o && o.items) ? o.items : [];
+  return list.map((it) => {
+    const qty = Number(it.qty ?? it.quantity) || 0;
+    const amount = it.line_total != null ? Number(it.line_total) : it.price != null && qty ? Number(it.price) * qty : null;
+    return { name: it.name || it.product_name || '', spec: it.spec || '', qty, amount, image: it.image || null };
+  }).filter((it) => it.name);
+}
+
 function OnlineCard({ o, summary, onOpen, onReturn }) {
   const url = trackUrl(o);
+  const items = cardItems(o);
   return (
     <div className="ocard">
       <button className="oh tap" onClick={() => onOpen(o)} aria-label={`${dayLabel(o.created_at)} 주문 상세`}>
@@ -87,7 +99,25 @@ function OnlineCard({ o, summary, onOpen, onReturn }) {
         <span className={`pill ${TONE[o.status] ?? 'b'}`}>{o.status || '결제완료'}</span>
       </button>
       <ReturnStrip o={o} />
-      {summary && (
+      {items.length > 0 && (
+        <button className="oi tap oitems" onClick={() => onOpen(o)} aria-label="주문 상품 보기">
+          <span style={{ flex: 1, minWidth: 0 }}>
+            {items.slice(0, 2).map((it, i) => (
+              <span className="prow" key={i}>
+                <span className="pimg">{it.image ? <img src={imgUrl(it.image)} alt="" /> : <Icon name="box" />}</span>
+                <span className="info">
+                  <span className="nm">{it.name}</span>
+                  <span className="spec">{it.spec ? `${it.spec} · ` : ''}{it.qty}개</span>
+                  {it.amount != null && <span className="price">{won(it.amount)}</span>}
+                </span>
+              </span>
+            ))}
+            {items.length > 2 && <small className="more">외 {items.length - 2}건</small>}
+          </span>
+          <span className="chev"><Icon name="chevR" size="sm" /></span>
+        </button>
+      )}
+      {!items.length && summary && (
         <button className="oi tap" onClick={() => onOpen(o)}>
           <span className="ricon t-gray"><Icon name="box" /></span><span className="lbl">{summary}</span><span className="chev"><Icon name="chevR" size="sm" /></span>
         </button>

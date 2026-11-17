@@ -386,7 +386,8 @@ function AppContent() {
         ...o,
         date: new Date(o.created_at).toLocaleString('ko-KR'),
         totalPrice: o.total_price,
-        items: [],
+        // 주문 목록에는 아직 품목이 없다 — 서버가 싣는 날 그대로 쓴다(주문내역 카드 품목 줄 · 2026-11-17 낮 지시 5)
+        items: Array.isArray(o.items) ? o.items : [],
       })));
     } catch (err) {
       console.error('주문 내역 로드 실패:', err);

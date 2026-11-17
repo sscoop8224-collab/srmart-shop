@@ -340,6 +340,12 @@
 .v2 .ocard .oi { display: flex; align-items: center; gap: var(--sp-3); width: 100%; padding: var(--sp-2) var(--sp-4); border-top: var(--hairline) solid var(--sep); text-align: left; font-size: var(--fs-sub); color: var(--text); }
 .v2 .ocard .oi .lbl { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .v2 .ocard .oi .chev { color: var(--text-3); display: inline-flex; }
+/* 카드 품목 줄(서버가 주문 줄에 items 를 실을 때 · 2026-11-17 낮 지시 5) — 상세의 .prow 를 그대로, 줄 사이만 띄운다 */
+.v2 .ocard .oitems { padding-top: var(--sp-3); padding-bottom: var(--sp-3); }
+.v2 .ocard .oitems .prow { display: flex; }
+.v2 .ocard .oitems .prow + .prow { margin-top: var(--sp-2); }
+.v2 .ocard .oitems .info > span { display: block; }
+.v2 .ocard .oitems .more { display: block; margin-top: var(--sp-2); color: var(--text-2); font-size: var(--fs-cap); }
 .v2 .ocard .of { padding: var(--sp-3) var(--sp-4); border-top: var(--hairline) solid var(--sep); }
 .v2 .ocard .of .kv { padding: 0; }
 .v2 .ocard .of .kv.ship { padding-top: var(--sp-2); font-size: var(--fs-foot); color: var(--text-2); }
