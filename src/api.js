@@ -48,12 +48,22 @@ export const kakaoPayReady = (orderInfo) =>
   }).then((res) => res.data);
 
 export const register = (data) => API.post('/register', data);
+// 가입·계정 찾기의 본인 확인(2026-11-16 지시 7) — 업체 흐름 자체는 src/identity/identityClient.js
+//   문자 인증(옛 경로 · 본인확인이 꺼져 있고 문자·알림톡이 켜져 있을 때만 쓰인다): 서버가 꺼져 있으면 { enabled:false } 만 준다(아무것도 안 보낸다)
+export const sendSignupCode = (phone, store_id) => API.post('/auth/send-code', { purpose: 'signup', phone, store_id });
+export const verifySignupCode = (phone, code) => API.post('/auth/verify-code', { purpose: 'signup', phone, code });
+//   본인확인 토큰을 쓰는 입구 — 토큰은 15분 · 한 번 · 그 목적에만
+export const findIdByIdentity = (identity_token) => API.post('/auth/find-id', { identity_token });
+export const resetByIdentity = (identity_token, username) => API.post('/auth/identity-reset', { identity_token, username });
+export const resetPassword = (token, newPassword) => API.post('/auth/reset-password', { token, newPassword });
+export const verifyMemberIdentity = (identity_token) => API.post('/users/me/identity', { identity_token });
+export const changePhoneByIdentity = (identity_token) => API.put('/users/me/phone', { identity_token });
 export const login = (username, password) => API.post('/login', { username, password });
 // 손님 화면용 매장 목록 (2026-11-12) — `audience=customer` 면 서버가 「손님에게 보이기」가 켜진
 // 매장만, 공개 항목(전화·영업시간·우편번호·표시 이름)과 함께 준다. 옛 서버는 이 값을 무시하고
 // 전체를 주므로 배포 순서가 어긋나도 깨지지 않는다.
 export const getStores = () => API.get('/stores', { params: { audience: 'customer' } });
-// 가입 쿠폰 문구 — 서버가 「지급 가능」(정책 켬 + 문자 인증 연동 켬)일 때만 { enabled:true, label, sub } 를 준다.
+// 가입 쿠폰 문구 — 서버가 「지급 가능」(정책 켬 + 휴대폰 본인확인 연동 켬 + 중복 방지 키)일 때만 { enabled:true, label, sub } 를 준다.
 // 🔴 화면은 이 값에만 따른다. 쿠폰 금액·문구를 화면에 직접 적지 않는다(지킬 수 없는 약속이 된다).
 export const getSignupCoupon = () => API.get('/signup-coupon');
 // 홈 배송 한 줄(묶음 2) — 매장 배송 설정에서 서버가 계산한 약속. mode: today | tomorrow | closed | holiday | off(안 보인다).
@@ -81,6 +91,8 @@ export const getActiveProducts = (storeId) => API.get('/products/active', storeI
 export const getOrders = () => API.get('/orders');
 export const getMyOrders = () => API.get('/orders/my');
 export const createOrder = (data) => API.post('/orders', data);
+// 배송+픽업 나눠 결제(주류 · S52) — 결제 한 번 · 주문 두 건(서버가 금액을 둘 다 다시 계산하고 합계를 대조한다)
+export const createCheckout = (data) => API.post('/orders/checkout', data);
 // 주문서 견적(2026-11-13) — 주문 저장과 같은 계산(행사·쿠폰·배송비). 주문서는 이 값을 그대로 보이고 그대로 싣는다(hooks/useCheckoutFlow.js)
 export const quoteOrder = (body) => API.post('/shop/quote', body);
 // 서버 장바구니(2026-11-13) — 회원은 계정에 저장 · 비회원은 기기에 두고 미리보기로 같은 판정을 받는다(hooks/useShopCart.js)

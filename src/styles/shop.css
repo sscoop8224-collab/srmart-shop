@@ -551,3 +551,15 @@
 .v2 .install-ios p { margin-top: var(--sp-3); font-size: var(--fs-callout); }
 .v2 .install-ios p .ic { vertical-align: -3px; }
 .v2 .install-ios p.f-hint { font-size: var(--fs-foot); }
+
+/* 휴대폰 본인확인(목업 S48 · 2026-11-16 지시 7) — 업체 창 테두리 · 카드 · 마친 뒤 안내 */
+.v2 .verify-win { border: var(--hairline) solid var(--sep-strong); border-radius: var(--r-md); overflow: hidden; background: var(--card); }
+.v2 .verify-win .vw-h { padding: var(--sp-2) var(--sp-3); font-size: var(--fs-cap); color: var(--text-2); background: var(--fill); display: flex; gap: var(--sp-2); align-items: center; }
+.v2 .verify-win .seg { margin-bottom: var(--sp-2); }
+.v2 .idv-card { margin-top: var(--sp-4); }
+.v2 .idv-card .idv-t { font-size: var(--fs-callout); display: inline-flex; gap: var(--sp-1); align-items: center; }
+.v2 .idv-done { margin-top: var(--sp-4); }
+.v2 .auth .seg + .idv-card, .v2 .auth .seg + .notice, .v2 .auth .seg + .f-lbl { margin-top: var(--sp-4); }
+.v2 .found-id { margin-top: var(--sp-3); }
+.v2 .found-id b { font-size: var(--fs-headline); }
+.v2 .found-id + .btn-row { margin-top: var(--sp-4); }

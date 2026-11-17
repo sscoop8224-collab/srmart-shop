@@ -44,6 +44,7 @@
 - 🟠 **손님 토큰으로 닿는 POS 입구 3곳** — `GET /api/pos/products/search` · `/api/pos/presets` · `/api/pos/keymap`
   은 `authMiddleware` 만 걸려 있어 손님 토큰으로도 상품·가격이 읽힌다. 주류 판정이 아니라 **직원 전용
   관문(`posStaffOnly`)이 빠진 자리**라 이번에 고치지 않았다(포스 쪽 결정). 검사기가 실행할 때마다 🟠 로 보인다.
+  ✅ **닫혔다** — 백엔드 `bfe167c` 「손님 토큰으로 열리던 POS 입구 3개를 직원 전용으로 닫는다」(2026-11-16 확인: `index.js` 의 `/api/pos/products/search` 에 `posStaffOnly`).
 
 ## 주문 (돈이 바뀌는 자리)
 

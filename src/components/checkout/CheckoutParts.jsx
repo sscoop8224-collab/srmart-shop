@@ -232,22 +232,25 @@ function CouponSheet({ c, onClose }) {
 export const summaryOf = (c) => ({ goods: c.totalPrice, promo: c.promoDiscount || 0, coupon: (c.discountAmount || 0) + (c.couponDiscount || 0), points: c.clampedUsePoints || 0, deliveryFee: c.deliveryFee || 0 });
 
 // ── 결제 금액 ─────────────────────────────────────────
-export function PayRows({ c }) {
+// title — 배송+픽업 나눠 결제(S52)에서 덩어리 이름(「배송 주문」·「매장 픽업 주문」). 그때 마지막 줄은 「이 주문 결제금액」.
+export function PayRows({ c, title }) {
   const coupon = (c.discountAmount || 0) + (c.couponDiscount || 0);
   return (
     <section className="sec">
-      <div className="sec-h">결제 금액</div>
+      <div className="sec-h">{title ? `결제 금액 · ${title}` : '결제 금액'}</div>
       <div className="group"><div className="pad">
         <div className="kv"><span>상품 금액</span><span>{won(c.totalPrice)}</span></div>
         {/* 행사 할인 — 상품 금액(행사 전) 바로 아래. 장바구니 바 · 주문 완료(영수증)와 같은 줄(2026-11-13 지시 3) */}
         {c.promoDiscount > 0 && <div className="kv"><span>행사 할인</span><span className="minus">−{won(c.promoDiscount)}</span></div>}
         {coupon > 0 && <div className="kv"><span>쿠폰 할인</span><span className="minus">−{won(coupon)}</span></div>}
         {c.clampedUsePoints > 0 && <div className="kv"><span>포인트</span><span className="minus">−{won(c.clampedUsePoints)}</span></div>}
-        <div className="kv">
-          <span>배송비 {c.freeDeliveryMin > 0 && <span className="pill g">{won(c.freeDeliveryMin)} 이상 무료</span>}</span>
-          <span>{won(c.deliveryFee)}</span>
-        </div>
-        <div className="kv total"><span>총 결제금액</span><span>{c.quoteLoading ? '확인 중' : won(c.finalPrice)}</span></div>
+        {!c.isPickup && (
+          <div className="kv">
+            <span>배송비 {c.freeDeliveryMin > 0 && <span className="pill g">{won(c.freeDeliveryMin)} 이상 무료</span>}</span>
+            <span>{won(c.deliveryFee)}</span>
+          </div>
+        )}
+        <div className="kv total"><span>{title ? '이 주문 결제금액' : '총 결제금액'}</span><span>{c.quoteLoading ? '확인 중' : won(c.finalPrice)}</span></div>
       </div></div>
       {/* 🔴 금액을 서버에서 못 받았거나(견적 실패) 그 사이 살 수 없게 된 상품이 있으면 — 결제 단추를 잠그고 이유를 말한다 */}
       {(c.quoteError || (c.quoteProblems && c.quoteProblems.length > 0)) && (
@@ -284,7 +287,8 @@ export function BenefitsError({ c }) {
 export function PayBar({ c, onPay, payLabel }) {
   const ref = useRef(null);
   usePublishBottomBarHeight(ref);
-  const label = !c.zipcode ? '주소를 검색해 주세요' : !c.deliveryInfo?.zoneName ? '배송 구역을 확인해 주세요'
+  // 픽업만 하는 주문은 주소를 묻지 않는다(S51)
+  const label = !c.isPickup && !c.zipcode ? '주소를 검색해 주세요' : !c.isPickup && !c.deliveryInfo?.zoneName ? '배송 구역을 확인해 주세요'
     : c.quoteError ? '금액을 확인하지 못했어요' : c.quoteLoading ? '금액 확인 중…' : (payLabel || `${won(c.finalPrice)} 결제하기`);   // P03 「43,900원 결제하기」
   return (
     <>

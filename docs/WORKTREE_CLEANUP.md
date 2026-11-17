@@ -2,7 +2,8 @@
 
 ## 한 줄
 
-**`node scripts/worktree-cleanup.cjs <C:\srmart\worktrees\이름> --yes`** 로만 치운다.
+**`node C:\srmart\tools\worktree-cleanup.cjs <C:\srmart\worktrees\이름> --yes`** 로만 치운다 — 세 창 공용 도구(루트 저장소, 2026-11-16 지시 2 로 옮김).
+이 저장소의 `scripts/worktree-cleanup.cjs` 는 그 도구로 인자만 넘기는 전달 파일이다.
 링크(node_modules junction)를 **먼저** 풀고 → `git worktree remove` → 남은 것은 `E:\backups\worktrees-done\` 로 옮긴다.
 
 🔴 **링크가 남은 폴더를 `Move-Item` 으로 E: 에 옮기지 마라 — 진짜 `node_modules` 가 비워진다**(아래 실측 D1).
@@ -31,12 +32,12 @@
   삭제 낱말이 없고, 그 안의 지우기는 git·node 안에서 돈다. `Move-Item` 은 옮기기라 막을 이유가 없다(D1 은 폴더 안을 봐야만 안다).
   - 링크만 푸는 명령: `cmd /c rmdir <링크>` 는 **막힌다**(C:\srmart 안 삭제) · `fsutil reparsepoint delete <링크>` 는 **통과**(관리자 권한 불필요, 실측).
 
-## 정리 스크립트 — `scripts/worktree-cleanup.cjs`
+## 정리 스크립트 — `C:\srmart\tools\worktree-cleanup.cjs` (세 창 공용)
 
 ```
-node C:\srmart\srmart-shop\scripts\worktree-cleanup.cjs C:\srmart\worktrees\shop-1115              (보기만)
-node C:\srmart\srmart-shop\scripts\worktree-cleanup.cjs C:\srmart\worktrees\shop-1115 --yes        (한다)
-node C:\srmart\srmart-shop\scripts\worktree-cleanup.cjs --selftest                                 (%TEMP% 에서 전 과정 · E: 로 옮기는 갈래까지)
+node C:\srmart\tools\worktree-cleanup.cjs C:\srmart\worktrees\shop-1115              (보기만)
+node C:\srmart\tools\worktree-cleanup.cjs C:\srmart\worktrees\shop-1115 --yes        (한다)
+node C:\srmart\tools\worktree-cleanup.cjs --selftest                                 (%TEMP% 에서 전 과정 · E: 로 옮기는 갈래까지)
 ```
 
 폴더마다:
@@ -71,3 +72,7 @@ node C:\srmart\srmart-shop\scripts\worktree-cleanup.cjs --selftest              
 
 - 전역 삭제 훅이 **D1(링크가 든 폴더를 다른 드라이브로 `Move-Item`/`mv`)** 을 막게 할지 — 훅이 명령의 원본 폴더 안을 한 번 들여다보면 된다.
   훅 원본은 `C:\srmart\dongsin-brand\hooks\block-delete.cjs`(전역판과 같이 고친다)라 이 창에서는 손대지 않았다.
+  - **2026-11-16 (지시 2)**: 보강판을 파일로만 만들었다 — `C:\srmart\tools\hooks\block-delete-v2.cjs`(자가 시험 40/40).
+    ⑴ `mv`·`move`·`Move-Item`·`robocopy /MOV(E)` 의 **원본 폴더 안을 세어** 링크가 있으면 막는다(못 다 세면 막는다 · 변수·`*`·`cd` 섞임도 막는다)
+    ⑵ `git worktree remove`(·`-C`·`--force`)를 막는다 — 정리는 위 도구로만.
+    **전역 설정에는 아직 걸지 않았다**(대표님 결정 대기). 거는 법은 루트 `CLAUDE.md` 「작업 가지 정리」 문단.

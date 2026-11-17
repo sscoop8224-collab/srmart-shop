@@ -35,7 +35,7 @@
 
 - `srm` 에스알마트 · `aram` 아람마트. 두 브랜드 앱은 **장바구니를 따로** 쓴다. 회원(포인트·주문)은 하나다.
 - 서버는 `X-Shop-Brand` 머리글을 읽는다. 안 보냈으면 그 회원 매장의 브랜드를 따른다.
-  지금 앱은 에스알마트 하나뿐이라 **아직 보내지 않는다**(`useShopCart.js` 의 `BRAND = 'srm'` 은 기기 키에만 쓴다). 브랜드 앱을 나눌 때 보내게 한다.
+  ✅ 2026-11-16 확인: 지금 앱은 **보낸다**(`src/api.js` 요청 가로채기가 `X-Shop-Brand = BRAND.code` — 빌드의 브랜드). ~~아직 보내지 않는다~~(옛 기록).
 - 🔴 매장 → 브랜드 짝은 브랜드 표(`migration_brands_v1`)가 생기기 전까지 **두 곳에 손으로** 적혀 있다:
   `shopCart.js` 의 `BRAND_STORE_CODES` 와 쇼핑앱 `brands/<id>/brand.json` 의 `stores`. **한쪽만 바꾸면 그 매장 손님의 장바구니가
   「이 앱의 매장 상품이 아니에요」 로 통째로 잠긴다.** 브랜드 표가 생기면 `BRAND_STORE_CODES` 를 지운다(`docs/SHOP_SCOPE_SETTINGS.md`).

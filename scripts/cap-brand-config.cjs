@@ -31,10 +31,17 @@ function brands() {
 }
 const flavorFile = id => path.join(ROOT, `android/app/src/${id}/assets/capacitor.config.json`);
 
-/** main 설정에서 server.url 만 바꾼 것 */
-function forBrand(mainCfg, url) {
+/** main 설정에서 server.url(과 부팅 배경색)만 바꾼 것
+ *  부팅 배경색(2026-11-16 아람 점검): 웹뷰 기본 배경·스플래시 플러그인 배경이 에스알마트 초록(#077D3C)이라
+ *  아람 앱이 빨강 네이티브 스플래시 → 초록 웹뷰 → 화면으로 깜빡였다. brand.json 의 colors.splashBackground 로 바꾼다.
+ *  main 에 그 칸이 있을 때만 바꾼다(없는 칸을 새로 만들지 않는다). */
+function forBrand(mainCfg, url, splashBg) {
   const c = JSON.parse(JSON.stringify(mainCfg));
   c.server = { ...(c.server || {}), url };
+  if (splashBg) {
+    if (c.android && c.android.backgroundColor) c.android.backgroundColor = splashBg;
+    if (c.plugins && c.plugins.SplashScreen && c.plugins.SplashScreen.backgroundColor) c.plugins.SplashScreen.backgroundColor = splashBg;
+  }
   return c;
 }
 
@@ -57,12 +64,12 @@ function main() {
   const mainCfg = JSON.parse(fs.readFileSync(MAIN, 'utf8'));
   const problems = [];
   for (const b of list) {
-    const want = JSON.stringify(forBrand(mainCfg, b.url), null, '\t') + '\n';
+    const want = JSON.stringify(forBrand(mainCfg, b.url, b.colors && b.colors.splashBackground), null, '\t') + '\n';
     const f = flavorFile(b.id);
     if (CHECK) {
       if (!fs.existsSync(f)) { problems.push(`${b.id}: ${path.relative(ROOT, f)} 가 없다 — 이대로 찍으면 main 주소(${mainCfg.server && mainCfg.server.url})를 연다`); continue; }
       const got = fs.readFileSync(f, 'utf8');
-      if (got !== want) problems.push(`${b.id}: ${path.relative(ROOT, f)} 가 main + url(${b.url}) 과 다르다 — sync 뒤 이 스크립트를 다시 돌릴 것`);
+      if (got !== want) problems.push(`${b.id}: ${path.relative(ROOT, f)} 가 main + url(${b.url}) · 부팅색 과 다르다 — sync 뒤 이 스크립트를 다시 돌릴 것`);
       continue;
     }
     fs.mkdirSync(path.dirname(f), { recursive: true });

@@ -3,13 +3,18 @@
 // 로그인 — 로고 · 인사 · 아이디/비밀번호(보기) · 자동 로그인 · 찾기 · 로그인 · 회원가입 · 둘러보기. 오류는 칸 아래에 바로 쓴다.
 // 회원가입 — 한 화면에 칸이 11개라 길었다(S28). 「배송할 곳 → 계정 → 동의」 세 단계로 나눈다.
 //   항목·문구·동의 방식·보내는 값은 예전 한 화면 그대로다(register 에 싣는 값이 같다).
-//   🔸 목업 2단계의 「휴대폰 본인확인」 은 아직 없다 — 본인확인(S48)이 운영에 꺼져 있다. 그 전까지는 손으로 넣는 칸.
+//   🔴 2단계의 휴대폰 확인은 **서버가 켠 쪽**으로 간다(2026-11-16 지시 7) — 예전엔 둘 다 안 보내서 어느 쪽이든 켜는 순간 가입이 400 이었다.
+//      · 본인확인 켬(GET /identity/status live) → 「휴대폰 본인확인」(S48) · 이름·생년월일·번호는 확인된 값 · identityToken
+//      · 꺼짐 → 손으로 넣는 번호·생년월일. 「다음」에서 send-code 를 물어 문자·알림톡이 켜져 있으면 인증번호 칸 · verificationToken
+//        (꺼져 있으면 서버가 { enabled:false } 만 주고 아무것도 안 보낸다 — 지금 운영이 이 경우다)
 //   🔸 목업 3단계의 [필수] 만 14세 · 이용약관 줄은 넣지 않았다 — 서버가 받아 남기지 않는 동의를 화면에만 두면
 //      「받았다」 는 증거가 없다. 서버에 칸이 생기면 함께 넣는다.
 import { useState, useEffect, useRef } from 'react';
+import TermsSheet from '../components/TermsSheet';
 import FindAccount from './FindAccount';
-import logo from '../assets/brand/logo_h_ko.png';
-import { getStores, register, getCoverage, SITE } from '../api';
+import { getStores, register, getCoverage, SITE, sendSignupCode, verifySignupCode } from '../api';
+import IdentitySheet, { IdentityCard, VerifiedFields } from '../identity/IdentitySheet';
+import useIdentityLive from '../identity/useIdentityLive';
 import { useDialog } from '../DialogContext';
 import { todayYmd } from '../utils/localDate';
 import Icon from '../components/ui/Icon';
@@ -61,7 +66,8 @@ const SqCheck = ({ on }) => <span className={`check sq${on ? ' on' : ''}`}>{on &
 // 동의 한 줄 — 설명을 접어두지 않고 **항상 펼쳐서** 보여준다. 접어두면 대부분 안 펴보고 체크하는데,
 // 그건 동의를 받았다고 하기 어렵다. 특히 선택 항목은 "동의 안 해도 된다" 는 사실이 보여야 의미가 있다.
 // 줄 전체가 <label> — 휴대폰에서 체크만 겨냥하기 어렵다.
-function ConsentRow({ checked, onChange, label, detail, required = false, big = false }) {
+// onView — 「보기」(S49 전문 시트). 누르면 체크는 그대로 두고 시트만 연다
+function ConsentRow({ checked, onChange, label, detail, required = false, big = false, onView }) {
   return (
     <label className={`consent${big ? ' all' : ''}`}>
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
@@ -70,6 +76,8 @@ function ConsentRow({ checked, onChange, label, detail, required = false, big = 
         <b>{!big && <span className={required ? 'req' : 'opt-t'}>{required ? '[필수]' : '[선택]'}</span>}{!big && ' '}{label}</b>
         {detail && <p>{detail}</p>}
       </span>
+      {onView && <button type="button" className="link" style={{ flexShrink: 0, alignSelf: 'flex-start', background: 'none', border: 0, padding: 'var(--sp-1)' }}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onView(); }}>보기</button>}
     </label>
   );
 }
@@ -91,11 +99,14 @@ function EyeBtn({ show, setShow, inputRef }) {
   );
 }
 
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;   // 서버 src/services/orderOwner.js EMAIL_RE 와 같다
 const EMPTY_FORM = { name: '', username: '', email: '', password: '', phone: '', address: '', addressDetail: '', birth: '' };
+// 문자 인증 상태 — needed: null(아직 안 물음) · false(서버가 꺼 둠) · true(인증번호 칸)
+const SMS0 = { needed: null, code: '', token: null, busy: false };
 
 // ── 메인 ───────────────────────────────────────────────────
 function Login({ onLogin, onGuest, initialMode }) {
-  const { notify } = useDialog();
+  const { notify, confirm } = useDialog();
   const [mode, setMode] = useState(initialMode === 'signup' ? 'signup' : 'login');   // 홈 가입 쿠폰 띠 「가입하기」 → 바로 가입(묶음 2)
   const [isFindAccount, setIsFindAccount] = useState(false);
 
@@ -123,6 +134,11 @@ function Login({ onLogin, onGuest, initialMode }) {
   const [coverageLoading, setCoverageLoading] = useState(false);
   const [signupDong, setSignupDong] = useState('');         // Daum에서 받은 동 이름(bname) — 커버리지 주 기준
   const [signupZipcode, setSignupZipcode] = useState('');
+  // 휴대폰 확인(2026-11-16 지시 7) — 머리 주석. idLive: null 모름 · true 본인확인 · false 옛 경로
+  const [idLive, setIdLive] = useIdentityLive(mode === 'signup');
+  const [idv, setIdv] = useState(null);            // 본인확인 결과 { token, name, birthdate, phone_masked, adult }
+  const [idvOpen, setIdvOpen] = useState(false);
+  const [sms, setSms] = useState({ ...SMS0 });
 
   // 동의 항목 (2026-09-10 신설).
   //
@@ -142,6 +158,7 @@ function Login({ onLogin, onGuest, initialMode }) {
   // 「전체 동의」(2026-11-12 P04 확정)는 **한 번에 체크하는 단추일 뿐**이다 — 줄마다 따로 켜고 끌 수
   // 있고, 서버에는 줄마다 따로 간다. 전체 동의 뒤 선택 줄 하나를 끄면 전체 동의도 꺼진다.
   const [privacyConsent, setPrivacyConsent] = useState(false);
+  const [termsKind, setTermsKind] = useState(null);   // S49 전문 시트 — privacy · thirdParty · marketing
   const [thirdPartyConsent, setThirdPartyConsent] = useState(false);
   const [marketingPush, setMarketingPush] = useState(false);
   const allConsent = privacyConsent && thirdPartyConsent && marketingPush;
@@ -237,15 +254,54 @@ function Login({ onLogin, onGuest, initialMode }) {
     if (!form.username.trim()) e.username = '아이디를 입력해 주세요.';
     if (!form.password) e.password = '비밀번호를 입력해 주세요.';
     else if (pwProblem(form.password)) e.password = pwProblem(form.password);
-    if (!form.email.trim()) e.email = '이메일을 입력해 주세요.';
-    if (!form.phone.trim()) e.phone = '전화번호를 입력해 주세요.';
-    if (!form.birth || calcAgeFromBirth(form.birth) === null) e.birth = '생년월일을 올바르게 입력해주세요!';
+    // 이메일은 선택이다(2026-11-17 대표 확정) — 넣었을 때만 모양을 본다. 서버도 같은 규칙(orderOwner.normalizeSignupEmail).
+    if (form.email.trim() && !EMAIL_SHAPE.test(form.email.trim())) e.email = '이메일 모양이 맞지 않아요. 비워 두셔도 가입할 수 있어요.';
+    if (idLive) {
+      if (!idv) e.identity = '휴대폰 본인확인을 해 주세요.';
+    } else {
+      if (!form.phone.trim()) e.phone = '전화번호를 입력해 주세요.';
+      if (!form.birth || calcAgeFromBirth(form.birth) === null) e.birth = '생년월일을 올바르게 입력해주세요!';
+      if (sms.needed && !sms.token) e.code = '인증번호를 확인해 주세요.';
+    }
     return e;
   };
-  const next = () => {
+  // 문자 인증번호 받기 — 서버가 꺼 두었으면 { enabled:false } → 인증 없이 넘어간다(true 를 돌려준다).
+  //   켜져 있으면 인증번호 칸을 열고 멈춘다(false). 본인확인이 켜졌다고 하면(USE_IDENTITY) 본인확인 카드로 바꾼다.
+  const askCode = async () => {
+    setSms((s) => ({ ...s, busy: true }));
+    try {
+      const r = await sendSignupCode(form.phone, Number(selectedStoreId) || 0);
+      if (!r.data || r.data.enabled === false) { setSms({ ...SMS0, needed: false }); return true; }
+      setSms({ ...SMS0, needed: true });
+      setErrs((x) => ({ ...x, code: null }));
+      return false;
+    } catch (err) {
+      const d = (err.response && err.response.data) || {};
+      setSms((s) => ({ ...s, busy: false }));
+      if (d.code === 'USE_IDENTITY') { setIdLive(true); setErrs({ identity: '휴대폰 본인확인으로 진행해 주세요.' }); return false; }
+      setErrs((x) => ({ ...x, phone: d.error || '인증번호를 보내지 못했어요. 잠시 후 다시 시도해 주세요.' }));
+      return false;
+    }
+  };
+  const confirmCode = async () => {
+    if (!sms.code.trim()) { setErrs((x) => ({ ...x, code: '인증번호를 넣어 주세요.' })); return; }
+    setSms((s) => ({ ...s, busy: true }));
+    try {
+      const r = await verifySignupCode(form.phone, sms.code.trim());
+      setSms((s) => ({ ...s, busy: false, token: (r.data && r.data.verificationToken) || null }));
+      setErrs((x) => ({ ...x, code: null }));
+    } catch (err) {
+      const d = (err.response && err.response.data) || {};
+      setSms((s) => ({ ...s, busy: false }));
+      if (d.code === 'USE_IDENTITY') { setIdLive(true); setSms({ ...SMS0 }); setErrs({ identity: '휴대폰 본인확인으로 진행해 주세요.' }); return; }
+      setErrs((x) => ({ ...x, code: d.error || '인증번호를 확인하지 못했어요.' }));
+    }
+  };
+  const next = async () => {
     const e = step === 1 ? check1() : check2();
     setErrs(e);
     if (Object.keys(e).length) return;
+    if (step === 2 && !idLive && sms.needed === null && !(await askCode())) return;
     setStep(step + 1);
     window.scrollTo(0, 0);
   };
@@ -256,20 +312,23 @@ function Login({ onLogin, onGuest, initialMode }) {
     const e2 = check2(); if (Object.keys(e2).length) { setErrs(e2); setStep(2); return; }
     if (!privacyConsent) { setErrs({ consent: '개인정보 수집·이용에 동의해주세요.' }); return; }
 
-    const age = calcAgeFromBirth(form.birth);
-    const isAdult = age !== null && age >= 19;
+    // 본인확인했으면 그 값으로(서버도 그 값으로 저장하고 성인 여부를 다시 계산한다 — 화면 값은 표시용)
+    const age = calcAgeFromBirth(idv ? idv.birthdate : form.birth);
+    const isAdult = idv ? !!idv.adult : (age !== null && age >= 19);
 
     try {
       setSignupLoading(true);
       const res = await register({
-        name: form.name,
+        name: idv ? idv.name : form.name,
         username: form.username,
         email: form.email,
         password: form.password,
-        phone: form.phone,
+        phone: idv ? '' : form.phone,     // 본인확인이면 서버가 확인된 번호로 넣는다
         address: form.address,
         addressDetail: form.addressDetail,
-        birth: form.birth,        // 서버가 이 값으로 is_adult/age 를 다시 계산한다
+        birth: idv ? idv.birthdate : form.birth,   // 서버가 이 값으로 is_adult/age 를 다시 계산한다(본인확인이면 확인된 값을 쓴다)
+        identityToken: idv ? idv.token : undefined,          // 본인확인 켬 — 없으면 서버가 400 IDENTITY_REQUIRED
+        verificationToken: sms.token || undefined,           // 문자 인증 켬 — 없으면 서버가 400 「휴대폰 인증을 완료해주세요」
         privacyConsent,           // 필수 — 서버도 없으면 400 으로 막는다
         thirdPartyConsent,        // 선택 — 미동의면 온라인 전용 회원이 된다
         marketing_push: marketingPush,   // 선택 — 혜택 알림(광고성) 수신. 기본 false
@@ -281,7 +340,7 @@ function Login({ onLogin, onGuest, initialMode }) {
       });
       const sc = res && res.data && res.data.signup_coupon;
       setDone({
-        name: form.name, storeName: shortName(storeName(selectedStoreId)), isAdult,
+        name: idv ? idv.name : form.name, storeName: shortName(storeName(selectedStoreId)), isAdult,
         // 혜택 알림에 동의했으면 처리 결과(날짜)를 같이 알린다 — 정보통신망법상 수신 동의 결과 안내.
         marketing: marketingPush ? `${todayYmd().replace(/-/g, '.')} 혜택 알림 수신에 동의하셨어요.` : '',
         coupon: sc && sc.granted ? sc : null,   // 서버가 「지급했다」 고 할 때만 쿠폰 칸을 그린다
@@ -290,8 +349,17 @@ function Login({ onLogin, onGuest, initialMode }) {
       window.scrollTo(0, 0);
     } catch (err) {
       const msg = err.response?.data?.error || err.message || '회원가입 중 오류가 발생했어요.';
+      const code = err.response?.data?.code;
       // 서버가 막은 칸이 있는 단계로 돌려보내 그 칸 아래에 쓴다(3단계에서 창만 뜨면 어느 칸인지 모른다)
-      if (/아이디/.test(msg)) { setErrs({ username: msg }); setStep(2); }
+      if (code === 'IDENTITY_REQUIRED') { setIdv(null); setIdLive(true); setErrs({ identity: msg }); setStep(2); }   // 꺼져 있다가 켜졌거나 15분이 지났다
+      else if (code === 'IDENTITY_ALREADY_MEMBER') {
+        setIdv(null);
+        const ids = (err.response.data.accounts || []).map((a) => a.username).join(', ');
+        const go = await confirm({ icon: 'user', title: '이미 가입하셨어요', message: `본인확인한 분의 계정(${ids})이 있어요. 새로 가입하지 않고 그 계정으로 로그인해 주세요.`, cancelLabel: '닫기', okLabel: '아이디 찾기' });
+        if (go) setIsFindAccount(true); else setStep(2);
+      }
+      else if (/휴대폰 인증/.test(msg)) { setSms({ ...SMS0 }); setErrs({ code: msg, phone: sms.needed ? null : msg }); setStep(2); }   // 문자 인증이 켜졌거나 만료
+      else if (/아이디/.test(msg)) { setErrs({ username: msg }); setStep(2); }
       else if (/비밀번호/.test(msg)) { setErrs({ password: msg }); setStep(2); }
       else if (/이메일/.test(msg)) { setErrs({ email: msg }); setStep(2); }
       else if (/우편번호/.test(msg)) { setErrs({ address: msg }); setStep(1); }
@@ -310,6 +378,8 @@ function Login({ onLogin, onGuest, initialMode }) {
     setErrs({});
     setStep(1);
     resetConsents();
+    setIdv(null);
+    setSms({ ...SMS0 });
   };
   const toLogin = () => { resetSignup(); setDone(null); setMode('login'); };
 
@@ -340,7 +410,7 @@ function Login({ onLogin, onGuest, initialMode }) {
   };
 
   if (isFindAccount) {
-    return <FindAccount onBack={() => setIsFindAccount(false)} />;
+    return <FindAccount onBack={() => setIsFindAccount(false)} onSignup={() => { setIsFindAccount(false); resetSignup(); setMode('signup'); }} />;
   }
 
   // ── 로그인(S27) ──
@@ -349,7 +419,7 @@ function Login({ onLogin, onGuest, initialMode }) {
       <div className="v2 plain auth-v2">
         <div className="auth-wrap">
           <div className="auth-top">
-            <img src={logo} alt={BRAND.name} />
+            <img src={BRAND.logo} alt={BRAND.name} />
             <h1>즐거운 쇼핑을 시작하세요</h1>
             <p>오늘도 {BRAND.name}에서 좋은 하루 되세요</p>
           </div>
@@ -485,7 +555,7 @@ function Login({ onLogin, onGuest, initialMode }) {
         {step === 2 && (
           <div className="auth">
             <h2 className="step-h">계정 만들기</h2>
-            <p className="f-hint">로그인할 아이디와 연락처를 넣어 주세요.</p>
+            <p className="f-hint">{idLive ? '휴대폰 본인확인을 마쳐야 가입할 수 있어요.' : '로그인할 아이디와 연락처를 넣어 주세요.'}</p>
             <Field label="아이디" error={errs.username}>
               <input value={form.username} onChange={setF('username')} placeholder="아이디를 입력해 주세요" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
             </Field>
@@ -500,23 +570,47 @@ function Login({ onLogin, onGuest, initialMode }) {
                 <span className="f-hint" style={{ margin: 0 }}>· 소문자·숫자·특수문자 중 2가지</span>
               </div>
             )}
-            <Field label="이메일" error={errs.email}>
-              <input type="email" value={form.email} onChange={setF('email')} placeholder="이메일을 입력해 주세요" autoComplete="email" autoCapitalize="none" />
+            {/* 휴대폰 본인확인(목업 P04 2단계 · S48) — 켜져 있을 때만. 이름·생년월일·번호는 확인된 값(서버도 그 값으로 저장한다) */}
+            {idLive && (idv ? <VerifiedFields result={idv} /> : <IdentityCard onStart={() => setIdvOpen(true)} error={errs.identity} />)}
+            <Field label="이메일 (선택)" error={errs.email}>
+              <input type="email" value={form.email} onChange={setF('email')} placeholder="예) name@example.com" autoComplete="email" autoCapitalize="none" />
             </Field>
-            <Field label="전화번호" error={errs.phone}>
-              <input type="tel" value={form.phone} onChange={setF('phone')} placeholder="010-0000-0000" autoComplete="tel" />
-            </Field>
-            {/* 예전엔 주민등록번호 앞 6자리 + 성별자리를 받았다(위 calcAgeFromBirth 주석). 생년월일만 받는다. */}
-            <Field label="생년월일 (성인 확인용)" error={errs.birth}>
-              {/* 🔴 **한국 시간으로** (판단 ③) — UTC 상한이면 오전 9시 전엔 오늘 날짜를 못 고른다. */}
-              <input type="date" value={form.birth} max={todayYmd()} onChange={setF('birth')} />
-            </Field>
-            {!errs.birth && <div className="f-hint">성인 여부 확인·생일 혜택에만 쓰고, 주민등록번호는 받지 않아요</div>}
-            {!errs.birth && form.birth && (age === null
-              ? <div className="f-err"><Icon name="alert" size="sm" />올바른 생년월일을 입력해 주세요</div>
-              : age >= 19
-                ? <div className="f-ok"><Icon name="check" size="sm" />성인 확인됐어요 (만 {age}세)</div>
-                : <div className="f-err"><Icon name="alert" size="sm" />미성년자예요 (만 {age}세) · 성인 상품 구매가 제한돼요</div>)}
+            {!errs.email && <div className="f-hint">넣으시면 이메일로도 로그인할 수 있어요. 비워 두셔도 가입돼요.</div>}
+            {!idLive && (
+              <>
+                <Field label="전화번호" error={errs.phone}>
+                  <input type="tel" value={form.phone} placeholder="010-0000-0000" autoComplete="tel"
+                    onChange={(e) => { setF('phone')(e); if (sms.needed) setSms({ ...SMS0 }); }} />
+                </Field>
+                {/* 문자 인증(옛 경로) — 서버가 문자·알림톡을 켰을 때만(send-code 가 enabled). 꺼져 있으면 이 칸은 안 생긴다 */}
+                {sms.needed && (
+                  <>
+                    <label className="f-lbl">인증번호</label>
+                    <div className="addr-row">
+                      <div className={`field${errs.code ? ' err' : ''}`} style={{ flex: 1 }}>
+                        <input inputMode="numeric" autoComplete="one-time-code" value={sms.code} disabled={!!sms.token} placeholder="인증번호 6자리"
+                          onChange={(e) => { const v = e.target.value; setSms((s) => ({ ...s, code: v })); if (errs.code) setErrs((x) => ({ ...x, code: null })); }} />
+                      </div>
+                      <button type="button" className="ui-btn md sec" disabled={sms.busy || !!sms.token} onClick={confirmCode}>{sms.token ? '확인됨' : '확인'}</button>
+                    </div>
+                    {errs.code ? <div className="f-err"><Icon name="alert" size="sm" />{errs.code}</div>
+                      : sms.token ? <div className="f-ok"><Icon name="check" size="sm" />휴대폰 인증을 마쳤어요</div>
+                      : <div className="f-hint">인증번호를 보냈어요(3분 안에 넣어 주세요) · <button type="button" className="link" disabled={sms.busy} onClick={askCode}>다시 받기</button></div>}
+                  </>
+                )}
+                {/* 예전엔 주민등록번호 앞 6자리 + 성별자리를 받았다(위 calcAgeFromBirth 주석). 생년월일만 받는다. */}
+                <Field label="생년월일 (성인 확인용)" error={errs.birth}>
+                  {/* 🔴 **한국 시간으로** (판단 ③) — UTC 상한이면 오전 9시 전엔 오늘 날짜를 못 고른다. */}
+                  <input type="date" value={form.birth} max={todayYmd()} onChange={setF('birth')} />
+                </Field>
+                {!errs.birth && <div className="f-hint">성인 여부 확인·생일 혜택에만 쓰고, 주민등록번호는 받지 않아요</div>}
+                {!errs.birth && form.birth && (age === null
+                  ? <div className="f-err"><Icon name="alert" size="sm" />올바른 생년월일을 입력해 주세요</div>
+                  : age >= 19
+                    ? <div className="f-ok"><Icon name="check" size="sm" />성인 확인됐어요 (만 {age}세)</div>
+                    : <div className="f-err"><Icon name="alert" size="sm" />미성년자예요 (만 {age}세) · 성인 상품 구매가 제한돼요</div>)}
+              </>
+            )}
           </div>
         )}
 
@@ -529,19 +623,20 @@ function Login({ onLogin, onGuest, initialMode }) {
             <section className="sec">
               <div className="group consents">
                 <ConsentRow big checked={allConsent} onChange={setAllConsent} label="전체 동의" detail="선택 항목 포함" />
-                <ConsentRow checked={privacyConsent} onChange={(v) => { setPrivacyConsent(v); setErrs({}); }} required
+                <ConsentRow checked={privacyConsent} onChange={(v) => { setPrivacyConsent(v); setErrs({}); }} required onView={() => setTermsKind('privacy')}
                   label="개인정보 수집·이용 동의"
-                  detail="이름, 아이디, 이메일, 휴대전화번호, 생년월일, 주소를 회원 관리와 주문·배송에 이용합니다." />
-                <ConsentRow checked={thirdPartyConsent} onChange={setThirdPartyConsent}
+                  detail="이름, 아이디, 휴대전화번호, 생년월일, 주소(이메일은 넣으신 경우만)를 회원 관리와 주문·배송에 이용합니다." />
+                <ConsentRow checked={thirdPartyConsent} onChange={setThirdPartyConsent} onView={() => setTermsKind('thirdParty')}
                   label="지점 통합 회원·포인트·구매 내역 이용 동의"
                   detail={`${BRAND.name} 각 지점${branchList(stores) ? `(${branchList(stores)})` : ''}은 서로 다른 사업자입니다. 동의하시면 모든 지점에서 포인트를 함께 쌓고 쓰시고, 매장 구매 영수증도 앱에서 보실 수 있어요. 제공 항목은 이름·연락처·회원번호·포인트 내역·매장 구매 내역입니다. 동의하지 않으셔도 가입과 온라인 주문은 그대로 가능하며, 이 경우 매장 포인트 적립·사용과 매장 구매 내역 표시만 제한됩니다.`} />
-                <ConsentRow checked={marketingPush} onChange={setMarketingPush}
+                <ConsentRow checked={marketingPush} onChange={setMarketingPush} onView={() => setTermsKind('marketing')}
                   label="혜택 알림(행사·쿠폰) 받기"
                   detail="행사·쿠폰 소식을 앱 푸시·문자로 보내 드려요. 동의하지 않으셔도 가입·주문과 주문·배송 알림은 그대로예요. 마이 → 알림 설정에서 언제든 끌 수 있어요." />
               </div>
               {errs.consent && <div className="f-err" style={{ padding: '0 var(--sp-4)' }}><Icon name="alert" size="sm" />{errs.consent}</div>}
               <div className="sec-f"><a className="link" href={`${SITE}/privacy.html?b=${BRAND.code}`} target="_blank" rel="noreferrer">개인정보처리방침 전문 보기</a></div>
             </section>
+            {termsKind && <TermsSheet kind={termsKind} onClose={() => setTermsKind(null)} />}
           </>
         )}
       </div>
@@ -555,9 +650,14 @@ function Login({ onLogin, onGuest, initialMode }) {
             {signupLoading ? '가입 중…' : '가입하기'}
           </button>
         ) : (
-          <button type="button" className="ui-btn pri" style={{ flex: step > 1 ? 2 : 1 }} onClick={next}>다음</button>
+          <button type="button" className={`ui-btn ${sms.busy ? 'dis' : 'pri'}`} style={{ flex: step > 1 ? 2 : 1 }} disabled={sms.busy} onClick={next}>{sms.busy && step === 2 ? '확인 중…' : '다음'}</button>
         )}
       </div></div>
+      {idvOpen && (
+        <IdentitySheet purpose="signup" onClose={() => setIdvOpen(false)}
+          onDone={(r) => { setIdv(r); setIdvOpen(false); setErrs((x) => ({ ...x, identity: null })); }}
+          onFindId={() => setIsFindAccount(true)} />
+      )}
     </div>
   );
 }

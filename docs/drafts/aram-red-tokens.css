@@ -1,0 +1,39 @@
+/* 🔴 초안 — 적용하지 않았다 (2026-11-17 밤샘 지시 6 · 아람 화면색 빨강 적용안). 대표님 결정 전에는 src/ 에 넣지 않는다.
+ *
+ * ── 구조 ──
+ *   ① 이 블록을 src/styles/tokens.css 맨 아래에 붙인다(색을 쓰는 곳은 tokens.css 하나 — check-ui-rules 가 지킨다).
+ *   ② 앱이 뜰 때 <html data-brand="aram"> 을 단다 — src/index.js 맨 위 한 줄 + public/index.html 부팅 스크립트(첫 그림부터 빨강).
+ *      document.documentElement.dataset.brand = BRAND.code;   // src/brand.js 의 BRAND(빌드가 정한 브랜드)
+ *   ③ 에스알마트(srm)는 이 블록이 안 걸려서 지금 초록 그대로다 — 바뀌는 것은 아람 빌드 하나.
+ *   ④ 그 뒤 scripts/brand-build.cjs 의 「빌드 뒤 #077D3C 바꿔 끼우기」(0442c342)는 이 토큰으로 옮길 수 있다(부팅 배경만 남는다).
+ *
+ * ── 값 — 흰 글자 대비(WCAG) ──
+ *   #DB102E(아람 대표색) 위 흰 글자 5.09 : 1 → 초록과 달리 **대표색 그대로 흰 글자 단추**가 된다(초록 #00c471 은 2.30 이라 #00864a 를 따로 뒀다).
+ *   흰 바탕 위 빨강 글자 #C40E29 6.10 : 1 · 어두운 바탕(#1c1c1e) 위 빨강 글자 #FF5A6E 5.62 : 1.
+ *
+ * ── 정할 것 ──
+ *   🔴 오류·품절·삭제의 빨강(--danger #ff3b30)과 대표색 빨강이 가깝다 — 아람 화면에서는 「경고」와 「강조」가 같은 색으로 읽힐 수 있다.
+ *      이 초안은 --danger 를 그대로 둔다(뜻이 다른 색을 브랜드 때문에 바꾸지 않는다). 사진에서 장바구니 「품절」·삭제 단추를 같이 보신다.
+ */
+:root[data-brand="aram"] {
+  --brand: #DB102E;
+  --brand-strong: #C40E29;
+  --brand-soft: #fdecef;
+  --on-brand: #ffffff;
+  --brand-fill: #DB102E;
+  --brand-fill-pressed: #B30D25;
+  --on-brand-fill: #ffffff;
+  --shadow-brand: 0 6px 18px rgba(219,16,46,.30);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-brand="aram"]:not([data-theme="light"]) {
+    --brand: #ff4d63; --brand-strong: #ff7385; --brand-soft: rgba(219,16,46,.20); --on-brand: #ffffff;
+    --brand-fill: #DB102E; --brand-fill-pressed: #B30D25;
+    --shadow-brand: 0 6px 18px rgba(219,16,46,.25);
+  }
+}
+:root[data-brand="aram"][data-theme="dark"] {
+  --brand: #ff4d63; --brand-strong: #ff7385; --brand-soft: rgba(219,16,46,.20); --on-brand: #ffffff;
+  --brand-fill: #DB102E; --brand-fill-pressed: #B30D25;
+  --shadow-brand: 0 6px 18px rgba(219,16,46,.25);
+}

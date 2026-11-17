@@ -10,6 +10,40 @@ import { imgUrl, getSellerTax } from '../api';
 import SellerTaxNote from '../components/SellerTaxNote';
 import { getItemPrice } from '../utils/pricing';
 import Icon from '../components/ui/Icon';
+import { useStore } from '../StoreContext';
+
+/** 픽업 수령 안내(S53 「예약 완료」) — 픽업 주문(주류)을 결제하면 완료 화면에 같이 보인다.
+ *  🔴 기한 날짜는 서버가 결제일 + 매장 설정 N일로 정한다(orders.pickup_deadline) — 여기서 지어내지 않고 「알림으로 알려 드려요」만.
+ *  바코드는 아직 없다(계산대가 주문번호로 찾는다) — 목업 S53 의 바코드 자리는 계산대 쪽 조회가 생긴 뒤에. */
+function PickupGuide({ order, store }) {
+  const name = store ? (store.display_name || store.name) : '가입 매장';
+  const sub = store ? [store.address, store.operating_hours].filter(Boolean).join(' · ') : '';
+  const pickupId = order.fulfillment === 'split' ? String(order.id).split(' · ').find(x => /-P$/.test(x)) || order.id : order.id;
+  return (
+    <>
+      <section className="sec">
+        <div className="notice g"><Icon name="check" /><div style={{ flex: 1 }}><b>픽업 예약을 마쳤어요</b><br />매장에서 준비되면 알려 드려요. 찾아가는 기한도 그 알림에 적어 드려요.</div></div>
+      </section>
+      <section className="sec">
+        <div className="sec-h">픽업 매장</div>
+        <div className="group">
+          <div className="row"><span className="ricon"><Icon name="store" /></span><span className="lbl">{name}{sub && <small>{sub}</small>}</span></div>
+          {store && store.phone && <a className="row tap" href={`tel:${store.phone}`}><span className="ricon"><Icon name="phone" /></span><span className="lbl">{store.phone}<small>매장에 전화하기</small></span></a>}
+          <div className="row"><span className="lbl">픽업 주문번호</span><span className="val">{pickupId}</span></div>
+        </div>
+      </section>
+      <section className="sec">
+        <div className="sec-h">찾아가는 법</div>
+        <div className="group"><div className="pad">
+          <div className="kv"><span>1</span><span style={{ flex: 1, textAlign: 'left', marginLeft: 'var(--sp-3)' }}>계산대에 픽업 주문번호를 보여 주세요</span></div>
+          <div className="kv"><span>2</span><span style={{ flex: 1, textAlign: 'left', marginLeft: 'var(--sp-3)' }}>신분증으로 나이를 확인해요 — 예약한 본인만 받을 수 있어요</span></div>
+          <div className="kv"><span>3</span><span style={{ flex: 1, textAlign: 'left', marginLeft: 'var(--sp-3)' }}>결제는 앱에서 끝났어요 — 매장에서 다시 내지 않아요</span></div>
+        </div></div>
+        <div className="sec-f">기한이 지나면 예약을 취소하고 환불해 드려요.</div>
+      </section>
+    </>
+  );
+}
 
 const getCategoryImage = (large) => {
   switch(large) {
@@ -25,6 +59,7 @@ const won = (n) => `${Number(n || 0).toLocaleString('ko-KR')}원`;
 const TONE = { '결제완료': 'g', '배송중': 'b', '배송완료': 'g', '취소': 'r' };
 
 function Receipt({ order, onClose, onGoHome, earnPoints }) {
+  const { currentStore } = useStore() || {};
   // 판매자 과세 유형 문구(2026-11-15 지시 3) — 🔴 못 받으면 null 그대로 → 부가세 줄도 세금계산서 단추도 안 그린다
   const [sellerTax, setSellerTax] = useState(null);
   useEffect(() => {
@@ -51,9 +86,12 @@ function Receipt({ order, onClose, onGoHome, earnPoints }) {
           {earnPoints > 0 && <span className="pill b">배송 완료 시 {earnPoints.toLocaleString('ko-KR')}P 적립 예정</span>}
         </div>
 
+        {(order.fulfillment === 'pickup' || order.fulfillment === 'split') && <PickupGuide order={order} store={currentStore} />}
+
         <section className="sec">
           <div className="group">
-            <div className="row"><span className="lbl">주문번호</span><span className="val">{order.id}</span></div>
+            {/* 나눠 결제(배송+픽업)는 주문번호가 둘 — 한 줄에 하나씩(한 줄에 이으면 이름표가 세로로 쪼개진다 · 2026-11-17 사진) */}
+            <div className="row"><span className="lbl" style={{ whiteSpace: 'nowrap' }}>주문번호</span><span className="val" style={{ textAlign: 'right', wordBreak: 'break-all' }}>{String(order.id).split(' · ').map((x) => <span key={x} style={{ display: 'block' }}>{x}</span>)}</span></div>
             <div className="row"><span className="lbl">주문 일시</span><span className="val">{order.date}</span></div>
             <div className="row"><span className="lbl">상태</span><span className={`pill ${TONE[status] || 'g'}`} style={{ marginLeft: 'auto' }}>{status}</span></div>
           </div>
@@ -85,7 +123,7 @@ function Receipt({ order, onClose, onGoHome, earnPoints }) {
             {sm && sm.promo > 0 && <div className="kv"><span>행사 할인</span><span className="minus">−{won(sm.promo)}</span></div>}
             {sm && sm.coupon > 0 && <div className="kv"><span>쿠폰 할인</span><span className="minus">−{won(sm.coupon)}</span></div>}
             {sm && sm.points > 0 && <div className="kv"><span>포인트</span><span className="minus">−{won(sm.points)}</span></div>}
-            {sm && <div className="kv"><span>배송비</span><span>{sm.deliveryFee > 0 ? won(sm.deliveryFee) : '무료'}</span></div>}
+            {sm && order.fulfillment !== 'pickup' && <div className="kv"><span>배송비</span><span>{sm.deliveryFee > 0 ? won(sm.deliveryFee) : '무료'}</span></div>}
             <div className="kv total"><span>총 결제금액</span><span>{won(order.totalPrice)}</span></div>
             <SellerTaxNote info={sellerTax} />
           </div></div>

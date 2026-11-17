@@ -100,7 +100,7 @@
 | 앱 이름 · 패키지 · 아이콘 · 대표색 | `brands/<id>/brand.json` + `android/app/build.gradle` productFlavors(srm `com.dongsin.srmart` · aram `com.dongsin.arammart`) | **브랜드** | 이미 나뉘었다. `brands` 표가 같은 값을 들고(서버가 앱을 알아볼 때) 🔴 패키지는 플레이스토어에 올리면 못 바꾼다 |
 | 웹 주소 · `server.url` | `capacitor.config.ts` 한 벌(`/shop/`) · brand.json `webPath` `/srm` `/aram` | 브랜드 | `capacitor.config.ts` 를 브랜드별로 |
 | 앱 설치 안내 | `InstallPrompt.js:102-104` 「에스알마트 앱 설치」 · `public/manifest.json` · `index.html` · `offline.html` · `service-worker.js` · 홈페이지 스토어 링크 빈칸(`homepage/index.html:235-243`) | **브랜드** | 브랜드별 manifest · 문구. 스토어 주소는 등재 뒤에 |
-| 앱이 서버에 브랜드 알리기 | 🔴 **안 보낸다**(`X-Shop-Brand` 를 보내는 코드 없음 · `useShopCart.js` 의 `BRAND = 'srm'` 고정) | 브랜드 | `api.js` 가 빌드의 브랜드를 머리글로 보낸다 |
+| 앱이 서버에 브랜드 알리기 | ✅ **보낸다**(2026-11-16 확인 — `src/api.js` 요청 가로채기가 `X-Shop-Brand = BRAND.code`) · ~~안 보낸다~~(옛 기록) | 브랜드 | 끝남 |
 
 ### 2-7. 매장 단계에만 있는 것
 
