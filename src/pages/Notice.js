@@ -7,12 +7,14 @@
 //   「삭제」 = 서버에 지우는 길이 없어 **숨기기**(`PUT /api/admin/shop-notices/:id/visible`) — 기록은 남고 어드민에서 다시 보일 수 있다.
 import { useCallback, useEffect, useState } from 'react';
 import { getShopNotices, createShopNotice, hideShopNotice } from '../api';
+import { markSeen } from '../utils/noticeSeen';
 import { useDialog } from '../DialogContext';
 import Icon from '../components/ui/Icon';
 
 const ymd = (s) => String(s || '').slice(0, 10).replace(/-/g, '.');   // 서버가 'YYYY-MM-DD HH:mm' 글자로 준다(DATE_FORMAT) — 날짜 밀림 없음
 
-function Notice({ storeId, isAdmin, goBack }) {
+// onSeen — 목록을 받아 본 것으로 적은 뒤 부른다(홈 종 빨간 점을 끈다 · 2026-11-17 낮 지시 5)
+function Notice({ storeId, isAdmin, goBack, onSeen }) {
   const { notify, confirm } = useDialog();
   const [list, setList] = useState(null);       // null = 불러오는 중
   const [failed, setFailed] = useState(false);
@@ -24,9 +26,14 @@ function Notice({ storeId, isAdmin, goBack }) {
   const load = useCallback(() => {
     setFailed(false);
     getShopNotices(storeId)
-      .then((r) => setList(Array.isArray(r.data) ? r.data : []))
+      .then((r) => {
+        const rows = Array.isArray(r.data) ? r.data : [];
+        setList(rows);
+        markSeen(rows);
+        if (onSeen) onSeen();
+      })
       .catch(() => { setFailed(true); setList([]); });
-  }, [storeId]);
+  }, [storeId]);   // eslint-disable-line react-hooks/exhaustive-deps -- onSeen 은 부모가 매번 새로 만든다(다시 불러올 까닭 아님)
   useEffect(() => { load(); }, [load]);
 
   const handleAdd = async () => {

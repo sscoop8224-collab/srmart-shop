@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
-import { login as apiLogin, getActiveProducts, getCategories, getBanners, getMyOrders, createOrder, createCheckout, getWishlist, toggleWishlist as toggleWishlistApi, getActivePromotions } from './api';
+import { login as apiLogin, getShopNotices, getActiveProducts, getCategories, getBanners, getMyOrders, createOrder, createCheckout, getWishlist, toggleWishlist as toggleWishlistApi, getActivePromotions } from './api';
 import API from './api';
 import Chatbot from './components/Chatbot';
 import StoreSelectionModal from './components/StoreSelectionModal';
@@ -34,7 +34,8 @@ import { objectJosa } from './utils/customerStores';
 import useShopCart from './hooks/useShopCart';
 import useIdentityLive from './identity/useIdentityLive';
 import { BRAND, shortStoreName } from './brand';
-import { sameUser, payerKey } from './utils/sameUser';   // 이메일 없는 회원(2026-11-17) — 같은 사람은 번호로
+import { sameUser, payerKey } from './utils/sameUser';
+import { hasNewNotice } from './utils/noticeSeen';   // 홈 종 빨간 점(2026-11-17 낮 지시 5)   // 이메일 없는 회원(2026-11-17) — 같은 사람은 번호로
 
 // 코드 스플리팅: 홈(App 내 inline) 외 페이지는 지연 로드 → 초기 번들 축소(파싱 단축).
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -404,6 +405,18 @@ function AppContent() {
     // 스플래시 광고 조회/캐싱은 SplashAd 컴포넌트가 마운트 시 직접 수행(loadActiveSplashAd) → 첫 콜드스타트도 표시.
   }, [currentStoreId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 홈 종 빨간 점 — 회원이 홈에 올 때마다 공지 목록을 한 번 읽어 「본 것보다 새 공지」가 있나 본다(개발 표 #22 · 2026-11-17 낮 지시 5).
+  //   종은 로그인한 회원만 연다(비로그인은 로그인 안내 — 결정 대기 #23) → 점도 회원에게만. 못 읽으면 점을 안 그린다(틀린 점보다 없는 점).
+  const [bellDot, setBellDot] = useState(false);
+  useEffect(() => {
+    if (!user || page !== 'home') return undefined;
+    let alive = true;
+    getShopNotices(currentStoreId)
+      .then((r) => { if (alive) setBellDot(hasNewNotice(r.data)); })
+      .catch(() => { if (alive) setBellDot(false); });
+    return () => { alive = false; };
+  }, [user, page, currentStoreId]);
+
   // ✅ 로그인 - username 또는 email로 백엔드 연동
   const handleLogin = async (loggedInUser) => {
     const identifier = loggedInUser.username || loggedInUser.email;
@@ -674,6 +687,7 @@ function AppContent() {
         onStoreClick={!user && !isOwner ? () => setShowStoreModal(true) : null}
         onHome={() => goToPage('home')}
         onBell={() => (user ? goToPage('notice') : requireLogin())}
+        bellDot={!!user && bellDot}
         loggedIn={!!user}
         onLogin={() => setPage('login')}
       />}
@@ -719,7 +733,7 @@ function AppContent() {
 
         {/* 화면 조각을 받는 동안 — 「불러오는 중…」 글자 대신 화면 뼈대(S43, 묶음 1) */}
         <Suspense fallback={<PageFallback />}>
-        {page === 'notice'          && <Notice storeId={currentStoreId} isAdmin={isAdmin} goBack={goBack} />}
+        {page === 'notice'          && <Notice storeId={currentStoreId} isAdmin={isAdmin} goBack={goBack} onSeen={() => setBellDot(false)} />}
         {/* 묶음 6 — 최근 본 상품(S41)·내 리뷰(S42) · 가격·그림은 지금 매장 상품 목록에서 */}
         {page === 'recentViews'     && <RecentViews products={products} wishlist={wishlist} adultOk={!!(currentUser && currentUser.isAdult)} onProductClick={(product) => { setSelectedProduct(product); goToPage('productDetail'); }} onAddToCart={addToCart} onToggleWish={toggleWishlist} goBack={goBack} goToHome={() => goToPage('home')} />}
         {/* 묶음 6 — 매장안내(S44)·고객센터(S46) · 매장 바꾸기는 점포 선택과 같은 사람만(손님 · 대표 미리보기) — 회원은 가입 매장 */}
