@@ -3,10 +3,12 @@
 //  · 표시할 광고 포인터(id,url)를 localStorage에 저장 → 다음 콜드스타트에 네트워크 없이 바로 렌더
 //  · 이미지 바이트는 Cache API에 저장 → caches.match로 즉시(blob) 로드
 //  · 백그라운드로 활성 광고를 갱신해 '다음' 콜드스타트용 포인터/캐시를 최신화(이번 표시엔 영향 없음 → 로딩 지연 0)
+//  · 브랜드마다 기억 자리가 따로다(src/brand.js SPLASH_AD_KEY) — 조회는 공용 API 라 X-Shop-Brand 가 같이 간다(2026-11-17 낮 지시 5).
 import { getSplashAds, imgUrl } from '../api';
+import { SPLASH_AD_KEY, SPLASH_AD_CACHE } from '../brand';
 
-const CACHE = 'srmart-splash-ads-v1';
-const LS_KEY = 'srmart_splash_ad';
+const CACHE = SPLASH_AD_CACHE;
+const LS_KEY = SPLASH_AD_KEY;
 
 export function readSplashPointer() {
   try { const v = localStorage.getItem(LS_KEY); return v ? JSON.parse(v) : null; } catch (e) { return null; }
