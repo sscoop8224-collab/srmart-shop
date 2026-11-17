@@ -151,3 +151,35 @@
 @font-face { font-family: "Pretendard"; font-weight: 400; src: url("../assets/fonts/pretendard_regular.woff2") format("woff2"); font-display: swap; }
 @font-face { font-family: "Pretendard"; font-weight: 600; src: url("../assets/fonts/pretendard_semibold.woff2") format("woff2"); font-display: swap; }
 @font-face { font-family: "Pretendard"; font-weight: 700; src: url("../assets/fonts/pretendard_bold.woff2") format("woff2"); font-display: swap; }
+
+/* ── 아람마트 앱 안 강조색 = 진한 분홍(2026-11-17 대표 결정 · 🔴 가지 shop-aram-pink-1117 — 대표님이 사진을 보신 뒤 반영) ──
+   <html data-brand="aram"> 일 때만 걸린다(public/index.html 부팅 줄 + src/index.js). 에스알마트(srm)는 이 블록이 안 걸려 초록 그대로.
+   바뀌는 것: 단추·탭·강조·링크·체크·스위치(--brand 계열). 그대로인 것: 로고·앱 아이콘·시작 화면(빨강 #DB102E — 그림과 brand.json),
+   오류·품절·할인 빨강(--danger · --sale — 뜻이 다른 색).
+   대비(WCAG, 흰 글자 기준 4.5): 채움 #D6246E 위 흰 글자 4.84 · 눌림 #B81C5D 6.25 · 흰 바탕 위 글자 #B81C5D 6.25 · 옅은 바탕 #fdebf2 위 글자 5.46
+     · 어둡게: 카드(#1c1c1e) 위 글자 #FF8DB6 7.89 · 아이콘 #FF6FA3 6.53 · 채움 단추는 밝게와 같은 #D6246E(흰 글자 4.84).
+   꺼진 단추는 지금처럼 회색(.ui-btn.dis = --fill · --text-3) — 브랜드마다 다르게 하지 않는다.
+   후보·사진: reports/20261117-evening-shop.md 「아람 분홍」. 옛 화면(App.css)의 --primary 계열도 같이 바꾼다. */
+:root[data-brand="aram"] {
+  --brand: #D6246E;
+  --brand-strong: #B81C5D;
+  --brand-soft: #fdebf2;
+  --on-brand: #ffffff;
+  --brand-fill: #D6246E;
+  --brand-fill-pressed: #B81C5D;
+  --on-brand-fill: #ffffff;
+  --shadow-brand: 0 6px 18px rgba(214,36,110,.30);
+  --primary: #D6246E; --primary-dark: #B81C5D; --primary-light: #fdebf2; --primary-gradient: linear-gradient(135deg, #D6246E, #B81C5D);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-brand="aram"]:not([data-theme="light"]) {
+    --brand: #FF6FA3; --brand-strong: #FF8DB6; --brand-soft: rgba(214,36,110,.22); --on-brand: #ffffff;
+    --brand-fill: #D6246E; --brand-fill-pressed: #B81C5D; --on-brand-fill: #ffffff;
+    --shadow-brand: 0 6px 18px rgba(214,36,110,.25);
+  }
+}
+:root[data-brand="aram"][data-theme="dark"] {
+  --brand: #FF6FA3; --brand-strong: #FF8DB6; --brand-soft: rgba(214,36,110,.22); --on-brand: #ffffff;
+  --brand-fill: #D6246E; --brand-fill-pressed: #B81C5D; --on-brand-fill: #ffffff;
+  --shadow-brand: 0 6px 18px rgba(214,36,110,.25);
+}
