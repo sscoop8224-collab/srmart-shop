@@ -582,6 +582,8 @@ function AppContent() {
         summary: orderExtras.summary,   // 영수증(S13)에 결제 화면과 같은 금액을 보이려고(서버로는 안 보낸다)
         fulfillment: split ? 'split' : (orderExtras.fulfillment || 'delivery'),
         pickupItems: split ? items.filter(i => i.pickup_only) : orderExtras.fulfillment === 'pickup' ? [...items] : [],
+        // 픽업 기한 — 서버가 주문을 넣을 때 정한 값(앱이 계산하지 않는다 · 2026-11-17 낮 지시 5). 옛 서버면 없음 → 화면은 「알림으로」
+        pickupDeadline: split ? (placed.find(o => o.fulfillment === 'pickup') || {}).pickup_deadline || null : saved?.data?.pickup_deadline || null,
         userId: user.email, status: '결제완료',
       };
       setOrders([newOrder, ...orders]); setLastOrder(newOrder);

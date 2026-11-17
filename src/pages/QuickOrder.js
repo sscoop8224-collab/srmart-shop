@@ -79,7 +79,7 @@ export function PickupSection({ c, store }) {
           <span className="lbl">받는 분<small>{c.currentAddress.name || '이름 없음'} · {c.currentAddress.phone || '전화번호 없음'}</small></span>
         </div>
       </div>
-      <div className="sec-f">주류는 배송하지 않아요. 매장에서 준비되면 찾아가는 기한과 함께 알림으로 알려 드려요.</div>
+      <div className="sec-f">주류는 배송하지 않아요. 찾아가는 기한은 주문 완료 화면과 알림으로 알려 드려요.</div>
     </section>
   );
 }

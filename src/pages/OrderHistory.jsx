@@ -16,6 +16,7 @@ import Code128 from '../components/Code128';
 import Icon from '../components/ui/Icon';
 import { BRAND } from '../brand';
 import SellerTaxNote from '../components/SellerTaxNote';
+import { pickupDeadlineLabel } from '../utils/pickupDeadline';
 
 const won = (n) => `${Number(n || 0).toLocaleString('ko-KR')}원`;
 const pts = (n) => `${Number(n || 0).toLocaleString('ko-KR')}P`;
@@ -68,6 +69,14 @@ function ReturnButtons({ o, onReturn }) {
   );
 }
 
+// 매장 픽업(주류) — 기한·수령. 서버 값(GET /orders/my 의 fulfillment_type · pickup_deadline · picked_up_at)만 쓴다(2026-11-17 낮 지시 5).
+function pickupLine(o) {
+  if (!o || o.fulfillment_type !== 'pickup') return '';
+  if (o.picked_up_at) return `매장 픽업 · ${dayLabel(o.picked_up_at)} 찾아가셨어요`;
+  const until = pickupDeadlineLabel(o.pickup_deadline);
+  return until ? `매장 픽업 · ${until} 찾아가 주세요` : '매장 픽업';
+}
+
 function OnlineCard({ o, summary, onOpen, onReturn }) {
   const url = trackUrl(o);
   return (
@@ -84,6 +93,7 @@ function OnlineCard({ o, summary, onOpen, onReturn }) {
       )}
       <div className="of">
         <div className="kv"><span>총 결제금액</span><b>{won(paidOf(o))}</b></div>
+        {pickupLine(o) && <div className="kv ship"><span><Icon name="store" size="sm" /> {pickupLine(o)}</span></div>}
         {o.courier && o.tracking_number && (
           <div className="kv ship">
             <span><Icon name="truck" size="sm" /> {o.courier} {o.tracking_number}</span>
@@ -249,6 +259,15 @@ function OnlineDetail({ d, o, onReturn, onList }) {
           <SellerTaxNote info={d.seller_tax} />
         </div>
       </section>
+      {o && o.fulfillment_type === 'pickup' && (
+        <section className="sec">
+          <div className="sec-h">매장 픽업</div>
+          <div className="group">
+            <div className="row"><span className="ricon"><Icon name="store" /></span><span className="lbl">{o.picked_up_at ? '찾아가셨어요' : '찾아가는 기한'}</span><span className="val"><b>{o.picked_up_at ? fullDate(o.picked_up_at) : (pickupDeadlineLabel(o.pickup_deadline) || '알림으로 알려 드려요')}</b></span></div>
+          </div>
+          <div className="sec-f">받으실 때 신분증으로 나이를 확인해요 — 예약한 본인만 받을 수 있어요.</div>
+        </section>
+      )}
       {d.tracking_number && (
         <section className="sec">
           <div className="sec-h">배송</div>
