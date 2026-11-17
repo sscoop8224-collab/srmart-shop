@@ -52,8 +52,8 @@ async function shoot(b, ai, sizeKey, vp, theme, state) {
 async function render(b, html, file, width) {
   const tmp = path.join(SHOTS, '_sheet.html');
   fs.writeFileSync(tmp, `<!doctype html><meta charset="utf-8"><style>
-    @font-face { font-family: P; font-weight: 400; src: url("${url(path.join(FONT, 'pretendard_regular.otf'))}"); }
-    @font-face { font-family: P; font-weight: 700; src: url("${url(path.join(FONT, 'pretendard_bold.otf'))}"); }
+    @font-face { font-family: P; font-weight: 400; src: url("${url(path.join(FONT, 'pretendard_regular.woff2'))}"); }
+    @font-face { font-family: P; font-weight: 700; src: url("${url(path.join(FONT, 'pretendard_bold.woff2'))}"); }
     body { margin: 0; padding: 28px; font-family: P, sans-serif; background: #f2f3f5; color: #111; width: ${width}px; }
     h1 { font-size: 26px; margin: 0 0 6px; } .sub { color: #555; font-size: 15px; margin-bottom: 20px; }
     table { border-collapse: separate; border-spacing: 14px 10px; } th { font-size: 15px; text-align: left; padding: 0 2px; }

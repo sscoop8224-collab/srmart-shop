@@ -146,6 +146,8 @@
 /* 안드로이드·PC 용 글꼴 — 목업과 같은 Pretendard(아이폰은 -apple-system 이 먼저 잡힌다). 외부 CDN 없음.
    목업 index.html 의 @font-face 세 줄을 그대로 옮겼다(파일은 src/assets/fonts — 빌드가 이름에 해시를 붙여 오래 캐시된다).
    쓰는 굵기만 내려받는다(swap — 받는 동안은 기본 글꼴로 먼저 그린다). */
-@font-face { font-family: "Pretendard"; font-weight: 400; src: url("../assets/fonts/pretendard_regular.otf") format("opentype"); font-display: swap; }
-@font-face { font-family: "Pretendard"; font-weight: 600; src: url("../assets/fonts/pretendard_semibold.otf") format("opentype"); font-display: swap; }
-@font-face { font-family: "Pretendard"; font-weight: 700; src: url("../assets/fonts/pretendard_bold.otf") format("opentype"); font-display: swap; }
+/* 2026-11-17 정리: OTF(세 굵기 4.7MB) → woff2(2.4MB) — 같은 글꼴을 압축만 한 것(글리프 표 11개 바이트 같음 · head 의 압축 표시·체크섬만 다름).
+   woff2 는 안드로이드 WebView·iOS 12 이상 모두 읽는다. 만들기: wawoff2 compress(무손실). */
+@font-face { font-family: "Pretendard"; font-weight: 400; src: url("../assets/fonts/pretendard_regular.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Pretendard"; font-weight: 600; src: url("../assets/fonts/pretendard_semibold.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Pretendard"; font-weight: 700; src: url("../assets/fonts/pretendard_bold.woff2") format("woff2"); font-display: swap; }
