@@ -29,7 +29,6 @@ const STRICT = [
   'src/components/ui/Icon.jsx',
   'src/components/ui/TabBar.jsx',
   'src/components/ui/AppHeader.jsx',
-  'src/components/ConfirmModal.jsx',
   'src/DialogContext.jsx',
   'src/ThemeContext.jsx',
   'src/pages/Offline.js',

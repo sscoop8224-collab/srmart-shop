@@ -37,7 +37,6 @@ import { BRAND, shortStoreName } from './brand';
 import { sameUser, payerKey } from './utils/sameUser';   // 이메일 없는 회원(2026-11-17) — 같은 사람은 번호로
 
 // 코드 스플리팅: 홈(App 내 inline) 외 페이지는 지연 로드 → 초기 번들 축소(파싱 단축).
-const HomePage = lazy(() => import('./pages/HomePage'));
 const Login = lazy(() => import('./pages/Login'));
 // 주문내역(P01) — 예전 「주문내역」(Orders.js)과 「구매 내역」(Purchases.jsx)을 한 화면이 대신한다(묶음 4)
 const OrderHistory = lazy(() => import('./pages/OrderHistory'));
@@ -108,8 +107,7 @@ function AppContent() {
   const { guestStoreId, currentStoreId, currentStore, isGuest, setGuestStoreId, stores, isOwner, ownerViewStoreId, setOwnerViewStoreId } = useStore();
   const { notify, confirm } = useDialog();
 
-  // 웹은 내장 랜딩(homepage)을 건너뛰고 게스트로 바로 쇼핑앱 진입, 네이티브 앱은 로그인 우선
-  // (회사 정적 홈페이지가 이미 랜딩 역할을 하므로 웹에서 HomePage.jsx는 표시하지 않음)
+  // 옛 첫 화면(HomePage.jsx · page 'homepage')은 2026-11-17 정리에서 뺐다 — 그 화면으로 가는 길(setPage('homepage'))이 어디에도 없었다.
   const [page, setPage] = useState('home');   // 웹·앱 공통: 홈(게스트 둘러보기)부터. 로그인은 계정 필요 시점에.
   const [pageHistory, setPageHistory] = useState([]);
   const [showStoreModal, setShowStoreModal] = useState(false);
@@ -615,28 +613,6 @@ function AppContent() {
     }
     await placeOrder({ finalPrice, orderExtras, items: [item], onPlaced: () => setQuickOrderItem(null) });
   };
-
-  if (page === 'homepage') {
-    return (
-      <div style={{ width: '100%', minHeight: '100vh' }}>
-        <Suspense fallback={<PageFallback />}>
-          <HomePage onShop={handleGuest} onLogin={() => setPage('login')} darkMode={darkMode} />
-        </Suspense>
-        {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
-        {mcpUser && <ForcePasswordChangeModal onDone={handleForcePasswordChangeDone} />}
-      {needsConsent && (
-        <ThirdPartyConsentModal
-          onDone={(agreed) => {
-            setNeedsConsent(false);
-            // 답을 했으면(동의/거절) 그 값을 사용자 정보에도 반영한다 — 마이페이지가
-            // 다시 조회하지 않아도 맞는 상태를 보여준다. '나중에'(null)면 그대로 둔다.
-            if (agreed !== null) setUser(u => (u ? { ...u, thirdPartyConsent: agreed ? 1 : 0 } : u));
-          }}
-        />
-      )}
-      </div>
-    );
-  }
 
   if (page === 'login') {
     return (
