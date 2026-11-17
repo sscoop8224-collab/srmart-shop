@@ -143,6 +143,8 @@ export const checkWishlist = (product_ids) => API.get('/wishlist/check', { param
 // 최근 본 상품
 export const recordRecentView = (product_id) => API.post('/recent-views', { product_id });
 export const getRecentViews = () => API.get('/users/me/recent-views');
+// 최근 본 상품 지우기(2026-11-17) — 본인 것만. productId 없으면 전부.
+export const deleteRecentView = (productId) => API.delete(productId ? `/users/me/recent-views/${productId}` : '/users/me/recent-views');
 // 추천
 export const getRelatedProducts = (id) => API.get(`/products/${id}/related`);
 export const getFrequentlyBought = (id) => API.get(`/products/${id}/frequently-bought-together`);
