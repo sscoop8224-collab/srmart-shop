@@ -117,10 +117,10 @@ const reviews = {
 };
 
 const loginHistory = [
-  // 서버(GET /users/me/login-history)는 ip · success · created_at 만 준다 — IP 는 통째로 온다(가리는 것은 화면 몫 · 묶음 5)
-  { created_at: '2026-11-11T09:12:00+09:00', ip: '211.234.51.7', success: 1 },
-  { created_at: '2026-11-10T21:03:00+09:00', ip: '211.234.51.7', success: 1 },
-  { created_at: '2026-11-09T08:44:00+09:00', ip: '::ffff:118.235.10.99', success: 0 },
+  // 서버(GET /users/me/login-history)는 ip · success · created_at · device(2026-11-17 — 거친 기기 이름 · 옛 기록은 null) — IP 는 통째로 온다(가리는 것은 화면 몫 · 묶음 5)
+  { created_at: '2026-11-11T09:12:00+09:00', ip: '211.234.51.7', success: 1, device: 'Android 앱' },
+  { created_at: '2026-11-10T21:03:00+09:00', ip: '211.234.51.7', success: 1, device: 'PC' },
+  { created_at: '2026-11-09T08:44:00+09:00', ip: '::ffff:118.235.10.99', success: 0, device: null },
 ];
 
 // 묶음 2 — 홈 배송 한 줄(GET /stores/:id/delivery-promise). 서버 computePromise 의 모양 그대로(목업 DELIV 와 같은 날)
