@@ -84,10 +84,11 @@ const purchases = {
 };
 const storePurchase = {
   id: 5501, code: 'S11-20261110-0042', date: '2026-11-10T18:22:00+09:00', store: { name: '에스알마트 왕길점', address: '인천 서구 왕길동', tel: '032-000-0000' },
-  pos_number: 1, subtotal: 21318, tax: 2132, total: 23450, earned_points: 234, points_used: 0, points_balance: 3820,
+  // 세금은 서버처럼 과세 품목에서만(10,750 / 11 = 977) — 영수증 세금 줄(과세 물품가액·부가세·면세 물품가액) 촬영 · 2026-11-17 낮 지시 5
+  pos_number: 1, subtotal: 23450, tax: 977, total: 23450, earned_points: 234, points_used: 0, points_balance: 3820,
   items: [
-    { name: '코카콜라', spec: '1.5L', qty: 2, unit_price: 3200, line_total: 6400 },
-    { name: '농심 메론킥', spec: '60g', qty: 3, unit_price: 1450, line_total: 4350 },
+    { name: '코카콜라', spec: '1.5L', qty: 2, unit_price: 3200, line_total: 6400, tax_type: '과세' },
+    { name: '농심 메론킥', spec: '60g', qty: 3, unit_price: 1450, line_total: 4350, tax_type: '과세' },
     { name: '부사 사과', spec: '1.5kg', qty: 1, unit_price: 12700, line_total: 12700, tax_type: '면세' },
   ],
   payments: [{ seq: 1, method: 'card', amount: 23450, status: 'approved' }],

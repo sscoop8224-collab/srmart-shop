@@ -17,6 +17,7 @@ import Icon from '../components/ui/Icon';
 import { BRAND } from '../brand';
 import SellerTaxNote from '../components/SellerTaxNote';
 import { pickupDeadlineLabel } from '../utils/pickupDeadline';
+import { receiptTaxLines } from '../utils/receiptTax';
 
 const won = (n) => `${Number(n || 0).toLocaleString('ko-KR')}원`;
 const pts = (n) => `${Number(n || 0).toLocaleString('ko-KR')}P`;
@@ -145,6 +146,7 @@ function Nav({ title, onBack, large }) {
 // ── 매장 영수증(S17) — 종이 영수증과 같은 내용·같은 순서를 폰 폭에 맞게 ──────────
 function StoreReceipt({ d }) {
   const voided = !!d.voided;
+  const taxLines = receiptTaxLines(d);
   const store = d.store || {};
   const pay = (d.payments || []).find((p) => p.cash_received != null);
   return (
@@ -175,7 +177,9 @@ function StoreReceipt({ d }) {
         </table>
         <div className="dash" />
         <div className="kv"><span>소계</span><span>{won(d.subtotal)}</span></div>
-        <div className="kv"><span>부가세(포함)</span><span>{won(d.tax)}</span></div>
+        {/* 세금 줄 — 종이 영수증과 같은 줄·숫자(utils/receiptTax.js · 2026-11-17 낮 지시 5). 과세 구분이 없는 옛 자료는 예전 한 줄 */}
+        {taxLines ? taxLines.map((t) => <div className="kv" key={t.label}><span>{t.label}</span><span>{won(t.amount)}</span></div>)
+          : <div className="kv"><span>부가세(포함)</span><span>{won(d.tax)}</span></div>}
         <div className="kv total"><span>{d.is_return ? '반품 총액' : '합계'}</span><span>{won(d.total)}</span></div>
         {(d.payments || []).length > 0 && (
           <>

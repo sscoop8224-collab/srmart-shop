@@ -103,3 +103,13 @@ test('픽업 주문 카드에 찾아가는 기한, 찾아간 주문에는 「찾
   expect(screen.getByText(/매장 픽업 · 11월 16일 찾아가셨어요/)).toBeInTheDocument();
   expect(screen.getAllByText(/매장 픽업 ·/).length).toBe(2);   // 배송 주문에는 안 붙는다
 });
+
+// 매장 영수증 세금 줄 — 종이 영수증(receiptFormat.ts)과 같은 줄·숫자(2026-11-17 낮 지시 5)
+test('매장 영수증에 과세 물품가액 · 부가세 — 면세 품목이 없으면 면세 줄은 없다', async () => {
+  render(<OrderHistory orders={[]} openSaleId={71} />);
+  expect(await screen.findByText('과세 물품가액')).toBeInTheDocument();
+  expect(screen.getByText('1,318원')).toBeInTheDocument();   // 1,450 − 132
+  expect(screen.getByText('부가세')).toBeInTheDocument();
+  expect(screen.queryByText('면세 물품가액')).not.toBeInTheDocument();
+  expect(screen.queryByText('부가세(포함)')).not.toBeInTheDocument();
+});
