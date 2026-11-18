@@ -34,7 +34,7 @@ beforeEach(() => {
     { id: 3, coupon_name: '가을맞이 2,000원', discount_type: 'amount', discount: 2000, min_purchase_amount: 15000, valid_until: '2026-10-31', code: 'FALL2000', used_at: '2026-10-02T10:00:00' },
   ] });
   api.default.get.mockResolvedValue({ data: [
-    { ip: '211.234.10.20', success: 1, created_at: '2026-11-11T09:12:00' },
+    { ip: '211.234.10.20', success: 1, created_at: '2026-11-11T09:12:00', device: 'Android 앱' },   // 기기는 서버가 거친 이름으로(2026-11-17)
     { ip: '::ffff:118.235.1.2', success: 0, created_at: '2026-11-09T08:44:00' },
   ] });
 });
@@ -66,10 +66,10 @@ test('로그인함 — 주문내역은 한 줄, 쿠폰은 쓸 수 있는 것만 
   expect(screen.getByText('가을맞이 2,000원')).toBeInTheDocument();
 });
 
-test('로그인 이력 — IP 는 앞 두 마디만 보인다', async () => {
+test('로그인 이력 — IP 는 앞 두 마디만 · 기기는 서버가 준 이름(없으면 IP 만)', async () => {
   render(<MyPage user={USER} goToPage={jest.fn()} onLogout={jest.fn()} />);
   fireEvent.click(screen.getByText('로그인 이력'));
-  expect(await screen.findByText('211.234.*.*')).toBeInTheDocument();
+  expect(await screen.findByText('Android 앱 · 211.234.*.*')).toBeInTheDocument();
   expect(screen.getByText('118.235.*.*')).toBeInTheDocument();
   expect(screen.queryByText(/211\.234\.10\.20/)).toBeNull();
   expect(screen.getByText('실패')).toBeInTheDocument();

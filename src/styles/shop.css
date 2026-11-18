@@ -340,6 +340,12 @@
 .v2 .ocard .oi { display: flex; align-items: center; gap: var(--sp-3); width: 100%; padding: var(--sp-2) var(--sp-4); border-top: var(--hairline) solid var(--sep); text-align: left; font-size: var(--fs-sub); color: var(--text); }
 .v2 .ocard .oi .lbl { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .v2 .ocard .oi .chev { color: var(--text-3); display: inline-flex; }
+/* 카드 품목 줄(서버가 주문 줄에 items 를 실을 때 · 2026-11-17 낮 지시 5) — 상세의 .prow 를 그대로, 줄 사이만 띄운다 */
+.v2 .ocard .oitems { padding-top: var(--sp-3); padding-bottom: var(--sp-3); }
+.v2 .ocard .oitems .prow { display: flex; }
+.v2 .ocard .oitems .prow + .prow { margin-top: var(--sp-2); }
+.v2 .ocard .oitems .info > span { display: block; }
+.v2 .ocard .oitems .more { display: block; margin-top: var(--sp-2); color: var(--text-2); font-size: var(--fs-cap); }
 .v2 .ocard .of { padding: var(--sp-3) var(--sp-4); border-top: var(--hairline) solid var(--sep); }
 .v2 .ocard .of .kv { padding: 0; }
 .v2 .ocard .of .kv.ship { padding-top: var(--sp-2); font-size: var(--fs-foot); color: var(--text-2); }
@@ -488,6 +494,14 @@
 /* 묶음 6 — S41 최근 본 상품 · S42 내 리뷰 */
 .v2.recent-v2, .v2.myrev-v2 { padding-bottom: var(--sp-6); }
 .v2 .rv-miss { padding: var(--sp-3) var(--page-x) 0; }
+/* 최근 본 상품 편집(2026-11-17 낮 지시 5) — 편집 중에는 찜 하트 자리(오른쪽 위)에 지우기 단추 — 왼쪽 위는 행사·19 표시 자리 · 아래 「모두 지우기」 */
+.v2 .rv-cell { position: relative; min-width: 0; }
+.v2 .rv-cell.on .pc .heart { visibility: hidden; }
+.v2 .rv-del { position: absolute; top: var(--sp-2); right: var(--sp-2); z-index: 2; width: 32px; height: 32px; border-radius: var(--r-full); display: inline-flex; align-items: center; justify-content: center; background: var(--bar-bg); color: var(--danger); box-shadow: var(--shadow-1); }   /* 찜 하트와 같은 바탕 · 빨간 X */
+.v2 .rv-del::before { content: ''; position: absolute; inset: -6px; }   /* 누르는 칸 44px */
+.v2 .rv-del:disabled { opacity: .5; }
+.v2 .rv-all { padding: var(--sp-5) var(--page-x) var(--sp-6); }
+.v2 .rv-all .ui-btn { width: 100%; color: var(--danger); }
 .v2 .mr-prod { display: flex; gap: var(--sp-3); align-items: center; flex: 1; min-width: 0; text-align: left; }
 .v2 .mr-prod .pimg { width: var(--thumb); height: var(--thumb); flex-shrink: 0; border-radius: var(--r-sm); color: var(--text-3); }
 .v2 .mr-meta { display: flex; gap: var(--sp-2); align-items: center; margin-top: 2px; }

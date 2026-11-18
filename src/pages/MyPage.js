@@ -141,6 +141,7 @@ function CouponSheet({ coupons, loading, onClose }) {
 }
 
 // ── 로그인 이력(S24) ──
+// 기기(Android 앱 · iPhone · PC)는 서버가 거친 이름으로 준다(r.device · 2026-11-17 낮 지시 5). 옛 기록·옛 서버는 없음 → IP 만.
 function LoginHistorySheet({ rows, loading, failed, onClose }) {
   return (
     <Sheet id="login-history-title" title="로그인 이력" left="" right={<button type="button" className="nav-btn b" onClick={onClose}>닫기</button>} onClose={onClose}>
@@ -154,7 +155,7 @@ function LoginHistorySheet({ rows, loading, failed, onClose }) {
         <Group f="내가 아닌 로그인이 보이면 비밀번호를 바꿔 주세요.">
           {rows.map((r, i) => (
             <div className="row" key={i}>
-              <span className="lbl">{md(r.created_at)}<small>{maskIp(r.ip)}</small></span>
+              <span className="lbl">{md(r.created_at)}<small>{[r.device, maskIp(r.ip)].filter(Boolean).join(' · ')}</small></span>
               <span className={`pill ${r.success ? 'g' : 'r'}`}>{r.success ? '성공' : '실패'}</span>
             </div>
           ))}

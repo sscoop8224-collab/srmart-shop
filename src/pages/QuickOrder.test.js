@@ -39,7 +39,9 @@ test('섞인 주문서 — 두 묶음 · 견적 두 번 · 결제 한 번(합계
   expect(screen.getByText('에스알마트 왕길점')).toBeInTheDocument();
   const btn = await screen.findByRole('button', { name: '9,800원 결제하기' });   // 5,900 + 3,900
   await waitFor(() => expect(btn).not.toBeDisabled());
-  const kinds = api.quoteOrder.mock.calls.map(([b]) => b.fulfillment || 'delivery').sort();
+  // 묶음마다 견적을 받는다 — 횟수는 보지 않는다: 배송지 확인(matchedDong)이 첫 견적보다 늦게 오면 질문이 바뀌어 배송 견적을
+  // 한 번 더 받는다(전체 시험을 한꺼번에 돌릴 때 실제로 그랬다 · 2026-11-17). 화면은 질문이 맞는 견적(quoteFresh)만 쓴다.
+  const kinds = [...new Set(api.quoteOrder.mock.calls.map(([b]) => b.fulfillment || 'delivery'))].sort();
   expect(kinds).toEqual(['delivery', 'pickup']);
   fireEvent.click(btn);
   const [total, extras] = onPayment.mock.calls[0];

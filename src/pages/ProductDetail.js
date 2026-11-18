@@ -5,6 +5,7 @@
 // 아래 고정 바: 합계 · 「장바구니 담기」 · 「바로 주문」. 리뷰를 쓰는 동안은 바가 「취소 · 리뷰 등록」(S05 — 본문 단추가 바 밑에 깔리던 것).
 // 이 화면에는 탭바가 없다(App.js). 색·크기는 styles/shop.css(토큰 이름만).
 import { useState, useEffect, useRef } from 'react';
+import { productImages } from '../utils/productImages';
 import { getProductReviews, createReview, getRelatedProducts, recordRecentView, imgUrl } from '../api';
 import { buildCartItem } from '../utils/cartItem';
 import usePublishBottomBarHeight from '../hooks/usePublishBottomBarHeight';
@@ -96,9 +97,7 @@ function ProductDetail({ product, onBack, onAddToCart, onBuyNow, user, storeId, 
 
   if (!product) return null;
 
-  const images = product.images && product.images.length > 0
-    ? product.images
-    : product.image ? [product.image] : [];
+  const images = productImages(product);   // 대표 + 추가 사진(gallery_images) — 서버가 주면 넘김·썸네일(2026-11-17 낮 지시 5)
   const weight = product.pricing_type === 'weight';
   const unit = product.unit_price || product.price;
   const hasBox = !!(product.box_price_override && product.box_quantity);

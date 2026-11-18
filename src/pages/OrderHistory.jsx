@@ -16,6 +16,8 @@ import Code128 from '../components/Code128';
 import Icon from '../components/ui/Icon';
 import { BRAND } from '../brand';
 import SellerTaxNote from '../components/SellerTaxNote';
+import { pickupDeadlineLabel } from '../utils/pickupDeadline';
+import { receiptTaxLines } from '../utils/receiptTax';
 
 const won = (n) => `${Number(n || 0).toLocaleString('ko-KR')}원`;
 const pts = (n) => `${Number(n || 0).toLocaleString('ko-KR')}P`;
@@ -68,8 +70,28 @@ function ReturnButtons({ o, onReturn }) {
   );
 }
 
+// 매장 픽업(주류) — 기한·수령. 서버 값(GET /orders/my 의 fulfillment_type · pickup_deadline · picked_up_at)만 쓴다(2026-11-17 낮 지시 5).
+function pickupLine(o) {
+  if (!o || o.fulfillment_type !== 'pickup') return '';
+  if (o.picked_up_at) return `매장 픽업 · ${dayLabel(o.picked_up_at)} 찾아가셨어요`;
+  const until = pickupDeadlineLabel(o.pickup_deadline);
+  return until ? `매장 픽업 · ${until} 찾아가 주세요` : '매장 픽업';
+}
+
+// 카드의 품목 줄(목업 P01) — 주문 줄의 items 가 있을 때만(지금 서버 목록엔 없다 → 요약 한 줄). 앞 두 개 + 「외 N건」.
+//   서버 모양(product_name · quantity · price)과 상세 모양(name · qty · line_total)을 다 받는다. 앱이 금액을 지어내지 않는다 — 없으면 금액 칸을 비운다.
+export function cardItems(o) {
+  const list = Array.isArray(o && o.items) ? o.items : [];
+  return list.map((it) => {
+    const qty = Number(it.qty ?? it.quantity) || 0;
+    const amount = it.line_total != null ? Number(it.line_total) : it.price != null && qty ? Number(it.price) * qty : null;
+    return { name: it.name || it.product_name || '', spec: it.spec || '', qty, amount, image: it.image || null };
+  }).filter((it) => it.name);
+}
+
 function OnlineCard({ o, summary, onOpen, onReturn }) {
   const url = trackUrl(o);
+  const items = cardItems(o);
   return (
     <div className="ocard">
       <button className="oh tap" onClick={() => onOpen(o)} aria-label={`${dayLabel(o.created_at)} 주문 상세`}>
@@ -77,13 +99,32 @@ function OnlineCard({ o, summary, onOpen, onReturn }) {
         <span className={`pill ${TONE[o.status] ?? 'b'}`}>{o.status || '결제완료'}</span>
       </button>
       <ReturnStrip o={o} />
-      {summary && (
+      {items.length > 0 && (
+        <button className="oi tap oitems" onClick={() => onOpen(o)} aria-label="주문 상품 보기">
+          <span style={{ flex: 1, minWidth: 0 }}>
+            {items.slice(0, 2).map((it, i) => (
+              <span className="prow" key={i}>
+                <span className="pimg">{it.image ? <img src={imgUrl(it.image)} alt="" /> : <Icon name="box" />}</span>
+                <span className="info">
+                  <span className="nm">{it.name}</span>
+                  <span className="spec">{it.spec ? `${it.spec} · ` : ''}{it.qty}개</span>
+                  {it.amount != null && <span className="price">{won(it.amount)}</span>}
+                </span>
+              </span>
+            ))}
+            {items.length > 2 && <small className="more">외 {items.length - 2}건</small>}
+          </span>
+          <span className="chev"><Icon name="chevR" size="sm" /></span>
+        </button>
+      )}
+      {!items.length && summary && (
         <button className="oi tap" onClick={() => onOpen(o)}>
           <span className="ricon t-gray"><Icon name="box" /></span><span className="lbl">{summary}</span><span className="chev"><Icon name="chevR" size="sm" /></span>
         </button>
       )}
       <div className="of">
         <div className="kv"><span>총 결제금액</span><b>{won(paidOf(o))}</b></div>
+        {pickupLine(o) && <div className="kv ship"><span><Icon name="store" size="sm" /> {pickupLine(o)}</span></div>}
         {o.courier && o.tracking_number && (
           <div className="kv ship">
             <span><Icon name="truck" size="sm" /> {o.courier} {o.tracking_number}</span>
@@ -135,6 +176,7 @@ function Nav({ title, onBack, large }) {
 // ── 매장 영수증(S17) — 종이 영수증과 같은 내용·같은 순서를 폰 폭에 맞게 ──────────
 function StoreReceipt({ d }) {
   const voided = !!d.voided;
+  const taxLines = receiptTaxLines(d);
   const store = d.store || {};
   const pay = (d.payments || []).find((p) => p.cash_received != null);
   return (
@@ -165,7 +207,9 @@ function StoreReceipt({ d }) {
         </table>
         <div className="dash" />
         <div className="kv"><span>소계</span><span>{won(d.subtotal)}</span></div>
-        <div className="kv"><span>부가세(포함)</span><span>{won(d.tax)}</span></div>
+        {/* 세금 줄 — 종이 영수증과 같은 줄·숫자(utils/receiptTax.js · 2026-11-17 낮 지시 5). 과세 구분이 없는 옛 자료는 예전 한 줄 */}
+        {taxLines ? taxLines.map((t) => <div className="kv" key={t.label}><span>{t.label}</span><span>{won(t.amount)}</span></div>)
+          : <div className="kv"><span>부가세(포함)</span><span>{won(d.tax)}</span></div>}
         <div className="kv total"><span>{d.is_return ? '반품 총액' : '합계'}</span><span>{won(d.total)}</span></div>
         {(d.payments || []).length > 0 && (
           <>
@@ -249,6 +293,15 @@ function OnlineDetail({ d, o, onReturn, onList }) {
           <SellerTaxNote info={d.seller_tax} />
         </div>
       </section>
+      {o && o.fulfillment_type === 'pickup' && (
+        <section className="sec">
+          <div className="sec-h">매장 픽업</div>
+          <div className="group">
+            <div className="row"><span className="ricon"><Icon name="store" /></span><span className="lbl">{o.picked_up_at ? '찾아가셨어요' : '찾아가는 기한'}</span><span className="val"><b>{o.picked_up_at ? fullDate(o.picked_up_at) : (pickupDeadlineLabel(o.pickup_deadline) || '알림으로 알려 드려요')}</b></span></div>
+          </div>
+          <div className="sec-f">받으실 때 신분증으로 나이를 확인해요 — 예약한 본인만 받을 수 있어요.</div>
+        </section>
+      )}
       {d.tracking_number && (
         <section className="sec">
           <div className="sec-h">배송</div>

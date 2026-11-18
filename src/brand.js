@@ -18,9 +18,6 @@ export const BRAND = process.env.REACT_APP_BRAND === 'aram'
     // require 를 삼항식 **안에** 둔다 — 빌드가 조건을 상수로 바꾸면 안 쓰는 브랜드 그림은 번들에 들어가지 않는다.
     // 그림 만들기: node brand/generate-brand-web.cjs aram
     logo: require('./assets/brand/aram/logo_h_ko.png'),
-    // 앱 첫 화면(HomePage) 로고 — 에스알마트는 public 의 투명 로고, 아람은 가로 로고(2026-11-17 — 예전엔 두 브랜드 모두
-    // public/srm-logo-transparent.png 를 주소로 불러 아람 앱 첫 화면에 SRM 이 떴다)
-    landingLogo: require('./assets/brand/aram/logo_h_ko.png'),
     // 매장 이름 앞에 붙는 상호 — 「아람마트 고촌점」 → 「고촌점」
     storePrefix: /^(아람마트|동신마켓)\s*/i,
   })
@@ -30,7 +27,6 @@ export const BRAND = process.env.REACT_APP_BRAND === 'aram'
     appId: 'com.dongsin.srmart',
     aiName: '에스알마트 AI 상담사',
     logo: require('./assets/brand/logo_h_ko.png'),
-    landingLogo: `${process.env.PUBLIC_URL}/srm-logo-transparent.png`,
     storePrefix: /^(에스알마트|SR\s*마트|에스알|동신마켓)\s*/i,
   });
 
@@ -48,3 +44,12 @@ export const shortStoreName = (n) => String(n || '').replace(BRAND.storePrefix, 
  *   지키는 검사: scripts/check-brand-paths.cjs
  */
 export const GUEST_STORE_KEY = BRAND.code === 'srm' ? 'guestStoreId' : `guestStoreId:${BRAND.code}`;
+
+/**
+ * 시작 광고(직전 광고) 기억 자리 — 브랜드마다 따로 (2026-11-17 낮 지시 5 · 위 매장 키와 같은 까닭)
+ *   같은 출처(/srm/ · /aram/)에서 키가 같으면, 에스알마트에서 본 광고가 아람마트 웹 첫 화면에 먼저 뜬다(다음 조회로 바뀌기 전 한 번).
+ *   🔴 public/index.html 의 미리 받기도 같은 키를 쓴다 — 거기는 빌드가 %REACT_APP_BRAND% 를 채운 값으로 같은 규칙을 다시 적는다.
+ *   에스알마트는 옛 키 그대로(바꾸면 지금 손님들의 첫 화면 광고가 한 번 늦게 뜬다).
+ */
+export const SPLASH_AD_KEY = BRAND.code === 'srm' ? 'srmart_splash_ad' : `srmart_splash_ad:${BRAND.code}`;
+export const SPLASH_AD_CACHE = BRAND.code === 'srm' ? 'srmart-splash-ads-v1' : `srmart-splash-ads-v1-${BRAND.code}`;

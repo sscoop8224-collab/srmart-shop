@@ -11,18 +11,21 @@ import SellerTaxNote from '../components/SellerTaxNote';
 import { getItemPrice } from '../utils/pricing';
 import Icon from '../components/ui/Icon';
 import { useStore } from '../StoreContext';
+import { pickupDeadlineLabel } from '../utils/pickupDeadline';
 
 /** 픽업 수령 안내(S53 「예약 완료」) — 픽업 주문(주류)을 결제하면 완료 화면에 같이 보인다.
- *  🔴 기한 날짜는 서버가 결제일 + 매장 설정 N일로 정한다(orders.pickup_deadline) — 여기서 지어내지 않고 「알림으로 알려 드려요」만.
+ *  🔴 기한 날짜는 서버가 결제일 + 매장 설정 N일로 정한다(orders.pickup_deadline) — 주문 응답에 실려 온 그 값만 보인다(2026-11-17 낮 지시 5).
+ *     여기서 지어내지 않는다. 값이 없으면(옛 서버) 「알림으로 알려 드려요」.
  *  바코드는 아직 없다(계산대가 주문번호로 찾는다) — 목업 S53 의 바코드 자리는 계산대 쪽 조회가 생긴 뒤에. */
 function PickupGuide({ order, store }) {
   const name = store ? (store.display_name || store.name) : '가입 매장';
   const sub = store ? [store.address, store.operating_hours].filter(Boolean).join(' · ') : '';
   const pickupId = order.fulfillment === 'split' ? String(order.id).split(' · ').find(x => /-P$/.test(x)) || order.id : order.id;
+  const until = pickupDeadlineLabel(order.pickupDeadline);
   return (
     <>
       <section className="sec">
-        <div className="notice g"><Icon name="check" /><div style={{ flex: 1 }}><b>픽업 예약을 마쳤어요</b><br />매장에서 준비되면 알려 드려요. 찾아가는 기한도 그 알림에 적어 드려요.</div></div>
+        <div className="notice g"><Icon name="check" /><div style={{ flex: 1 }}><b>픽업 예약을 마쳤어요</b><br />{until ? `매장에서 준비되면 알려 드려요. ${until} 찾아가 주세요.` : '매장에서 준비되면 알려 드려요. 찾아가는 기한도 그 알림에 적어 드려요.'}</div></div>
       </section>
       <section className="sec">
         <div className="sec-h">픽업 매장</div>
@@ -30,6 +33,7 @@ function PickupGuide({ order, store }) {
           <div className="row"><span className="ricon"><Icon name="store" /></span><span className="lbl">{name}{sub && <small>{sub}</small>}</span></div>
           {store && store.phone && <a className="row tap" href={`tel:${store.phone}`}><span className="ricon"><Icon name="phone" /></span><span className="lbl">{store.phone}<small>매장에 전화하기</small></span></a>}
           <div className="row"><span className="lbl">픽업 주문번호</span><span className="val">{pickupId}</span></div>
+          {until && <div className="row"><span className="lbl">찾아가는 기한</span><span className="val"><b>{until}</b></span></div>}
         </div>
       </section>
       <section className="sec">

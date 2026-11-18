@@ -86,8 +86,8 @@ const SHOT = {   // 크기 → [폴더, 파일 이름 꼬리, 가로/세로 비]
       const cells = chunk.map(s => `<section><h2><span class="id ${s.prop ? 'p' : s.dec ? 'd' : ''}">${s.id}</span>${s.name}${em(s)}</h2><div class="row">${job.cell(s)}</div></section>`).join('');
       const first = chunk[0].id, last = chunk[chunk.length - 1].id;
       const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><style>
-        @font-face { font-family: P; font-weight: 400; src: url("${url(path.join(FONT, 'pretendard_regular.otf'))}"); }
-        @font-face { font-family: P; font-weight: 700; src: url("${url(path.join(FONT, 'pretendard_bold.otf'))}"); }
+        @font-face { font-family: P; font-weight: 400; src: url("${url(path.join(FONT, 'pretendard_regular.woff2'))}"); }
+        @font-face { font-family: P; font-weight: 700; src: url("${url(path.join(FONT, 'pretendard_bold.woff2'))}"); }
         * { margin: 0; box-sizing: border-box; } body { font-family: P, sans-serif; background: ${job.theme === 'dark' ? '#2a2a2e' : '#e9e9ee'}; color: ${job.theme === 'dark' ? '#f2f2f7' : '#111'}; padding: 24px; width: 1720px; }
         header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; gap: 24px; }
         header h1 { font-size: 26px; } header p { font-size: 15px; opacity: .7; }

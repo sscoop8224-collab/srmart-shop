@@ -12,6 +12,8 @@
  *  ④ 서비스워커: 캐시 이름에 범위가 들어간다 · activate 가 「내 이름 아닌 것 전부」를 지우지 않는다 · caches.match 를 바로 쓰지 않는다
  *     (Cache Storage 는 출처 단위 — 범위가 다른 서비스워커끼리 서로의 캐시를 지운다)
  *  ⑤ 손님이 고른 매장의 기억 자리(localStorage)가 브랜드마다 다르다 · 'guestStoreId' 를 화면 코드에 바로 쓰지 않는다
+ *     시작 광고 기억 자리도(2026-11-17 낮 지시 5): splashAdCache.js 는 SPLASH_AD_KEY 를 · public/index.html 은 %REACT_APP_BRAND% 로 같은 규칙을 ·
+ *     광고 미리 받기는 X-Shop-Brand 를 보낸다
  *  ⑥ QR 안내 화면(landing/app/index.html)의 웹 쇼핑몰 주소 = brand.json webPath
  *  ⑦ 브랜드별 앱 주소 사본(android/app/src/<브랜드>/assets/capacitor.config.json)이 git 에서 빠져 있다
  * 종료코드: 0 통과 · 1 실패
@@ -100,6 +102,14 @@ function checkGuestKey(brandSrc, files) {
   for (const [f, s] of Object.entries(files)) if (/localStorage\.\w+\(\s*'guestStoreId'/.test(s)) out.push(`${f} 가 'guestStoreId' 를 바로 쓴다 — GUEST_STORE_KEY 를 쓸 것(브랜드끼리 매장이 섞인다)`);
   return out;
 }
+function checkSplashKey(brandSrc, cacheSrc, html) {
+  const out = [];
+  if (!/export const SPLASH_AD_KEY\s*=\s*BRAND\.code === 'srm' \? 'srmart_splash_ad' : `srmart_splash_ad:\$\{BRAND\.code\}`/.test(brandSrc)) out.push('src/brand.js 에 브랜드별 SPLASH_AD_KEY 가 없다(에스알마트는 옛 키 srmart_splash_ad 그대로)');
+  if (/'srmart_splash_ad'|'srmart-splash-ads-v1'/.test(cacheSrc) || !/SPLASH_AD_KEY/.test(cacheSrc)) out.push("src/utils/splashAdCache.js 가 시작 광고 키를 바로 쓴다 — SPLASH_AD_KEY · SPLASH_AD_CACHE 를 쓸 것(브랜드끼리 광고가 섞인다)");
+  if (!/'%REACT_APP_BRAND%' === 'aram'/.test(html) || /localStorage\.getItem\('srmart_splash_ad'\)/.test(html)) out.push('public/index.html 미리 받기가 브랜드별 키를 안 쓴다(%REACT_APP_BRAND% → srmart_splash_ad:<브랜드>)');
+  if (!/fetch\('\/api\/splash-ads'[^)]*'X-Shop-Brand'/.test(html)) out.push('public/index.html 광고 미리 받기가 X-Shop-Brand 를 안 보낸다 — 다른 브랜드 광고 그림을 미리 받는다');
+  return out;
+}
 function checkLanding(html, list) {
   const out = [];
   for (const b of list) {
@@ -132,6 +142,8 @@ function selftest() {
     ['아람 칸 없음', checkProfiles({ srm: P.srm }, L).some(x => /aram/.test(x))],
     ['capacitor 주소 어긋남', checkCapacitor("url: 'https://www.dongsinmarket.com/shop/',", L).length === 1],
     ['매장 키 바로 씀', checkGuestKey("export const GUEST_STORE_KEY = BRAND.code === 'srm' ? 'guestStoreId' : `guestStoreId:${BRAND.code}`;", { 'x.js': "localStorage.getItem('guestStoreId')" }).length === 1],
+    ['시작 광고 키 바로 씀', checkSplashKey("export const SPLASH_AD_KEY = BRAND.code === 'srm' ? 'srmart_splash_ad' : `srmart_splash_ad:${BRAND.code}`;", "const LS_KEY = 'srmart_splash_ad';", "var brand = '%REACT_APP_BRAND%' === 'aram'; fetch('/api/splash-ads', { headers: { 'X-Shop-Brand': brand } })").length === 1],
+    ['광고 미리 받기 브랜드 빠짐', checkSplashKey("export const SPLASH_AD_KEY = BRAND.code === 'srm' ? 'srmart_splash_ad' : `srmart_splash_ad:${BRAND.code}`;", "SPLASH_AD_KEY", "localStorage.getItem('srmart_splash_ad'); fetch('/api/splash-ads', { headers: {} })").length === 2],
     ['QR 안내 아람 주소 빠짐', checkLanding("srm: { web: '/srm/' }, aram: { web: null }", L).length === 1],
     ['gitignore 빠짐', checkGitignore('app/src/srm/assets/capacitor.config.json', L).length === 1],
   ];
@@ -152,11 +164,12 @@ function main() {
     ...(drafts.length ? checkNginx(R('deploy/nginx/' + drafts[drafts.length - 1]), list, prof) : ['deploy/nginx/nginx.conf.draft-<날짜> 가 없다']),
     ...checkSW(R('public/service-worker.js')),
     ...checkGuestKey(R('src/brand.js'), Object.fromEntries(['src/StoreContext.jsx', 'src/pushSetup.js', 'src/App.js'].map(f => [f, R(f)]))),
+    ...checkSplashKey(R('src/brand.js'), R('src/utils/splashAdCache.js'), R('public/index.html')),
     ...checkLanding(R('landing/app/index.html'), list),
     ...checkGitignore(R('android/.gitignore'), list),
   ];
   if (problems.length) { problems.forEach(p => console.error('🔴 ' + p)); console.error(`🔴 [브랜드 주소] ${problems.length}건 (자가 시험 ${n}/${n})`); process.exit(1); }
   console.log(`✅ [브랜드 주소] ${list.map(b => `${b.id} ${b.webPath}/ → 127.0.0.1:${prof[b.id].port}`).join(' · ')} · /shop/ → 3000 · nginx 초안 ${drafts[drafts.length - 1]} · 서비스워커 범위별 캐시 · 매장 기억 브랜드별 (자가 시험 ${n}/${n})`);
 }
-module.exports = { checkNginx, checkSW, checkProfiles, checkCapacitor, checkGuestKey, checkLanding, checkGitignore, parseProfiles };
+module.exports = { checkNginx, checkSW, checkProfiles, checkCapacitor, checkGuestKey, checkSplashKey, checkLanding, checkGitignore, parseProfiles };
 if (require.main === module) main();

@@ -5,6 +5,10 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { AuthProvider } from './AuthContext';
 import { StoreProvider } from './StoreContext';
+import { BRAND } from './brand';
+
+// 브랜드 표시 — tokens.css 의 :root[data-brand="aram"](아람 빨강)이 이것을 본다. index.html 부팅 줄과 같은 값(빌드가 정한 브랜드) · 2026-11-17 낮 지시 6
+document.documentElement.setAttribute('data-brand', BRAND.code);
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

@@ -90,3 +90,43 @@ test('CODE128 심볼이 규격대로 그려진다', async () => {
   expect(svg.getAttribute('viewBox')).toBe('0 0 165 96');
   expect(svg.querySelectorAll('rect').length).toBe(1 + 40);
 });
+
+// 매장 픽업(주류) — 서버가 정한 기한을 날짜로, 찾아간 뒤에는 그 날짜로(2026-11-17 낮 지시 5). 앱이 기한을 계산하지 않는다.
+test('픽업 주문 카드에 찾아가는 기한, 찾아간 주문에는 「찾아가셨어요」', async () => {
+  const PICK = [
+    { id: 'P1-P', created_at: '2026-11-17T10:00:00', total_price: 3900, final_amount: 3900, status: '결제완료', fulfillment_type: 'pickup', pickup_deadline: '2026-11-20 23:59:59', picked_up_at: null },
+    { id: 'P2-P', created_at: '2026-11-15T10:00:00', total_price: 3900, final_amount: 3900, status: '결제완료', fulfillment_type: 'pickup', pickup_deadline: '2026-11-18 23:59:59', picked_up_at: '2026-11-16T18:20:00' },
+    { id: 'D1', created_at: '2026-11-14T10:00:00', total_price: 5900, final_amount: 5900, status: '배송중', fulfillment_type: 'delivery', pickup_deadline: null },
+  ];
+  render(<OrderHistory orders={PICK} />);
+  expect(await screen.findByText(/매장 픽업 · 11월 20일\(금\)까지 찾아가 주세요/)).toBeInTheDocument();
+  expect(screen.getByText(/매장 픽업 · 11월 16일 찾아가셨어요/)).toBeInTheDocument();
+  expect(screen.getAllByText(/매장 픽업 ·/).length).toBe(2);   // 배송 주문에는 안 붙는다
+});
+
+// 매장 영수증 세금 줄 — 종이 영수증(receiptFormat.ts)과 같은 줄·숫자(2026-11-17 낮 지시 5)
+test('매장 영수증에 과세 물품가액 · 부가세 — 면세 품목이 없으면 면세 줄은 없다', async () => {
+  render(<OrderHistory orders={[]} openSaleId={71} />);
+  expect(await screen.findByText('과세 물품가액')).toBeInTheDocument();
+  expect(screen.getByText('1,318원')).toBeInTheDocument();   // 1,450 − 132
+  expect(screen.getByText('부가세')).toBeInTheDocument();
+  expect(screen.queryByText('면세 물품가액')).not.toBeInTheDocument();
+  expect(screen.queryByText('부가세(포함)')).not.toBeInTheDocument();
+});
+
+// 온라인 카드 품목 줄 — 주문 줄에 items 가 있을 때만(지금 서버 목록엔 없다 → 요약 한 줄) · 2026-11-17 낮 지시 5
+test('주문 줄에 품목이 있으면 앞 두 개 + 「외 N건」, 없으면 요약 한 줄', async () => {
+  const O = [
+    { id: 'I1', created_at: '2026-11-16T10:00:00', total_price: 9000, final_amount: 9000, status: '배송중', items: [
+      { product_name: '코카콜라', spec: '1.5L', quantity: 2, price: 3200 },
+      { name: '농심 메론킥', spec: '60g', qty: 1, line_total: 1450 },
+      { name: '신라면', qty: 1, line_total: 1150 },
+    ] },
+  ];
+  render(<OrderHistory orders={O} />);
+  expect(await screen.findByText('코카콜라')).toBeInTheDocument();
+  expect(screen.getByText('6,400원')).toBeInTheDocument();          // 3,200 × 2 — 서버가 준 단가 × 수량
+  expect(screen.getByText('농심 메론킥')).toBeInTheDocument();
+  expect(screen.queryByText('신라면')).not.toBeInTheDocument();
+  expect(screen.getByText('외 1건')).toBeInTheDocument();
+});

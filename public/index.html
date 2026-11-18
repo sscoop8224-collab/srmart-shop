@@ -34,20 +34,21 @@
     <link rel="apple-touch-icon" sizes="192x192" href="%PUBLIC_URL%/icons/icon-192.png" />
     <link rel="apple-touch-startup-image" href="%PUBLIC_URL%/icons/icon-512.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
     <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
     <title>에스알마트</title>
+    <!-- 브랜드 표시(아람 빨강 · 2026-11-17 낮 지시 6) — 첫 그림부터 tokens.css 의 :root[data-brand="aram"] 이 걸리게. 빌드가 %REACT_APP_BRAND% 를 채운다(없으면 srm). -->
+    <script>document.documentElement.setAttribute('data-brand', '%REACT_APP_BRAND%' === 'aram' ? 'aram' : 'srm');</script>
     <!-- 스플래시 광고 부팅시점 프리페치: 로고 스플래시가 뜨는 동안(JS/웹뷰 부팅 수 초)에 광고 이미지를 미리 받아둔다.
          저사양 기기에서 마운트 시점 다운로드 레이스 방지. 총 로딩 시간은 안 늘림(이미 걸리는 부팅 시간 활용). -->
     <script>
     (function () {
       try {
         var warm = function (u) { if (u) { var i = new Image(); i.decoding = 'async'; i.src = u; } };
-        var p = localStorage.getItem('srmart_splash_ad');           // 1) 직전 회차 캐시 포인터 즉시 프리페치
+        // 브랜드(2026-11-17 낮 지시 5) — 빌드가 %REACT_APP_BRAND% 를 채운다. 못 채웠으면 에스알마트. 키 규칙은 src/brand.js SPLASH_AD_KEY 와 같다.
+        var brand = '%REACT_APP_BRAND%' === 'aram' ? 'aram' : 'srm';
+        var p = localStorage.getItem(brand === 'srm' ? 'srmart_splash_ad' : 'srmart_splash_ad:' + brand);   // 1) 직전 회차 캐시 포인터 즉시 프리페치
         if (p) { try { var o = JSON.parse(p); if (o && o.url) warm(o.url); } catch (e) {} }
-        fetch('/api/splash-ads', { headers: { Accept: 'application/json' } })  // 2) 현재 활성 광고 조기 조회 → 이미지 프리페치(첫 회차/교체 대비)
+        fetch('/api/splash-ads', { headers: { Accept: 'application/json', 'X-Shop-Brand': brand } })  // 2) 현재 활성 광고 조기 조회 → 이미지 프리페치(첫 회차/교체 대비)
           .then(function (r) { return r.ok ? r.json() : null; })
           .then(function (a) {
             if (a && a[0] && a[0].image_url) {

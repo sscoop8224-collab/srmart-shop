@@ -63,6 +63,17 @@ const myOrders = [
   { id: 'order_1762100000000', created_at: '2026-11-03T09:05:00+09:00', total_price: 15600, status: '배송완료', return_status: '반려', return_type: '환불', return_message: '환불 요청이 반려됐어요.', return_note: '개봉 후 7일이 지나 환불이 어려워요.' },
 ];
 
+// 매장 픽업 주문(주류) — opts.pickupOrders 일 때 주문내역 맨 위에. 하나는 찾아갈 기한, 하나는 찾아감(2026-11-17 낮 지시 5)
+const PICKUP_DEADLINE = '2026-11-20T14:59:59.000Z';   // = 2026-11-20 23:59:59 KST(서버 orders.pickup_deadline 을 JSON 으로 낸 모양)
+const pickupOrders = [
+  { id: 'order_1763340000000-P', created_at: '2026-11-17T09:20:00+09:00', total_price: 3900, final_amount: 3900, status: '결제완료', fulfillment_type: 'pickup', pickup_deadline: PICKUP_DEADLINE, picked_up_at: null },
+  { id: 'order_1763100000000-P', created_at: '2026-11-14T19:05:00+09:00', total_price: 7800, final_amount: 7800, status: '결제완료', fulfillment_type: 'pickup', pickup_deadline: '2026-11-17T14:59:59.000Z', picked_up_at: '2026-11-15T18:40:00+09:00' },
+];
+const pickupPurchases = [
+  { kind: 'online', id: 'order_1763340000000-P', date: '2026-11-17T09:20:00+09:00', store_name: '온라인', total: 3900, item_summary: '참이슬 후레쉬 360ml 2개', status: '결제완료' },
+  { kind: 'online', id: 'order_1763100000000-P', date: '2026-11-14T19:05:00+09:00', store_name: '온라인', total: 7800, item_summary: '참이슬 후레쉬 360ml 4개', status: '결제완료' },
+];
+
 const purchases = {
   store_visible: true,
   purchases: [
@@ -73,10 +84,11 @@ const purchases = {
 };
 const storePurchase = {
   id: 5501, code: 'S11-20261110-0042', date: '2026-11-10T18:22:00+09:00', store: { name: '에스알마트 왕길점', address: '인천 서구 왕길동', tel: '032-000-0000' },
-  pos_number: 1, subtotal: 21318, tax: 2132, total: 23450, earned_points: 234, points_used: 0, points_balance: 3820,
+  // 세금은 서버처럼 과세 품목에서만(10,750 / 11 = 977) — 영수증 세금 줄(과세 물품가액·부가세·면세 물품가액) 촬영 · 2026-11-17 낮 지시 5
+  pos_number: 1, subtotal: 23450, tax: 977, total: 23450, earned_points: 234, points_used: 0, points_balance: 3820,
   items: [
-    { name: '코카콜라', spec: '1.5L', qty: 2, unit_price: 3200, line_total: 6400 },
-    { name: '농심 메론킥', spec: '60g', qty: 3, unit_price: 1450, line_total: 4350 },
+    { name: '코카콜라', spec: '1.5L', qty: 2, unit_price: 3200, line_total: 6400, tax_type: '과세' },
+    { name: '농심 메론킥', spec: '60g', qty: 3, unit_price: 1450, line_total: 4350, tax_type: '과세' },
     { name: '부사 사과', spec: '1.5kg', qty: 1, unit_price: 12700, line_total: 12700, tax_type: '면세' },
   ],
   payments: [{ seq: 1, method: 'card', amount: 23450, status: 'approved' }],
@@ -105,10 +117,10 @@ const reviews = {
 };
 
 const loginHistory = [
-  // 서버(GET /users/me/login-history)는 ip · success · created_at 만 준다 — IP 는 통째로 온다(가리는 것은 화면 몫 · 묶음 5)
-  { created_at: '2026-11-11T09:12:00+09:00', ip: '211.234.51.7', success: 1 },
-  { created_at: '2026-11-10T21:03:00+09:00', ip: '211.234.51.7', success: 1 },
-  { created_at: '2026-11-09T08:44:00+09:00', ip: '::ffff:118.235.10.99', success: 0 },
+  // 서버(GET /users/me/login-history)는 ip · success · created_at · device(2026-11-17 — 거친 기기 이름 · 옛 기록은 null) — IP 는 통째로 온다(가리는 것은 화면 몫 · 묶음 5)
+  { created_at: '2026-11-11T09:12:00+09:00', ip: '211.234.51.7', success: 1, device: 'Android 앱' },
+  { created_at: '2026-11-10T21:03:00+09:00', ip: '211.234.51.7', success: 1, device: 'PC' },
+  { created_at: '2026-11-09T08:44:00+09:00', ip: '::ffff:118.235.10.99', success: 0, device: null },
 ];
 
 // 묶음 2 — 홈 배송 한 줄(GET /stores/:id/delivery-promise). 서버 computePromise 의 모양 그대로(목업 DELIV 와 같은 날)
@@ -249,6 +261,15 @@ function route(pathname, method, search, opts = {}, body = null) {
   if (pathname === '/signup-coupon') return j(opts.noCoupon ? { enabled: false } : { enabled: true, label: '신규회원 10% 할인 쿠폰', sub: '2만 원 이상 주문 · 가입 후 30일' });
   if (pathname === '/shop/business-info') return j(bizInfo);
   // 공지(묶음 5 S26) — 서버 shopContent.js 와 같은 모양(created_at 은 'YYYY-MM-DD HH:mm' 글자) · noNotices 면 비어 있음
+  // newNotice — 오늘 올라온 공지 하나를 맨 위에(홈 종 빨간 점 촬영 · 2026-11-17 낮 지시 5). 시각은 찍는 순간의 그 지역 시각.
+  if (pathname === '/shop/notices' && opts.newNotice && !opts.noNotices) {
+    const d = new Date(Date.now() - 60000), p2 = (n) => String(n).padStart(2, '0');
+    const now = `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+    return j([
+      { id: 3, store_id: null, title: '연말 휴무 안내', body: '12월 31일은 오후 6시까지 영업해요.', is_pinned: 0, is_visible: 1, created_at: now, updated_at: now },
+      ...route('/shop/notices', 'GET', '', { ...opts, newNotice: 0 }).body,
+    ]);
+  }
   if (pathname === '/shop/notices') return j(opts.noNotices ? [] : [
     { id: 2, store_id: null, title: '추석 연휴 배송 안내', body: '11월 15일은 배송이 하루 늦어질 수 있어요.', is_pinned: 1, is_visible: 1, created_at: '2026-11-01 09:00', updated_at: '2026-11-01 09:00' },
     { id: 1, store_id: 11, title: '왕길점 영업시간 변경', body: '11월부터 밤 10시까지 영업해요.', is_pinned: 0, is_visible: 1, created_at: '2026-10-20 10:00', updated_at: '2026-10-20 10:00' },
@@ -275,7 +296,13 @@ function route(pathname, method, search, opts = {}, body = null) {
   }
   // 가입(묶음 5 P04) — 서버 index.js 와 같은 모양. 쿠폰은 서버가 「지급했다」 할 때만 granted(noCoupon 이면 꺼짐)
   if (pathname === '/register') return j({ message: '회원가입 성공! 🎉', signup_coupon: opts.noCoupon ? { granted: false } : { granted: true, user_coupon_id: 9, coupon_id: 3, name: '신규회원 10% 할인', label: '신규회원 10% 할인 쿠폰', sub: '2만 원 이상 주문 · 가입 후 30일' } });
-  if (pathname === '/orders/my') return j(opts.noOrders ? [] : myOrders);   // noOrders — 주문내역 비어 있음(목업 P01)
+  // orderItems — 서버가 주문 목록에 품목을 실은 날의 모양(카드 품목 줄 촬영 · 2026-11-17 낮 지시 5). 지금 운영 서버는 안 싣는다.
+  if (pathname === '/orders/my' && opts.orderItems) return j(myOrders.map((o, i) => (i === 0 ? { ...o, items: [
+    { product_name: '농심 메론킥', spec: '60g', quantity: 1, price: 21000, image: null },
+    { product_name: '코카콜라', spec: '1.5L', quantity: 2, price: 3200, image: null },
+    { product_name: '참이슬 후레쉬', spec: '360ml', quantity: 2, price: 1950, image: null },
+  ] } : o)));
+  if (pathname === '/orders/my') return j(opts.noOrders ? [] : opts.pickupOrders ? [...pickupOrders, ...myOrders] : myOrders);   // noOrders — 주문내역 비어 있음(목업 P01)
   // 서버 찜 줄은 `w.*` + 상품 몇 칸 — id 는 **찜 줄 번호**, 상품 번호는 product_id, 가격은 없다(묶음 5 — 진짜 모양으로)
   if (pathname === '/users/me/wishlist') return j(opts.emptyWish ? [] : [products[0], products[3]].map((p, i) => ({ id: 501 + i, user_id: 9001, product_id: p.id, created_at: '2026-11-10T10:00:00', name: p.name, large: p.large, spec: p.spec, image: p.image })));
   if (pathname === '/wishlist') return j({ wishlisted: true, message: '찜 목록에 담았어요!' });
@@ -295,6 +322,7 @@ function route(pathname, method, search, opts = {}, body = null) {
   if (pathname === '/coupons/my') return j(userCoupons.filter(c => !c.used_at));
   if (pathname === '/users/me/login-history') return j(loginHistory);
   if (pathname === '/me/purchases' && opts.noOrders) return j({ store_visible: true, purchases: [] });
+  if (pathname === '/me/purchases' && opts.pickupOrders) return j({ ...purchases, purchases: [...pickupPurchases, ...purchases.purchases] });
   if (pathname === '/me/purchases') return j(opts.noConsent ? { ...purchases, store_visible: false, purchases: purchases.purchases.filter(p => p.kind === 'online') } : purchases);
   // voidedReceipt — 취소된 매장 거래(목업 S17 「취소된 거래」)
   if (pathname.startsWith('/me/purchases/store/')) return j(opts.voidedReceipt ? { ...storePurchase, voided: true, voided_at: '2026-11-10T18:40:00+09:00', payments: storePurchase.payments.map(p => ({ ...p, status: 'canceled' })) } : storePurchase);
@@ -313,8 +341,8 @@ function route(pathname, method, search, opts = {}, body = null) {
   if (pathname === '/store/match-zipcode' && opts.noZone) return j({ matched: false, message: '배송할 수 없는 지역이에요' });   // 목업 S11 배송 불가
   if (pathname === '/store/match-zipcode') return j({ matched: true, zone: { zone_name: '왕길동 배송구역', free_delivery_min: 30000 }, delivery_fee: 3000 });
   if (pathname === '/store/coverage') return j({ stores: [{ store_id: 11, store_name: '에스알마트 왕길점' }], recommended: { store_id: 11, store_name: '에스알마트 왕길점' } });
-  if (pathname === '/orders') return j({ ok: true });
-  if (pathname === '/orders/checkout') return j({ payment_group_id: 'PGTEST', orders: ((body && body.orders) || []).map(o => ({ orderId: o.id, fulfillment: o.fulfillment, final_amount: 0 })) });
+  if (pathname === '/orders') return j({ ok: true, fulfillment: (body && body.fulfillment) || 'delivery', pickup_deadline: body && body.fulfillment === 'pickup' ? PICKUP_DEADLINE : null });
+  if (pathname === '/orders/checkout') return j({ payment_group_id: 'PGTEST', orders: ((body && body.orders) || []).map(o => ({ orderId: o.id, fulfillment: o.fulfillment, final_amount: 0, pickup_deadline: o.fulfillment === 'pickup' ? PICKUP_DEADLINE : null })) });
   if (pathname === '/chatbot' && opts.chatFail) return j({ error: '서버 오류' }, 500);
   if (pathname === '/chatbot') return j({ reply: '네! 코카콜라 1.5L 는 왕길점에 24개 있어요. 장바구니에 담아 드릴까요?' });
   if (pathname === '/users/third-party-consent') return j({ ok: true });
