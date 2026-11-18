@@ -9,6 +9,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import Login from './Login';
 
+// 가입 비밀번호 — 시험마다 무작위(2026-11-18 · 저장소에 값을 남기지 않는다). 소문자·숫자·특수문자가 다 들어간다
+const TEST_PW = 'k' + Math.random().toString(36).slice(2, 10) + '7!';
+
 jest.mock('../api', () => ({
   __esModule: true,
   getStores: jest.fn(),
@@ -74,7 +77,7 @@ async function toStep3(opt) {
   // 서버 규칙(6자 · 2종)에 못 미치면 넘어가지 않는다
   fireEvent.click(screen.getByRole('button', { name: '다음' }));
   expect(screen.getByText('비밀번호는 6자 이상이어야 해요!')).toBeInTheDocument();
-  fireEvent.change(screen.getByPlaceholderText('비밀번호를 입력해 주세요'), { target: { value: 'abcd1234' } });
+  fireEvent.change(screen.getByPlaceholderText('비밀번호를 입력해 주세요'), { target: { value: TEST_PW } });
   fireEvent.click(screen.getByRole('button', { name: '다음' }));
   expect(await screen.findByRole('heading', { name: '동의' })).toBeInTheDocument();
 }
@@ -94,7 +97,7 @@ test('가입 — 이메일을 넣었으면 모양을 본다(틀리면 2단계에
   expect(screen.getByText('넣으시면 이메일로도 로그인할 수 있어요. 비워 두셔도 가입돼요.')).toBeInTheDocument();
   fireEvent.change(screen.getByPlaceholderText('010-0000-0000'), { target: { value: '010-1234-5678' } });
   fireEvent.change(document.querySelector('input[type=date]'), { target: { value: '1990-05-12' } });
-  fireEvent.change(screen.getByPlaceholderText('비밀번호를 입력해 주세요'), { target: { value: 'abcd1234' } });
+  fireEvent.change(screen.getByPlaceholderText('비밀번호를 입력해 주세요'), { target: { value: TEST_PW } });
   fireEvent.click(screen.getByRole('button', { name: '다음' }));
   expect(screen.getByText('이메일 모양이 맞지 않아요. 비워 두셔도 가입할 수 있어요.')).toBeInTheDocument();
   expect(screen.queryByRole('heading', { name: '동의' })).toBeNull();
@@ -114,7 +117,7 @@ test('가입 — 서버에 가는 값은 예전 한 화면과 같고, 쿠폰은 
   fireEvent.click(screen.getByRole('button', { name: '가입하기' }));
   expect(await screen.findByText('가입을 환영해요, 김손님님!')).toBeInTheDocument();
   expect(api.register).toHaveBeenCalledWith(expect.objectContaining({
-    name: '김손님', username: 'kimson', email: 'kim@example.com', password: 'abcd1234', phone: '010-1234-5678',
+    name: '김손님', username: 'kimson', email: 'kim@example.com', password: TEST_PW, phone: '010-1234-5678',
     address: '인천 서구 왕길로 123', addressDetail: '', birth: '1990-05-12',
     privacyConsent: true, thirdPartyConsent: false, marketing_push: false, isAdult: true,
     store_id: 11, zipcode: '22689', dong_name: '왕길동',
@@ -153,7 +156,7 @@ test('가입 — 문자 인증이 켜져 있으면 인증번호를 확인해야 
   await toStep2();
   fireEvent.change(screen.getByPlaceholderText('010-0000-0000'), { target: { value: '010-1234-5678' } });
   fireEvent.change(document.querySelector('input[type=date]'), { target: { value: '1990-05-12' } });
-  fireEvent.change(screen.getByPlaceholderText('비밀번호를 입력해 주세요'), { target: { value: 'abcd1234' } });
+  fireEvent.change(screen.getByPlaceholderText('비밀번호를 입력해 주세요'), { target: { value: TEST_PW } });
   fireEvent.click(screen.getByRole('button', { name: '다음' }));
   const code = await screen.findByPlaceholderText('인증번호 6자리');
   expect(screen.queryByRole('heading', { name: '동의' })).toBeNull();
@@ -177,7 +180,7 @@ test('가입 — 본인확인이 켜져 있으면 번호·생년월일 칸 대�
   await toStep2();
   expect(screen.queryByPlaceholderText('010-0000-0000')).toBeNull();
   expect(document.querySelector('input[type=date]')).toBeNull();
-  fireEvent.change(screen.getByPlaceholderText('비밀번호를 입력해 주세요'), { target: { value: 'abcd1234' } });
+  fireEvent.change(screen.getByPlaceholderText('비밀번호를 입력해 주세요'), { target: { value: TEST_PW } });
   fireEvent.click(screen.getByRole('button', { name: '다음' }));
   expect(await screen.findByText('휴대폰 본인확인을 해 주세요.')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: '휴대폰 본인확인' }));

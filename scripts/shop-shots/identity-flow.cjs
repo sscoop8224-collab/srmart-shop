@@ -27,7 +27,8 @@ const { chromium } = require('playwright');
 const { route, customer } = require('./fixtures.cjs');
 const OUT = path.resolve(arg('--out', path.join(require('os').tmpdir(), 'srm-identity-flow')));
 fs.mkdirSync(OUT, { recursive: true });
-const PW = 'Qw7#mPz2vK';
+const PW = 'k' + require('crypto').randomBytes(9).toString('base64url') + '7!';   // 실행마다 무작위(2026-11-18 · 저장소에 값을 남기지 않는다) — 화면에 찍지 않는다
+const NEW_PW = 'n' + require('crypto').randomBytes(9).toString('base64url') + '3!';   // 비밀번호 재설정에 넣는 새 값 — 실행마다 무작위(2026-11-18)
 const REAL = (p) => /^\/(identity\/|register$|auth\/|users\/me\/identity|users\/me\/phone$)/.test(p);
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else fail++; console.log(`  ${c ? '✅' : '🔴'} ${m}`); };
@@ -185,11 +186,11 @@ function forward(apiPort, req) {
       await p.locator('#fa-id').fill('leejoin'); await snap('S29_비밀번호_재설정');
       await p.locator('.idv-card button').click(); await wait(p, 600);
       await mockFill(p, EXIST); await mockSubmit(p); await wait(p, 1500);
-      await p.locator('#fa-pw').fill('Newpass#77'); await p.locator('#fa-pw2').fill('Newpass#77'); await wait(p, 200);
+      await p.locator('#fa-pw').fill(NEW_PW); await p.locator('#fa-pw2').fill(NEW_PW); await wait(p, 200);
       await snap('S29_비밀번호_재설정_새_비밀번호');
       await p.getByRole('button', { name: '비밀번호 바꾸기' }).click(); await wait(p, 1200);
       ok(await p.getByText('비밀번호를 바꿨어요').isVisible(), '재설정 — 「비밀번호를 바꿨어요」');
-      const r = await h.request('POST', '/api/login', { username: 'leejoin', password: 'Newpass#77' });
+      const r = await h.request('POST', '/api/login', { username: 'leejoin', password: NEW_PW });
       ok(r.status === 200, `새 비밀번호로 로그인(서버) ${r.status}`);
     });
 

@@ -88,7 +88,8 @@ const GUEST_CART = [
 const guestOrder = async p => { await tab(p, '장바구니').click(); await wait(p, 1200); await p.getByRole('button', { name: '로그인하고 주문하기' }).click(); await wait(p, 500); };
 // 로그인 화면(S27) — 홈 헤더 「로그인」 · 회원가입(P04) — 거기서 「회원가입」
 const loginPage = async p => { await p.locator('.app-nav button', { hasText: '로그인' }).click(); await wait(p, 700); };
-const fillLogin = async (p, pw = 'password') => { await p.getByPlaceholder(/아이디를 입력해 ?주세요/).fill('guest_demo'); await p.getByPlaceholder(/비밀번호를 입력해 ?주세요/).fill(pw); };
+const FAKE_PW = 'k' + require('crypto').randomBytes(9).toString('base64url') + '7!';   // 가짜 응답에 넣는 값 — 실행마다 무작위(2026-11-18)
+const fillLogin = async (p, pw = FAKE_PW) => { await p.getByPlaceholder(/아이디를 입력해 ?주세요/).fill('guest_demo'); await p.getByPlaceholder(/비밀번호를 입력해 ?주세요/).fill(pw); };
 // 주소 찾기(다음 우편번호 창)는 바깥 스크립트라 사진에서는 막혀 있다 — 같은 모양의 답을 바로 돌려주는 가짜로 바꾼다
 const fakePostcode = p => p.evaluate(() => { window.daum = { Postcode: function Postcode(o) { this.open = () => o.oncomplete({ roadAddress: '인천 서구 왕길로 123', zonecode: '22689', bname: '왕길동' }); } }; });
 const signupStep = async (p, n) => {
