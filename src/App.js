@@ -650,16 +650,19 @@ function AppContent() {
   const v2Page = ['home', 'search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt', 'orders', 'purchases', 'mypage', 'wishlist', 'about', 'notice', 'recentViews', 'myReviews', 'storeInfo', 'customerCenter', 'events', 'notificationSettings'].includes(page);
   // 아래 고정 바가 있는 화면은 탭바를 안 그린다(목업 S04·S08·S12·P03 — 바가 탭바를 덮던 것). 빈 장바구니(S09)는 탭바 — 묶음 3
   const noTab = ['productDetail', 'quickOrder', 'orderSheet', 'receipt'].includes(page) || (page === 'cart' && shopCart.count > 0) || (ordersDetail && (page === 'orders' || page === 'purchases'));
+  // 자기 머리(.app-nav)를 그리는 화면 — 앱 머리(AppHeader)를 안 그린다(목업 S06 등). 「매장 미리보기 중」 띠가 이 화면들에서는 맨 위에 온다
+  const ownHeader = ['search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt', 'orders', 'purchases', 'mypage', 'wishlist', 'about', 'notice', 'recentViews', 'myReviews', 'storeInfo', 'customerCenter', 'events', 'notificationSettings'].includes(page);
+  // 🔴 그때 띠가 상태 줄(시계·배터리) 밑으로 들어가고 아래 머리가 안전 영역을 또 더해 빈 틈이 생겼다(2026-11-19 대표님 아이폰 · 묶음 2 부터) — CSS .owner-top
 
   return (
-    <div className={`App${v2Page ? ' app-v2' : ''}${noTab ? ' no-tab' : ''}`}>
+    <div className={`App${v2Page ? ' app-v2' : ''}${noTab ? ' no-tab' : ''}${isOwner && currentStore && ownHeader ? ' owner-top' : ''}`}>
       {Capacitor.isNativePlatform() && <SplashAd visible={splashAdVisible} storeId={currentStoreId} onReady={hideSplash} />}
       <InstallPrompt />
       {showStoreModal && <StoreSelectionModal onSelected={handleStoreSelected} />}
       {mcpUser && <ForcePasswordChangeModal onDone={handleForcePasswordChangeDone} />}
       {/* 헤더(P05) — 로고 이미지 · 매장 · 종 · 로그인(AI 상담은 홈 검색창 오른쪽). 로그아웃은 마이 맨 아래(결정 11) — 묶음 1 */}
       {/* 검색 화면은 검색창이 헤더다(목업 S06) — 묶음 2 */}
-      {!['search', 'productDetail', 'cart', 'quickOrder', 'orderSheet', 'receipt', 'orders', 'purchases', 'mypage', 'wishlist', 'about', 'notice', 'recentViews', 'myReviews', 'storeInfo', 'customerCenter', 'events', 'notificationSettings'].includes(page) && <AppHeader
+      {!ownHeader && <AppHeader
         storeName={storeShort}
         onStoreClick={!user && !isOwner ? () => setShowStoreModal(true) : null}
         onHome={() => goToPage('home')}

@@ -16,7 +16,9 @@
  *     **운영 백엔드의 같은 주소(읽기만 하는 GET 목록)** 로 넘겨 화면마다 다른 브랜드 글자·그림이 나오는지 본다. 빌드 몫이 1건이라도
  *     있으면 바꿔 끼우지 않는다(2026-11-17 — 운영 /aram/ 에 에스알마트 로고·아이콘이 나간 일. 글자 검사만 있었고 그림·서버 응답은 안 봤다).
  *     서버 자료 몫(예: 범위가 「전체」 인 배너의 「SR Mart」)은 적기만 한다 — 배포로는 못 고친다.
- *  1-c. 🔴 서비스워커 판 — 서비스워커는 아이콘·offline·manifest 처럼 이름이 고정된 파일도 「캐시 먼저」로 내준다. 그런 파일이
+ *  1-d. 🔴 상태 줄 겹침 검사(scripts/shop-shots/check-safe-top.cjs) — 안전 영역 47px 을 넣고 「매장 미리보기 중」 띠 있음/없음 전 화면.
+ *     겹치거나 띠 아래가 띠 없을 때보다 더 비면 바꿔 끼우지 않는다(2026-11-19 · 아이폰에서 띠가 시계 줄과 겹친 채 11-13 부터 나가 있었다).
+ *  1-c. 🔴 서비스워커 판 —서비스워커는 아이콘·offline·manifest 처럼 이름이 고정된 파일도 「캐시 먼저」로 내준다. 그런 파일이
  *     바뀌었는데 service-worker.js 가 지금 운영과 바이트까지 같으면, 이미 연 기기는 새 서비스워커를 안 받고 옛 그림을 계속 낸다
  *     (2026-11-17 실측: 운영 /aram/ 을 연 기기의 shop-v7:/aram/ 에 에스알마트 icon-192). 그때는 반영하지 않는다 — public/service-worker.js 의 VERSION 을 올릴 것.
  *  1. HEAD 를 깨끗한 폴더로 꺼내(git worktree add --detach C:/srmart/_deploy_wt-shop-<시각>) 거기서 빌드 →
@@ -189,6 +191,18 @@ function brandLive(dir, wt) {
   log(`   ${r.status === 0 ? '✅' : '🔴'} 브랜드 화면 검사 종료코드 ${r.status} · 사진 ${out}`);
   return r.status === 0;
 }
+/** 1-d. 상태 줄 겹침 검사 — 아이폰 안전 영역(47px)을 넣고 「매장 미리보기 중」 띠 있음/없음 전 화면(가짜 자료 · 운영 서버 안 부름).
+ *  2026-11-19 — 띠가 시계·배터리 줄과 겹친 채 11-13 부터 운영에 나가 있었다(데스크톱 크롬은 안전 영역을 0 으로 줘서 어느 사진에도 안 보였다). */
+function safeTop(dir, wt) {
+  const tool = path.join(wt, 'scripts', 'shop-shots', 'check-safe-top.cjs');
+  if (!fs.existsSync(tool)) { log('🔴 상태 줄 검사기가 없다(check-safe-top.cjs) — 반영하지 않는다'); return false; }
+  const out = path.join(require('os').tmpdir(), `deploy-shop-safetop-${BRAND}-${STAMP}`);
+  const r = spawnSync(process.execPath, [tool, '--build', dir, '--out', out], { cwd: wt, encoding: 'utf8', timeout: 1200000 });
+  const lines = (r.stdout || '').split('\n').filter((l) => /🔴|상태 줄 검사/.test(l));
+  log(lines.slice(-12).map((l) => '   ' + l).join('\n') + ((r.stderr || '').trim() ? '\n   ' + r.stderr.trim().slice(-400) : ''));
+  log(`   ${r.status === 0 ? '✅' : '🔴'} 상태 줄 검사 종료코드 ${r.status} · 사진 ${out}`);
+  return r.status === 0;
+}
 /** 1-c. 이름 고정 파일이 바뀌었는데 서비스워커가 그대로인가 → 바뀐 파일 목록(비어 있으면 통과) */
 function swStale(newDir, oldDir) {
   const swNew = path.join(newDir, 'service-worker.js'), swOld = path.join(oldDir, 'service-worker.js');
@@ -346,6 +360,8 @@ function prune(yes) {
   const b = buildFromHead((dir, res) => {
     log('1-b. 브랜드 화면 검사(운영과 같은 응답 · 읽기만)');
     if (!brandLive(dir, res.wt)) { res.out += '\n🔴 브랜드 화면 검사 실패 — 다른 브랜드 글자·그림이 빌드에 남았다(위 줄)'; return false; }
+    log('1-d. 상태 줄 겹침 검사(아이폰 안전 영역 · 띠 있음/없음 · 가짜 자료)');
+    if (!safeTop(dir, res.wt)) { res.out += '\n🔴 상태 줄 검사 실패 — 화면 맨 위 글자가 시계·배터리 줄과 겹치거나 띠 아래가 빈다(위 줄)'; return false; }
     const stale = fs.existsSync(P(PROF.dir)) ? swStale(dir, P(PROF.dir)) : [];
     log(`1-c. 서비스워커 판 — 이름 고정 파일 바뀜 ${stale.length}개${stale.length ? ' · 🔴 service-worker.js 는 운영과 같다' : ''}`);
     if (stale.length) { res.out += `\n🔴 ${stale.slice(0, 8).join(' · ')} 가 바뀌었는데 service-worker.js 가 그대로다 — 이미 연 기기에는 옛 파일이 계속 나간다. public/service-worker.js 의 VERSION 을 올리고 커밋한 뒤 다시`; return false; }

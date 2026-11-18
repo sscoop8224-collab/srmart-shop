@@ -81,7 +81,7 @@ function Receipt({ order, onClose, onGoHome, earnPoints }) {
 
   return (
     <div className="v2 receipt-v2">
-      <div style={{ height: 'calc(env(safe-area-inset-top) + var(--sp-8))' }} />
+      <div className="receipt-top-space" style={{ height: 'calc(env(safe-area-inset-top) + var(--sp-8))' }} />
       <div className="tw">
         <div className="ui-empty">
           <div className="big g"><Icon name="check" /></div>
