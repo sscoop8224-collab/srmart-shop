@@ -133,7 +133,7 @@ async function run() {
   for (const mode of ['customer', 'owner'].filter((m) => !only || m === only)) {
     for (const [id, go] of PAGES) {
       const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, serviceWorkers: 'block', userAgent: UA });
-      await ctx.addInitScript(() => { try { localStorage.setItem('guestStoreId', '11'); localStorage.setItem('srmart_pwa_dismissed_at', String(Date.now())); } catch (e) { /* */ } window.open = () => null; });
+      await ctx.addInitScript(() => { try { localStorage.setItem('guestStoreId', '11'); localStorage.setItem('guestStoreId:aram', '11'); localStorage.setItem('srmart_pwa_dismissed_at', String(Date.now())); } catch (e) { /* */ } window.open = () => null; });
       await ctx.addInitScript(FAKE_STATUS(INSET));
       const opts = { cartPreset: 'promo', _cart: {} };
       await ctx.route('**/*', async (r) => {
