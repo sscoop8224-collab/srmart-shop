@@ -3,7 +3,7 @@
  * 상태 줄(시계·배터리) 겹침 검사 — 아이폰처럼 위 안전 영역(safe-area-inset-top)이 있을 때 화면 맨 위 글자가 상태 줄 밑으로 들어가는지,
  * 그리고 「매장 미리보기 중」 띠와 그 아래 머리 사이가 너무 비는지 본다. (2026-11-19 밤샘 지시 6 — 대표님이 아이폰에서 찾음)
  *
- *   node scripts/shop-shots/check-safe-top.cjs --build <빌드 폴더> [--out <사진 폴더>] [--inset 47] [--only owner|customer] [--pages home,search]
+ *   node scripts/shop-shots/check-safe-top.cjs --build <빌드 폴더> [--out <사진 폴더>] [--inset 47] [--only owner|customer|guest] [--modes customer,owner,guest] [--pages home,search]
  *   node scripts/shop-shots/check-safe-top.cjs --self-test
  *
  * 왜 이렇게 재나: 데스크톱 크롬은 env(safe-area-inset-top) 을 늘 0 으로 준다 → 그냥 찍으면 아이폰 겹침이 **절대 안 보인다**
@@ -98,6 +98,9 @@ async function run() {
   if (OUT) fs.mkdirSync(OUT, { recursive: true });
   const PORT = Number(arg('--port', 5363));
   const only = arg('--only', null);
+  // guest = 로그아웃 상태(로그인 안 함 · 띠가 없어야 정상) — 2026-11-19 2차 밤샘 지시 1(대표님이 마이를 정상으로 본 까닭 가리기). 기본은 손님·대표 둘
+  const MODES = (only ? [only] : arg('--modes', 'customer,owner').split(',')).filter((x) => ['customer', 'owner', 'guest'].includes(x));
+  const LABEL = { customer: '띠 없음', owner: '띠 있음', guest: '로그아웃' };
   const pickPages = arg('--pages', null);
   const { chromium } = require(path.join(ROOT, 'node_modules/playwright'));
   const { route } = require(path.join(__dirname, 'fixtures.cjs'));
@@ -130,7 +133,7 @@ async function run() {
   ].filter(([id]) => !pickPages || pickPages.split(',').includes(id));
   const results = [];
   const baseOf = {};
-  for (const mode of ['customer', 'owner'].filter((m) => !only || m === only)) {
+  for (const mode of MODES) {
     for (const [id, go] of PAGES) {
       const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, serviceWorkers: 'block', userAgent: UA });
       await ctx.addInitScript(() => { try { localStorage.setItem('guestStoreId', '11'); localStorage.setItem('guestStoreId:aram', '11'); localStorage.setItem('srmart_pwa_dismissed_at', String(Date.now())); } catch (e) { /* */ } window.open = () => null; });
@@ -161,20 +164,23 @@ async function run() {
       let status = 'ok', fails = [], m = null;
       try {
         await p.goto(`http://127.0.0.1:${PORT}/`); await wait(p, 2200);
-        await p.locator('.app-nav button', { hasText: '로그인' }).first().click(); await wait(p, 800);
-        await p.getByPlaceholder(/아이디를 입력해 ?주세요/).fill(mode === 'owner' ? 'owner_demo' : 'kimmem');
-        await p.getByPlaceholder(/비밀번호를 입력해 ?주세요/).fill('k' + require('crypto').randomBytes(6).toString('hex') + '7!');
-        await p.getByRole('button', { name: /^로그인$/ }).filter({ visible: true }).first().click(); await wait(p, 1800);
+        if (mode !== 'guest') {
+          await p.locator('.app-nav button', { hasText: '로그인' }).first().click(); await wait(p, 800);
+          await p.getByPlaceholder(/아이디를 입력해 ?주세요/).fill(mode === 'owner' ? 'owner_demo' : 'kimmem');
+          await p.getByPlaceholder(/비밀번호를 입력해 ?주세요/).fill('k' + require('crypto').randomBytes(6).toString('hex') + '7!');
+          await p.getByRole('button', { name: /^로그인$/ }).filter({ visible: true }).first().click(); await wait(p, 1800);
+        }
         await go(p);
         await p.evaluate(() => window.scrollTo(0, 0)); await wait(p, 300);
         m = await p.evaluate(`${MEASURE}(${JSON.stringify({ inset: INSET })})`);
         if (mode === 'customer') baseOf[id] = m;
         fails = judge(m, INSET, mode === 'owner' ? baseOf[id] || null : null);
         if (mode === 'owner' && !m.band) fails.push('「매장 미리보기 중」 띠가 안 보임(띠 있는 경우를 못 잼)');
-        if (OUT) await p.screenshot({ path: path.join(OUT, `${mode === 'owner' ? '띠있음' : '띠없음'}_${id}.png`) });
+        if (mode === 'guest' && m.band) fails.push('로그아웃인데 「매장 미리보기 중」 띠가 보임');
+        if (OUT) await p.screenshot({ path: path.join(OUT, `${LABEL[mode].replace(/ /g, '')}_${id}.png`) });
       } catch (e) { status = 'nav'; fails = [`화면에 못 감: ${String(e.message).split('\n')[0].slice(0, 80)}`]; }
       results.push({ mode, id, status, fails, band: m && m.band });
-      console.log(`  ${fails.length ? '🔴' : '✅'} ${mode === 'owner' ? '띠 있음' : '띠 없음'} · ${id}${fails.length ? ' — ' + fails.join(' / ') : ''}${m && m.band ? ` (띠 ${m.band.top}~${m.band.bottom} · 아래 ${m.band.nextTop})` : ''}`);
+      console.log(`  ${fails.length ? '🔴' : '✅'} ${LABEL[mode]} · ${id}${fails.length ? ' — ' + fails.join(' / ') : ''}${m && m.band ? ` (띠 ${m.band.top}~${m.band.bottom} · 아래 ${m.band.nextTop})` : ''}`);
       await ctx.close();
     }
   }
