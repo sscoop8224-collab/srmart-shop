@@ -1,4 +1,7 @@
-# 2026-11-18 낮 반영 순서서 — 다음 반영 묶음 `shop-next-1118` (+ 아람 진한 분홍 A)
+# 2026-11-18 낮 반영 순서서 — 쇼핑앱 묶음 `shop-day-1118`(백엔드·어드민) + `shop-next-1118-pink`(쇼핑앱)
+
+> 🔸 **2026-11-18 낮 확정판** — 대표 결정: 가입 문구는 **뺀 판**(`-pink`) · 세 저장소 모두 **지금 main 기준으로 맞춘** 가지 · 백엔드는 시험 도구 비밀번호 무작위 포함.
+>    합치기: 백엔드 = **포스 창** · 어드민 = **어드민 창** · 쇼핑앱 = 쇼핑앱 창(대표 「재시작 끝」 뒤).
 
 > 2026-11-18 밤샘 지시 2 · 쇼핑앱 창. 🔴 **대표님 승인 뒤 · 영업시간 밖**에만 한다.
 > 예행 결과는 `C:\srmart\reports\20261118-morning-shop.md` 「1. 예행」.
@@ -7,9 +10,9 @@
 
 | 저장소 | 가지 · 끝 커밋 | 들어가는 것 |
 |---|---|---|
-| 백엔드 | `shop-next-1118` `ca5a55f` | 픽업 기한 응답 · 시작 광고 범위(전체/브랜드/매장) · 🔴 로그인 기록에 기기 · 최근 본 상품 지우기 · 주문 목록에 품목 · **SQL 1개** |
-| 어드민 | `shop-next-1118` `79a72f9` | 시작 광고 화면 범위 고르기 |
-| 쇼핑앱 | **둘 중 하나** — 가입 문구를 대표님이 확정하셨으면 `shop-next-1118-pink-copy`, 아니면 `shop-next-1118-pink` | 낮 가지 전부 · 정리(글꼴 woff2 · 안 쓰는 파일) · 아람 진한 분홍 A · (copy 판만) 가입 문구 「고친 안」 |
+| 백엔드 | `shop-day-1118` `f4da6af` (= `shop-next-1118` + main `ea278df` + 시험 도구 비밀번호 무작위 `560e054`) | 픽업 기한 응답 · 시작 광고 범위(전체/브랜드/매장) · 🔴 로그인 기록에 기기 · 최근 본 상품 지우기 · 주문 목록에 품목 · 시험 도구 비밀번호·PIN 무작위 · **SQL 1개** |
+| 어드민 | `shop-day-1118` `8fc0d76` (= `shop-next-1118` + main `85068d8` + 글자색 한 줄) | 시작 광고 화면 범위 고르기 |
+| 쇼핑앱 | `shop-next-1118-pink` (가입 문구 **뺀 판** · main `fc89c0d6` 합침) | 낮 가지 전부 · 정리(글꼴 woff2 · 안 쓰는 파일) · 아람 진한 분홍 A · 촬영·시험 도구 비밀번호 무작위 |
 
 - 🔴 백엔드는 **SQL 을 적용하기 전에는 재시작 관문(기동 시험)에서 멈춘다**(`requiredSchema` 의 `splash_ads` 줄 — 의도).
 - 🔴 백엔드 가지는 **SQL 적용이 끝난 뒤에** main 에 합친다(CLAUDE.md 「DB 마이그레이션이 필요한 백엔드 커밋은 운영 적용 뒤에만 main 에」).
@@ -17,7 +20,7 @@
 
 ## 1. 대표님 — SQL (cmd 에서 실행)
 
-**1-0. SQL 파일이 있는 폴더가 맞는 가지인지** — `shop-next-1118` 한 줄이 나와야 한다.
+**1-0. SQL 파일이 있는 폴더가 맞는 가지인지** — `shop-day-1118` 한 줄이 나와야 한다.
 ```
 git -C C:\srmart\worktrees\backend-1115 branch --show-current
 ```
@@ -50,9 +53,11 @@ mysql -u root -p -h 127.0.0.1 -P 3306 --default-character-set=utf8mb4 srmart -e 
 
 ## 2. Claude — 합치기 (대표님 「SQL 적용 끝」 뒤)
 
-1. 백엔드: `C:\srmart\srmart-backend` 가 깨끗하고 `.work-lock` 이 없는지 본다 → `git merge --no-ff shop-next-1118` (예행: main 위 충돌 0).
-2. 어드민: `C:\srmart\srmart-admin` 에서 `git merge --no-ff shop-next-1118` (예행 충돌 0).
-3. 쇼핑앱: `C:\srmart\srmart-shop` 에서 `git merge --no-ff shop-next-1118-pink`(또는 `-pink-copy`) (예행 충돌 0 · 분홍 합칠 때의 충돌 1건은 가지 안에서 이미 풀었다).
+1. 백엔드(**포스 창**): `C:\srmart\srmart-backend` 가 깨끗하고 `.work-lock` 이 없는지 본다 → `git merge --no-ff shop-day-1118` (가지가 main `ea278df` 를 이미 품었다 — 충돌 0 이어야 한다).
+2. 어드민(**어드민 창**): `C:\srmart\srmart-admin` 에서 `git merge --no-ff shop-day-1118` (main `85068d8` 를 품었다 — 충돌 0).
+3. 쇼핑앱(쇼핑앱 창 · 대표 「재시작 끝」 뒤): `C:\srmart\srmart-shop` 에서 `git merge --no-ff shop-next-1118-pink` (main `fc89c0d6` 를 품었다 — 충돌 0).
+- 🔴 그 사이 main 이 또 움직였으면(다른 창 합치기) 충돌이 날 수 있다 — 그때는 합치지 말고 가지 주인 창에 알린다.
+- 🔴 **백엔드 push** 는 이 묶음으로도 바로 풀리지 않는다 — 관문이 옛 커밋(`39b6bbb` · `78cbde6`)의 그 줄을 그대로 본다. 저녁 보고 「백엔드 push」 참고.
 - 합친 커밋 해시를 보고에 적는다.
 
 ## 3. 포스 창 — 백엔드 재시작 (PowerShell)
